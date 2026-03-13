@@ -101,8 +101,10 @@ $(document).ready(function () {
             {paddingRight: SIDEBAR_WIDTH},
             SIDEBAR_DISPLAY_DURATION
           );
+          $('body').removeClass('sidebar-hidden');
         })
         .on('sidebar.isHiding', function () {
+          $('body').addClass('sidebar-hidden');
         });
     },
     clickHandler: function () {

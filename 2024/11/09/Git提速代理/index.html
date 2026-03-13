@@ -92,7 +92,7 @@
 
 
 
-  <link rel="alternate" href="/atom.xml" title="Psychic's Blog" type="application/atom+xml" />
+  <link rel="alternate" href="/atom.xml" title="Zcorpius's Blog" type="application/atom+xml" />
 
 
 
@@ -102,19 +102,19 @@
 <meta name="description" content="因为平时在Ubuntu虚拟机上使用Git clone的时候速度特别慢，使用干脆写个代理文件进行提速。  梯子准备在主机上挂个梯子，然后查看IP地址与端口(确保能使用)。 12345678en0: flags&#x3D;8863&lt;UP,BROADCAST,SMART,RUNNING,SIMPLEX,MULTICAST&gt; mtu 1500	options&#x3D;400&lt;CHANNEL_IO&gt;">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Git提速代理">
-<meta property="og:url" content="https://zybo_o.github.io/2024/11/09/Git%E6%8F%90%E9%80%9F%E4%BB%A3%E7%90%86/index.html">
-<meta property="og:site_name" content="Psychic&#39;s Blog">
+<meta property="og:url" content="https://zcorpius.github.io/2024/11/09/Git%E6%8F%90%E9%80%9F%E4%BB%A3%E7%90%86/index.html">
+<meta property="og:site_name" content="Zcorpius&#39;s Blog">
 <meta property="og:description" content="因为平时在Ubuntu虚拟机上使用Git clone的时候速度特别慢，使用干脆写个代理文件进行提速。  梯子准备在主机上挂个梯子，然后查看IP地址与端口(确保能使用)。 12345678en0: flags&#x3D;8863&lt;UP,BROADCAST,SMART,RUNNING,SIMPLEX,MULTICAST&gt; mtu 1500	options&#x3D;400&lt;CHANNEL_IO&gt;">
 <meta property="og:locale">
-<meta property="og:image" content="https://zybo_o.github.io/2024/11/09/Git%E6%8F%90%E9%80%9F%E4%BB%A3%E7%90%86/1.png">
-<meta property="og:image" content="https://zybo_o.github.io/2024/11/09/Git%E6%8F%90%E9%80%9F%E4%BB%A3%E7%90%86/2.png">
-<meta property="og:image" content="https://zybo_o.github.io/2024/11/09/Git%E6%8F%90%E9%80%9F%E4%BB%A3%E7%90%86/3.png">
+<meta property="og:image" content="https://zcorpius.github.io/2024/11/09/Git%E6%8F%90%E9%80%9F%E4%BB%A3%E7%90%86/1.png">
+<meta property="og:image" content="https://zcorpius.github.io/2024/11/09/Git%E6%8F%90%E9%80%9F%E4%BB%A3%E7%90%86/2.png">
+<meta property="og:image" content="https://zcorpius.github.io/2024/11/09/Git%E6%8F%90%E9%80%9F%E4%BB%A3%E7%90%86/3.png">
 <meta property="article:published_time" content="2024-11-09T10:17:15.000Z">
-<meta property="article:modified_time" content="2024-11-10T14:33:25.058Z">
-<meta property="article:author" content="Psychic">
+<meta property="article:modified_time" content="2024-11-10T14:33:25.000Z">
+<meta property="article:author" content="Zcorpius">
 <meta property="article:tag" content="Git">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://zybo_o.github.io/2024/11/09/Git%E6%8F%90%E9%80%9F%E4%BB%A3%E7%90%86/1.png">
+<meta name="twitter:image" content="https://zcorpius.github.io/2024/11/09/Git%E6%8F%90%E9%80%9F%E4%BB%A3%E7%90%86/1.png">
 
 
 
@@ -144,13 +144,13 @@
 
 
 
-  <link rel="canonical" href="https://ZYBO_o.github.io/2024/11/09/Git提速代理/"/>
+  <link rel="canonical" href="https://Zcorpius.github.io/2024/11/09/Git提速代理/"/>
 
 
 
 
 
-  <title>Git提速代理 | Psychic's Blog</title>
+  <title>Git提速代理 | Zcorpius's Blog</title>
   
 
 
@@ -160,7 +160,7 @@
 
 
 
-<meta name="generator" content="Hexo 5.2.0"></head>
+<meta name="generator" content="Hexo 7.3.0"></head>
 
 <body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
 
@@ -180,7 +180,7 @@
     <div class="custom-logo-site-title">
       <a href="/"  class="brand" rel="start">
         <span class="logo-line-before"><i></i></span>
-        <span class="site-title">Psychic's Blog</span>
+        <span class="site-title">Zcorpius's Blog</span>
         <span class="logo-line-after"><i></i></span>
       </a>
     </div>
@@ -331,7 +331,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="https://ZYBO_o.github.io/2024/11/09/Git%E6%8F%90%E9%80%9F%E4%BB%A3%E7%90%86/">
+    <link itemprop="mainEntityOfPage" href="https://Zcorpius.github.io/2024/11/09/Git%E6%8F%90%E9%80%9F%E4%BB%A3%E7%90%86/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="">
@@ -340,7 +340,7 @@
     </span>
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Psychic's Blog">
+      <meta itemprop="name" content="Zcorpius's Blog">
     </span>
 
     
@@ -456,12 +456,14 @@
 </blockquote>
 <h2 id="梯子准备"><a href="#梯子准备" class="headerlink" title="梯子准备"></a>梯子准备</h2><p>在主机上挂个梯子，然后查看IP地址与端口(确保能使用)。</p>
 <div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SHELL"><figure class="iseeu highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">en0: flags=8863&lt;UP,BROADCAST,SMART,RUNNING,SIMPLEX,MULTICAST&gt; mtu 1500</span><br><span class="line">	options=400&lt;CHANNEL_IO&gt;</span><br><span class="line">	ether 38:f9:d3:8d:58:3e</span><br><span class="line">	inet6 fe80::1434:df1:87d5:7e09%en0 prefixlen 64 secured scopeid 0x6</span><br><span class="line">	inet 192.168.1.4 netmask 0xffffff00 broadcast 192.168.1.255</span><br><span class="line">	nd6 options=201&lt;PERFORMNUD,DAD&gt;</span><br><span class="line">	media: autoselect</span><br><span class="line">	status: active</span><br></pre></td></tr></table></figure></div>
-<p><img src="/2024/11/09/Git%E6%8F%90%E9%80%9F%E4%BB%A3%E7%90%86/1.png" style="zoom:50%;"></p>
+
+<img src="/2024/11/09/Git%E6%8F%90%E9%80%9F%E4%BB%A3%E7%90%86/1.png" style="zoom:50%;">
+
 <p>我的IP与端口:192.168.1.4:7890</p>
 <h2 id="写代理文件"><a href="#写代理文件" class="headerlink" title="写代理文件"></a>写代理文件</h2><p>在Ubuntu上写代理文件，在与Desktop同一级的目录下新建.gitconfig文件并进行编辑。</p>
-<p><img src="/2024/11/09/Git%E6%8F%90%E9%80%9F%E4%BB%A3%E7%90%86/2.png" alt></p>
+<p><img src="/2024/11/09/Git%E6%8F%90%E9%80%9F%E4%BB%A3%E7%90%86/2.png"></p>
 <p>这样就可以加速了。实践一下。</p>
-<p><img src="/2024/11/09/Git%E6%8F%90%E9%80%9F%E4%BB%A3%E7%90%86/3.png" alt></p>
+<p><img src="/2024/11/09/Git%E6%8F%90%E9%80%9F%E4%BB%A3%E7%90%86/3.png"></p>
 <p>这个速度就爽多！</p>
 
       
@@ -586,7 +588,7 @@
               
                 <a href="/archives/%7C%7C%20archive">
               
-                  <span class="site-state-item-count">8</span>
+                  <span class="site-state-item-count">6</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
@@ -710,11 +712,11 @@
 
     <footer id="footer" class="footer">
       <div class="footer-inner">
-        <div class="copyright">&copy; <span itemprop="copyrightYear">2025</span>
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2026</span>
   <span class="with-love">
     <i class="fa fa-user"></i>
   </span>
-  <span class="author" itemprop="copyrightHolder">Psychic</span>
+  <span class="author" itemprop="copyrightHolder">Zcorpius</span>
 
   
 </div>

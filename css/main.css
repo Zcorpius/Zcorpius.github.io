@@ -1855,7 +1855,7 @@ pre {
   width: 4px;
   height: 4px;
   border-radius: 50%;
-  background: #aaffdb;
+  background: #e47aa2;
 }
 .links-of-blogroll {
   font-size: 13px;
@@ -1954,7 +1954,7 @@ pre {
   line-height: 1.8;
 }
 .post-toc .nav .nav-child {
-  display: none;
+  display: block;
 }
 .post-toc .nav .active > .nav-child {
   display: block;
@@ -2807,6 +2807,7 @@ embed {
 .main-inner {
   margin: 0 auto;
   width: 960px;
+  transition: width 0.3s ease;
 }
 @media (min-width: 1600px) {
   .main-inner {
@@ -2822,6 +2823,19 @@ embed {
 @media (max-width: 767px) {
   .main-inner {
     margin: 0 auto;
+    width: inherit;
+  }
+}
+.sidebar-hidden .main-inner {
+  width: 1100px;
+}
+@media (min-width: 1600px) {
+  .sidebar-hidden .main-inner {
+    width: 1200px;
+  }
+}
+@media (max-width: 1100px) {
+  .sidebar-hidden .main-inner {
     width: inherit;
   }
 }
@@ -2999,6 +3013,16 @@ pre {
 .code ::selection {
   background: #2593a6;
   color: #fff;
+}
+.post-toc .nav .active > a {
+  color: #fc6423 !important;
+  font-weight: bold;
+  border-bottom-color: #fc6423 !important;
+}
+.post-toc .nav .active-current > a {
+  color: #e3461e !important;
+  font-weight: bold;
+  border-bottom-color: #e3461e !important;
 }
 .code +mobile() {
   background: #2593a6;

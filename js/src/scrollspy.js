@@ -64,7 +64,9 @@
       .map(function () {
         var $el   = $(this)
         var href  = $el.data('target') || $el.attr('href')
-        var $href = /^#./.test(href) && $(NexT.utils.escapeSelector(href)) // Need to escape selector.
+        // 解码URL编码的中文
+        var decodedHref = decodeURIComponent(href)
+        var $href = /^#./.test(decodedHref) && $(NexT.utils.escapeSelector(decodedHref)) // Need to escape selector.
 
         return ($href
           && $href.length
