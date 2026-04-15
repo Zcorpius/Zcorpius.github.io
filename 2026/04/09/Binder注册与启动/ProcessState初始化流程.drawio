@@ -1,0 +1,233 @@
+<mxfile host="Electron" agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/29.6.6 Chrome/144.0.7559.236 Electron/40.8.4 Safari/537.36" version="29.6.6">
+  <diagram id="CvTT7gf-Vb2W5uyleiTe" name="Page-1">
+    <mxGraphModel dx="1371" dy="1056" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="7" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#4D4D4D;dashed=1;dashPattern=8 4;" value="" vertex="1">
+          <mxGeometry height="690" width="700" x="80" y="330" as="geometry" />
+        </mxCell>
+        <mxCell id="6" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=none;dashed=1;dashPattern=8 4;fontColor=#333333;" value="" vertex="1">
+          <mxGeometry height="228" width="460" x="290" y="552" as="geometry" />
+        </mxCell>
+        <mxCell id="caller_header" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;fontSize=12;" value="Caller&lt;br&gt;（调用者）" vertex="1">
+          <mxGeometry height="50" width="120" x="60" y="60" as="geometry" />
+        </mxCell>
+        <mxCell id="ps_header" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;fontSize=12;" value="ProcessState&lt;br&gt;（PS）" vertex="1">
+          <mxGeometry height="50" width="120" x="260" y="60" as="geometry" />
+        </mxCell>
+        <mxCell id="init_header" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;fontSize=12;" value="init()&lt;br&gt;（Init）" vertex="1">
+          <mxGeometry height="50" width="120" x="460" y="60" as="geometry" />
+        </mxCell>
+        <mxCell id="kernel_header" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontStyle=1;fontSize=12;" value="内核驱动&lt;br&gt;（/dev/binder）" vertex="1">
+          <mxGeometry height="50" width="130" x="660" y="60" as="geometry" />
+        </mxCell>
+        <mxCell id="caller_line" edge="1" parent="1" style="endArrow=none;dashed=1;dashPattern=5 5;strokeColor=#6c8ebf;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" target="caller_active">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="120" y="110" as="sourcePoint" />
+            <mxPoint x="120" y="1120" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ps_line" edge="1" parent="1" style="endArrow=none;dashed=1;dashPattern=5 5;strokeColor=#6c8ebf;fillColor=#dae8fc;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" target="ps_active2">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="320" y="110" as="sourcePoint" />
+            <mxPoint x="320" y="1120" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="init_line" edge="1" parent="1" style="endArrow=none;dashed=1;dashPattern=5 5;strokeColor=#6c8ebf;fillColor=#dae8fc;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" target="init_active">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="520" y="110" as="sourcePoint" />
+            <mxPoint x="520" y="1090" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="kernel_line" edge="1" parent="1" source="kernel_active" style="endArrow=none;dashed=1;dashPattern=5 5;strokeColor=#b85450;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="725" y="110" as="sourcePoint" />
+            <mxPoint x="725" y="1040" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="caller_active" parent="1" style="fillColor=#dae8fc;strokeColor=#6c8ebf;opacity=30;" vertex="1">
+          <mxGeometry height="915" width="16" x="112" y="125" as="geometry" />
+        </mxCell>
+        <mxCell id="ps_active1" parent="1" style="fillColor=#dae8fc;strokeColor=#6c8ebf;opacity=30;" vertex="1">
+          <mxGeometry height="895" width="16" x="312" y="145" as="geometry" />
+        </mxCell>
+        <mxCell id="init_active" parent="1" style="fillColor=#dae8fc;strokeColor=#6c8ebf;opacity=30;" vertex="1">
+          <mxGeometry height="860" width="16" x="512" y="180" as="geometry" />
+        </mxCell>
+        <mxCell id="ps_active2" parent="1" style="fillColor=#dae8fc;strokeColor=#6c8ebf;opacity=30;" vertex="1">
+          <mxGeometry height="590" width="16" x="312" y="450" as="geometry" />
+        </mxCell>
+        <mxCell id="msg1" edge="1" parent="1" style="endArrow=block;endFill=1;edgeStyle=orthogonalEdgeStyle;strokeColor=#333333;fontSize=11;fontStyle=0;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" value="self() ">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint as="offset" />
+            <mxPoint x="128" y="156" as="sourcePoint" />
+            <mxPoint x="312" y="156" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="msg2" edge="1" parent="1" style="endArrow=block;endFill=1;edgeStyle=orthogonalEdgeStyle;strokeColor=#333333;fontSize=11;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" value="init(driver, requireDefault)">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="328" y="180" as="sourcePoint" />
+            <mxPoint x="512" y="180" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="alt_frame1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#4D4D4D;dashed=1;dashPattern=8 4;" value="" vertex="1">
+          <mxGeometry height="58" width="700" x="80" y="232" as="geometry" />
+        </mxCell>
+        <mxCell id="alt_label1" parent="1" style="text;html=1;fontSize=11;fontStyle=1;align=left;verticalAlign=top;fillColor=#f5f5f5;strokeColor=#999999;spacingLeft=4;spacingRight=4;" value="alt [driver == nullptr]" vertex="1">
+          <mxGeometry height="22" width="140" x="80" y="210" as="geometry" />
+        </mxCell>
+        <mxCell id="msg3" edge="1" parent="1" style="endArrow=block;endFill=1;edgeStyle=orthogonalEdgeStyle;strokeColor=#1A1A1A;fontSize=11;dashed=1;" value="返回 gProcess（不创建）">
+          <mxGeometry relative="1" x="-0.1087" y="-14" as="geometry">
+            <mxPoint as="offset" />
+            <mxPoint x="512" y="277" as="sourcePoint" />
+            <mxPoint x="328" y="277" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="alt_label2" parent="1" style="text;html=1;fontSize=11;fontStyle=1;align=left;verticalAlign=top;fillColor=#e8e8e8;strokeColor=#666666;spacingLeft=4;spacingRight=4;" value="else [driver != nullptr]" vertex="1">
+          <mxGeometry height="22" width="140" x="80" y="308" as="geometry" />
+        </mxCell>
+        <mxCell id="note1" parent="1" style="shape=note;whiteSpace=wrap;html=1;size=14;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;fontStyle=2;align=center;" value="std::call_once(gProcessOnce, ...)" vertex="1">
+          <mxGeometry height="35" width="220" x="440" y="333" as="geometry" />
+        </mxCell>
+        <mxCell id="msg4" edge="1" parent="1" style="endArrow=block;endFill=1;edgeStyle=orthogonalEdgeStyle;strokeColor=#333333;fontSize=11;curved=1;" value="access(driver, R_OK)">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="580" y="383" />
+              <mxPoint x="580" y="418" />
+            </Array>
+            <mxPoint x="528" y="383" as="sourcePoint" />
+            <mxPoint x="528" y="418" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="note_fallback" parent="1" style="shape=note;whiteSpace=wrap;html=1;size=14;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;fontStyle=2;align=center;" value="驱动不可访问&lt;br&gt;则回退到 /dev/binder" vertex="1">
+          <mxGeometry height="30" width="140" x="360" y="383" as="geometry" />
+        </mxCell>
+        <mxCell id="msg5" edge="1" parent="1" style="endArrow=block;endFill=1;edgeStyle=orthogonalEdgeStyle;strokeColor=#333333;fontSize=11;curved=1;" value="pthread_atfork(onFork, parentPostFork, childPostFork)">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="600" y="437" />
+              <mxPoint x="600" y="472" />
+            </Array>
+            <mxPoint x="528" y="437" as="sourcePoint" />
+            <mxPoint x="528" y="472" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="msg6" edge="1" parent="1" style="endArrow=block;endFill=1;edgeStyle=orthogonalEdgeStyle;strokeColor=#333333;fontSize=11;" value="sp&lt;ProcessState&gt;::make(driver)">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="512" y="501" as="sourcePoint" />
+            <mxPoint x="328" y="501" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="note_constructor" parent="1" style="shape=note;whiteSpace=wrap;html=1;size=14;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;fontStyle=1;align=center;" value="构造函数 ProcessState(driver)" vertex="1">
+          <mxGeometry height="30" width="200" x="220" y="521" as="geometry" />
+        </mxCell>
+        <mxCell id="msg7" edge="1" parent="1" style="endArrow=block;endFill=1;edgeStyle=orthogonalEdgeStyle;strokeColor=#333333;fontSize=11;fontStyle=1;curved=1;" value="open_driver()">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="390" y="562" />
+              <mxPoint x="390" y="602" />
+            </Array>
+            <mxPoint x="328" y="562" as="sourcePoint" />
+            <mxPoint x="328" y="602" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="msg8" edge="1" parent="1" style="endArrow=block;endFill=1;edgeStyle=orthogonalEdgeStyle;strokeColor=#333333;fontSize=11;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" value="open(driver, O_RDWR | O_CLOEXEC)">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="328" y="620" as="sourcePoint" />
+            <mxPoint x="717" y="620" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="msg8r" edge="1" parent="1" style="endArrow=block;endFill=1;edgeStyle=orthogonalEdgeStyle;strokeColor=#666666;fontSize=11;dashed=1;" value="fd（文件描述符）">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="715.5" y="639" as="sourcePoint" />
+            <mxPoint x="326.5" y="639" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="msg9" edge="1" parent="1" style="endArrow=block;endFill=1;edgeStyle=orthogonalEdgeStyle;strokeColor=#333333;fontSize=11;" value="ioctl(BINDER_VERSION)">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="328" y="660" as="sourcePoint" />
+            <mxPoint x="717" y="660" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="msg9r" edge="1" parent="1" style="endArrow=block;endFill=1;edgeStyle=orthogonalEdgeStyle;strokeColor=#666666;fontSize=11;dashed=1;" value="协议版本号">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="717" y="680" as="sourcePoint" />
+            <mxPoint x="328" y="680" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="msg10" edge="1" parent="1" style="endArrow=block;endFill=1;edgeStyle=orthogonalEdgeStyle;strokeColor=#333333;fontSize=11;" value="ioctl(BINDER_SET_MAX_THREADS)">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="328" y="700" as="sourcePoint" />
+            <mxPoint x="717" y="700" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="msg10r" edge="1" parent="1" style="endArrow=block;endFill=1;edgeStyle=orthogonalEdgeStyle;strokeColor=#666666;fontSize=11;dashed=1;" value="OK">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="717" y="720" as="sourcePoint" />
+            <mxPoint x="328" y="720" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="msg11" edge="1" parent="1" style="endArrow=block;endFill=1;edgeStyle=orthogonalEdgeStyle;strokeColor=#333333;fontSize=11;" value="ioctl(BINDER_ENABLE_ONEWAY_SPAM_DETECTION)">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="328" y="740" as="sourcePoint" />
+            <mxPoint x="717" y="740" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="msg11r" edge="1" parent="1" style="endArrow=block;endFill=1;edgeStyle=orthogonalEdgeStyle;strokeColor=#666666;fontSize=11;dashed=1;" value="OK">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="717" y="760" as="sourcePoint" />
+            <mxPoint x="328" y="760" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="msg12" edge="1" parent="1" style="endArrow=block;endFill=1;edgeStyle=orthogonalEdgeStyle;strokeColor=#333333;fontSize=11;" value="mmap(nullptr, BINDER_VM_SIZE, ...)">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="326.5" y="819" as="sourcePoint" />
+            <mxPoint x="715.5" y="819" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="msg12r" edge="1" parent="1" style="endArrow=block;endFill=1;edgeStyle=orthogonalEdgeStyle;strokeColor=#666666;fontSize=11;dashed=1;" value="共享内存映射（用于接收事务）">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="715.5" y="839" as="sourcePoint" />
+            <mxPoint x="326.5" y="839" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="msg13" edge="1" parent="1" style="endArrow=block;endFill=1;edgeStyle=orthogonalEdgeStyle;strokeColor=#333333;fontSize=11;fontStyle=1;curved=1;" value="加锁写 gProcess">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="590" y="880" />
+              <mxPoint x="590" y="920" />
+            </Array>
+            <mxPoint x="528" y="880" as="sourcePoint" />
+            <mxPoint x="528" y="920" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="msg14" edge="1" parent="1" style="endArrow=block;endFill=1;edgeStyle=orthogonalEdgeStyle;strokeColor=#333333;fontSize=11;fontStyle=1;curved=1;" value="verifyNotForked(gProcess-&gt;mForked)  ← fork 安全检查">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="610" y="940" />
+              <mxPoint x="610" y="990" />
+            </Array>
+            <mxPoint x="528" y="940" as="sourcePoint" />
+            <mxPoint x="528" y="990" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="msg15" edge="1" parent="1" style="endArrow=block;endFill=1;edgeStyle=orthogonalEdgeStyle;strokeColor=#0066CC;fontSize=12;fontStyle=1;strokeWidth=2;" value="返回 gProcess 单例">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="512" y="1000" as="sourcePoint" />
+            <mxPoint x="128" y="1000" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="5" edge="1" parent="1" style="endArrow=none;dashed=1;dashPattern=5 5;strokeColor=#b85450;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" target="kernel_active" value="">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="725" y="110" as="sourcePoint" />
+            <mxPoint x="725" y="1560" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="kernel_active" parent="1" style="fillColor=#f8cecc;strokeColor=#b85450;opacity=30;" vertex="1">
+          <mxGeometry height="430" width="16" x="717" y="610" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

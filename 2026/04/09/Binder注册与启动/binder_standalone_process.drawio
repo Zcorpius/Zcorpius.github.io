@@ -1,0 +1,85 @@
+<mxfile host="app.diagrams.net" modified="2026-04-09" agent="Claude" version="21.0.0" type="device">
+  <diagram id="standalone-process" name="独立进程启动流程">
+    <mxGraphModel dx="1422" dy="762" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1100" pageHeight="780" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="n1" value="shell 或某个服务执行" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;verticalAlign=middle;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="150" y="30" width="700" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="n2" value="app_process /system/bin com.android.commands.incident.IncidentHelper ..." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="150" y="86" width="700" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="n3" value="app_main.cpp main() ← C++ 入口，全新的进程" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;verticalAlign=middle;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="150" y="142" width="700" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="n4" value="runtime.start(&quot;RuntimeInit&quot;, args, zygote=false)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="150" y="198" width="700" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="n5" value="AndroidRuntime::start()" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="150" y="254" width="700" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="n6" value="startVm() ← 创建新的 ART 虚拟机" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=12;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="150" y="310" width="700" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="n7" value="onVmCreated() ← FindClass 查找目标类" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=12;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="150" y="366" width="700" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="n8" value="RuntimeInit.main() ← 进入 Java 层" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=12;verticalAlign=middle;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="150" y="422" width="700" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="n9" value="nativeFinishInit() ← JNI 调用" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="150" y="478" width="700" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="n10" value="AppRuntime::onStarted() ← C++ 回调 ★" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;verticalAlign=middle;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="150" y="534" width="700" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="n11" value="ProcessState::self()-&gt;startThreadPool() ← 启动 Binder 线程池" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="150" y="590" width="700" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="n12" value="callMain(&quot;IncidentHelper&quot;, ...) ← 执行目标类 main()" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="150" y="646" width="700" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="n13" value="IPCThreadState::self()-&gt;stopProcess() ← 执行完毕，清理退出" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=12;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="150" y="702" width="700" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="e1" style="html=1;strokeColor=#999999;endArrow=block;endFill=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" source="n1" target="n2" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e2" style="html=1;strokeColor=#999999;endArrow=block;endFill=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" source="n2" target="n3" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e3" style="html=1;strokeColor=#999999;endArrow=block;endFill=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" source="n3" target="n4" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e4" style="html=1;strokeColor=#999999;endArrow=block;endFill=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" source="n4" target="n5" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e5" style="html=1;strokeColor=#999999;endArrow=block;endFill=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" source="n5" target="n6" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e6" style="html=1;strokeColor=#999999;endArrow=block;endFill=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" source="n6" target="n7" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e7" style="html=1;strokeColor=#999999;endArrow=block;endFill=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" source="n7" target="n8" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e8" style="html=1;strokeColor=#999999;endArrow=block;endFill=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" source="n8" target="n9" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e9" style="html=1;strokeColor=#999999;endArrow=block;endFill=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" source="n9" target="n10" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e10" style="html=1;strokeColor=#999999;endArrow=block;endFill=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" source="n10" target="n11" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e11" style="html=1;strokeColor=#999999;endArrow=block;endFill=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" source="n11" target="n12" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e12" style="html=1;strokeColor=#999999;endArrow=block;endFill=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" source="n12" target="n13" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

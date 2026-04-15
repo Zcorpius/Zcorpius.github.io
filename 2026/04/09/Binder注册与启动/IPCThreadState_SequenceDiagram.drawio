@@ -1,0 +1,255 @@
+<mxfile host="Electron" agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/29.6.6 Chrome/144.0.7559.236 Electron/40.8.4 Safari/537.36" version="29.6.6">
+  <diagram id="-5oUt7h1C_97VMbBUUPm" name="第 1 页">
+    <mxGraphModel dx="575" dy="613" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="loop_start" parent="1" style="rounded=0;whiteSpace=wrap;fillColor=#FFF5E0;strokeColor=#d6b656;strokeWidth=1;dashed=1;" value="" vertex="1">
+          <mxGeometry height="330" width="460" x="480" y="800" as="geometry" />
+        </mxCell>
+        <mxCell id="phase3_bg" parent="1" style="rounded=1;whiteSpace=wrap;fillColor=#FFFFF0;strokeColor=#E6C23C;strokeWidth=1;dashed=1;opacity=30;" value="" vertex="1">
+          <mxGeometry height="395" width="920" x="60" y="735" as="geometry" />
+        </mxCell>
+        <mxCell id="p_app" parent="1" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;container=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;newEdgeStyle={&quot;curved&quot;:0,&quot;rounded&quot;:0};fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;fontStyle=1;width=90;" value="应用主线程&#xa;(App)" vertex="1">
+          <mxGeometry height="1120" width="90" x="80" y="60" as="geometry" />
+        </mxCell>
+        <mxCell id="p_ps" parent="1" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;container=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;newEdgeStyle={&quot;curved&quot;:0,&quot;rounded&quot;:0};fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;fontStyle=1;width=90;" value="ProcessState&#xa;(PS)" vertex="1">
+          <mxGeometry height="1110" width="90" x="230" y="60" as="geometry" />
+        </mxCell>
+        <mxCell id="p_pt" parent="1" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;container=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;newEdgeStyle={&quot;curved&quot;:0,&quot;rounded&quot;:0};fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;fontStyle=1;width=90;" value="PoolThread&#xa;(模版类)" vertex="1">
+          <mxGeometry height="1110" width="90" x="380" y="60" as="geometry" />
+        </mxCell>
+        <mxCell id="p_bt1" parent="1" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;container=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;newEdgeStyle={&quot;curved&quot;:0,&quot;rounded&quot;:0};fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;fontStyle=1;width=100;" value="主Binder线程&#xa;(BT1)" vertex="1">
+          <mxGeometry height="1110" width="100" x="530" y="60" as="geometry" />
+        </mxCell>
+        <mxCell id="p_ipc1" parent="1" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;container=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;newEdgeStyle={&quot;curved&quot;:0,&quot;rounded&quot;:0};fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;fontStyle=1;width=110;" value="IPCThreadState&#xa;(IPC1)" vertex="1">
+          <mxGeometry height="1110" width="110" x="690" y="60" as="geometry" />
+        </mxCell>
+        <mxCell id="p_kernel" parent="1" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;container=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;newEdgeStyle={&quot;curved&quot;:0,&quot;rounded&quot;:0};fillColor=#f8cecc;strokeColor=#b85450;fontSize=11;fontStyle=1;width=100;" value="内核Binder&#xa;驱动(Kernel)" vertex="1">
+          <mxGeometry height="1110" width="100" x="860" y="60" as="geometry" />
+        </mxCell>
+        <mxCell id="phase1_bg" parent="1" style="rounded=1;whiteSpace=wrap;fillColor=#FFF5E6;strokeColor=#E6A23C;strokeWidth=1;dashed=1;opacity=30;" value="" vertex="1">
+          <mxGeometry height="250" width="920" x="60" y="110" as="geometry" />
+        </mxCell>
+        <mxCell id="phase1_label" parent="1" style="text;html=1;fontSize=13;fontStyle=1;align=left;fillColor=#FFF5E6;strokeColor=#E6A23C;rounded=1;spacingLeft=5;spacingRight=5;" value="阶段一：主线程启动线程池" vertex="1">
+          <mxGeometry height="25" width="200" x="60" y="110" as="geometry" />
+        </mxCell>
+        <mxCell id="m2" edge="1" parent="1" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;fontSize=10;fontStyle=1;" value="mThreadPoolStarted = true">
+          <mxGeometry relative="1" x="-0.3305" y="20" as="geometry">
+            <mxPoint y="-1" as="offset" />
+            <Array as="points">
+              <mxPoint x="290" y="183" />
+              <mxPoint x="290" y="198" />
+            </Array>
+            <mxPoint x="274.8103448275863" y="183" as="sourcePoint" />
+            <mxPoint x="274.8103448275863" y="198" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m3" edge="1" parent="1" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;fontSize=10;fontStyle=1;" value="&lt;span&gt;&amp;nbsp;new PoolThread(isMain=true)&lt;/span&gt;">
+          <mxGeometry relative="1" x="-0.0015" y="4" as="geometry">
+            <mxPoint as="offset" />
+            <Array as="points">
+              <mxPoint x="275" y="224" />
+              <mxPoint x="425" y="224" />
+            </Array>
+            <mxPoint x="274.8103448275863" y="224" as="sourcePoint" />
+            <mxPoint x="424.81034482758605" y="224" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m4" edge="1" parent="1" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;fontSize=10;fontStyle=1;" value="t-&amp;gt;run(&quot;Binder:pid_1&quot;)">
+          <mxGeometry relative="1" x="-0.573" y="5" as="geometry">
+            <mxPoint as="offset" />
+            <Array as="points">
+              <mxPoint x="275" y="256" />
+              <mxPoint x="580" y="256" />
+            </Array>
+            <mxPoint x="275.19230769230774" y="256" as="sourcePoint" />
+            <mxPoint x="580.1923076923077" y="256" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="n1" parent="1" style="shape=note;whiteSpace=wrap;html=1;fontSize=9;fillColor=#FFF5E6;strokeColor=#E6A23C;size=10;align=center;" value="主线程立即返回，&lt;div&gt;继续做自己的事&lt;/div&gt;" vertex="1">
+          <mxGeometry height="30" width="90" x="230" y="280" as="geometry" />
+        </mxCell>
+        <mxCell id="m5" edge="1" parent="1" source="p_ps" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;fontSize=10;fontStyle=1;" target="p_ps" value="&lt;span style=&quot;background-color: light-dark(#ffffff, var(--ge-dark-color, #121212));&quot;&gt;mKernelStartedThreads++&lt;/span&gt;">
+          <mxGeometry relative="1" x="0.3372" y="-70" as="geometry">
+            <mxPoint x="70" y="70" as="offset" />
+            <Array as="points">
+              <mxPoint x="290" y="330" />
+              <mxPoint x="290" y="345" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="phase2_bg" parent="1" style="rounded=1;whiteSpace=wrap;fillColor=#E6FFE6;strokeColor=#67C23A;strokeWidth=1;dashed=1;opacity=30;" value="" vertex="1">
+          <mxGeometry height="360" width="920" x="60" y="380" as="geometry" />
+        </mxCell>
+        <mxCell id="phase2_label" parent="1" style="text;html=1;fontSize=13;fontStyle=1;align=left;fillColor=#E6FFE6;strokeColor=#67C23A;rounded=1;spacingLeft=5;spacingRight=5;" value="阶段二：主Binder线程加入线程池" vertex="1">
+          <mxGeometry height="25" width="230" x="60" y="380" as="geometry" />
+        </mxCell>
+        <mxCell id="m6" edge="1" parent="1" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;fontSize=10;fontStyle=1;" value="IPCThreadState::self()">
+          <mxGeometry relative="1" x="-0.1434" as="geometry">
+            <mxPoint as="offset" />
+            <Array as="points">
+              <mxPoint x="579.37" y="420" />
+              <mxPoint x="744.37" y="420" />
+            </Array>
+            <mxPoint x="579.6260975609757" y="420" as="sourcePoint" />
+            <mxPoint x="744.6260975609756" y="420" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="n2" parent="1" style="shape=note;whiteSpace=wrap;html=1;fontSize=9;fillColor=#E6FFE6;strokeColor=#67C23A;size=10;align=center;" value="TLS查找为空 → new IPCThreadState&#xa;初始化 mIn(256B) / mOut(256B)" vertex="1">
+          <mxGeometry height="35" width="170" x="660" y="430" as="geometry" />
+        </mxCell>
+        <mxCell id="m7" edge="1" parent="1" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;fontSize=10;fontStyle=1;" value="joinThreadPool(isMain=true)">
+          <mxGeometry relative="1" x="-0.0302" as="geometry">
+            <mxPoint as="offset" />
+            <Array as="points">
+              <mxPoint x="580" y="495" />
+              <mxPoint x="745" y="495" />
+            </Array>
+            <mxPoint x="580.2142857142857" y="495" as="sourcePoint" />
+            <mxPoint x="745.2142857142858" y="495" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m8" edge="1" parent="1" source="p_ipc1" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;fontSize=10;fontStyle=1;" target="p_ps" value="mCurrentThreads++">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint as="offset" />
+            <Array as="points">
+              <mxPoint x="745" y="535" />
+              <mxPoint x="275" y="535" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m9" edge="1" parent="1" source="p_ipc1" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;fontSize=10;fontStyle=1;" target="p_ipc1" value="mOut←BC_ENTER_LOOPER">
+          <mxGeometry relative="1" x="0.3365" y="-70" as="geometry">
+            <mxPoint x="70" y="70" as="offset" />
+            <Array as="points">
+              <mxPoint x="760" y="560" />
+              <mxPoint x="760" y="575" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m10" edge="1" parent="1" source="p_ipc1" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;fontSize=10;fontStyle=1;" target="p_kernel" value="ioctl(BINDER_WRITE_READ)">
+          <mxGeometry relative="1" x="0.0302" as="geometry">
+            <mxPoint as="offset" />
+            <Array as="points">
+              <mxPoint x="745" y="600" />
+              <mxPoint x="910" y="600" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="n3" parent="1" style="shape=note;whiteSpace=wrap;html=1;fontSize=9;fillColor=#E6FFE6;strokeColor=#67C23A;size=10;align=center;" value="write_buffer=mOut(BC_ENTER_LOOPER)&#xa;read_buffer=mIn(等待驱动返回)" vertex="1">
+          <mxGeometry height="35" width="190" x="790" y="610" as="geometry" />
+        </mxCell>
+        <mxCell id="m11" edge="1" parent="1" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;curved=0;rounded=0;fontSize=10;fontStyle=1;dashPattern=5 3;" value="消费 BC_ENTER_LOOPER，返回 BR_xxx 或阻塞">
+          <mxGeometry relative="1" x="-0.0303" y="-3" as="geometry">
+            <mxPoint as="offset" />
+            <Array as="points">
+              <mxPoint x="910" y="673" />
+              <mxPoint x="745" y="673" />
+            </Array>
+            <mxPoint x="910.0555555555557" y="673" as="sourcePoint" />
+            <mxPoint x="745.0555555555557" y="673" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m12" edge="1" parent="1" source="p_ipc1" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;fontSize=10;fontStyle=1;" target="p_ipc1" value="mIsLooper = true">
+          <mxGeometry relative="1" x="0.3387" y="-50" as="geometry">
+            <mxPoint x="50" y="50" as="offset" />
+            <Array as="points">
+              <mxPoint x="760" y="700" />
+              <mxPoint x="760" y="715" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="phase3_label" parent="1" style="text;html=1;fontSize=13;fontStyle=1;align=left;fillColor=#FFFFF0;strokeColor=#E6C23C;rounded=1;spacingLeft=5;spacingRight=5;" value="阶段三：主循环处理事务 (do-while 循环，isMain=true 不因超时退出)" vertex="1">
+          <mxGeometry height="25" width="420" x="60" y="760" as="geometry" />
+        </mxCell>
+        <mxCell id="loop_label" parent="1" style="text;html=1;fontSize=11;fontStyle=2;align=left;fillColor=#ffe6cc;strokeColor=#d79b00;" value="loop [do-while]" vertex="1">
+          <mxGeometry height="20" width="100" x="480" y="800" as="geometry" />
+        </mxCell>
+        <mxCell id="m13" edge="1" parent="1" source="p_ipc1" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;fontSize=10;fontStyle=1;" target="p_ipc1" value="getAndExecuteCommand()">
+          <mxGeometry relative="1" x="0.3337" y="-70" as="geometry">
+            <mxPoint x="70" y="70" as="offset" />
+            <Array as="points">
+              <mxPoint x="760" y="860" />
+              <mxPoint x="760" y="875" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m14" edge="1" parent="1" source="p_ipc1" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;fontSize=10;fontStyle=1;" target="p_kernel" value="talkWithDriver() → ioctl()">
+          <mxGeometry relative="1" x="0.0303" as="geometry">
+            <mxPoint as="offset" />
+            <Array as="points">
+              <mxPoint x="745" y="900" />
+              <mxPoint x="910" y="900" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="n4" parent="1" style="shape=note;whiteSpace=wrap;html=1;fontSize=9;fillColor=#FFFFF0;strokeColor=#E6C23C;size=10;align=center;" value="无事务时阻塞在 wait_event&#xa;有事务时 wake_up 唤醒" vertex="1">
+          <mxGeometry height="35" width="180" x="760" y="910" as="geometry" />
+        </mxCell>
+        <mxCell id="m15" edge="1" parent="1" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;curved=0;rounded=0;fontSize=10;fontStyle=1;dashPattern=5 3;" value="bwr.read_consumed 数据写入 mIn">
+          <mxGeometry relative="1" x="-0.1515" as="geometry">
+            <mxPoint as="offset" />
+            <Array as="points">
+              <mxPoint x="910" y="967" />
+              <mxPoint x="745" y="967" />
+            </Array>
+            <mxPoint x="910.0238095238096" y="967" as="sourcePoint" />
+            <mxPoint x="745.0238095238096" y="967" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m16" edge="1" parent="1" source="p_ipc1" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;fontSize=10;fontStyle=1;" target="p_ipc1" value="mIn.dataAvail() 检查数据量">
+          <mxGeometry relative="1" x="0.3387" y="-70" as="geometry">
+            <mxPoint x="70" y="70" as="offset" />
+            <Array as="points">
+              <mxPoint x="760" y="990" />
+              <mxPoint x="760" y="1005" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m17" edge="1" parent="1" source="p_ipc1" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;fontSize=10;fontStyle=1;" target="p_ipc1" value="cmd = mIn.readInt32()">
+          <mxGeometry relative="1" x="0.3364" y="-60" as="geometry">
+            <mxPoint x="60" y="60" as="offset" />
+            <Array as="points">
+              <mxPoint x="760" y="1030" />
+              <mxPoint x="760" y="1045" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="Kzan34mBfCKbleUA-4K7-1" edge="1" parent="1" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;fontSize=10;fontStyle=1;" value="&amp;nbsp;startThreadPool()">
+          <mxGeometry relative="1" x="-0.1286" as="geometry">
+            <mxPoint as="offset" />
+            <Array as="points">
+              <mxPoint x="125.18965517241372" y="155" />
+              <mxPoint x="275.1896551724137" y="155" />
+            </Array>
+            <mxPoint x="125" y="155" as="sourcePoint" />
+            <mxPoint x="274.9999999999998" y="155" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="Kzan34mBfCKbleUA-4K7-3" edge="1" parent="1" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;fontSize=10;fontStyle=1;" value="executeCommand(cmd) → transact()">
+          <mxGeometry relative="1" x="0.0303" as="geometry">
+            <mxPoint as="offset" />
+            <Array as="points">
+              <mxPoint x="745" y="1072" />
+              <mxPoint x="910" y="1072" />
+            </Array>
+            <mxPoint x="745" y="1072" as="sourcePoint" />
+            <mxPoint x="910" y="1072" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="Kzan34mBfCKbleUA-4K7-4" edge="1" parent="1" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;curved=0;rounded=0;fontSize=10;fontStyle=1;dashPattern=5 3;" value="REPLY">
+          <mxGeometry relative="1" x="-0.1515" as="geometry">
+            <mxPoint as="offset" />
+            <Array as="points">
+              <mxPoint x="909" y="1096" />
+              <mxPoint x="744" y="1096" />
+            </Array>
+            <mxPoint x="909.0238095238096" y="1096" as="sourcePoint" />
+            <mxPoint x="744.0238095238096" y="1096" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
