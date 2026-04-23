@@ -110,7 +110,7 @@
 <meta property="og:image" content="https://zcorpius.github.io/2026/04/09/Binder%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/IPCThreadState_SequenceDiagram.drawio.svg">
 <meta property="og:image" content="https://zcorpius.github.io/2026/04/09/Binder%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/%E6%A0%B8%E5%BF%83%E5%BE%AA%E7%8E%AF%E4%BA%8B%E4%BB%B6%E5%A4%84%E7%90%86.png">
 <meta property="article:published_time" content="2026-04-09T10:54:52.000Z">
-<meta property="article:modified_time" content="2026-04-23T03:47:01.080Z">
+<meta property="article:modified_time" content="2026-04-23T05:02:06.826Z">
 <meta property="article:author" content="Zcorpius">
 <meta property="article:tag" content="Binder">
 <meta name="twitter:card" content="summary">
@@ -641,7 +641,7 @@
 <p><img src="/2026/04/09/Binder%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/IPCThreadState_SequenceDiagram.drawio.svg"></p>
 <h2 id="1-3-Binder-核心循环事件处理"><a href="#1-3-Binder-核心循环事件处理" class="headerlink" title="1.3. Binder 核心循环事件处理"></a>1.3. Binder 核心循环事件处理</h2><p>从上面的流程图可以看出：<code>joinThreadPool</code> <strong>是外层循环，</strong><code>getAndExecuteCommand</code> <strong>是单次迭代，</strong><code>talkWithDriver</code> <strong>+</strong> <code>executeCommand</code> <strong>是迭代内的两步。</strong></p>
 <p> <code>getAndExecuteCommand</code>将 <code>talkWithDriver</code>（与内核交换数据）和 <code>executeCommand</code>（处理具体命令）串联起来，并管理线程池的执行计数与饥饿检测。整个 Binder IPC 的接收端就是靠这个循环驱动的。先梳理具体流程，然后再详细分析 <code>talkWithDriver</code> 与<code>executeCommand</code>方法。</p>
-<img src="/2026/04/09/Binder%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/核心循环事件处理.png" style="zoom:80%;">
+<img src="/2026/04/09/Binder%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/核心循环事件处理.png" width="80%">
 
 
 

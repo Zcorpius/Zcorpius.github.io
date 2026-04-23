@@ -820,7 +820,7 @@
 <p><img src="/2026/04/09/Binder%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/IPCThreadState_SequenceDiagram.drawio.svg"></p>
 <h2 id="1-3-Binder-核心循环事件处理"><a href="#1-3-Binder-核心循环事件处理" class="headerlink" title="1.3. Binder 核心循环事件处理"></a>1.3. Binder 核心循环事件处理</h2><p>从上面的流程图可以看出：<code>joinThreadPool</code> <strong>是外层循环，</strong><code>getAndExecuteCommand</code> <strong>是单次迭代，</strong><code>talkWithDriver</code> <strong>+</strong> <code>executeCommand</code> <strong>是迭代内的两步。</strong></p>
 <p> <code>getAndExecuteCommand</code>将 <code>talkWithDriver</code>（与内核交换数据）和 <code>executeCommand</code>（处理具体命令）串联起来，并管理线程池的执行计数与饥饿检测。整个 Binder IPC 的接收端就是靠这个循环驱动的。先梳理具体流程，然后再详细分析 <code>talkWithDriver</code> 与<code>executeCommand</code>方法。</p>
-<img src="/2026/04/09/Binder%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/核心循环事件处理.png" style="zoom:80%;">
+<img src="/2026/04/09/Binder%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/核心循环事件处理.png" width="80%">
 
 
 
@@ -1226,24 +1226,6 @@
       </tags>
   </entry>
   <entry>
-    <title>大学的四年</title>
-    <url>/2024/11/29/%E5%A4%A7%E5%AD%A6%E7%9A%84%E5%9B%9B%E5%B9%B4/</url>
-    <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="/assets/css/APlayer.min.css"><script src="/assets/js/APlayer.min.js" class="aplayer-secondary-script-marker"></script><blockquote>
-<p>周末夜里闲来无聊，不经意翻阅起大学舍友的博客，看着他记录的点点滴滴，十分感慨。看着自己工作后就一直没有再更新过的博客，不妨在大学十周年之前，趁着记忆还算深刻，都将回忆记录下来，一切都从头开始吧。</p>
-</blockquote>
-<h1 id="序章"><a href="#序章" class="headerlink" title="序章"></a>序章</h1><p>从高考成绩出来的那一刻起，也许大学生活就算是开始了吧。当时考完觉得自己考砸了，跟父母说，如果不在一本线，那直接复读。然后命运给自己的答案就是加上小高考，分数刚好是一本线，不多也不少。。父母和老师都觉得难报专业，记得当时的目标是河海的水利，理想是东大的土木，打电话给表哥，问他所在的土木行业怎么样，给点回复是“碰都别碰”（等到大学毕业，土木确实也算是天坑之一了，也是感谢当时表哥的劝退）。</p>
-<p>巧的是邻家哥哥刚好大学毕业，考上了东大的计算机，趁着暑假在家，和他促膝畅谈了一番，都觉得之后计算机行业应该会更好找工作。也记得初中喜欢的一篇青年文摘上文章男主报的专业也是计算机，就这样选择好了专业。最后在南工程，南审计和南林中选择了唯一有硕士点的南林。然后也为自己大三时候要考研埋下了种子。就这样，大学的四年在南林正式开始。</p>
-<hr>
-<h1 id="大一"><a href="#大一" class="headerlink" title="大一"></a>大一</h1>]]></content>
-      <categories>
-        <category>回忆录</category>
-      </categories>
-      <tags>
-        <tag>涓涓心事</tag>
-        <tag>回忆录</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>gdb学习</title>
     <url>/2024/11/09/gdb%E5%AD%A6%E4%B9%A0/</url>
     <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="/assets/css/APlayer.min.css"><script src="/assets/js/APlayer.min.js" class="aplayer-secondary-script-marker"></script><h1 id="1-GDB-的基本介绍"><a href="#1-GDB-的基本介绍" class="headerlink" title="1.GDB 的基本介绍"></a>1.GDB 的基本介绍</h1><p>GDB, 是 <code>The GNU Project Debugger</code> 的缩写, 是 Linux 下功能全面的调试工具。GDB 支持断点、单步执行、打印变量、观察变量、查看寄存器、查看堆栈等调试手段。在 Linux 环境软件开发中，GDB 是主要的调试工具，用来调试 C 和 C++ 程序。</p>
@@ -1529,6 +1511,24 @@
       <tags>
         <tag>C</tag>
         <tag>gdb</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>大学的四年</title>
+    <url>/2024/11/29/%E5%A4%A7%E5%AD%A6%E7%9A%84%E5%9B%9B%E5%B9%B4/</url>
+    <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="/assets/css/APlayer.min.css"><script src="/assets/js/APlayer.min.js" class="aplayer-secondary-script-marker"></script><blockquote>
+<p>周末夜里闲来无聊，不经意翻阅起大学舍友的博客，看着他记录的点点滴滴，十分感慨。看着自己工作后就一直没有再更新过的博客，不妨在大学十周年之前，趁着记忆还算深刻，都将回忆记录下来，一切都从头开始吧。</p>
+</blockquote>
+<h1 id="序章"><a href="#序章" class="headerlink" title="序章"></a>序章</h1><p>从高考成绩出来的那一刻起，也许大学生活就算是开始了吧。当时考完觉得自己考砸了，跟父母说，如果不在一本线，那直接复读。然后命运给自己的答案就是加上小高考，分数刚好是一本线，不多也不少。。父母和老师都觉得难报专业，记得当时的目标是河海的水利，理想是东大的土木，打电话给表哥，问他所在的土木行业怎么样，给点回复是“碰都别碰”（等到大学毕业，土木确实也算是天坑之一了，也是感谢当时表哥的劝退）。</p>
+<p>巧的是邻家哥哥刚好大学毕业，考上了东大的计算机，趁着暑假在家，和他促膝畅谈了一番，都觉得之后计算机行业应该会更好找工作。也记得初中喜欢的一篇青年文摘上文章男主报的专业也是计算机，就这样选择好了专业。最后在南工程，南审计和南林中选择了唯一有硕士点的南林。然后也为自己大三时候要考研埋下了种子。就这样，大学的四年在南林正式开始。</p>
+<hr>
+<h1 id="大一"><a href="#大一" class="headerlink" title="大一"></a>大一</h1>]]></content>
+      <categories>
+        <category>回忆录</category>
+      </categories>
+      <tags>
+        <tag>涓涓心事</tag>
+        <tag>回忆录</tag>
       </tags>
   </entry>
 </search>
