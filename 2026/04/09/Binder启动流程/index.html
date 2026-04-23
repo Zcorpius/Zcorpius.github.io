@@ -99,24 +99,22 @@
 
 
 
-<meta name="description" content="1. Binder 启动流程首先是 Zygote 进程启动，这是在系统开机时执行，只执行一次。 123456789101112init (PID&#x3D;1) → 解析 init.rc，启动 zygote 服务  → 执行 app_process --zygote --start-system-server   → app_main.cpp main()">
+<meta name="description" content="1. Binder 启动流程 从启动流程上看，servicemanager 是在 Zygote 之前启动的，理论上对应进程的 Binder 创建也是 servicemanager 先执行，但大部分进程都用 Zygote 进程的启动链路，理解后直接能套用到 Android 大部分进程。ServiceManager 反而是单线程特例，能做一个很好的对比。  直接从 Zygote 进程启动开始吧，这是在">
 <meta property="og:type" content="article">
-<meta property="og:title" content="Binder注册与启动">
-<meta property="og:url" content="https://zcorpius.github.io/2026/04/09/Binder%E6%B3%A8%E5%86%8C%E4%B8%8E%E5%90%AF%E5%8A%A8/index.html">
+<meta property="og:title" content="Binder 启动流程">
+<meta property="og:url" content="https://zcorpius.github.io/2026/04/09/Binder%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/index.html">
 <meta property="og:site_name" content="Zcorpius&#39;s Blog">
-<meta property="og:description" content="1. Binder 启动流程首先是 Zygote 进程启动，这是在系统开机时执行，只执行一次。 123456789101112init (PID&#x3D;1) → 解析 init.rc，启动 zygote 服务  → 执行 app_process --zygote --start-system-server   → app_main.cpp main()">
+<meta property="og:description" content="1. Binder 启动流程 从启动流程上看，servicemanager 是在 Zygote 之前启动的，理论上对应进程的 Binder 创建也是 servicemanager 先执行，但大部分进程都用 Zygote 进程的启动链路，理解后直接能套用到 Android 大部分进程。ServiceManager 反而是单线程特例，能做一个很好的对比。  直接从 Zygote 进程启动开始吧，这是在">
 <meta property="og:locale">
-<meta property="og:image" content="https://zcorpius.github.io/2026/04/09/Binder%E6%B3%A8%E5%86%8C%E4%B8%8E%E5%90%AF%E5%8A%A8/binder_zygote_startup.png">
-<meta property="og:image" content="https://zcorpius.github.io/2026/04/09/Binder%E6%B3%A8%E5%86%8C%E4%B8%8E%E5%90%AF%E5%8A%A8/binder_fork_child.png">
-<meta property="og:image" content="https://zcorpius.github.io/2026/04/09/Binder%E6%B3%A8%E5%86%8C%E4%B8%8E%E5%90%AF%E5%8A%A8/binder_standalone_process.png">
-<meta property="og:image" content="https://zcorpius.github.io/2026/04/09/Binder%E6%B3%A8%E5%86%8C%E4%B8%8E%E5%90%AF%E5%8A%A8/ProcessState%E5%88%9D%E5%A7%8B%E5%8C%96%E6%B5%81%E7%A8%8B.drawio.svg">
-<meta property="og:image" content="https://zcorpius.github.io/2026/04/09/Binder%E6%B3%A8%E5%86%8C%E4%B8%8E%E5%90%AF%E5%8A%A8/IPCThreadState_SequenceDiagram.drawio.svg">
+<meta property="og:image" content="https://zcorpius.github.io/2026/04/09/Binder%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/ProcessState%E5%88%9D%E5%A7%8B%E5%8C%96%E6%B5%81%E7%A8%8B.drawio.svg">
+<meta property="og:image" content="https://zcorpius.github.io/2026/04/09/Binder%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/IPCThreadState_SequenceDiagram.drawio.svg">
+<meta property="og:image" content="https://zcorpius.github.io/2026/04/09/Binder%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/zhangyongbin/Blog/zybTree/source/_posts/Binder%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/%E6%A0%B8%E5%BF%83%E5%BE%AA%E7%8E%AF%E4%BA%8B%E4%BB%B6%E5%A4%84%E7%90%86.png">
 <meta property="article:published_time" content="2026-04-09T10:54:52.000Z">
-<meta property="article:modified_time" content="2026-04-15T12:07:46.178Z">
+<meta property="article:modified_time" content="2026-04-23T03:38:41.214Z">
 <meta property="article:author" content="Zcorpius">
 <meta property="article:tag" content="Binder">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://zcorpius.github.io/2026/04/09/Binder%E6%B3%A8%E5%86%8C%E4%B8%8E%E5%90%AF%E5%8A%A8/binder_zygote_startup.png">
+<meta name="twitter:image" content="https://zcorpius.github.io/2026/04/09/Binder%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/ProcessState%E5%88%9D%E5%A7%8B%E5%8C%96%E6%B5%81%E7%A8%8B.drawio.svg">
 
 
 
@@ -146,13 +144,13 @@
 
 
 
-  <link rel="canonical" href="https://Zcorpius.github.io/2026/04/09/Binder注册与启动/"/>
+  <link rel="canonical" href="https://Zcorpius.github.io/2026/04/09/Binder启动流程/"/>
 
 
 
 
 
-  <title>Binder注册与启动 | Zcorpius's Blog</title>
+  <title>Binder 启动流程 | Zcorpius's Blog</title>
   
 
 
@@ -333,7 +331,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="https://Zcorpius.github.io/2026/04/09/Binder%E6%B3%A8%E5%86%8C%E4%B8%8E%E5%90%AF%E5%8A%A8/">
+    <link itemprop="mainEntityOfPage" href="https://Zcorpius.github.io/2026/04/09/Binder%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="">
@@ -350,7 +348,7 @@
 
         
         
-          <h1 class="post-title" itemprop="name headline">Binder注册与启动</h1>
+          <h1 class="post-title" itemprop="name headline">Binder 启动流程</h1>
         
 
         <div class="post-meta">
@@ -416,7 +414,7 @@
                   <span class="post-meta-item-text">字数统计&#58;</span>
                 
                 <span title="字数统计">
-                  2.5k
+                  3.9k
                 </span>
               
 
@@ -432,7 +430,7 @@
                   <span class="post-meta-item-text">阅读时长 &asymp;</span>
                 
                 <span title="阅读时长">
-                  11
+                  17
                 </span>
               
             </div>
@@ -453,20 +451,15 @@
       
 
       
-        <h1 id="1-Binder-启动流程"><a href="#1-Binder-启动流程" class="headerlink" title="1. Binder 启动流程"></a>1. Binder 启动流程</h1><p>首先是 Zygote 进程启动，这是在系统开机时执行，只执行一次。</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="BASH"><figure class="iseeu highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">init (PID=1)</span><br><span class="line"> → 解析 init.rc，启动 zygote 服务</span><br><span class="line">  → 执行 app_process --zygote --start-system-server</span><br><span class="line">   → app_main.cpp main()                             ← C++ 入口</span><br><span class="line">    → runtime.start(<span class="string">&quot;ZygoteInit&quot;</span>, args, zygote=<span class="literal">true</span>)</span><br><span class="line">     → AndroidRuntime::start()</span><br><span class="line">      → startVm()                                    ← 启动 ART 虚拟机</span><br><span class="line">      → onVmCreated()                                ← mClassName 为空，直接 <span class="built_in">return</span></span><br><span class="line">      → ZygoteInit.main()                            ← 进入 Java 层</span><br><span class="line">       → preload()                                   ← 预加载类和资源</span><br><span class="line">       → forkSystemServer()                          ← fork 出 system_server</span><br><span class="line">       → runSelectLoop()                             ← 进入 socket 循环，等待请求</span><br></pre></td></tr></table></figure></div>
-
-<img src="/2026/04/09/Binder%E6%B3%A8%E5%86%8C%E4%B8%8E%E5%90%AF%E5%8A%A8/binder_zygote_startup.png" style="zoom:45%;">
-
+        <h1 id="1-Binder-启动流程"><a href="#1-Binder-启动流程" class="headerlink" title="1. Binder 启动流程"></a>1. Binder 启动流程</h1><blockquote>
+<p>从启动流程上看，servicemanager 是在 Zygote 之前启动的，理论上对应进程的 Binder 创建也是 servicemanager 先执行，但大部分进程都用 Zygote 进程的启动链路，理解后直接能套用到 Android 大部分进程。ServiceManager 反而是单线程特例，能做一个很好的对比。</p>
+</blockquote>
+<p>直接从 Zygote 进程启动开始吧，这是在系统开机时执行，只执行一次。</p>
 <p>Zygote fork 出的子进程通过 zygote 进行 fork 后调用 AndroidRuntime 中的 <code>ZygoteInit.nativeZygoteInit()</code> ，最后调到 <code>app_main.cpp</code> 的 <code>onZygoteInit</code> ，来启动 binder 线程池。</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="BASH"><figure class="iseeu highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">Zygote.runSelectLoop()</span><br><span class="line"> → ZygoteConnection.processCommand()                 ← 收到 AMS 的 socket 请求</span><br><span class="line">  → Zygote.forkAndSpecialize() / forkSimpleApps()    ← fork 发生在 Java 层</span><br><span class="line">   → 子进程从 fork 点继续（不再回到 app_main.cpp main()）</span><br><span class="line">    → Zygote.childMain()</span><br><span class="line">     → ZygoteInit.zygoteInit()                       ← Java 方法</span><br><span class="line">      → RuntimeInit.commonInit()</span><br><span class="line">      → ZygoteInit.nativeZygoteInit()                ← JNI 调用</span><br><span class="line">       → AppRuntime::onZygoteInit()                  ← C++ 回调，启动 Binder 线程池 ★</span><br><span class="line">        → ProcessState::self()-&gt;startThreadPool()</span><br><span class="line">      → RuntimeInit.applicationInit()</span><br><span class="line">       → ActivityThread.main()                       ← 进入应用主循环</span><br></pre></td></tr></table></figure></div>
-
-<img src="/2026/04/09/Binder%E6%B3%A8%E5%86%8C%E4%B8%8E%E5%90%AF%E5%8A%A8/binder_fork_child.png" alt="Fork子进程流程" style="zoom:40%;">
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="BASH"><figure class="iseeu highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">init (PID=1)</span><br><span class="line"> → 解析 init.rc，启动 zygote 服务</span><br><span class="line">  → 执行 app_process --zygote --start-system-server</span><br><span class="line">   → app_main.cpp main()                             ← C++ 入口</span><br><span class="line">    → runtime.start(<span class="string">&quot;ZygoteInit&quot;</span>, args, zygote=<span class="literal">true</span>)</span><br><span class="line">     → AndroidRuntime::start()</span><br><span class="line">      → startVm()                                    ← 启动 ART 虚拟机</span><br><span class="line">      → onVmCreated()                                ← mClassName 为空，直接 <span class="built_in">return</span></span><br><span class="line">      → ZygoteInit.main()                            ← 进入 Java 层</span><br><span class="line">       → preload()                                   ← 预加载类和资源</span><br><span class="line">       → forkSystemServer()                          ← fork 出 system_server</span><br><span class="line">       → runSelectLoop()                             ← 进入 socket 循环，等待请求</span><br></pre></td></tr></table></figure></div>
 
 <p>还有一种情况是<strong>直接通过</strong> <strong><code>app_process</code></strong> <strong>启动的独立进程</strong>，不是从 Zygote fork 出来的，则走 <code>onStarted()</code> 实现。</p>
 <div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="BASH"><figure class="iseeu highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">shell 或某个服务执行：</span><br><span class="line">  app_process /system/bin com.android.commands.incident.IncidentHelper ...</span><br><span class="line">   → app_main.cpp main()                             ← C++ 入口，全新的进程</span><br><span class="line">    → runtime.start(<span class="string">&quot;RuntimeInit&quot;</span>, args, zygote=<span class="literal">false</span>)</span><br><span class="line">     → AndroidRuntime::start()</span><br><span class="line">      → startVm()                                    ← 创建新的 ART 虚拟机</span><br><span class="line">      → onVmCreated()                                ← FindClass 查找目标类</span><br><span class="line">      → RuntimeInit.main()                           ← 进入 Java 层</span><br><span class="line">       → nativeFinishInit()                          ← JNI 调用</span><br><span class="line">        → AppRuntime::onStarted()                    ← C++ 回调 ★</span><br><span class="line">         → ProcessState::self()-&gt;startThreadPool()   ← 启动 Binder 线程池</span><br><span class="line">         → callMain(<span class="string">&quot;IncidentHelper&quot;</span>, ...)           ← 执行目标类 main()</span><br><span class="line">         → IPCThreadState::self()-&gt;stopProcess()     ← 执行完毕，清理退出</span><br></pre></td></tr></table></figure></div>
-
-<img src="/2026/04/09/Binder%E6%B3%A8%E5%86%8C%E4%B8%8E%E5%90%AF%E5%8A%A8/binder_standalone_process.png" alt="独立进程启动流程" style="zoom:40%;">
 
 <p>对比如下：</p>
 <table>
@@ -524,8 +517,10 @@
 <p><code>onZygoteInit</code> 与 <code>onStarted</code> 实现如下：</p>
 <div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CPP"><figure class="iseeu highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/base/cmds/app_process/app_main.cpp</span></span><br><span class="line"><span class="function"><span class="keyword">virtual</span> <span class="type">void</span> <span class="title">onStarted</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    sp&lt;ProcessState&gt; proc = ProcessState::<span class="built_in">self</span>();</span><br><span class="line">    <span class="built_in">ALOGV</span>(<span class="string">&quot;App process: starting thread pool.\n&quot;</span>);</span><br><span class="line">    proc-&gt;<span class="built_in">startThreadPool</span>();</span><br><span class="line"></span><br><span class="line">    AndroidRuntime* ar = AndroidRuntime::<span class="built_in">getRuntime</span>();</span><br><span class="line">    ar-&gt;<span class="built_in">callMain</span>(mClassName, mClass, mArgs);</span><br><span class="line"></span><br><span class="line">    IPCThreadState::<span class="built_in">self</span>()-&gt;<span class="built_in">stopProcess</span>();</span><br><span class="line">    hardware::IPCThreadState::<span class="built_in">self</span>()-&gt;<span class="built_in">stopProcess</span>();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">virtual</span> <span class="type">void</span> <span class="title">onZygoteInit</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    sp&lt;ProcessState&gt; proc = ProcessState::<span class="built_in">self</span>();</span><br><span class="line">    <span class="built_in">ALOGV</span>(<span class="string">&quot;App process: starting thread pool.\n&quot;</span>);</span><br><span class="line">    proc-&gt;<span class="built_in">startThreadPool</span>();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
 
+<blockquote>
 <p>值得注意的是，<strong>Hal</strong> 中也会有 Binder 池创建，<strong>HW Binder 线程池的启动走的是另一条路径</strong>——在 android_os_HwBinder.cpp中，当 Java 层注册或获取 HIDL 服务时，才通过 JNI 按需调用：</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="PLAINTEXT"><figure class="iseeu highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">::android::hardware::ProcessState::self()-&gt;startThreadPool();</span><br></pre></td></tr></table></figure></div>
+</blockquote>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CPP"><figure class="iseeu highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">::android::hardware::ProcessState::<span class="built_in">self</span>()-&gt;<span class="built_in">startThreadPool</span>();</span><br></pre></td></tr></table></figure></div>
 
 <p>现在分析的都是<strong>普通 Binder 线程池，不是 HW Binder 线程池。</strong></p>
 <p>首先看 <code>ProcessState::self()</code> 初始化相关。</p>
@@ -560,7 +555,7 @@
 </tr>
 </tbody></table>
 <p>具体流程如下：</p>
-<img src="/2026/04/09/Binder%E6%B3%A8%E5%86%8C%E4%B8%8E%E5%90%AF%E5%8A%A8/ProcessState初始化流程.drawio.svg" style="zoom:100%;">
+<img src="/2026/04/09/Binder%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/ProcessState初始化流程.drawio.svg" style="zoom:100%;">
 
 <p>首先看 <code>ProcessState::self</code> 的实现：</p>
 <div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CPP"><figure class="iseeu highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/native/libs/binder/ProcessState.cpp</span></span><br><span class="line"><span class="type">const</span> <span class="type">char</span>* kDefaultDriver = <span class="string">&quot;/dev/binder&quot;</span>;</span><br><span class="line"><span class="function">sp&lt;ProcessState&gt; <span class="title">ProcessState::self</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="built_in">init</span>(kDefaultDriver, <span class="literal">false</span> <span class="comment">/*requireDefault*/</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function">sp&lt;ProcessState&gt; <span class="title">ProcessState::init</span><span class="params">(<span class="type">const</span> <span class="type">char</span>* driver, <span class="type">bool</span> requireDefault)</span> </span>&#123;</span><br><span class="line">    ...</span><br><span class="line">    std::<span class="built_in">call_once</span>(gProcessOnce, [&amp;]()&#123;</span><br><span class="line">        ...</span><br><span class="line">        <span class="comment">// we must install these before instantiating the gProcess object,</span></span><br><span class="line">        <span class="comment">// otherwise this would race with creating it, and there could be the</span></span><br><span class="line">        <span class="comment">// possibility of an invalid gProcess object forked by another thread</span></span><br><span class="line">        <span class="comment">// before these are installed</span></span><br><span class="line">        <span class="type">int</span> ret = <span class="built_in">pthread_atfork</span>(ProcessState::onFork, ProcessState::parentPostFork,</span><br><span class="line">                                 ProcessState::childPostFork);</span><br><span class="line">        <span class="built_in">LOG_ALWAYS_FATAL_IF</span>(ret != <span class="number">0</span>, <span class="string">&quot;pthread_atfork error %s&quot;</span>, <span class="built_in">strerror</span>(ret));</span><br><span class="line">    </span><br><span class="line">        std::lock_guard&lt;std::mutex&gt; <span class="built_in">l</span>(gProcessMutex);</span><br><span class="line">        <span class="comment">// 初始化 ProcessState</span></span><br><span class="line">        gProcess = sp&lt;ProcessState&gt;::<span class="built_in">make</span>(driver);</span><br><span class="line">    &#125;);</span><br><span class="line"></span><br><span class="line">    ...</span><br><span class="line">    <span class="keyword">return</span> gProcess;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
@@ -643,7 +638,286 @@
 
 <p>将当前线程加入 Binder 线程池，然后循环，阻塞等待并处理来自内核 Binder 驱动的事务。其中最重要的就是 <code>getAndExecuteCommand</code> 方法，后续分析内核相关时再剖析具体流程吧。</p>
 <p>Binder 服务端线程启动时序如下：</p>
-<p><img src="/2026/04/09/Binder%E6%B3%A8%E5%86%8C%E4%B8%8E%E5%90%AF%E5%8A%A8/IPCThreadState_SequenceDiagram.drawio.svg"></p>
+<p><img src="/2026/04/09/Binder%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/IPCThreadState_SequenceDiagram.drawio.svg"></p>
+<h2 id="1-3-Binder-核心循环事件处理"><a href="#1-3-Binder-核心循环事件处理" class="headerlink" title="1.3. Binder 核心循环事件处理"></a>1.3. Binder 核心循环事件处理</h2><p>从上面的流程图可以看出：<code>joinThreadPool</code> <strong>是外层循环，</strong><code>getAndExecuteCommand</code> <strong>是单次迭代，</strong><code>talkWithDriver</code> <strong>+</strong> <code>executeCommand</code> <strong>是迭代内的两步。</strong></p>
+<p> <code>getAndExecuteCommand</code>将 <code>talkWithDriver</code>（与内核交换数据）和 <code>executeCommand</code>（处理具体命令）串联起来，并管理线程池的执行计数与饥饿检测。整个 Binder IPC 的接收端就是靠这个循环驱动的。先梳理具体流程，然后再详细分析 <code>talkWithDriver</code> 与<code>executeCommand</code>方法。</p>
+<img src="/2026/04/09/Binder%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/zhangyongbin/Blog/zybTree/source/_posts/Binder启动流程/核心循环事件处理.png" style="zoom:80%;">
+
+
+
+<h3 id="1-3-1-talkWithDriver-——-内核交互的底层方法"><a href="#1-3-1-talkWithDriver-——-内核交互的底层方法" class="headerlink" title="1.3.1. talkWithDriver —— 内核交互的底层方法"></a>1.3.1. talkWithDriver —— 内核交互的底层方法</h3><p><code>talkWithDriver</code> 是用户空间与内核 Binder 驱动之间的<strong>唯一通信桥梁</strong>。所有 <code>BC_*</code> 命令的发送和 <code>BR_*</code> 命令的接收都通过此方法完成。</p>
+<h4 id="前置检查"><a href="#前置检查" class="headerlink" title="前置检查"></a>前置检查</h4><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (mProcess-&gt;mDriverFD &lt; <span class="number">0</span>) &#123;</span><br><span class="line">    <span class="keyword">return</span> -EBADF;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>检查 binder fd 是否有效。在进程退出或驱动关闭后 <code>mDriverFD</code> 会被置为 -1。</p>
+<h4 id="计算-read-write-需求"><a href="#计算-read-write-需求" class="headerlink" title="计算 read&#x2F;write 需求"></a>计算 read&#x2F;write 需求</h4><p>这是 <code>talkWithDriver</code> 最关键的逻辑，决定了本次 <code>ioctl </code>发送什么、接收什么：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// mIn 中的数据是否已全部读完？</span></span><br><span class="line"><span class="type">const</span> <span class="type">bool</span> needRead = mIn.<span class="built_in">dataPosition</span>() &gt;= mIn.<span class="built_in">dataSize</span>();</span><br><span class="line"></span><br><span class="line"><span class="comment">// 是否有数据要发送给内核？</span></span><br><span class="line"><span class="type">const</span> <span class="type">size_t</span> outAvail = (!doReceive || needRead) ? mOut.<span class="built_in">dataSize</span>() : <span class="number">0</span>;</span><br></pre></td></tr></table></figure>
+
+<p><code>outAvail</code> 的计算逻辑：</p>
+<table>
+<thead>
+<tr>
+<th>doReceive</th>
+<th>needRead</th>
+<th>outAvail</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>TRUE</td>
+<td>TRUE</td>
+<td>mOut.dataSize()</td>
+<td>mIn 已读完 + 需要接收 → 正常发送 mOut</td>
+</tr>
+<tr>
+<td>TRUE</td>
+<td>FALSE</td>
+<td>0</td>
+<td>mIn 还有数据没读 → 不发送 mOut，避免内核写入覆盖</td>
+</tr>
+<tr>
+<td>FALSE</td>
+<td>-</td>
+<td>mOut.dataSize()</td>
+<td>只发不收（flushCommands 场景）</td>
+</tr>
+</tbody></table>
+<p>read 的设置：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (doReceive &amp;&amp; needRead) &#123;</span><br><span class="line">    bwr.read_size = mIn.<span class="built_in">dataCapacity</span>();    <span class="comment">// 接收缓冲区大小</span></span><br><span class="line">    bwr.read_buffer = (<span class="type">uintptr_t</span>)mIn.<span class="built_in">data</span>();</span><br><span class="line">&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    bwr.read_size = <span class="number">0</span>;                     <span class="comment">// 不接收</span></span><br><span class="line">    bwr.read_buffer = <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="短路检查"><a href="#短路检查" class="headerlink" title="短路检查"></a>短路检查</h4><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> ((bwr.write_size == <span class="number">0</span>) &amp;&amp; (bwr.read_size == <span class="number">0</span>)) <span class="keyword">return</span> NO_ERROR;</span><br></pre></td></tr></table></figure>
+
+<p>表示既没有数据要发、也不需要接收，直接返回即可。这发生在 <code>mOut</code> 为空且 <code>mIn</code> 还有未消费数据时。</p>
+<h4 id="ioctl-核心交互"><a href="#ioctl-核心交互" class="headerlink" title="ioctl 核心交互"></a>ioctl 核心交互</h4><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">bwr.write_consumed = <span class="number">0</span>;</span><br><span class="line">bwr.read_consumed = <span class="number">0</span>;</span><br><span class="line"><span class="keyword">do</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> (<span class="built_in">ioctl</span>(mProcess-&gt;mDriverFD, BINDER_WRITE_READ, &amp;bwr) &gt;= <span class="number">0</span>)</span><br><span class="line">        err = NO_ERROR;</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">        err = -errno;</span><br><span class="line">&#125; <span class="keyword">while</span> (err == -EINTR);</span><br></pre></td></tr></table></figure>
+
+<p><code>binder_write_read</code> 结构体是用户空间与内核的协议：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">binder_write_read &#123;</span><br><span class="line">    write_size:        <span class="comment">// 要写入内核的数据大小</span></span><br><span class="line">    write_buffer:      <span class="comment">// 指向 mOut 的数据指针</span></span><br><span class="line">    write_consumed:    <span class="comment">// 内核实际消费了多少（由内核填写返回）</span></span><br><span class="line"></span><br><span class="line">    read_size:         <span class="comment">// 接收缓冲区大小</span></span><br><span class="line">    read_buffer:       <span class="comment">// 指向 mIn 的缓冲区指针</span></span><br><span class="line">    read_consumed:     <span class="comment">// 内核实际写入了多少（由内核填写返回）</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>ioctl</code> 行为有如下情况：</p>
+<table>
+<thead>
+<tr>
+<th>情况</th>
+<th>行为</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>write_size &gt; 0, read_size &gt; 0</td>
+<td>双向交换：发送 BC_* 命令 + 接收 BR_* 命令</td>
+</tr>
+<tr>
+<td>write_size &gt; 0, read_size &#x3D;&#x3D; 0</td>
+<td>只发送</td>
+</tr>
+<tr>
+<td>write_size &#x3D;&#x3D; 0, read_size &gt; 0</td>
+<td>阻塞等待内核数据</td>
+</tr>
+<tr>
+<td>两者都为 0</td>
+<td>短路返回（前面已处理）</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>期间有个特殊情况，那就是 <code>err == -EINTR</code> ，此时表示 <code>ioctl</code> 被信号中断（返回 <code>-EINTR</code>），自动重试。这在 Android 中很常见（如 ART 的信号机制、debugger 信号等）。</p>
+</blockquote>
+<h4 id="写入确认"><a href="#写入确认" class="headerlink" title="写入确认"></a>写入确认</h4><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (bwr.write_consumed &gt; <span class="number">0</span>) &#123;</span><br><span class="line">    <span class="keyword">if</span> (bwr.write_consumed &lt; mOut.<span class="built_in">dataSize</span>()) &#123;</span><br><span class="line">        <span class="comment">// 内核没有消费完所有写入数据 → 致命错误</span></span><br><span class="line">        <span class="built_in">LOG_ALWAYS_FATAL</span>(<span class="string">&quot;Driver did not consume write buffer. ...&quot;</span>);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        mOut.<span class="built_in">setDataSize</span>(<span class="number">0</span>);           <span class="comment">// 清空 mOut</span></span><br><span class="line">        <span class="built_in">processPostWriteDerefs</span>();      <span class="comment">// 处理延迟引用释放</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>其中内核必须<strong>一次性消费完</strong> mOut 中的所有数据，否则视为 bug 直接 <code>FATAL</code>。</p>
+<h4 id="读取确认"><a href="#读取确认" class="headerlink" title="读取确认"></a>读取确认</h4><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (bwr.read_consumed &gt; <span class="number">0</span>) &#123;</span><br><span class="line">    mIn.<span class="built_in">setDataSize</span>(bwr.read_consumed);    <span class="comment">// 设置实际读到的数据大小</span></span><br><span class="line">    mIn.<span class="built_in">setDataPosition</span>(<span class="number">0</span>);                 <span class="comment">// 重置读取位置到开头</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>内核通过 <code>read_consumed</code> 告知写入了多少 <code>BR_*</code> 数据到 <code>mIn</code> 缓冲区。之后调用者通过 <code>mIn.readInt32()</code> 逐条读取命令。</p>
+<h4 id="调用场景"><a href="#调用场景" class="headerlink" title="调用场景"></a>调用场景</h4><p>基本调用场景如下：</p>
+<table>
+<thead>
+<tr>
+<th>调用者</th>
+<th>doReceive</th>
+<th>目的</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>getAndExecuteCommand</td>
+<td>true（默认）</td>
+<td>正常循环：发送待处理命令 + 阻塞等待内核命令</td>
+</tr>
+<tr>
+<td>waitForResponse</td>
+<td>true（默认）</td>
+<td>发送 BC_TRANSACTION&#x2F;BC_REPLY + 等待 BR_REPLY</td>
+</tr>
+<tr>
+<td>flushCommands</td>
+<td>FALSE</td>
+<td>只发送 mOut 中的命令，不接收</td>
+</tr>
+</tbody></table>
+<h3 id="1-3-2-executeCommand-——-内核命令分发处理"><a href="#1-3-2-executeCommand-——-内核命令分发处理" class="headerlink" title="1.3.2. executeCommand —— 内核命令分发处理"></a>1.3.2. executeCommand —— 内核命令分发处理</h3><p><code>executeCommand</code> 是 <code>getAndExecuteCommand</code> 循环中的<strong>核心执行方法</strong>。它根据内核返回的 <code>BR_*</code> 命令类型，执行对应的处理逻辑，涵盖事务处理、引用计数管理、死亡通知、冻结通知、线程池管理等全部场景。</p>
+<h4 id="事件处理集锦"><a href="#事件处理集锦" class="headerlink" title="事件处理集锦"></a>事件处理集锦</h4><table>
+<thead>
+<tr>
+<th>序号</th>
+<th>命令</th>
+<th>类别</th>
+<th>从 mIn 读取</th>
+<th>执行操作</th>
+<th>是否回复内核(mOut)</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>BR_ERROR</td>
+<td>简单状态</td>
+<td>readInt32()</td>
+<td>设置 result &#x3D; error code</td>
+<td>否</td>
+</tr>
+<tr>
+<td>2</td>
+<td>BR_OK</td>
+<td>简单状态</td>
+<td>无</td>
+<td>无操作</td>
+<td>否</td>
+</tr>
+<tr>
+<td>3</td>
+<td>BR_ACQUIRE</td>
+<td>引用计数</td>
+<td>refs(weakref_type*), obj(BBinder*)</td>
+<td>obj-&gt;incStrong()</td>
+<td>BC_ACQUIRE_DONE + refs + obj</td>
+</tr>
+<tr>
+<td>4</td>
+<td>BR_RELEASE</td>
+<td>引用计数</td>
+<td>refs, obj</td>
+<td>延迟释放：push 到 mPendingStrongDerefs</td>
+<td>否</td>
+</tr>
+<tr>
+<td>5</td>
+<td>BR_INCREFS</td>
+<td>引用计数</td>
+<td>refs, obj</td>
+<td>refs-&gt;incWeak()</td>
+<td>BC_INCREFS_DONE + refs + obj</td>
+</tr>
+<tr>
+<td>6</td>
+<td>BR_DECREFS</td>
+<td>引用计数</td>
+<td>refs, obj(仅消费)</td>
+<td>延迟释放：push 到 mPendingWeakDerefs</td>
+<td>否</td>
+</tr>
+<tr>
+<td>7</td>
+<td>BR_ATTEMPT_ACQUIRE</td>
+<td>引用计数</td>
+<td>refs, obj</td>
+<td>refs-&gt;attemptIncStrong()</td>
+<td>BC_ACQUIRE_RESULT + success(int32)</td>
+</tr>
+<tr>
+<td>8</td>
+<td>BR_TRANSACTION_SEC_CTX</td>
+<td>事务处理</td>
+<td>binder_transaction_data_secctx</td>
+<td>解析安全上下文+事务数据，调用 doTransactBinder，同步事务 sendReply，oneway 不回复</td>
+<td>BC_REPLY(via sendReply，仅同步)</td>
+</tr>
+<tr>
+<td>9</td>
+<td>BR_TRANSACTION</td>
+<td>事务处理</td>
+<td>binder_transaction_data</td>
+<td>同上（不含安全上下文）</td>
+<td>同上</td>
+</tr>
+<tr>
+<td>10</td>
+<td>BR_DEAD_BINDER</td>
+<td>死亡通知</td>
+<td>proxy(BpBinder*)</td>
+<td>proxy-&gt;sendObituary() 触发死亡回调</td>
+<td>BC_DEAD_BINDER_DONE + proxy</td>
+</tr>
+<tr>
+<td>11</td>
+<td>BR_CLEAR_DEATH_NOTIFICATION_DONE</td>
+<td>死亡通知</td>
+<td>proxy(BpBinder*)</td>
+<td>proxy-&gt;getWeakRefs()-&gt;decWeak() 清除注册时的弱引用</td>
+<td>否</td>
+</tr>
+<tr>
+<td>12</td>
+<td>BR_FROZEN_BINDER</td>
+<td>冻结通知</td>
+<td>binder_frozen_state_info</td>
+<td>触发冻结状态回调 onFrozenStateChanged</td>
+<td>BC_FREEZE_NOTIFICATION_DONE + cookie</td>
+</tr>
+<tr>
+<td>13</td>
+<td>BR_CLEAR_FREEZE_NOTIFICATION_DONE</td>
+<td>冻结通知</td>
+<td>proxy(BpBinder*)</td>
+<td>等待 listener 移除完成 + decWeak()</td>
+<td>否</td>
+</tr>
+<tr>
+<td>14</td>
+<td>BR_FINISHED</td>
+<td>简单状态</td>
+<td>无</td>
+<td>返回 TIMED_OUT，通知线程退出</td>
+<td>否</td>
+</tr>
+<tr>
+<td>15</td>
+<td>BR_NOOP</td>
+<td>简单状态</td>
+<td>无</td>
+<td>无操作，心跳</td>
+<td>否</td>
+</tr>
+<tr>
+<td>16</td>
+<td>BR_SPAWN_LOOPER</td>
+<td>线程池管理</td>
+<td>无</td>
+<td>mProcess-&gt;spawnPooledThread(false) 创建新辅助线程</td>
+<td>否</td>
+</tr>
+<tr>
+<td>17</td>
+<td>default</td>
+<td>异常</td>
+<td>无</td>
+<td>ALOGE + 返回 UNKNOWN_ERROR</td>
+<td>否</td>
+</tr>
+</tbody></table>
+<h4 id="调用场景-1"><a href="#调用场景-1" class="headerlink" title="调用场景"></a>调用场景</h4><p><code>executeCommand</code> 不仅在 <code>getAndExecuteCommand</code> 中被调用，还在 <code>waitForResponse</code> 的 <code>default</code> 分支中被调用：</p>
+<table>
+<thead>
+<tr>
+<th>调用场景</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>getAndExecuteCommand</td>
+<td>接收端主循环，处理所有 BR_* 命令</td>
+</tr>
+<tr>
+<td>waitForResponse 的 default 分支</td>
+<td>发送端等待回复时，如果收到 BR_ACQUIRE 等非回复命令，就地在当前线程处理</td>
+</tr>
+</tbody></table>
+<p>这意味着一个 Binder 线程在等待回复（<code>waitForResponse</code>）的过程中，也可能被内核”借用”来处理引用计数等轻量命令，甚至处理嵌套的 <code>BR_TRANSACTION</code>。</p>
 
       
     </div>
@@ -867,7 +1141,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#1-Binder-%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B"><span class="nav-text">1. Binder 启动流程</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-1-%E5%88%9D%E5%A7%8B%E5%8C%96-ProcessState"><span class="nav-text">1.1. 初始化 ProcessState</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#1-2-%E5%90%AF%E5%8A%A8-Binder-%E6%9C%8D%E5%8A%A1%E7%AB%AF%E7%BA%BF%E7%A8%8B%E6%B1%A0"><span class="nav-text">1.2. 启动 Binder 服务端线程池</span></a></li></ol></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#1-Binder-%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B"><span class="nav-text">1. Binder 启动流程</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-1-%E5%88%9D%E5%A7%8B%E5%8C%96-ProcessState"><span class="nav-text">1.1. 初始化 ProcessState</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#1-2-%E5%90%AF%E5%8A%A8-Binder-%E6%9C%8D%E5%8A%A1%E7%AB%AF%E7%BA%BF%E7%A8%8B%E6%B1%A0"><span class="nav-text">1.2. 启动 Binder 服务端线程池</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#1-3-Binder-%E6%A0%B8%E5%BF%83%E5%BE%AA%E7%8E%AF%E4%BA%8B%E4%BB%B6%E5%A4%84%E7%90%86"><span class="nav-text">1.3. Binder 核心循环事件处理</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-3-1-talkWithDriver-%E2%80%94%E2%80%94-%E5%86%85%E6%A0%B8%E4%BA%A4%E4%BA%92%E7%9A%84%E5%BA%95%E5%B1%82%E6%96%B9%E6%B3%95"><span class="nav-text">1.3.1. talkWithDriver —— 内核交互的底层方法</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%89%8D%E7%BD%AE%E6%A3%80%E6%9F%A5"><span class="nav-text">前置检查</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E8%AE%A1%E7%AE%97-read-write-%E9%9C%80%E6%B1%82"><span class="nav-text">计算 read&#x2F;write 需求</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E7%9F%AD%E8%B7%AF%E6%A3%80%E6%9F%A5"><span class="nav-text">短路检查</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#ioctl-%E6%A0%B8%E5%BF%83%E4%BA%A4%E4%BA%92"><span class="nav-text">ioctl 核心交互</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%86%99%E5%85%A5%E7%A1%AE%E8%AE%A4"><span class="nav-text">写入确认</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E8%AF%BB%E5%8F%96%E7%A1%AE%E8%AE%A4"><span class="nav-text">读取确认</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E8%B0%83%E7%94%A8%E5%9C%BA%E6%99%AF"><span class="nav-text">调用场景</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-3-2-executeCommand-%E2%80%94%E2%80%94-%E5%86%85%E6%A0%B8%E5%91%BD%E4%BB%A4%E5%88%86%E5%8F%91%E5%A4%84%E7%90%86"><span class="nav-text">1.3.2. executeCommand —— 内核命令分发处理</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%BA%8B%E4%BB%B6%E5%A4%84%E7%90%86%E9%9B%86%E9%94%A6"><span class="nav-text">事件处理集锦</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E8%B0%83%E7%94%A8%E5%9C%BA%E6%99%AF-1"><span class="nav-text">调用场景</span></a></li></ol></li></ol></li></ol></li></ol></div>
             
 
           </div>
