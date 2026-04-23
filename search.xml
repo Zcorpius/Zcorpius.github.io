@@ -3,7 +3,7 @@
   <entry>
     <title>Binder 启动流程</title>
     <url>/2026/04/09/Binder%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/</url>
-    <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="/assets/css/APlayer.min.css"><script src="/assets/js/APlayer.min.js" class="aplayer-secondary-script-marker"></script><h1 id="1-Binder-启动流程"><a href="#1-Binder-启动流程" class="headerlink" title="1. Binder 启动流程"></a>1. Binder 启动流程</h1><blockquote>
+    <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="/assets/css/APlayer.min.css"><script src="/assets/js/APlayer.min.js" class="aplayer-secondary-script-marker"></script><blockquote>
 <p>从启动流程上看，servicemanager 是在 Zygote 之前启动的，理论上对应进程的 Binder 创建也是 servicemanager 先执行，但大部分进程都用 Zygote 进程的启动链路，理解后直接能套用到 Android 大部分进程。ServiceManager 反而是单线程特例，能做一个很好的对比。</p>
 </blockquote>
 <p>直接从 Zygote 进程启动开始吧，这是在系统开机时执行，只执行一次。</p>
@@ -76,7 +76,7 @@
 
 <p>现在分析的都是<strong>普通 Binder 线程池，不是 HW Binder 线程池。</strong></p>
 <p>首先看 <code>ProcessState::self()</code> 初始化相关。</p>
-<h2 id="1-1-初始化-ProcessState"><a href="#1-1-初始化-ProcessState" class="headerlink" title="1.1. 初始化 ProcessState"></a>1.1. 初始化 ProcessState</h2><p><code>ProcessState</code> 是 Android Binder IPC 框架中的 <strong>进程级单例</strong>，负责维护 Binder 的资源、线程、缓冲区和生命周期。</p>
+<h1 id="1-初始化-ProcessState"><a href="#1-初始化-ProcessState" class="headerlink" title="1. 初始化 ProcessState"></a>1. 初始化 ProcessState</h1><p><code>ProcessState</code> 是 Android Binder IPC 框架中的 <strong>进程级单例</strong>，负责维护 Binder 的资源、线程、缓冲区和生命周期。</p>
 <p>承担以下核心职责：</p>
 <table>
 <thead>
@@ -129,7 +129,7 @@
 <li>两个进程之间并不是”协商出一块共享内存”，而是各自独立 mmap，通过内核中转</li>
 </ul>
 </blockquote>
-<h2 id="1-2-启动-Binder-服务端线程池"><a href="#1-2-启动-Binder-服务端线程池" class="headerlink" title="1.2. 启动 Binder 服务端线程池"></a>1.2. 启动 Binder 服务端线程池</h2><p>获取到 ProcessState 对象后就进行启动 Binder 服务端线程，首先来看 <code>startThreadPool</code> 的实现：</p>
+<h1 id="2-启动-Binder-服务端线程池"><a href="#2-启动-Binder-服务端线程池" class="headerlink" title="2. 启动 Binder 服务端线程池"></a>2. 启动 Binder 服务端线程池</h1><p>获取到 ProcessState 对象后就进行启动 Binder 服务端线程，首先来看 <code>startThreadPool</code> 的实现：</p>
 <div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CPP"><figure class="iseeu highlight cpp"><table><tr><td class="code"><pre><span class="line"><span class="comment">// frameworks/native/libs/binder/ProcessState.cpp</span></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">ProcessState::startThreadPool</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    std::unique_lock&lt;std::mutex&gt; _l(mLock);</span><br><span class="line">    <span class="comment">// 创建 ProcessState 的时候将 mThreadPoolStarted 默认设置成 false 了</span></span><br><span class="line">    <span class="keyword">if</span> (!mThreadPoolStarted) &#123;</span><br><span class="line">        <span class="keyword">if</span> (mMaxThreads == <span class="number">0</span>) &#123;</span><br><span class="line">            <span class="comment">// see also getThreadPoolMaxTotalThreadCount</span></span><br><span class="line">            <span class="built_in">ALOGW</span>(<span class="string">&quot;Extra binder thread started, but 0 threads requested. Do not use &quot;</span></span><br><span class="line">                  <span class="string">&quot;*startThreadPool when zero threads are requested.&quot;</span>);</span><br><span class="line">        &#125;</span><br><span class="line">        mThreadPoolStarted = <span class="literal">true</span>;</span><br><span class="line">        <span class="built_in">spawnPooledThread</span>(<span class="literal">true</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
 
 <p>最开始创建 ProcessState 时将 mThreadPoolStarted 设置为 false，在接下来是 spawnPooledThread 操作：</p>
@@ -191,17 +191,17 @@
 <p>将当前线程加入 Binder 线程池，然后循环，阻塞等待并处理来自内核 Binder 驱动的事务。其中最重要的就是 <code>getAndExecuteCommand</code> 方法，后续分析内核相关时再剖析具体流程吧。</p>
 <p>Binder 服务端线程启动时序如下：</p>
 <p><img src="/2026/04/09/Binder%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/IPCThreadState_SequenceDiagram.drawio.svg"></p>
-<h2 id="1-3-Binder-核心循环事件处理"><a href="#1-3-Binder-核心循环事件处理" class="headerlink" title="1.3. Binder 核心循环事件处理"></a>1.3. Binder 核心循环事件处理</h2><p>从上面的流程图可以看出：<code>joinThreadPool</code> <strong>是外层循环，</strong><code>getAndExecuteCommand</code> <strong>是单次迭代，</strong><code>talkWithDriver</code> <strong>+</strong> <code>executeCommand</code> <strong>是迭代内的两步。</strong></p>
+<h1 id="3-Binder-核心循环事件处理"><a href="#3-Binder-核心循环事件处理" class="headerlink" title="3. Binder 核心循环事件处理"></a>3. Binder 核心循环事件处理</h1><p>从上面的流程图可以看出：<code>joinThreadPool</code> <strong>是外层循环，</strong><code>getAndExecuteCommand</code> <strong>是单次迭代，</strong><code>talkWithDriver</code> <strong>+</strong> <code>executeCommand</code> <strong>是迭代内的两步。</strong></p>
 <p> <code>getAndExecuteCommand</code>将 <code>talkWithDriver</code>（与内核交换数据）和 <code>executeCommand</code>（处理具体命令）串联起来，并管理线程池的执行计数与饥饿检测。整个 Binder IPC 的接收端就是靠这个循环驱动的。先梳理具体流程，然后再详细分析 <code>talkWithDriver</code> 与<code>executeCommand</code>方法。</p>
 <img src="/2026/04/09/Binder%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/核心循环事件处理.png" width="80%">
 
 
 
-<h3 id="1-3-1-talkWithDriver-——-内核交互的底层方法"><a href="#1-3-1-talkWithDriver-——-内核交互的底层方法" class="headerlink" title="1.3.1. talkWithDriver —— 内核交互的底层方法"></a>1.3.1. talkWithDriver —— 内核交互的底层方法</h3><p><code>talkWithDriver</code> 是用户空间与内核 Binder 驱动之间的<strong>唯一通信桥梁</strong>。所有 <code>BC_*</code> 命令的发送和 <code>BR_*</code> 命令的接收都通过此方法完成。</p>
-<h4 id="1-前置检查"><a href="#1-前置检查" class="headerlink" title="1. 前置检查"></a>1. 前置检查</h4><div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CPP"><figure class="iseeu highlight cpp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">if</span> (mProcess-&gt;mDriverFD &lt; <span class="number">0</span>) &#123;</span><br><span class="line">    <span class="keyword">return</span> -EBADF;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<h2 id="3-1-talkWithDriver-——-内核交互的底层方法"><a href="#3-1-talkWithDriver-——-内核交互的底层方法" class="headerlink" title="3.1. talkWithDriver —— 内核交互的底层方法"></a>3.1. talkWithDriver —— 内核交互的底层方法</h2><p><code>talkWithDriver</code> 是用户空间与内核 Binder 驱动之间的<strong>唯一通信桥梁</strong>。所有 <code>BC_*</code> 命令的发送和 <code>BR_*</code> 命令的接收都通过此方法完成。</p>
+<h3 id="3-1-1-前置检查"><a href="#3-1-1-前置检查" class="headerlink" title="3.1.1. 前置检查"></a>3.1.1. 前置检查</h3><div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CPP"><figure class="iseeu highlight cpp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">if</span> (mProcess-&gt;mDriverFD &lt; <span class="number">0</span>) &#123;</span><br><span class="line">    <span class="keyword">return</span> -EBADF;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
 
 <p>检查 binder fd 是否有效。在进程退出或驱动关闭后 <code>mDriverFD</code> 会被置为 -1。</p>
-<h4 id="2-计算-read-write-需求"><a href="#2-计算-read-write-需求" class="headerlink" title="2. 计算 read&#x2F;write 需求"></a>2. 计算 read&#x2F;write 需求</h4><p>这是 <code>talkWithDriver</code> 最关键的逻辑，决定了本次 <code>ioctl </code>发送什么、接收什么：</p>
+<h3 id="3-1-2-计算-read-write-需求"><a href="#3-1-2-计算-read-write-需求" class="headerlink" title="3.1.2. 计算 read&#x2F;write 需求"></a>3.1.2. 计算 read&#x2F;write 需求</h3><p>这是 <code>talkWithDriver</code> 最关键的逻辑，决定了本次 <code>ioctl </code>发送什么、接收什么：</p>
 <div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CPP"><figure class="iseeu highlight cpp"><table><tr><td class="code"><pre><span class="line"><span class="comment">// mIn 中的数据是否已全部读完？</span></span><br><span class="line"><span class="type">const</span> <span class="type">bool</span> needRead = mIn.<span class="built_in">dataPosition</span>() &gt;= mIn.<span class="built_in">dataSize</span>();</span><br><span class="line"></span><br><span class="line"><span class="comment">// 是否有数据要发送给内核？</span></span><br><span class="line"><span class="type">const</span> <span class="type">size_t</span> outAvail = (!doReceive || needRead) ? mOut.<span class="built_in">dataSize</span>() : <span class="number">0</span>;</span><br></pre></td></tr></table></figure></div>
 
 <p><code>outAvail</code> 的计算逻辑：</p>
@@ -236,10 +236,10 @@
 <p>read 的设置：</p>
 <div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CPP"><figure class="iseeu highlight cpp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">if</span> (doReceive &amp;&amp; needRead) &#123;</span><br><span class="line">    bwr.read_size = mIn.<span class="built_in">dataCapacity</span>();    <span class="comment">// 接收缓冲区大小</span></span><br><span class="line">    bwr.read_buffer = (<span class="type">uintptr_t</span>)mIn.<span class="built_in">data</span>();</span><br><span class="line">&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    bwr.read_size = <span class="number">0</span>;                     <span class="comment">// 不接收</span></span><br><span class="line">    bwr.read_buffer = <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
 
-<h4 id="3-短路检查"><a href="#3-短路检查" class="headerlink" title="3. 短路检查"></a>3. 短路检查</h4><div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CPP"><figure class="iseeu highlight cpp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">if</span> ((bwr.write_size == <span class="number">0</span>) &amp;&amp; (bwr.read_size == <span class="number">0</span>)) <span class="keyword">return</span> NO_ERROR;</span><br></pre></td></tr></table></figure></div>
+<h3 id="3-1-3-短路检查"><a href="#3-1-3-短路检查" class="headerlink" title="3.1.3. 短路检查"></a>3.1.3. 短路检查</h3><div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CPP"><figure class="iseeu highlight cpp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">if</span> ((bwr.write_size == <span class="number">0</span>) &amp;&amp; (bwr.read_size == <span class="number">0</span>)) <span class="keyword">return</span> NO_ERROR;</span><br></pre></td></tr></table></figure></div>
 
 <p>表示既没有数据要发、也不需要接收，直接返回即可。这发生在 <code>mOut</code> 为空且 <code>mIn</code> 还有未消费数据时。</p>
-<h4 id="4-ioctl-核心交互"><a href="#4-ioctl-核心交互" class="headerlink" title="4. ioctl 核心交互"></a>4. ioctl 核心交互</h4><div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CPP"><figure class="iseeu highlight cpp"><table><tr><td class="code"><pre><span class="line">bwr.write_consumed = <span class="number">0</span>;</span><br><span class="line">bwr.read_consumed = <span class="number">0</span>;</span><br><span class="line"><span class="keyword">do</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> (<span class="built_in">ioctl</span>(mProcess-&gt;mDriverFD, BINDER_WRITE_READ, &amp;bwr) &gt;= <span class="number">0</span>)</span><br><span class="line">        err = NO_ERROR;</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">        err = -errno;</span><br><span class="line">&#125; <span class="keyword">while</span> (err == -EINTR);</span><br></pre></td></tr></table></figure></div>
+<h3 id="3-1-4-ioctl-核心交互"><a href="#3-1-4-ioctl-核心交互" class="headerlink" title="3.1.4. ioctl 核心交互"></a>3.1.4. ioctl 核心交互</h3><div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CPP"><figure class="iseeu highlight cpp"><table><tr><td class="code"><pre><span class="line">bwr.write_consumed = <span class="number">0</span>;</span><br><span class="line">bwr.read_consumed = <span class="number">0</span>;</span><br><span class="line"><span class="keyword">do</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> (<span class="built_in">ioctl</span>(mProcess-&gt;mDriverFD, BINDER_WRITE_READ, &amp;bwr) &gt;= <span class="number">0</span>)</span><br><span class="line">        err = NO_ERROR;</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">        err = -errno;</span><br><span class="line">&#125; <span class="keyword">while</span> (err == -EINTR);</span><br></pre></td></tr></table></figure></div>
 
 <p><code>binder_write_read</code> 结构体是用户空间与内核的协议：</p>
 <div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CPP"><figure class="iseeu highlight cpp"><table><tr><td class="code"><pre><span class="line">binder_write_read &#123;</span><br><span class="line">    write_size:        <span class="comment">// 要写入内核的数据大小</span></span><br><span class="line">    write_buffer:      <span class="comment">// 指向 mOut 的数据指针</span></span><br><span class="line">    write_consumed:    <span class="comment">// 内核实际消费了多少（由内核填写返回）</span></span><br><span class="line"></span><br><span class="line">    read_size:         <span class="comment">// 接收缓冲区大小</span></span><br><span class="line">    read_buffer:       <span class="comment">// 指向 mIn 的缓冲区指针</span></span><br><span class="line">    read_consumed:     <span class="comment">// 内核实际写入了多少（由内核填写返回）</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
@@ -272,13 +272,13 @@
 <blockquote>
 <p>期间有个特殊情况，那就是 <code>err == -EINTR</code> ，此时表示 <code>ioctl</code> 被信号中断（返回 <code>-EINTR</code>），自动重试。这在 Android 中很常见（如 ART 的信号机制、debugger 信号等）。</p>
 </blockquote>
-<h4 id="5-写入确认"><a href="#5-写入确认" class="headerlink" title="5. 写入确认"></a>5. 写入确认</h4><div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CPP"><figure class="iseeu highlight cpp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">if</span> (bwr.write_consumed &gt; <span class="number">0</span>) &#123;</span><br><span class="line">    <span class="keyword">if</span> (bwr.write_consumed &lt; mOut.<span class="built_in">dataSize</span>()) &#123;</span><br><span class="line">        <span class="comment">// 内核没有消费完所有写入数据 → 致命错误</span></span><br><span class="line">        <span class="built_in">LOG_ALWAYS_FATAL</span>(<span class="string">&quot;Driver did not consume write buffer. ...&quot;</span>);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        mOut.<span class="built_in">setDataSize</span>(<span class="number">0</span>);           <span class="comment">// 清空 mOut</span></span><br><span class="line">        <span class="built_in">processPostWriteDerefs</span>();      <span class="comment">// 处理延迟引用释放</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<h3 id="3-1-5-写入确认"><a href="#3-1-5-写入确认" class="headerlink" title="3.1.5. 写入确认"></a>3.1.5. 写入确认</h3><div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CPP"><figure class="iseeu highlight cpp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">if</span> (bwr.write_consumed &gt; <span class="number">0</span>) &#123;</span><br><span class="line">    <span class="keyword">if</span> (bwr.write_consumed &lt; mOut.<span class="built_in">dataSize</span>()) &#123;</span><br><span class="line">        <span class="comment">// 内核没有消费完所有写入数据 → 致命错误</span></span><br><span class="line">        <span class="built_in">LOG_ALWAYS_FATAL</span>(<span class="string">&quot;Driver did not consume write buffer. ...&quot;</span>);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        mOut.<span class="built_in">setDataSize</span>(<span class="number">0</span>);           <span class="comment">// 清空 mOut</span></span><br><span class="line">        <span class="built_in">processPostWriteDerefs</span>();      <span class="comment">// 处理延迟引用释放</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
 
 <p>其中内核必须<strong>一次性消费完</strong> mOut 中的所有数据，否则视为 bug 直接 <code>FATAL</code>。</p>
-<h4 id="6-读取确认"><a href="#6-读取确认" class="headerlink" title="6. 读取确认"></a>6. 读取确认</h4><div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CPP"><figure class="iseeu highlight cpp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">if</span> (bwr.read_consumed &gt; <span class="number">0</span>) &#123;</span><br><span class="line">    mIn.<span class="built_in">setDataSize</span>(bwr.read_consumed);    <span class="comment">// 设置实际读到的数据大小</span></span><br><span class="line">    mIn.<span class="built_in">setDataPosition</span>(<span class="number">0</span>);                 <span class="comment">// 重置读取位置到开头</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<h3 id="3-1-6-读取确认"><a href="#3-1-6-读取确认" class="headerlink" title="3.1.6. 读取确认"></a>3.1.6. 读取确认</h3><div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CPP"><figure class="iseeu highlight cpp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">if</span> (bwr.read_consumed &gt; <span class="number">0</span>) &#123;</span><br><span class="line">    mIn.<span class="built_in">setDataSize</span>(bwr.read_consumed);    <span class="comment">// 设置实际读到的数据大小</span></span><br><span class="line">    mIn.<span class="built_in">setDataPosition</span>(<span class="number">0</span>);                 <span class="comment">// 重置读取位置到开头</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
 
 <p>内核通过 <code>read_consumed</code> 告知写入了多少 <code>BR_*</code> 数据到 <code>mIn</code> 缓冲区。之后调用者通过 <code>mIn.readInt32()</code> 逐条读取命令。</p>
-<h4 id="7-调用场景"><a href="#7-调用场景" class="headerlink" title="7. 调用场景"></a>7. 调用场景</h4><p>基本调用场景如下：</p>
+<h3 id="3-1-7-调用场景"><a href="#3-1-7-调用场景" class="headerlink" title="3.1.7. 调用场景"></a>3.1.7. 调用场景</h3><p>基本调用场景如下：</p>
 <table>
 <thead>
 <tr>
@@ -303,8 +303,8 @@
 <td>只发送 mOut 中的命令，不接收</td>
 </tr>
 </tbody></table>
-<h3 id="1-3-2-executeCommand-——-内核命令分发处理"><a href="#1-3-2-executeCommand-——-内核命令分发处理" class="headerlink" title="1.3.2. executeCommand —— 内核命令分发处理"></a>1.3.2. executeCommand —— 内核命令分发处理</h3><p><code>executeCommand</code> 是 <code>getAndExecuteCommand</code> 循环中的<strong>核心执行方法</strong>。它根据内核返回的 <code>BR_*</code> 命令类型，执行对应的处理逻辑，涵盖事务处理、引用计数管理、死亡通知、冻结通知、线程池管理等全部场景。</p>
-<h4 id="1-事件处理集锦"><a href="#1-事件处理集锦" class="headerlink" title="1. 事件处理集锦"></a>1. 事件处理集锦</h4><table>
+<h2 id="3-2-executeCommand-——-内核命令分发处理"><a href="#3-2-executeCommand-——-内核命令分发处理" class="headerlink" title="3.2. executeCommand —— 内核命令分发处理"></a>3.2. executeCommand —— 内核命令分发处理</h2><p><code>executeCommand</code> 是 <code>getAndExecuteCommand</code> 循环中的<strong>核心执行方法</strong>。它根据内核返回的 <code>BR_*</code> 命令类型，执行对应的处理逻辑，涵盖事务处理、引用计数管理、死亡通知、冻结通知、线程池管理等全部场景。</p>
+<h3 id="3-1-1-事件处理集锦"><a href="#3-1-1-事件处理集锦" class="headerlink" title="3.1.1. 事件处理集锦"></a>3.1.1. 事件处理集锦</h3><table>
 <thead>
 <tr>
 <th>序号</th>
@@ -452,7 +452,7 @@
 <td>否</td>
 </tr>
 </tbody></table>
-<h4 id="2-调用场景"><a href="#2-调用场景" class="headerlink" title="2. 调用场景"></a>2. 调用场景</h4><p><code>executeCommand</code> 不仅在 <code>getAndExecuteCommand</code> 中被调用，还在 <code>waitForResponse</code> 的 <code>default</code> 分支中被调用：</p>
+<h3 id="3-1-2-调用场景"><a href="#3-1-2-调用场景" class="headerlink" title="3.1.2. 调用场景"></a>3.1.2. 调用场景</h3><p><code>executeCommand</code> 不仅在 <code>getAndExecuteCommand</code> 中被调用，还在 <code>waitForResponse</code> 的 <code>default</code> 分支中被调用：</p>
 <table>
 <thead>
 <tr>
@@ -476,6 +476,31 @@
       </categories>
       <tags>
         <tag>Binder</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Git提速代理</title>
+    <url>/2024/11/09/Git%E6%8F%90%E9%80%9F%E4%BB%A3%E7%90%86/</url>
+    <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="/assets/css/APlayer.min.css"><script src="/assets/js/APlayer.min.js" class="aplayer-secondary-script-marker"></script><blockquote>
+<p>因为平时在Ubuntu虚拟机上使用Git clone的时候速度特别慢，使用干脆写个代理文件进行提速。</p>
+</blockquote>
+<h2 id="梯子准备"><a href="#梯子准备" class="headerlink" title="梯子准备"></a>梯子准备</h2><p>在主机上挂个梯子，然后查看IP地址与端口(确保能使用)。</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SHELL"><figure class="iseeu highlight shell"><table><tr><td class="code"><pre><span class="line">en0: flags=8863&lt;UP,BROADCAST,SMART,RUNNING,SIMPLEX,MULTICAST&gt; mtu 1500</span><br><span class="line">	options=400&lt;CHANNEL_IO&gt;</span><br><span class="line">	ether 38:f9:d3:8d:58:3e</span><br><span class="line">	inet6 fe80::1434:df1:87d5:7e09%en0 prefixlen 64 secured scopeid 0x6</span><br><span class="line">	inet 192.168.1.4 netmask 0xffffff00 broadcast 192.168.1.255</span><br><span class="line">	nd6 options=201&lt;PERFORMNUD,DAD&gt;</span><br><span class="line">	media: autoselect</span><br><span class="line">	status: active</span><br></pre></td></tr></table></figure></div>
+
+<img src="/2024/11/09/Git%E6%8F%90%E9%80%9F%E4%BB%A3%E7%90%86/1.png" style="zoom:50%;">
+
+<p>我的IP与端口:192.168.1.4:7890</p>
+<h2 id="写代理文件"><a href="#写代理文件" class="headerlink" title="写代理文件"></a>写代理文件</h2><p>在Ubuntu上写代理文件，在与Desktop同一级的目录下新建.gitconfig文件并进行编辑。</p>
+<p><img src="/2024/11/09/Git%E6%8F%90%E9%80%9F%E4%BB%A3%E7%90%86/2.png"></p>
+<p>这样就可以加速了。实践一下。</p>
+<p><img src="/2024/11/09/Git%E6%8F%90%E9%80%9F%E4%BB%A3%E7%90%86/3.png"></p>
+<p>这个速度就爽多！</p>
+]]></content>
+      <categories>
+        <category>Linux</category>
+      </categories>
+      <tags>
+        <tag>Git</tag>
       </tags>
   </entry>
   <entry>
@@ -696,31 +721,6 @@
         <tag>LeetCode</tag>
         <tag>算法</tag>
         <tag>数据结构</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>Git提速代理</title>
-    <url>/2024/11/09/Git%E6%8F%90%E9%80%9F%E4%BB%A3%E7%90%86/</url>
-    <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="/assets/css/APlayer.min.css"><script src="/assets/js/APlayer.min.js" class="aplayer-secondary-script-marker"></script><blockquote>
-<p>因为平时在Ubuntu虚拟机上使用Git clone的时候速度特别慢，使用干脆写个代理文件进行提速。</p>
-</blockquote>
-<h2 id="梯子准备"><a href="#梯子准备" class="headerlink" title="梯子准备"></a>梯子准备</h2><p>在主机上挂个梯子，然后查看IP地址与端口(确保能使用)。</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SHELL"><figure class="iseeu highlight shell"><table><tr><td class="code"><pre><span class="line">en0: flags=8863&lt;UP,BROADCAST,SMART,RUNNING,SIMPLEX,MULTICAST&gt; mtu 1500</span><br><span class="line">	options=400&lt;CHANNEL_IO&gt;</span><br><span class="line">	ether 38:f9:d3:8d:58:3e</span><br><span class="line">	inet6 fe80::1434:df1:87d5:7e09%en0 prefixlen 64 secured scopeid 0x6</span><br><span class="line">	inet 192.168.1.4 netmask 0xffffff00 broadcast 192.168.1.255</span><br><span class="line">	nd6 options=201&lt;PERFORMNUD,DAD&gt;</span><br><span class="line">	media: autoselect</span><br><span class="line">	status: active</span><br></pre></td></tr></table></figure></div>
-
-<img src="/2024/11/09/Git%E6%8F%90%E9%80%9F%E4%BB%A3%E7%90%86/1.png" style="zoom:50%;">
-
-<p>我的IP与端口:192.168.1.4:7890</p>
-<h2 id="写代理文件"><a href="#写代理文件" class="headerlink" title="写代理文件"></a>写代理文件</h2><p>在Ubuntu上写代理文件，在与Desktop同一级的目录下新建.gitconfig文件并进行编辑。</p>
-<p><img src="/2024/11/09/Git%E6%8F%90%E9%80%9F%E4%BB%A3%E7%90%86/2.png"></p>
-<p>这样就可以加速了。实践一下。</p>
-<p><img src="/2024/11/09/Git%E6%8F%90%E9%80%9F%E4%BB%A3%E7%90%86/3.png"></p>
-<p>这个速度就爽多！</p>
-]]></content>
-      <categories>
-        <category>Linux</category>
-      </categories>
-      <tags>
-        <tag>Git</tag>
       </tags>
   </entry>
   <entry>
