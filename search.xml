@@ -344,7 +344,7 @@
 <td>BR_RELEASE</td>
 <td>引用计数</td>
 <td>refs, obj</td>
-<td>延迟释放：push 到 mPendingStrongDerefs</td>
+<td>延迟释放</td>
 <td>否</td>
 </tr>
 <tr>
@@ -360,30 +360,30 @@
 <td>BR_DECREFS</td>
 <td>引用计数</td>
 <td>refs, obj(仅消费)</td>
-<td>延迟释放：push 到 mPendingWeakDerefs</td>
+<td>延迟释放</td>
 <td>否</td>
 </tr>
 <tr>
 <td>7</td>
-<td>BR_ATTEMPT_ACQUIRE</td>
+<td>BR_ATTEMPT_<br>ACQUIRE</td>
 <td>引用计数</td>
 <td>refs, obj</td>
-<td>refs-&gt;attemptIncStrong()</td>
-<td>BC_ACQUIRE_RESULT + success(int32)</td>
+<td>refs-&gt;<br>attemptIncStrong()</td>
+<td>BC_ACQUIRE<br>_RESULT + success(int32)</td>
 </tr>
 <tr>
 <td>8</td>
-<td>BR_TRANSACTION_SEC_CTX</td>
+<td>BR_TRANSACTION _SEC _CTX</td>
 <td>事务处理</td>
-<td>binder_transaction_data_secctx</td>
-<td>解析安全上下文+事务数据，调用 doTransactBinder，同步事务 sendReply，oneway 不回复</td>
+<td>binder_transaction<br>_data_secctx</td>
+<td>解析安全上下文+事务数据，同步事务 sendReply，oneway 不回复</td>
 <td>BC_REPLY(via sendReply，仅同步)</td>
 </tr>
 <tr>
 <td>9</td>
 <td>BR_TRANSACTION</td>
 <td>事务处理</td>
-<td>binder_transaction_data</td>
+<td>binder_transaction<br>_data</td>
 <td>同上（不含安全上下文）</td>
 <td>同上</td>
 </tr>
@@ -392,28 +392,28 @@
 <td>BR_DEAD_BINDER</td>
 <td>死亡通知</td>
 <td>proxy(BpBinder*)</td>
-<td>proxy-&gt;sendObituary() 触发死亡回调</td>
-<td>BC_DEAD_BINDER_DONE + proxy</td>
+<td>proxy-&gt;<br>sendObituary() 触发死亡回调</td>
+<td>BC_DEAD_BINDER<br>_DONE + proxy</td>
 </tr>
 <tr>
 <td>11</td>
-<td>BR_CLEAR_DEATH_NOTIFICATION_DONE</td>
+<td>BR_CLEAR_DEATH<br>_NOTIFICATION_DONE</td>
 <td>死亡通知</td>
 <td>proxy(BpBinder*)</td>
-<td>proxy-&gt;getWeakRefs()-&gt;decWeak() 清除注册时的弱引用</td>
+<td>清除注册时的弱引用</td>
 <td>否</td>
 </tr>
 <tr>
 <td>12</td>
-<td>BR_FROZEN_BINDER</td>
+<td>BR_FROZEN<br>_BINDER</td>
 <td>冻结通知</td>
-<td>binder_frozen_state_info</td>
-<td>触发冻结状态回调 onFrozenStateChanged</td>
-<td>BC_FREEZE_NOTIFICATION_DONE + cookie</td>
+<td>binder_frozen<br>_state_info</td>
+<td>触发冻结状态回调</td>
+<td>BC_FREEZE_<br>NOTIFICATION_<br>DONE + cookie</td>
 </tr>
 <tr>
 <td>13</td>
-<td>BR_CLEAR_FREEZE_NOTIFICATION_DONE</td>
+<td>BR_CLEAR_FREEZE<br>_NOTIFICATION_DONE</td>
 <td>冻结通知</td>
 <td>proxy(BpBinder*)</td>
 <td>等待 listener 移除完成 + decWeak()</td>
@@ -437,10 +437,10 @@
 </tr>
 <tr>
 <td>16</td>
-<td>BR_SPAWN_LOOPER</td>
+<td>BR_SPAWN_<br>LOOPER</td>
 <td>线程池管理</td>
 <td>无</td>
-<td>mProcess-&gt;spawnPooledThread(false) 创建新辅助线程</td>
+<td>创建新辅助线程</td>
 <td>否</td>
 </tr>
 <tr>
@@ -476,31 +476,6 @@
       </categories>
       <tags>
         <tag>Binder</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>Git提速代理</title>
-    <url>/2024/11/09/Git%E6%8F%90%E9%80%9F%E4%BB%A3%E7%90%86/</url>
-    <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="/assets/css/APlayer.min.css"><script src="/assets/js/APlayer.min.js" class="aplayer-secondary-script-marker"></script><blockquote>
-<p>因为平时在Ubuntu虚拟机上使用Git clone的时候速度特别慢，使用干脆写个代理文件进行提速。</p>
-</blockquote>
-<h2 id="梯子准备"><a href="#梯子准备" class="headerlink" title="梯子准备"></a>梯子准备</h2><p>在主机上挂个梯子，然后查看IP地址与端口(确保能使用)。</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SHELL"><figure class="iseeu highlight shell"><table><tr><td class="code"><pre><span class="line">en0: flags=8863&lt;UP,BROADCAST,SMART,RUNNING,SIMPLEX,MULTICAST&gt; mtu 1500</span><br><span class="line">	options=400&lt;CHANNEL_IO&gt;</span><br><span class="line">	ether 38:f9:d3:8d:58:3e</span><br><span class="line">	inet6 fe80::1434:df1:87d5:7e09%en0 prefixlen 64 secured scopeid 0x6</span><br><span class="line">	inet 192.168.1.4 netmask 0xffffff00 broadcast 192.168.1.255</span><br><span class="line">	nd6 options=201&lt;PERFORMNUD,DAD&gt;</span><br><span class="line">	media: autoselect</span><br><span class="line">	status: active</span><br></pre></td></tr></table></figure></div>
-
-<img src="/2024/11/09/Git%E6%8F%90%E9%80%9F%E4%BB%A3%E7%90%86/1.png" style="zoom:50%;">
-
-<p>我的IP与端口:192.168.1.4:7890</p>
-<h2 id="写代理文件"><a href="#写代理文件" class="headerlink" title="写代理文件"></a>写代理文件</h2><p>在Ubuntu上写代理文件，在与Desktop同一级的目录下新建.gitconfig文件并进行编辑。</p>
-<p><img src="/2024/11/09/Git%E6%8F%90%E9%80%9F%E4%BB%A3%E7%90%86/2.png"></p>
-<p>这样就可以加速了。实践一下。</p>
-<p><img src="/2024/11/09/Git%E6%8F%90%E9%80%9F%E4%BB%A3%E7%90%86/3.png"></p>
-<p>这个速度就爽多！</p>
-]]></content>
-      <categories>
-        <category>Linux</category>
-      </categories>
-      <tags>
-        <tag>Git</tag>
       </tags>
   </entry>
   <entry>
@@ -721,6 +696,31 @@
         <tag>LeetCode</tag>
         <tag>算法</tag>
         <tag>数据结构</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Git提速代理</title>
+    <url>/2024/11/09/Git%E6%8F%90%E9%80%9F%E4%BB%A3%E7%90%86/</url>
+    <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="/assets/css/APlayer.min.css"><script src="/assets/js/APlayer.min.js" class="aplayer-secondary-script-marker"></script><blockquote>
+<p>因为平时在Ubuntu虚拟机上使用Git clone的时候速度特别慢，使用干脆写个代理文件进行提速。</p>
+</blockquote>
+<h2 id="梯子准备"><a href="#梯子准备" class="headerlink" title="梯子准备"></a>梯子准备</h2><p>在主机上挂个梯子，然后查看IP地址与端口(确保能使用)。</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SHELL"><figure class="iseeu highlight shell"><table><tr><td class="code"><pre><span class="line">en0: flags=8863&lt;UP,BROADCAST,SMART,RUNNING,SIMPLEX,MULTICAST&gt; mtu 1500</span><br><span class="line">	options=400&lt;CHANNEL_IO&gt;</span><br><span class="line">	ether 38:f9:d3:8d:58:3e</span><br><span class="line">	inet6 fe80::1434:df1:87d5:7e09%en0 prefixlen 64 secured scopeid 0x6</span><br><span class="line">	inet 192.168.1.4 netmask 0xffffff00 broadcast 192.168.1.255</span><br><span class="line">	nd6 options=201&lt;PERFORMNUD,DAD&gt;</span><br><span class="line">	media: autoselect</span><br><span class="line">	status: active</span><br></pre></td></tr></table></figure></div>
+
+<img src="/2024/11/09/Git%E6%8F%90%E9%80%9F%E4%BB%A3%E7%90%86/1.png" style="zoom:50%;">
+
+<p>我的IP与端口:192.168.1.4:7890</p>
+<h2 id="写代理文件"><a href="#写代理文件" class="headerlink" title="写代理文件"></a>写代理文件</h2><p>在Ubuntu上写代理文件，在与Desktop同一级的目录下新建.gitconfig文件并进行编辑。</p>
+<p><img src="/2024/11/09/Git%E6%8F%90%E9%80%9F%E4%BB%A3%E7%90%86/2.png"></p>
+<p>这样就可以加速了。实践一下。</p>
+<p><img src="/2024/11/09/Git%E6%8F%90%E9%80%9F%E4%BB%A3%E7%90%86/3.png"></p>
+<p>这个速度就爽多！</p>
+]]></content>
+      <categories>
+        <category>Linux</category>
+      </categories>
+      <tags>
+        <tag>Git</tag>
       </tags>
   </entry>
   <entry>
