@@ -1,6 +1,251 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
+    <title>Git提速代理</title>
+    <url>/2024/11/09/Git%E6%8F%90%E9%80%9F%E4%BB%A3%E7%90%86/</url>
+    <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="/assets/css/APlayer.min.css"><script src="/assets/js/APlayer.min.js" class="aplayer-secondary-script-marker"></script><blockquote>
+<p>因为平时在Ubuntu虚拟机上使用Git clone的时候速度特别慢，使用干脆写个代理文件进行提速。</p>
+</blockquote>
+<h2 id="梯子准备"><a href="#梯子准备" class="headerlink" title="梯子准备"></a>梯子准备</h2><p>在主机上挂个梯子，然后查看IP地址与端口(确保能使用)。</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SHELL"><figure class="iseeu highlight shell"><table><tr><td class="code"><pre><span class="line">en0: flags=8863&lt;UP,BROADCAST,SMART,RUNNING,SIMPLEX,MULTICAST&gt; mtu 1500</span><br><span class="line">	options=400&lt;CHANNEL_IO&gt;</span><br><span class="line">	ether 38:f9:d3:8d:58:3e</span><br><span class="line">	inet6 fe80::1434:df1:87d5:7e09%en0 prefixlen 64 secured scopeid 0x6</span><br><span class="line">	inet 192.168.1.4 netmask 0xffffff00 broadcast 192.168.1.255</span><br><span class="line">	nd6 options=201&lt;PERFORMNUD,DAD&gt;</span><br><span class="line">	media: autoselect</span><br><span class="line">	status: active</span><br></pre></td></tr></table></figure></div>
+
+<img src="/2024/11/09/Git%E6%8F%90%E9%80%9F%E4%BB%A3%E7%90%86/1.png" style="zoom:50%;">
+
+<p>我的IP与端口:192.168.1.4:7890</p>
+<h2 id="写代理文件"><a href="#写代理文件" class="headerlink" title="写代理文件"></a>写代理文件</h2><p>在Ubuntu上写代理文件，在与Desktop同一级的目录下新建.gitconfig文件并进行编辑。</p>
+<p><img src="/2024/11/09/Git%E6%8F%90%E9%80%9F%E4%BB%A3%E7%90%86/2.png"></p>
+<p>这样就可以加速了。实践一下。</p>
+<p><img src="/2024/11/09/Git%E6%8F%90%E9%80%9F%E4%BB%A3%E7%90%86/3.png"></p>
+<p>这个速度就爽多！</p>
+]]></content>
+      <categories>
+        <category>Linux</category>
+      </categories>
+      <tags>
+        <tag>Git</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>LeetCode Guide</title>
+    <url>/2025/06/02/LeetcodeGuide/</url>
+    <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="/assets/css/APlayer.min.css"><script src="/assets/js/APlayer.min.js" class="aplayer-secondary-script-marker"></script><h1 id="一-链表问题"><a href="#一-链表问题" class="headerlink" title="一.链表问题"></a>一.链表问题</h1><h2 id="1-单链表结构"><a href="#1-单链表结构" class="headerlink" title="1.单链表结构"></a>1.单链表结构</h2><div align="center"><img src="/2025/06/02/LeetcodeGuide/List1.png" width="600px"></div>
+
+<h2 id="2-单链表创建与实现"><a href="#2-单链表创建与实现" class="headerlink" title="2.单链表创建与实现"></a>2.单链表创建与实现</h2><figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">ListNode</span> &#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="type">int</span> value;</span><br><span class="line">    ListNode next;</span><br><span class="line">    <span class="built_in">ListNode</span>() : <span class="built_in">value</span>(<span class="number">0</span>), <span class="built_in">next</span>(<span class="literal">nullptr</span>) &#123;&#125;</span><br><span class="line">    <span class="built_in">ListNode</span>(<span class="type">int</span> val) : <span class="built_in">value</span>(val), <span class="built_in">next</span>(<span class="literal">nullptr</span>) &#123;&#125;</span><br><span class="line">    <span class="built_in">ListNode</span>(<span class="type">int</span> val, ListNode node) : <span class="built_in">value</span>(val), <span class="built_in">next</span>(node) &#123;&#125;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="comment">//创建链表</span></span><br><span class="line"><span class="function">ListNode <span class="title">CreateList</span><span class="params">(std::vector&lt;<span class="type">int</span>&gt; nums)</span></span>;</span><br><span class="line"><span class="comment">//打印链表</span></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">PrintList</span><span class="params">(ListNode head)</span></span>;</span><br><span class="line"><span class="comment">//插入结点</span></span><br><span class="line"><span class="function"><span class="type">bool</span> <span class="title">InsertNode</span><span class="params">(ListNode head, ListNode node, <span class="type">int</span> index)</span></span>;</span><br><span class="line"><span class="comment">//插入数据元素</span></span><br><span class="line"><span class="function"><span class="type">bool</span> <span class="title">InsertNode</span><span class="params">(ListNode head, <span class="type">int</span> val, <span class="type">int</span> index)</span></span>;</span><br><span class="line"><span class="comment">//删除数据元素</span></span><br><span class="line"><span class="function"><span class="type">bool</span> <span class="title">DeleteNode</span><span class="params">(ListNode head, <span class="type">int</span> val)</span></span>;</span><br><span class="line"><span class="comment">//查找数据元素</span></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">FindNode</span><span class="params">(ListNode head, <span class="type">int</span> val)</span></span>;</span><br><span class="line"><span class="comment">//返回链表长度</span></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">ListLength</span><span class="params">(ListNode head)</span></span>;</span><br><span class="line"><span class="comment">//清除链表</span></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">clear</span><span class="params">(ListNode head)</span></span>;</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="3-经典例题"><a href="#3-经典例题" class="headerlink" title="3. 经典例题"></a>3. 经典例题</h2><h4 id="反转链表"><a href="#反转链表" class="headerlink" title="反转链表"></a><a href="https://leetcode-cn.com/problems/reverse-linked-list/">反转链表</a></h4><blockquote>
+<p>给你单链表的头节点 <code>head</code> ，请你反转链表，并返回反转后的链表。</p>
+</blockquote>
+<p>如果再定义一个新的链表，实现链表元素的反转，其实这是对内存空间的浪费。</p>
+<p>其实只需要改变链表的next指针的指向，直接将链表反转 ，而不用重新定义一个新的链表，如图所示:</p>
+<div align="center"><img src="/2025/06/02/LeetcodeGuide/List2.png" width="600px"></div>
+
+<ul>
+<li><p>双指针方法：</p>
+<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * Definition for singly-linked list.</span></span><br><span class="line"><span class="comment"> * public class ListNode &#123;</span></span><br><span class="line"><span class="comment"> *     int val;</span></span><br><span class="line"><span class="comment"> *     ListNode next;</span></span><br><span class="line"><span class="comment"> *     ListNode() &#123;&#125;</span></span><br><span class="line"><span class="comment"> *     ListNode(int val) &#123; this.val = val; &#125;</span></span><br><span class="line"><span class="comment"> *     ListNode(int val, ListNode next) &#123; this.val = val; this.next = next; &#125;</span></span><br><span class="line"><span class="comment"> * &#125;</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">Solution</span> &#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> ListNode <span class="title">reverseList</span><span class="params">(ListNode head)</span> </span>&#123;</span><br><span class="line">        ListNode currentNode = head;</span><br><span class="line">        ListNode preNode = null;</span><br><span class="line">        <span class="keyword">while</span> (currentNode != null) &#123;</span><br><span class="line">            ListNode tempNode = currentNode.next;</span><br><span class="line">            currentNode.next = preNode;</span><br><span class="line">            preNode = currentNode;</span><br><span class="line">            currentNode = tempNode;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> preNode;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>递归方法：</p>
+<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">Solution</span> &#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> ListNode <span class="title">reverseList</span><span class="params">(ListNode head)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (head == null || head.next == null) &#123;</span><br><span class="line">            <span class="keyword">return</span> head;</span><br><span class="line">        &#125;</span><br><span class="line">        ListNode newHead = <span class="built_in">reverseList</span>(head.next);</span><br><span class="line">        head.next.next = head;</span><br><span class="line">        head.next = null;</span><br><span class="line">        <span class="keyword">return</span> newHead;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></li>
+</ul>
+<h4 id="反转链表-II"><a href="#反转链表-II" class="headerlink" title="反转链表 II"></a><a href="https://leetcode-cn.com/problems/reverse-linked-list-ii/">反转链表 II</a></h4><blockquote>
+<p>给你单链表的头指针 head 和两个整数 left 和 right ，其中 left &lt;&#x3D; right 。请你反转从位置 left 到位置 right 的链表节点，返回 反转后的链表 。</p>
+</blockquote>
+<ul>
+<li>定义leftnode指针和rightnode指针分别指向需要反转链表的两端结点</li>
+<li>定义pre,cur,temp指针，将left与right的链表进行反转</li>
+<li>最后反转完的链表重新指回leftnode与rightnode</li>
+</ul>
+<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="function">ListNode* <span class="title">reverseBetween</span><span class="params">(ListNode* head, <span class="type">int</span> left, <span class="type">int</span> right)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span>(head-&gt;next == <span class="literal">nullptr</span>) <span class="keyword">return</span> head;</span><br><span class="line">    ListNode* dummyNode = <span class="keyword">new</span> <span class="built_in">ListNode</span>(<span class="number">0</span>);</span><br><span class="line">    dummyNode-&gt;next = head;</span><br><span class="line">		<span class="comment">//定义左右结点</span></span><br><span class="line">    ListNode* leftNode = dummyNode;</span><br><span class="line">    ListNode* rightNode = head;</span><br><span class="line">		<span class="comment">//指向反转链表的；两端</span></span><br><span class="line">    <span class="keyword">while</span>(--left) </span><br><span class="line">        leftNode = leftNode-&gt;next;</span><br><span class="line">    <span class="keyword">while</span>(right--)</span><br><span class="line">        rightNode = rightNode-&gt;next;</span><br><span class="line">    </span><br><span class="line">  	<span class="comment">//定义结点进行反转</span></span><br><span class="line">  	<span class="comment">//最开始的pre指向rightNode</span></span><br><span class="line">    ListNode* pre = rightNode ;</span><br><span class="line">    ListNode* Cur = leftNode-&gt;next;</span><br><span class="line">    ListNode* temp ;</span><br><span class="line">    <span class="keyword">while</span>(Cur != rightNode) &#123;</span><br><span class="line">      temp = Cur-&gt;next;</span><br><span class="line">      Cur-&gt;next = pre;</span><br><span class="line">      pre = Cur;</span><br><span class="line">      Cur = temp;</span><br><span class="line">    &#125;</span><br><span class="line">  	<span class="comment">//反转完指回</span></span><br><span class="line">    leftNode-&gt;next = pre;</span><br><span class="line">    <span class="keyword">return</span> dummyNode-&gt;next;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="环形链表"><a href="#环形链表" class="headerlink" title="环形链表"></a><a href="https://leetcode-cn.com/problems/linked-list-cycle/">环形链表</a></h4><blockquote>
+<p>给定一个链表，判断链表中是否有环。</p>
+<p>如果链表中有某个节点，可以通过连续跟踪 next 指针再次到达，则链表中存在环。 为了表示给定链表中的环，我们使用整数 pos 来表示链表尾连接到链表中的位置（索引从 0 开始）。 如果 pos 是 -1，则在该链表中没有环。注意：pos 不作为参数进行传递，仅仅是为了标识链表的实际情况。</p>
+<p>如果链表中存在环，则返回 true 。 否则，返回 false 。</p>
+</blockquote>
+<p>定义两个指针，一快一满。慢指针每次只移动一步，而快指针每次移动两步。初始时，慢指针在位置 head，而快指针在位置 head.next。这样一来，如果在移动的过程中，快指针反过来追上慢指针，就说明该链表为环形链表。否则快指针将到达链表尾部，该链表不为环形链表。</p>
+<ul>
+<li><p>快慢指针</p>
+<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * Definition for singly-linked list.</span></span><br><span class="line"><span class="comment"> * class ListNode &#123;</span></span><br><span class="line"><span class="comment"> *     int val;</span></span><br><span class="line"><span class="comment"> *     ListNode next;</span></span><br><span class="line"><span class="comment"> *     ListNode(int x) &#123;</span></span><br><span class="line"><span class="comment"> *         val = x;</span></span><br><span class="line"><span class="comment"> *         next = null;</span></span><br><span class="line"><span class="comment"> *     &#125;</span></span><br><span class="line"><span class="comment"> * &#125;</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">Solution</span> &#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> boolean <span class="title">hasCycle</span><span class="params">(ListNode head)</span> </span>&#123;</span><br><span class="line">        ListNode slow = head;</span><br><span class="line">        ListNode fast = head;</span><br><span class="line">        <span class="keyword">while</span> (fast != null &amp;&amp; fast.next != null) &#123;</span><br><span class="line">            slow = slow.next;</span><br><span class="line">            fast = fast.next.next;</span><br><span class="line">            <span class="keyword">if</span> (slow == fast) &#123;</span><br><span class="line">                <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></li>
+</ul>
+<h4 id="环形链表-II"><a href="#环形链表-II" class="headerlink" title="环形链表 II"></a><a href="https://leetcode-cn.com/problems/linked-list-cycle-ii/">环形链表 II</a></h4><blockquote>
+<p>给定一个链表，返回链表开始入环的第一个节点。 如果链表无环，则返回 null。</p>
+<p>为了表示给定链表中的环，我们使用整数 pos 来表示链表尾连接到链表中的位置（索引从 0 开始）。 如果 pos 是 -1，则在该链表中没有环。注意，pos 仅仅是用于标识环的情况，并不会作为参数传递到函数中。</p>
+</blockquote>
+<p>使用两个指针，fast 和 slow，它们起始都位于链表的头部。随后，slow 指针每次向后移动一个位置，而 fast 指针向后移动两个位置。如果链表中存在环，则 fast 指针最终将再次与 slow 指针在环中相遇。</p>
+<p>当发现 slow 与 fast 相遇时，我们再额外使用一个指针 ptr。起始，它指向链表头部；随后，它和 slow 每次向后移动一个位置。最终，它们会在入环点相遇。</p>
+<ul>
+<li>快慢指针</li>
+</ul>
+<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * Definition for singly-linked list.</span></span><br><span class="line"><span class="comment"> * class ListNode &#123;</span></span><br><span class="line"><span class="comment"> *     int val;</span></span><br><span class="line"><span class="comment"> *     ListNode next;</span></span><br><span class="line"><span class="comment"> *     ListNode(int x) &#123;</span></span><br><span class="line"><span class="comment"> *         val = x;</span></span><br><span class="line"><span class="comment"> *         next = null;</span></span><br><span class="line"><span class="comment"> *     &#125;</span></span><br><span class="line"><span class="comment"> * &#125;</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">Solution</span> &#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> ListNode <span class="title">detectCycle</span><span class="params">(ListNode head)</span> </span>&#123;</span><br><span class="line">    </span><br><span class="line">        ListNode slow = head;</span><br><span class="line">        ListNode fast = head;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">while</span> (fast != null &amp;&amp; fast.next != null) &#123;</span><br><span class="line">            slow = slow.next;</span><br><span class="line">            fast = fast.next.next;</span><br><span class="line">            <span class="keyword">if</span> (slow == fast) &#123;</span><br><span class="line">                ListNode indexNode = head;</span><br><span class="line">                <span class="keyword">while</span> (indexNode != slow) &#123;</span><br><span class="line">                    slow = slow.next;</span><br><span class="line">                    indexNode = indexNode.next;</span><br><span class="line">                &#125;</span><br><span class="line">                <span class="keyword">return</span> indexNode;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> null;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="回文链表"><a href="#回文链表" class="headerlink" title="回文链表"></a><a href="https://leetcode-cn.com/problems/palindrome-linked-list/">回文链表</a></h4><blockquote>
+<p>请判断一个链表是否为回文链表。</p>
+</blockquote>
+<ul>
+<li>首先找到中心结点，将链表等分为二</li>
+<li>右半链表进行反转操作</li>
+<li>左链表与反转后的右链表进行比较</li>
+</ul>
+<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * Definition for singly-linked list.</span></span><br><span class="line"><span class="comment"> * public class ListNode &#123;</span></span><br><span class="line"><span class="comment"> *     int val;</span></span><br><span class="line"><span class="comment"> *     ListNode next;</span></span><br><span class="line"><span class="comment"> *     ListNode() &#123;&#125;</span></span><br><span class="line"><span class="comment"> *     ListNode(int val) &#123; this.val = val; &#125;</span></span><br><span class="line"><span class="comment"> *     ListNode(int val, ListNode next) &#123; this.val = val; this.next = next; &#125;</span></span><br><span class="line"><span class="comment"> * &#125;</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">Solution</span> &#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> boolean <span class="title">isPalindrome</span><span class="params">(ListNode head)</span> </span>&#123;</span><br><span class="line">        ListNode slow = head;</span><br><span class="line">        ListNode fast = head.next;</span><br><span class="line">        <span class="keyword">while</span> (fast != null &amp;&amp; fast.next != null) &#123;</span><br><span class="line">            slow = slow.next;</span><br><span class="line">            fast = fast.next.next;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        slow = <span class="built_in">reverseList</span>(slow.next);</span><br><span class="line">        ListNode pre = slow;</span><br><span class="line">        boolean result = <span class="literal">true</span>;</span><br><span class="line">        <span class="keyword">while</span> (slow != null) &#123;</span><br><span class="line">            <span class="keyword">if</span> (slow.val != head.val) &#123;</span><br><span class="line">                result = <span class="literal">false</span>;</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">            &#125;</span><br><span class="line">            slow = slow.next;</span><br><span class="line">            head = head.next;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="built_in">reverseList</span>(pre);</span><br><span class="line">        <span class="keyword">return</span> result;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">private</span> ListNode <span class="title">reverseList</span><span class="params">(ListNode head)</span> </span>&#123;</span><br><span class="line">        ListNode pre = null;</span><br><span class="line">        ListNode current = head;</span><br><span class="line">        <span class="keyword">while</span> (current != null) &#123;</span><br><span class="line">            ListNode temp = current.next;</span><br><span class="line">            current.next = pre;</span><br><span class="line">            pre = current;</span><br><span class="line">            current = temp;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> pre;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+
+
+<h4 id="奇偶链表"><a href="#奇偶链表" class="headerlink" title="奇偶链表"></a><a href="https://leetcode-cn.com/problems/odd-even-linked-list/">奇偶链表</a></h4><blockquote>
+<p>给定一个单链表，把所有的奇数节点和偶数节点分别排在一起。请注意，这里的奇数节点和偶数节点指的是节点编号的奇偶性，而不是节点的值的奇偶性。</p>
+</blockquote>
+<ul>
+<li>定义Even，Odd指针指向第一个奇偶结点，定义EvenNext结点指向第一个Odd，方便之后奇数链表指向</li>
+<li>进行遍历<ul>
+<li>Even指向Odd的next指针，然后Even进行更新</li>
+<li>Odd指向Even的next指针，然后Odd进行更新</li>
+<li>知道有一方的next为空</li>
+</ul>
+</li>
+</ul>
+<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="function">ListNode* <span class="title">oddEvenList</span><span class="params">(ListNode* head)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span>(!head) <span class="keyword">return</span> head;</span><br><span class="line">    ListNode* even = head;</span><br><span class="line">    ListNode* odd = head-&gt;next;</span><br><span class="line">    ListNode* evenNext = odd;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">while</span>(even-&gt;next != <span class="literal">nullptr</span> &amp;&amp; odd-&gt;next != <span class="literal">nullptr</span>) &#123;</span><br><span class="line">        even-&gt;next = odd-&gt;next;</span><br><span class="line">        even = even-&gt;next;</span><br><span class="line">        odd-&gt;next = even-&gt;next;</span><br><span class="line">        odd = odd-&gt;next;</span><br><span class="line">    &#125;</span><br><span class="line">    even-&gt;next = evenNext;</span><br><span class="line">    <span class="keyword">return</span> head;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="链表相交"><a href="#链表相交" class="headerlink" title="链表相交"></a><a href="https://leetcode-cn.com/problems/intersection-of-two-linked-lists-lcci/">链表相交</a></h4><blockquote>
+<p>给定两个（单向）链表，判定它们是否相交并返回交点。请注意相交的定义基于节点的引用，而不是基于节点的值。换句话说，如果一个链表的第k个节点与另一个链表的第j个节点是同一节点（引用完全相同），则这两个链表相交。</p>
+</blockquote>
+<ul>
+<li>设长链表A长度为LA，短链表长度LB；</li>
+<li>由于速度相同，则在长链表A走完LA长度时，短链表B已经反过头在A上走了LA-LB的长度，剩余要走的长度为LA-(LA-LB) &#x3D; LB；</li>
+<li>之后长链表A要反过头在B上走，剩余要走的长度也是LB；</li>
+<li>也就是说目前两个链表“对齐”了。因此，接下来遇到的第一个相同节点便是两个链表的交点。</li>
+</ul>
+<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * Definition for singly-linked list.</span></span><br><span class="line"><span class="comment"> * public class ListNode &#123;</span></span><br><span class="line"><span class="comment"> *     int val;</span></span><br><span class="line"><span class="comment"> *     ListNode next;</span></span><br><span class="line"><span class="comment"> *     ListNode(int x) &#123;</span></span><br><span class="line"><span class="comment"> *         val = x;</span></span><br><span class="line"><span class="comment"> *         next = null;</span></span><br><span class="line"><span class="comment"> *     &#125;</span></span><br><span class="line"><span class="comment"> * &#125;</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">Solution</span> &#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> ListNode <span class="title">getIntersectionNode</span><span class="params">(ListNode headA, ListNode headB)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (headA == null || headB == null) &#123;</span><br><span class="line">            <span class="keyword">return</span> null;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        ListNode pA = headA, pB = headB;</span><br><span class="line">        <span class="keyword">while</span> (pA != pB) &#123;</span><br><span class="line">            pA = (pA == null ? headB : pA.next);</span><br><span class="line">            pB = (pB == null ? headA : pB.next);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> pA;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="删除链表的倒数第-N-个结点"><a href="#删除链表的倒数第-N-个结点" class="headerlink" title="删除链表的倒数第 N 个结点"></a><a href="https://leetcode-cn.com/problems/remove-nth-node-from-end-of-list/">删除链表的倒数第 N 个结点</a></h4><blockquote>
+<p>给你一个链表，删除链表的倒数第 <code>n</code> 个结点，并且返回链表的头结点。</p>
+</blockquote>
+<p>由于我们需要找到倒数第 n 个节点，因此我们可以使用两个指针 first 和 second 同时对链表进行遍历，并且 first 比 second 超前 n 个节点。当 first 遍历到链表的末尾时，second 就恰好处于倒数第 n 个节点。</p>
+<ul>
+<li><p>快慢指针</p>
+<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="function">ListNode* <span class="title">removeNthFromEnd</span><span class="params">(ListNode* head, <span class="type">int</span> n)</span> </span>&#123;</span><br><span class="line">    ListNode* dummyHead = <span class="keyword">new</span> <span class="built_in">ListNode</span>(<span class="number">0</span>);</span><br><span class="line">    dummyHead-&gt;next = head;</span><br><span class="line">    ListNode* slow = dummyHead;</span><br><span class="line">    ListNode* fast = dummyHead;</span><br><span class="line">    <span class="keyword">while</span>(n-- &amp;&amp; fast != <span class="literal">NULL</span>) &#123;</span><br><span class="line">        fast = fast-&gt;next;</span><br><span class="line">    &#125;</span><br><span class="line">    fast = fast-&gt;next; <span class="comment">// fast再提前走一步，因为需要让slow指向删除节点的上一个节点</span></span><br><span class="line">    <span class="keyword">while</span> (fast != <span class="literal">NULL</span>) &#123;</span><br><span class="line">        fast = fast-&gt;next;</span><br><span class="line">        slow = slow-&gt;next;</span><br><span class="line">    &#125;</span><br><span class="line">    slow-&gt;next = slow-&gt;next-&gt;next;</span><br><span class="line">    <span class="keyword">return</span> dummyHead-&gt;next;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></li>
+</ul>
+<h4 id="重排链表"><a href="#重排链表" class="headerlink" title="重排链表"></a><a href="https://leetcode-cn.com/problems/reorder-list/">重排链表</a></h4><blockquote>
+<p>给定一个单链表 <em>L</em>：<em>L</em>0→<em>L</em>1→…→<em>L**n</em>-1→<em>L</em>n ，<br>将其重新排列后变为： <em>L</em>0→<em>L**n</em>→<em>L</em>1→<em>L**n</em>-1→<em>L</em>2→<em>L**n</em>-2→…</p>
+</blockquote>
+<p>注意到目标链表即为将原链表的左半端和反转后的右半端合并后的结果。</p>
+<p>这样我们的任务即可划分为三步：</p>
+<ul>
+<li><p>找到原链表的中点（参考「876. 链表的中间结点」）。</p>
+<ul>
+<li>我们可以使用快慢指针来 O(N)地找到链表的中间节点。</li>
+</ul>
+</li>
+<li><p>将原链表的右半端反转（参考「206. 反转链表」）。</p>
+<ul>
+<li>我们可以使用迭代法实现链表的反转。将原链表的两端合并。</li>
+</ul>
+</li>
+<li><p>因为两链表长度相差不超过 1，因此直接合并即可。</p>
+</li>
+</ul>
+<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">Solution</span> &#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="comment">//找到中心节点</span></span><br><span class="line">    <span class="comment">//分成两个链表</span></span><br><span class="line">    <span class="comment">//链表合成重排</span></span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">reorderList</span><span class="params">(ListNode* head)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">if</span>(!head) <span class="keyword">return</span>;</span><br><span class="line">        </span><br><span class="line">       ListNode* firstNode = head;</span><br><span class="line">       ListNode* secondNode = head;</span><br><span class="line">       <span class="keyword">while</span>(secondNode != <span class="literal">nullptr</span> &amp;&amp; secondNode-&gt;next != <span class="literal">nullptr</span>) &#123;</span><br><span class="line">           firstNode = firstNode-&gt;next;</span><br><span class="line">           secondNode = secondNode-&gt;next-&gt;next;</span><br><span class="line">       &#125;</span><br><span class="line">      <span class="comment">// cout &lt;&lt; firstNode-&gt;val &lt;&lt; endl;</span></span><br><span class="line">    </span><br><span class="line">        ListNode* firstEnd = firstNode;</span><br><span class="line">        ListNode* pre = firstNode;</span><br><span class="line">        ListNode* cur = firstNode-&gt;next;</span><br><span class="line">        firstNode = <span class="literal">nullptr</span>;</span><br><span class="line">        <span class="keyword">while</span>(cur) &#123;</span><br><span class="line">            ListNode* temp = cur-&gt;next;</span><br><span class="line">            cur-&gt;next = pre;</span><br><span class="line">            pre = cur;</span><br><span class="line">            cur = temp;</span><br><span class="line">        &#125;</span><br><span class="line">        firstEnd-&gt;next = <span class="literal">nullptr</span>;</span><br><span class="line"></span><br><span class="line">        <span class="built_in">Merge</span>(head, pre);</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line">  	<span class="comment">//head:1-&gt;2-&gt;3</span></span><br><span class="line">  	<span class="comment">//pre: 4-&gt;3</span></span><br><span class="line">  	<span class="comment">//所以head中的3不能使用，等到p-&gt;next = null就截止，最后补上nullptr就行</span></span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">Merge</span><span class="params">(ListNode* head, ListNode*pre)</span> </span>&#123;</span><br><span class="line">        ListNode* p = head;</span><br><span class="line">        <span class="keyword">while</span>(p-&gt;next != <span class="literal">nullptr</span> &amp;&amp; pre != <span class="literal">nullptr</span>) &#123;</span><br><span class="line">            ListNode* temp = p-&gt;next;</span><br><span class="line">            p-&gt;next = pre;</span><br><span class="line">            pre = pre-&gt;next;</span><br><span class="line">            p = p-&gt;next;</span><br><span class="line">            p-&gt;next = temp;</span><br><span class="line">            p = temp;</span><br><span class="line">        &#125;</span><br><span class="line">        p-&gt;next = <span class="literal">nullptr</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<h4 id="分割链表"><a href="#分割链表" class="headerlink" title="分割链表"></a><a href="https://leetcode-cn.com/problems/partition-list-lcci/">分割链表</a></h4><blockquote>
+<p>编写程序以 x 为基准分割链表，使得所有小于 x 的节点排在大于或等于 x 的节点之前。如果链表中包含 x，x 只需出现在小于 x 的元素之后(如下所示)。分割元素 x 只需处于“右半部分”即可，其不需要被置于左右两部分之间。</p>
+</blockquote>
+<p>:diamond_shape_with_a_dot_inside: <strong>利用双指针来解决</strong></p>
+<p>:large_blue_diamond: left指针指向小于 x 的最后一个元素</p>
+<p>:large_blue_diamond: right指针不断遍历链表，找到小于 x 的元素，插入至 left 区域</p>
+<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="function">ListNode* <span class="title">partition</span><span class="params">(ListNode* head, <span class="type">int</span> x)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span>(!head) <span class="keyword">return</span> <span class="literal">nullptr</span>;</span><br><span class="line">    ListNode* dummyNode = <span class="keyword">new</span> <span class="built_in">ListNode</span>(<span class="number">0</span>);</span><br><span class="line">    dummyNode-&gt;next = head;</span><br><span class="line">    ListNode* left = dummyNode;</span><br><span class="line">    ListNode* right = left-&gt;next;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">while</span>(left-&gt;next != <span class="literal">nullptr</span> &amp;&amp; left-&gt;next-&gt;val &lt; x) &#123;</span><br><span class="line">        <span class="comment">//左指针指向最后一个小于x的元素</span></span><br><span class="line">        left = left-&gt;next;   </span><br><span class="line">    &#125;     </span><br><span class="line">    <span class="comment">//右指针指向左指针右边</span></span><br><span class="line">    right = left-&gt;next;</span><br><span class="line">    <span class="keyword">while</span>(right != <span class="literal">nullptr</span> &amp;&amp; right-&gt;next != <span class="literal">nullptr</span>) &#123;</span><br><span class="line">        <span class="keyword">if</span>(right-&gt;next-&gt;val &gt;= x)</span><br><span class="line">            right = right-&gt;next;</span><br><span class="line">        <span class="keyword">else</span> &#123;</span><br><span class="line">            ListNode* temp = right-&gt;next;</span><br><span class="line">            right-&gt;next = temp-&gt;next;</span><br><span class="line"></span><br><span class="line">            temp-&gt;next = left-&gt;next;</span><br><span class="line">            left-&gt;next = temp;</span><br><span class="line">            left = temp;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> dummyNode-&gt;next;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="两数相加"><a href="#两数相加" class="headerlink" title="两数相加"></a><a href="https://leetcode-cn.com/problems/add-two-numbers/">两数相加</a></h4><p>:diamond_shape_with_a_dot_inside: 将长度较短的链表在末尾补零使得两个连表长度相等，再一个一个元素对其相加（考虑进位）</p>
+<ol>
+<li>获取两个链表所对应的长度</li>
+<li>在较短的链表末尾补零</li>
+<li>对齐相加考虑进位</li>
+</ol>
+<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="function">ListNode* <span class="title">addTwoNumbers</span><span class="params">(ListNode* l1, ListNode* l2)</span> </span>&#123;</span><br><span class="line">    ListNode *list1 = l1;</span><br><span class="line">    ListNode *list2 = l2;</span><br><span class="line">    ListNode *dummyNode = <span class="keyword">new</span> <span class="built_in">ListNode</span>(<span class="number">0</span>);</span><br><span class="line">    dummyNode-&gt;next = list2;</span><br><span class="line">  	<span class="comment">//设定前指针是为了方便增加结点的</span></span><br><span class="line">    ListNode* pre = dummyNode;</span><br><span class="line">    <span class="type">int</span> carry = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">while</span>(list1 || list2 || carry) &#123;</span><br><span class="line">        <span class="type">int</span> n1 = list1 != <span class="literal">nullptr</span> ? list1-&gt;val : <span class="number">0</span>;</span><br><span class="line">        <span class="type">int</span> n2 = list2 != <span class="literal">nullptr</span> ? list2-&gt;val : <span class="number">0</span>;</span><br><span class="line">        <span class="comment">//cout &lt;&lt; n1 &lt;&lt; n2 &lt;&lt; endl;</span></span><br><span class="line">        <span class="keyword">if</span>(list2 == <span class="literal">nullptr</span>) &#123;</span><br><span class="line">            ListNode* node = <span class="keyword">new</span> <span class="built_in">ListNode</span>((n1 + n2 + carry) % <span class="number">10</span>);</span><br><span class="line">            pre-&gt;next = node;</span><br><span class="line">            node-&gt;next = <span class="literal">nullptr</span>;</span><br><span class="line">            pre = node;</span><br><span class="line">        &#125; <span class="keyword">else</span> </span><br><span class="line">            list2-&gt;val = (n1 + n2 + carry) % <span class="number">10</span>;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span>((n1 + n2 + carry) &gt; <span class="number">9</span>)</span><br><span class="line">            carry = <span class="number">1</span>;</span><br><span class="line">        <span class="keyword">else</span> </span><br><span class="line">            carry = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span>(list1)</span><br><span class="line">            list1 = list1-&gt;next;</span><br><span class="line">        <span class="keyword">if</span>(list2) &#123;</span><br><span class="line">            list2 = list2-&gt;next;</span><br><span class="line">            pre = pre-&gt;next;</span><br><span class="line">        &#125;</span><br><span class="line">            </span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> l2;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="合并两个有序链表"><a href="#合并两个有序链表" class="headerlink" title="合并两个有序链表"></a><a href="https://leetcode-cn.com/problems/merge-two-sorted-lists/">合并两个有序链表</a></h4><p>:diamond_shape_with_a_dot_inside: 将链表2插入到链表1上</p>
+<ul>
+<li><p>定义list1,list2指针指向l1与l2的头结点，pre指向list1的上一个结点(为了好插入)</p>
+</li>
+<li><p>在遍历结点都不为空的情况下进行比较</p>
+<ul>
+<li>如果list1 &lt;&#x3D; list2，list1继续迭代</li>
+<li>如果list1 &gt; list2，则将list2结点插入到list1前面</li>
+</ul>
+</li>
+<li><p>遍历结束后，有一个不为空</p>
+<ul>
+<li>list1不为空则不用管</li>
+<li>list2不为空，将list2后面的结点直接移到list1后面</li>
+</ul>
+</li>
+</ul>
+<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * Definition for singly-linked list.</span></span><br><span class="line"><span class="comment"> * public class ListNode &#123;</span></span><br><span class="line"><span class="comment"> *     int val;</span></span><br><span class="line"><span class="comment"> *     ListNode next;</span></span><br><span class="line"><span class="comment"> *     ListNode() &#123;&#125;</span></span><br><span class="line"><span class="comment"> *     ListNode(int val) &#123; this.val = val; &#125;</span></span><br><span class="line"><span class="comment"> *     ListNode(int val, ListNode next) &#123; this.val = val; this.next = next; &#125;</span></span><br><span class="line"><span class="comment"> * &#125;</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">Solution</span> &#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> ListNode <span class="title">mergeTwoLists</span><span class="params">(ListNode list1, ListNode list2)</span> </span>&#123;</span><br><span class="line">        ListNode dum = <span class="keyword">new</span> <span class="built_in">ListNode</span>(<span class="number">-1</span>);</span><br><span class="line">        ListNode currentNode = dum;</span><br><span class="line">        <span class="keyword">while</span> (list1 != null &amp;&amp; list2 != null) &#123;</span><br><span class="line">            <span class="keyword">if</span> (list<span class="number">1.</span>val &lt; list<span class="number">2.</span>val) &#123;</span><br><span class="line">                currentNode.next = list1;</span><br><span class="line">                list1 = list<span class="number">1.</span>next;</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                currentNode.next = list2;</span><br><span class="line">                list2 = list<span class="number">2.</span>next;</span><br><span class="line">            &#125;</span><br><span class="line">            currentNode = currentNode.next;</span><br><span class="line">        &#125;</span><br><span class="line">        currentNode.next = (list1 != null ? list1 : list2);</span><br><span class="line">        <span class="keyword">return</span> dum.next;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="large-orange-diamond-两两交换链表中的节点"><a href="#large-orange-diamond-两两交换链表中的节点" class="headerlink" title=":large_orange_diamond: 两两交换链表中的节点"></a>:large_orange_diamond: <a href="https://leetcode-cn.com/problems/swap-nodes-in-pairs/">两两交换链表中的节点</a></h4><blockquote>
+<p>给定一个链表，两两交换其中相邻的节点，并返回交换后的链表。</p>
+<p><strong>你不能只是单纯的改变节点内部的值</strong>，而是需要实际的进行节点交换。</p>
+</blockquote>
+<div align="center"><img src="/2025/06/02/LeetcodeGuide/List3.png" width="800px"></div>
+
+<ul>
+<li>创建哑结点 dummyHead，令 dummyHead.next &#x3D; head。令 temp 表示当前到达的节点，初始时 temp &#x3D; dummyHead。每次需要交换 temp 后面的两个节点。</li>
+<li>如果 temp 的后面没有节点或者只有一个节点，则没有更多的节点需要交换，因此结束交换。否则，获得 temp 后面的两个节点 node1 和 node2，通过更新节点的指针关系实现两两交换节点。</li>
+</ul>
+<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="function">ListNode* <span class="title">swapPairs</span><span class="params">(ListNode* head)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span>(!head) <span class="keyword">return</span> head;</span><br><span class="line">    ListNode* dummyNode = <span class="keyword">new</span> <span class="built_in">ListNode</span>(<span class="number">0</span>);</span><br><span class="line">    dummyNode-&gt;next = head;</span><br><span class="line">    ListNode* Pre = dummyNode;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">while</span>(Pre-&gt;next != <span class="literal">nullptr</span> &amp;&amp; Pre-&gt;next-&gt;next != <span class="literal">nullptr</span>) &#123;</span><br><span class="line">        ListNode* node1 = Pre-&gt;next;</span><br><span class="line">        ListNode* node2 = Pre-&gt;next-&gt;next;</span><br><span class="line">				<span class="comment">//进行交换 </span></span><br><span class="line">        Pre-&gt;next = node2;</span><br><span class="line">        node1-&gt;next = node2-&gt;next;</span><br><span class="line">        node2-&gt;next = node1;</span><br><span class="line">        Pre = node1;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> dummyNode-&gt;next;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="large-orange-diamond-删除排序链表中的重复元素-II"><a href="#large-orange-diamond-删除排序链表中的重复元素-II" class="headerlink" title=":large_orange_diamond: 删除排序链表中的重复元素 II"></a>:large_orange_diamond: <a href="https://leetcode-cn.com/problems/remove-duplicates-from-sorted-list-ii/">删除排序链表中的重复元素 II</a></h4><blockquote>
+<p>存在一个按升序排列的链表，给你这个链表的头节点 <code>head</code> ，请你删除链表中所有存在数字重复情况的节点，只保留原始链表中 <strong>没有重复出现</strong> 的数字。</p>
+</blockquote>
+<ul>
+<li><strong>一边遍历、一边统计相邻节点的值是否相等，如果值相等就继续后移找到值不等的位置，然后删除值相等的这个区间</strong>。</li>
+<li>设置 Pre 与 Cur指针，比较Pre-&gt;next 与 Cur-&gt;next 的值，如果相等，则删除Cur-&gt;next的值，这样会出现第一个相等的值删不掉</li>
+<li>解决上述问题，可以设置flag标志，只要有相等就让flag&#x3D;1，这样最后剩下的元素也能被删除，之后再重新设置为0</li>
+</ul>
+<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="function">ListNode* <span class="title">deleteDuplicates</span><span class="params">(ListNode* head)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span>(!head) <span class="keyword">return</span> head;</span><br><span class="line">    ListNode* dummyNode = <span class="keyword">new</span> <span class="built_in">ListNode</span>(<span class="number">0</span>);</span><br><span class="line">    dummyNode-&gt;next = head;</span><br><span class="line">    ListNode* Cur = head;</span><br><span class="line">    ListNode* Pre = dummyNode;</span><br><span class="line">    <span class="comment">//设置标志</span></span><br><span class="line">    <span class="type">int</span> flag = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">while</span>(Cur != <span class="literal">nullptr</span> &amp;&amp; Cur-&gt;next != <span class="literal">nullptr</span>) &#123;</span><br><span class="line">        <span class="keyword">while</span>(Cur-&gt;next != <span class="literal">nullptr</span> &amp;&amp; Pre-&gt;next-&gt;val == Cur-&gt;next-&gt;val ) &#123;</span><br><span class="line">            ListNode* temp = Cur-&gt;next;</span><br><span class="line">            Cur-&gt;next = temp-&gt;next;</span><br><span class="line">            <span class="keyword">delete</span> temp;</span><br><span class="line">            flag = <span class="number">1</span>;</span><br><span class="line">        &#125; </span><br><span class="line">            </span><br><span class="line">        <span class="comment">//删除最后一个相等的值</span></span><br><span class="line">        <span class="keyword">if</span>(flag) &#123;</span><br><span class="line">            ListNode* temp = Cur;</span><br><span class="line">            Cur = Cur-&gt;next;</span><br><span class="line">            Pre-&gt;next = Cur;</span><br><span class="line">            <span class="keyword">delete</span> temp;</span><br><span class="line">            flag = <span class="number">0</span>;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            Cur = Cur-&gt;next;</span><br><span class="line">            Pre = Pre-&gt;next;</span><br><span class="line">        &#125;</span><br><span class="line">    </span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> dummyNode-&gt;next;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="diamond-shape-with-a-dot-inside-复制带随机指针的链表"><a href="#diamond-shape-with-a-dot-inside-复制带随机指针的链表" class="headerlink" title=":diamond_shape_with_a_dot_inside: 复制带随机指针的链表"></a>:diamond_shape_with_a_dot_inside: <a href="https://leetcode-cn.com/problems/copy-list-with-random-pointer/">复制带随机指针的链表</a></h4><blockquote>
+<p>请实现 copyRandomList 函数，复制一个复杂链表。在复杂链表中，每个节点除了有一个 next 指针指向下一个节点，还有一个 random 指针指向链表中的任意节点或者 null。</p>
+</blockquote>
+<div align="center"><img src="/2025/06/02/LeetcodeGuide/List4.png" width="800px"></div>
+
+<p>:large_orange_diamond: 利用哈希表的查询特点，考虑构建 原链表节点 和 新链表对应节点 的键值对映射关系，再遍历构建新链表各节点的 next 和 random 引用指向即可。</p>
+<p>算法流程：</p>
+<ol>
+<li><p>若头节点 head 为空节点，直接返回 null ；</p>
+</li>
+<li><p>初始化： 哈希表 dic ， 节点 cur 指向头节点；</p>
+</li>
+<li><p>复制链表：</p>
+<ul>
+<li>建立新节点，并向 dic 添加键值对 (原 cur 节点, 新 cur 节点） ；</li>
+<li>cur 遍历至原链表下一节点；</li>
+</ul>
+</li>
+<li><p>构建新链表的引用指向：</p>
+<ul>
+<li>构建新节点的 next 和 random 引用指向；</li>
+<li>cur 遍历至原链表下一节点；</li>
+</ul>
+</li>
+<li><p>返回值： 新链表的头节点 dic[cur] ；</p>
+</li>
+</ol>
+<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="function">Node* <span class="title">copyRandomList</span><span class="params">(Node* head)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span>(head == <span class="literal">nullptr</span>) <span class="keyword">return</span> <span class="literal">nullptr</span>;</span><br><span class="line">    Node* cur = head;</span><br><span class="line">    unordered_map&lt;Node*, Node*&gt; map;</span><br><span class="line">    <span class="comment">// 3. 复制各节点，并建立 “原节点 -&gt; 新节点” 的 Map 映射</span></span><br><span class="line">    <span class="keyword">while</span>(cur != <span class="literal">nullptr</span>) &#123;</span><br><span class="line">        map[cur] = <span class="keyword">new</span> <span class="built_in">Node</span>(cur-&gt;val);</span><br><span class="line">        cur = cur-&gt;next;</span><br><span class="line">    &#125;</span><br><span class="line">    cur = head;</span><br><span class="line">    <span class="comment">// 4. 构建新链表的 next 和 random 指向</span></span><br><span class="line">    <span class="keyword">while</span>(cur != <span class="literal">nullptr</span>) &#123;</span><br><span class="line">        map[cur]-&gt;next = map[cur-&gt;next];</span><br><span class="line">        map[cur]-&gt;random = map[cur-&gt;random];</span><br><span class="line">        cur = cur-&gt;next;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 5. 返回新链表的头节点</span></span><br><span class="line">    <span class="keyword">return</span> map[head];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<h4 id="diamond-shape-with-a-dot-inside-LRU-缓存机制"><a href="#diamond-shape-with-a-dot-inside-LRU-缓存机制" class="headerlink" title=":diamond_shape_with_a_dot_inside: LRU 缓存机制"></a>:diamond_shape_with_a_dot_inside: <a href="https://leetcode-cn.com/problems/lru-cache/">LRU 缓存机制</a></h4><p>[题解]</p>
+]]></content>
+      <categories>
+        <category>LeetCode</category>
+      </categories>
+      <tags>
+        <tag>LeetCode</tag>
+        <tag>算法</tag>
+        <tag>数据结构</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Binder 启动流程</title>
     <url>/2026/04/09/Binder%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/</url>
     <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="/assets/css/APlayer.min.css"><script src="/assets/js/APlayer.min.js" class="aplayer-secondary-script-marker"></script><blockquote>
@@ -479,248 +724,525 @@
       </tags>
   </entry>
   <entry>
-    <title>Git提速代理</title>
-    <url>/2024/11/09/Git%E6%8F%90%E9%80%9F%E4%BB%A3%E7%90%86/</url>
+    <title>Netty线程模型</title>
+    <url>/2024/11/10/Netty-%E7%BA%BF%E7%A8%8B%E6%A8%A1%E5%9E%8B/</url>
     <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="/assets/css/APlayer.min.css"><script src="/assets/js/APlayer.min.js" class="aplayer-secondary-script-marker"></script><blockquote>
-<p>因为平时在Ubuntu虚拟机上使用Git clone的时候速度特别慢，使用干脆写个代理文件进行提速。</p>
+<p>Netty 的线程模型是基于 Reactor 模型改进而来的，因此需要先熟悉 Reactor 模型，帮助对于 Netty 线程模型的理解。</p>
 </blockquote>
-<h2 id="梯子准备"><a href="#梯子准备" class="headerlink" title="梯子准备"></a>梯子准备</h2><p>在主机上挂个梯子，然后查看IP地址与端口(确保能使用)。</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SHELL"><figure class="iseeu highlight shell"><table><tr><td class="code"><pre><span class="line">en0: flags=8863&lt;UP,BROADCAST,SMART,RUNNING,SIMPLEX,MULTICAST&gt; mtu 1500</span><br><span class="line">	options=400&lt;CHANNEL_IO&gt;</span><br><span class="line">	ether 38:f9:d3:8d:58:3e</span><br><span class="line">	inet6 fe80::1434:df1:87d5:7e09%en0 prefixlen 64 secured scopeid 0x6</span><br><span class="line">	inet 192.168.1.4 netmask 0xffffff00 broadcast 192.168.1.255</span><br><span class="line">	nd6 options=201&lt;PERFORMNUD,DAD&gt;</span><br><span class="line">	media: autoselect</span><br><span class="line">	status: active</span><br></pre></td></tr></table></figure></div>
+<h1 id="一-Reactor-模型"><a href="#一-Reactor-模型" class="headerlink" title="一. Reactor 模型"></a><strong>一. Reactor 模型</strong></h1><h2 id="1-为什么需要-Reactor-模型"><a href="#1-为什么需要-Reactor-模型" class="headerlink" title="1.为什么需要 Reactor 模型"></a><strong>1.为什么需要 Reactor 模型</strong></h2><p> 传统阻塞 IO 模型具有设计上的不足之处：</p>
+<ul>
+<li>每个连接都需要独立线程处理，当并发数大时，创建线程数多，占用资源</li>
+<li>采用阻塞IO模型，连接建立后，若当前线程没有数据可读，线程会阻塞在读操作上，造成资源浪费</li>
+</ul>
+<p>针对传统阻塞IO模型的两个问题，可以采用如下的方案：</p>
+<ul>
+<li>基于池化思想，避免为每个连接创建线程，连接完成后将业务处理交给线程池处理</li>
+<li>基于IO复用模型，多个连接共用同一个阻塞对象，不用等待所有的连接。遍历到有新数据可以处理时，操作系统会通知程序，线程跳出阻塞状态，进行业务逻辑处理</li>
+</ul>
+<h2 id="2-什么是-Reactor-模型"><a href="#2-什么是-Reactor-模型" class="headerlink" title="2.什么是 Reactor 模型"></a><strong>2.什么是 Reactor 模型</strong></h2><p>The reactor design_pattern is an event_handling pattern for handling service requests delivered concurrently to a service handler by one or more inputs. The service handler then demultiplexes the incoming requests and dispatches them synchronously to the associated request handlers.</p>
+<p>Reactor 设计模型是一种事件处理模式，用于处理通过一个或多个输入同时传递给服务处理程序的服务请求。然后，服务处理程序对传入的请求进行多路分解，并将它们同步分派给关联的请求处理程序。Reactor 模式也被称作 Dispatcher 模式。它的核心是 <strong>多路复用器</strong> ，多路复用器收到事件后会进行分发，这点是网络服务器高并发的关键。Reacotr 模型主要分为三个角色：</p>
+<ol>
+<li><strong>Reactor</strong> ：把 IO 事件分配给对应的 handler 处理</li>
+<li><strong>Acceptor</strong> ：处理客户端连接事件</li>
+<li><strong>Handler</strong> ：处理非阻塞的任务</li>
+</ol>
+<p>通过这三个角色的配合，实现了高并发的操作。而Reactor 模型分为三种：</p>
+<ol>
+<li><strong>单 Reactor 单线程</strong></li>
+<li><strong>单 Reactor 多线程</strong></li>
+<li><strong>多 Reactor 多线程</strong></li>
+</ol>
+<p>这三种模型按顺序来看理解起来复杂度不断提升，也会更接近 Netty 的线程模型，下面来分别看看这三种模型。</p>
+<h3 id="1-单-Reactor-单线程"><a href="#1-单-Reactor-单线程" class="headerlink" title="(1). 单 Reactor 单线程"></a><strong>(1). 单 Reactor 单线程</strong></h3><p>这个最好理解，只有 <strong>一个线程</strong> ，只是会把 <strong>建立连接</strong> 和 <strong>处理请求</strong> 这两种任务分发给不同的类去处理，如下图所示：</p>
+<center class="half"> 
+    <img src="/2024/11/10/Netty-%E7%BA%BF%E7%A8%8B%E6%A8%A1%E5%9E%8B/1.PNG" width="70%">
+    <div>图1:单Reactor单线程</div>
+</center>
 
-<img src="/2024/11/09/Git%E6%8F%90%E9%80%9F%E4%BB%A3%E7%90%86/1.png" style="zoom:50%;">
+<p>整个流程简单来讲就是：</p>
+<ol>
+<li>Reactor 通过 Selector 监听事件</li>
+<li>收到事件使用 dispatch 对事件进行分发<ul>
+<li>如果是连接事件就由 Acceptor 进行处理，处理完成会创建一个 Handler 对后续业务进行处理。</li>
+<li>后面的数据请求都会由 Handler 进行处理</li>
+</ul>
+</li>
+</ol>
+<p><strong>优点</strong></p>
+<ul>
+<li>模型简单，不会有多线程的那些问题</li>
+</ul>
+<p><strong>缺点</strong></p>
+<ul>
+<li>性能问题：单线程无法发挥多核 CPU 的性能</li>
+<li>可靠性问题：处理业务时往往容易出问题，当 Handler 出问题了，由于只有一个线程，整个节点也挂了</li>
+</ul>
+<h3 id="2-单-Reactor-多线程"><a href="#2-单-Reactor-多线程" class="headerlink" title="(2). 单 Reactor 多线程"></a>(2). 单 Reactor 多线程</h3><p>这个线程模型针对前面的问题作出了一定的优化，多出了处理业务的线程池，如下图所示：</p>
+<center class="half"> 
+    <img src="/2024/11/10/Netty-%E7%BA%BF%E7%A8%8B%E6%A8%A1%E5%9E%8B/2.PNG" width="90%">
+    <div>图2:单Reactor多线程</div>
+</center>
 
-<p>我的IP与端口:192.168.1.4:7890</p>
-<h2 id="写代理文件"><a href="#写代理文件" class="headerlink" title="写代理文件"></a>写代理文件</h2><p>在Ubuntu上写代理文件，在与Desktop同一级的目录下新建.gitconfig文件并进行编辑。</p>
-<p><img src="/2024/11/09/Git%E6%8F%90%E9%80%9F%E4%BB%A3%E7%90%86/2.png"></p>
-<p>这样就可以加速了。实践一下。</p>
-<p><img src="/2024/11/09/Git%E6%8F%90%E9%80%9F%E4%BB%A3%E7%90%86/3.png"></p>
-<p>这个速度就爽多！</p>
+<p>前面的流程与单 Reactor 单线程是一致的，到 Handler 这一步就不一样了：</p>
+<ul>
+<li>这个模型 <strong>Handler 只负责读取数据和发送数据部分，业务处理交给了 Worker 线程</strong>，而 Worker 线程是由 Worker 线程池统一管理的。</li>
+</ul>
+<p><strong>优点</strong></p>
+<ul>
+<li>可以充分利用多核 CPU 的处理能力</li>
+</ul>
+<p><strong>缺点</strong></p>
+<ul>
+<li>多线程资源共享和访问处理会比较复杂，在主线程处理所有的连接、监听和响应也会出现性能瓶颈</li>
+</ul>
+<h3 id="3-主从-Reactor-多线程"><a href="#3-主从-Reactor-多线程" class="headerlink" title="(3). 主从 Reactor 多线程"></a>(3). 主从 Reactor 多线程</h3><p>主从 Reactor 多线程模型又在前面的模型基础上做了进一步优化， <strong>增加了子 Reactor</strong> ，如下图所示：</p>
+<center class="half"> 
+    <img src="/2024/11/10/Netty-%E7%BA%BF%E7%A8%8B%E6%A8%A1%E5%9E%8B/3.png" width="80%">
+    <div>图3:多Reactor多线程</div>
+</center>
+
+<p><strong>整个流程大概可以分为以下几步</strong>：</p>
+<ul>
+<li>主线程的 <code>MainReactor</code> 负责监听连接请求，收到连接请求会由 <code>Acceptor</code> 进行处理，成功建立连接之后 <code>MainReactor</code> 会把连接分派给 <code>SubReactor</code> ，由 <code>SubReactor</code> 监听和处理数据请求；</li>
+<li><code>SubReactor</code> 监听到数据请求，会派发给 Handler 处理，Handler 只会处理读取数据和发送数据部分，中间业务处理部分也是放在线程池中完成。</li>
+</ul>
+<p><strong>优点</strong></p>
+<ul>
+<li><code>MainReactor</code> 与 <code>SubReactor</code> 职责分明，一个处理连接事件，一个处理数据请求；</li>
+<li><code>MainReactor</code> 与 <code>SubReactor</code> 交互逻辑比较简单，<code>MainReactor</code> 单向地将建立好的连接传递出去；</li>
+<li>多 Reactor 设计能在高并发场景拥有更好的性能。</li>
+</ul>
+<p><strong>缺点</strong></p>
+<ul>
+<li>编程复杂度较高</li>
+</ul>
+<p>主从 Reactor 多线程模式是业界非常成熟的服务器程序设计模式，在很多中间件中都使用到了这种模式，像 Nginx、Memcached、Netty 等。这种模式也被称为 1 + M + N 模式，分别代指相对少的连接线程（不一定为 1 ），多个 I&#x2F;O 线程和多个业务处理线程。</p>
+<h1 id="二-Netty-线程模型"><a href="#二-Netty-线程模型" class="headerlink" title="二. Netty 线程模型"></a>二. Netty 线程模型</h1><p>Netty 线程模型是基于主从 Reactor 多线程模型优化而来的，整体架构如下图所示：</p>
+<center class="half"> 
+    <img src="/2024/11/10/Netty-%E7%BA%BF%E7%A8%8B%E6%A8%A1%E5%9E%8B/4.png" width="100%">
+    <div>图4:Netty线程</div>
+</center>
+
+<p>Netty 的线程模型主要分为两部分，分别是 <code>BossGroup</code> 和 <code>WorkerGroup</code>，它们都分别管理一个或多个 <code>NioEventLoop</code>。每个 <code>NioEventLoop</code> 对应着一个线程，一个 <code>Selector</code>，一个 <code>Executor</code> 和一个 <code>TaskQueue</code>。<code>NioEventLoop</code> 可以理解成一个事件循环：</p>
+<ul>
+<li>当程序启动后每个 <code>NioEventLoop</code> 都会通过 <code>Executor</code> 启动一个线程，开始执行事件循环。</li>
+<li>在循环中 <code>Selector</code> 会通过 select 方法阻塞并监听就绪事件，当有事件到来时通过 <code>processSeelectedKeys</code> 方法处理 Selector 事件。</li>
+<li>之后再通过 <code>runAllTasks</code> 方法处理其他的任务。</li>
+</ul>
+<p>与前面介绍的 主从 Reactor 多线程模型类似：</p>
+<ul>
+<li><code>BossGoup</code> 负责连接事件，当建立连接之后会生成一个 <code>NioSocketChannel</code> 并注册到 <code>WorkGroup</code> 其中一个 <code>NioEventLoop</code> 的 Selector 上。</li>
+<li><code>WokerGroup</code> 中的 <code>NioEventLoop</code> 负责处理数据请求，当请求到来时会调用 <code>processSelectedKeys</code> 方法，其中的业务处理会依次经过 Pipeline 中的多个 Handler。</li>
+</ul>
 ]]></content>
       <categories>
-        <category>Linux</category>
+        <category>Java</category>
       </categories>
       <tags>
-        <tag>Git</tag>
+        <tag>Netty</tag>
+        <tag>Java</tag>
       </tags>
   </entry>
   <entry>
-    <title>LeetCode Guide</title>
-    <url>/2025/06/02/LeetcodeGuide/</url>
-    <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="/assets/css/APlayer.min.css"><script src="/assets/js/APlayer.min.js" class="aplayer-secondary-script-marker"></script><h1 id="一-链表问题"><a href="#一-链表问题" class="headerlink" title="一.链表问题"></a>一.链表问题</h1><h2 id="1-单链表结构"><a href="#1-单链表结构" class="headerlink" title="1.单链表结构"></a>1.单链表结构</h2><div align="center"><img src="/2025/06/02/LeetcodeGuide/List1.png" width="600px"></div>
+    <title>servicemanager 启动流程</title>
+    <url>/2026/04/16/servicemanager%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/</url>
+    <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="/assets/css/APlayer.min.css"><script src="/assets/js/APlayer.min.js" class="aplayer-secondary-script-marker"></script><p>ServiceManager 是 Android 系统中所有 Binder 服务的<strong>名字注册中心</strong>，它是一个单线程、事件驱动的原生进程。</p>
+<table>
+<thead>
+<tr>
+<th>特征</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>线程模型</td>
+<td>单线程，无线程池 (setThreadPoolMaxThreadCount(0))</td>
+</tr>
+<tr>
+<td>事件模型</td>
+<td>Looper + epoll 事件驱动</td>
+</tr>
+<tr>
+<td>Binder 限制</td>
+<td>禁止发起同步调用 (FATAL_IF_NOT_ONEWAY)，防止死锁</td>
+</tr>
+<tr>
+<td>内核身份</td>
+<td>通过 BINDER_SET_CONTEXT_MGR 成为 handle&#x3D;0 的目标进程</td>
+</tr>
+<tr>
+<td>通信限制</td>
+<td>不允许普通 App UID 注册服务</td>
+</tr>
+</tbody></table>
+<h1 id="1-启动配置"><a href="#1-启动配置" class="headerlink" title="1. 启动配置"></a>1. 启动配置</h1><p>servicemanager 进程是在 init 启动时拉起的，在加载 <code>servicemanager.rc</code> 时记录下 service servicemanager 的启动规则，先看<code>servicemanager.rc</code>，了解 servicemanager 的基本规则：</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="BASH"><figure class="iseeu highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># frameworks/native/cmds/servicemanager/servicemanager.rc  </span></span><br><span class="line"></span><br><span class="line"><span class="comment"># service 用于通知init进程创建名为servicemanager的进程</span></span><br><span class="line"><span class="comment"># 这个进程执行程序的路径是系统目录： /system/bin/servicemanager</span></span><br><span class="line">service servicemanager /system/bin/servicemanager</span><br><span class="line">    <span class="comment"># 将此服务归入 core 和 animation 两个 class。</span></span><br><span class="line">    <span class="comment"># init 按 early_hal → hal → core → main 的顺序启动各 class，core 优先于 main（zygote）。</span></span><br><span class="line">    <span class="comment"># animation 让它在开机动画期间就运行。</span></span><br><span class="line">    class core animation    <span class="comment"># 系统级别的核心服务，开机早期就会启动</span></span><br><span class="line">    user system             <span class="comment"># 表明此进程是以system身份运行的</span></span><br><span class="line">    group system readproc   <span class="comment"># 加入 system 和 readproc 两个用户组。readproc 允许读取 /proc 下其他进程的信息</span></span><br><span class="line">    critical                <span class="comment"># 标记为关键进程。</span></span><br><span class="line">    file /dev/kmsg w        <span class="comment"># 让 ServiceManager 的日志能写入内核日志缓冲区</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment"># 重启时，先设置 system property：servicemanager.ready=false</span></span><br><span class="line">    onrestart setprop servicemanager.ready <span class="literal">false</span></span><br><span class="line">    <span class="comment"># 重启时，下面三个服务也会重启</span></span><br><span class="line">    onrestart restart --only-if-running apexd</span><br><span class="line">    onrestart restart audioserver</span><br><span class="line">    onrestart restart gatekeeperd</span><br><span class="line">    <span class="comment"># 下面三行代码就是重启时 把 main、hal、early_hal 三个 class 的所有服务全部重启。</span></span><br><span class="line">    onrestart class_restart --only-enabled main</span><br><span class="line">    onrestart class_restart --only-enabled hal</span><br><span class="line">    onrestart class_restart --only-enabled early_hal</span><br><span class="line">    </span><br><span class="line">    task_profiles ProcessCapacityHigh</span><br><span class="line">    shutdown critical</span><br></pre></td></tr></table></figure></div>
 
-<h2 id="2-单链表创建与实现"><a href="#2-单链表创建与实现" class="headerlink" title="2.单链表创建与实现"></a>2.单链表创建与实现</h2><figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">ListNode</span> &#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="type">int</span> value;</span><br><span class="line">    ListNode next;</span><br><span class="line">    <span class="built_in">ListNode</span>() : <span class="built_in">value</span>(<span class="number">0</span>), <span class="built_in">next</span>(<span class="literal">nullptr</span>) &#123;&#125;</span><br><span class="line">    <span class="built_in">ListNode</span>(<span class="type">int</span> val) : <span class="built_in">value</span>(val), <span class="built_in">next</span>(<span class="literal">nullptr</span>) &#123;&#125;</span><br><span class="line">    <span class="built_in">ListNode</span>(<span class="type">int</span> val, ListNode node) : <span class="built_in">value</span>(val), <span class="built_in">next</span>(node) &#123;&#125;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="comment">//创建链表</span></span><br><span class="line"><span class="function">ListNode <span class="title">CreateList</span><span class="params">(std::vector&lt;<span class="type">int</span>&gt; nums)</span></span>;</span><br><span class="line"><span class="comment">//打印链表</span></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">PrintList</span><span class="params">(ListNode head)</span></span>;</span><br><span class="line"><span class="comment">//插入结点</span></span><br><span class="line"><span class="function"><span class="type">bool</span> <span class="title">InsertNode</span><span class="params">(ListNode head, ListNode node, <span class="type">int</span> index)</span></span>;</span><br><span class="line"><span class="comment">//插入数据元素</span></span><br><span class="line"><span class="function"><span class="type">bool</span> <span class="title">InsertNode</span><span class="params">(ListNode head, <span class="type">int</span> val, <span class="type">int</span> index)</span></span>;</span><br><span class="line"><span class="comment">//删除数据元素</span></span><br><span class="line"><span class="function"><span class="type">bool</span> <span class="title">DeleteNode</span><span class="params">(ListNode head, <span class="type">int</span> val)</span></span>;</span><br><span class="line"><span class="comment">//查找数据元素</span></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">FindNode</span><span class="params">(ListNode head, <span class="type">int</span> val)</span></span>;</span><br><span class="line"><span class="comment">//返回链表长度</span></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">ListLength</span><span class="params">(ListNode head)</span></span>;</span><br><span class="line"><span class="comment">//清除链表</span></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">clear</span><span class="params">(ListNode head)</span></span>;</span><br></pre></td></tr></table></figure>
+<p>init 进程在启动<strong>之前</strong>就解析好 <code>servicemanager.rc</code> 的配置规则，再看 <code>init.rc</code> 文件：</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="BASH"><figure class="iseeu highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># system/core/rootdir/init.rc</span></span><br><span class="line"><span class="comment"># Start essential services.</span></span><br><span class="line">start servicemanager</span><br><span class="line">start hwservicemanager</span><br><span class="line">start vndservicemanager</span><br></pre></td></tr></table></figure></div>
 
-<hr>
-<h2 id="3-经典例题"><a href="#3-经典例题" class="headerlink" title="3. 经典例题"></a>3. 经典例题</h2><h4 id="反转链表"><a href="#反转链表" class="headerlink" title="反转链表"></a><a href="https://leetcode-cn.com/problems/reverse-linked-list/">反转链表</a></h4><blockquote>
-<p>给你单链表的头节点 <code>head</code> ，请你反转链表，并返回反转后的链表。</p>
-</blockquote>
-<p>如果再定义一个新的链表，实现链表元素的反转，其实这是对内存空间的浪费。</p>
-<p>其实只需要改变链表的next指针的指向，直接将链表反转 ，而不用重新定义一个新的链表，如图所示:</p>
-<div align="center"><img src="/2025/06/02/LeetcodeGuide/List2.png" width="600px"></div>
+<p>当执行到 start servicemanager 命令时，会通过 <code>fork + execve</code> 来启动 servicemanager 进程，而 servicemanager 是编译生成的可执行文件，位于系统 <code>/system/bin/servicemanager</code> 目录。</p>
+<h1 id="2-初始化流程"><a href="#2-初始化流程" class="headerlink" title="2. 初始化流程"></a>2. 初始化流程</h1><p>初始化时序如下：</p>
+<p><img src="/2026/04/16/servicemanager%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/%E5%88%9D%E5%A7%8B%E5%8C%96%E6%B5%81%E7%A8%8B.png"></p>
+<p>首先来看 servicemanager 实现方式：</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="BASH"><figure class="iseeu highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># frameworks/native/cmds/servicemanager/Android.bp</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># cc_binary编译成二进制文件servicemanager</span></span><br><span class="line">cc_binary &#123;</span><br><span class="line">    name: <span class="string">&quot;servicemanager&quot;</span>,</span><br><span class="line">    defaults: [<span class="string">&quot;servicemanager_defaults&quot;</span>],</span><br><span class="line">    init_rc: [<span class="string">&quot;servicemanager.rc&quot;</span>],</span><br><span class="line">    srcs: [<span class="string">&quot;main.cpp&quot;</span>],</span><br><span class="line">    bootstrap: <span class="literal">true</span>,</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
 
-<ul>
-<li><p>双指针方法：</p>
-<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * Definition for singly-linked list.</span></span><br><span class="line"><span class="comment"> * public class ListNode &#123;</span></span><br><span class="line"><span class="comment"> *     int val;</span></span><br><span class="line"><span class="comment"> *     ListNode next;</span></span><br><span class="line"><span class="comment"> *     ListNode() &#123;&#125;</span></span><br><span class="line"><span class="comment"> *     ListNode(int val) &#123; this.val = val; &#125;</span></span><br><span class="line"><span class="comment"> *     ListNode(int val, ListNode next) &#123; this.val = val; this.next = next; &#125;</span></span><br><span class="line"><span class="comment"> * &#125;</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">Solution</span> &#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> ListNode <span class="title">reverseList</span><span class="params">(ListNode head)</span> </span>&#123;</span><br><span class="line">        ListNode currentNode = head;</span><br><span class="line">        ListNode preNode = null;</span><br><span class="line">        <span class="keyword">while</span> (currentNode != null) &#123;</span><br><span class="line">            ListNode tempNode = currentNode.next;</span><br><span class="line">            currentNode.next = preNode;</span><br><span class="line">            preNode = currentNode;</span><br><span class="line">            currentNode = tempNode;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> preNode;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-</li>
-<li><p>递归方法：</p>
-<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">Solution</span> &#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> ListNode <span class="title">reverseList</span><span class="params">(ListNode head)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (head == null || head.next == null) &#123;</span><br><span class="line">            <span class="keyword">return</span> head;</span><br><span class="line">        &#125;</span><br><span class="line">        ListNode newHead = <span class="built_in">reverseList</span>(head.next);</span><br><span class="line">        head.next.next = head;</span><br><span class="line">        head.next = null;</span><br><span class="line">        <span class="keyword">return</span> newHead;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></li>
-</ul>
-<h4 id="反转链表-II"><a href="#反转链表-II" class="headerlink" title="反转链表 II"></a><a href="https://leetcode-cn.com/problems/reverse-linked-list-ii/">反转链表 II</a></h4><blockquote>
-<p>给你单链表的头指针 head 和两个整数 left 和 right ，其中 left &lt;&#x3D; right 。请你反转从位置 left 到位置 right 的链表节点，返回 反转后的链表 。</p>
-</blockquote>
-<ul>
-<li>定义leftnode指针和rightnode指针分别指向需要反转链表的两端结点</li>
-<li>定义pre,cur,temp指针，将left与right的链表进行反转</li>
-<li>最后反转完的链表重新指回leftnode与rightnode</li>
-</ul>
-<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="function">ListNode* <span class="title">reverseBetween</span><span class="params">(ListNode* head, <span class="type">int</span> left, <span class="type">int</span> right)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span>(head-&gt;next == <span class="literal">nullptr</span>) <span class="keyword">return</span> head;</span><br><span class="line">    ListNode* dummyNode = <span class="keyword">new</span> <span class="built_in">ListNode</span>(<span class="number">0</span>);</span><br><span class="line">    dummyNode-&gt;next = head;</span><br><span class="line">		<span class="comment">//定义左右结点</span></span><br><span class="line">    ListNode* leftNode = dummyNode;</span><br><span class="line">    ListNode* rightNode = head;</span><br><span class="line">		<span class="comment">//指向反转链表的；两端</span></span><br><span class="line">    <span class="keyword">while</span>(--left) </span><br><span class="line">        leftNode = leftNode-&gt;next;</span><br><span class="line">    <span class="keyword">while</span>(right--)</span><br><span class="line">        rightNode = rightNode-&gt;next;</span><br><span class="line">    </span><br><span class="line">  	<span class="comment">//定义结点进行反转</span></span><br><span class="line">  	<span class="comment">//最开始的pre指向rightNode</span></span><br><span class="line">    ListNode* pre = rightNode ;</span><br><span class="line">    ListNode* Cur = leftNode-&gt;next;</span><br><span class="line">    ListNode* temp ;</span><br><span class="line">    <span class="keyword">while</span>(Cur != rightNode) &#123;</span><br><span class="line">      temp = Cur-&gt;next;</span><br><span class="line">      Cur-&gt;next = pre;</span><br><span class="line">      pre = Cur;</span><br><span class="line">      Cur = temp;</span><br><span class="line">    &#125;</span><br><span class="line">  	<span class="comment">//反转完指回</span></span><br><span class="line">    leftNode-&gt;next = pre;</span><br><span class="line">    <span class="keyword">return</span> dummyNode-&gt;next;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>启动 servicemanager 服务，就是从 <code>main.cpp</code> 中的 main 开始的。</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CPP"><figure class="iseeu highlight cpp"><table><tr><td class="code"><pre><span class="line"><span class="comment">// frameworks/native/cmds/servicemanager/main.cpp</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">main</span><span class="params">(<span class="type">int</span> argc, <span class="type">char</span>** argv)</span> </span>&#123;</span><br><span class="line">    ...</span><br><span class="line">    <span class="comment">// 驱动路径默认使用 /dev/binder</span></span><br><span class="line">    <span class="type">const</span> <span class="type">char</span>* driver = argc == <span class="number">2</span> ? argv[<span class="number">1</span>] : <span class="string">&quot;/dev/binder&quot;</span>;</span><br><span class="line">    ...</span><br><span class="line">    <span class="comment">// 创建该进程内的 ProcessState 单例，打开 binder 驱动。</span></span><br><span class="line">    sp&lt;ProcessState&gt; ps = ProcessState::<span class="built_in">initWithDriver</span>(driver);</span><br><span class="line">    <span class="comment">// 通知 binder 驱动不要为创建额外的线程，禁止创建线程池，让所有事件都在主线程looper中操作。</span></span><br><span class="line">    ps-&gt;<span class="built_in">setThreadPoolMaxThreadCount</span>(<span class="number">0</span>);</span><br><span class="line">    <span class="comment">// 设置调用限制策略，禁止 ServiceManager 发起同步（双向）Binder 调用，否则直接崩溃。</span></span><br><span class="line">    ps-&gt;<span class="built_in">setCallRestriction</span>(ProcessState::CallRestriction::FATAL_IF_NOT_ONEWAY);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 禁用 Servicemanager 的 Binder 线程进入后台调度策略，保证不能被降低优先级</span></span><br><span class="line">    IPCThreadState::<span class="built_in">self</span>()-&gt;<span class="built_in">disableBackgroundScheduling</span>(<span class="literal">true</span>);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 创建 ServiceManager 对象并注册服务</span></span><br><span class="line">    sp&lt;ServiceManager&gt; manager = sp&lt;ServiceManager&gt;::<span class="built_in">make</span>(std::<span class="built_in">make_unique</span>&lt;Access&gt;());</span><br><span class="line">    <span class="comment">// 在 servicemanager 自己的注册表中注册名字为 &quot;manager&quot; 的服务对象，提供远程访问入口</span></span><br><span class="line">    <span class="keyword">if</span> (!manager-&gt;<span class="built_in">addService</span>(<span class="string">&quot;manager&quot;</span>, manager, <span class="literal">false</span> <span class="comment">/*allowIsolated*/</span>, IServiceManager::DUMP_FLAG_PRIORITY_DEFAULT).<span class="built_in">isOk</span>()) &#123;</span><br><span class="line">        <span class="built_in">LOG</span>(ERROR) &lt;&lt; <span class="string">&quot;Could not self register servicemanager&quot;</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 把 manager 对象设为 binder 的上下文对象，把 manager 绑定到 handle = 0</span></span><br><span class="line">    <span class="comment">// 通过 ioctl 告诉 binder 驱动：这个进程就是 ServiceManager。</span></span><br><span class="line">    <span class="comment">// 驱动会把该进程绑定到 handle=0，以后任何进程引用 handle=0，请求都会路由到这个进程。</span></span><br><span class="line">    IPCThreadState::<span class="built_in">self</span>()-&gt;<span class="built_in">setTheContextObject</span>(manager);</span><br><span class="line">    <span class="comment">// 向 Binder 内核声明 service manager 作为 Context Manager。binder 服务注册中心的建立</span></span><br><span class="line">    <span class="keyword">if</span> (!ps-&gt;<span class="built_in">becomeContextManager</span>()) &#123;</span><br><span class="line">        <span class="built_in">LOG</span>(FATAL) &lt;&lt; <span class="string">&quot;Could not become context manager&quot;</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 创建或准备一个 Looper（事件循环/消息分发器），用于在主线程上监听和分发文件描述符事件/回调。</span></span><br><span class="line">    sp&lt;Looper&gt; looper = Looper::<span class="built_in">prepare</span>(<span class="literal">false</span> <span class="comment">/*allowNonCallbacks*/</span>);</span><br><span class="line">    <span class="comment">// 把 binder fd 注册进 Looper。当驱动有数据（比如有人调用 getService）时，Looper 被 poll 唤醒</span></span><br><span class="line">    sp&lt;BinderCallback&gt; binderCallback = BinderCallback::<span class="built_in">setupTo</span>(looper);</span><br><span class="line">    <span class="comment">// 把定时器 fd 注册进 Looper。每 5 秒触发一次定时器，用来检查服务是否存在客户端，如果没有就清理。</span></span><br><span class="line">    ClientCallbackCallback::<span class="built_in">setupTo</span>(looper, manager, binderCallback);</span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="keyword">ifndef</span> VENDORSERVICEMANAGER</span></span><br><span class="line">    <span class="comment">// 通知系统 servicemanager 已就绪，与前面 rc 中设置false对应。</span></span><br><span class="line">    <span class="keyword">if</span> (!<span class="built_in">SetProperty</span>(<span class="string">&quot;servicemanager.ready&quot;</span>, <span class="string">&quot;true&quot;</span>)) &#123;</span><br><span class="line">        <span class="built_in">LOG</span>(ERROR) &lt;&lt; <span class="string">&quot;Failed to set servicemanager ready property&quot;</span>;</span><br><span class="line">    &#125;</span><br><span class="line"><span class="meta">#<span class="keyword">endif</span></span></span><br><span class="line"></span><br><span class="line">    <span class="comment">// 进入无限事件循环：looper-&gt;pollAll(-1) 阻塞等待并处理所有注册的事件</span></span><br><span class="line">    <span class="comment">// servicemanager 的所有运行时逻辑、处理 addService/getService、转发请求、管理客户端生命周期，都是在这个循环/回调链中完成。</span></span><br><span class="line">    <span class="keyword">while</span>(<span class="literal">true</span>) &#123;</span><br><span class="line">        looper-&gt;<span class="built_in">pollAll</span>(<span class="number">-1</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// should not be reached</span></span><br><span class="line">    <span class="keyword">return</span> EXIT_FAILURE;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
 
-<h4 id="环形链表"><a href="#环形链表" class="headerlink" title="环形链表"></a><a href="https://leetcode-cn.com/problems/linked-list-cycle/">环形链表</a></h4><blockquote>
-<p>给定一个链表，判断链表中是否有环。</p>
-<p>如果链表中有某个节点，可以通过连续跟踪 next 指针再次到达，则链表中存在环。 为了表示给定链表中的环，我们使用整数 pos 来表示链表尾连接到链表中的位置（索引从 0 开始）。 如果 pos 是 -1，则在该链表中没有环。注意：pos 不作为参数进行传递，仅仅是为了标识链表的实际情况。</p>
-<p>如果链表中存在环，则返回 true 。 否则，返回 false 。</p>
-</blockquote>
-<p>定义两个指针，一快一满。慢指针每次只移动一步，而快指针每次移动两步。初始时，慢指针在位置 head，而快指针在位置 head.next。这样一来，如果在移动的过程中，快指针反过来追上慢指针，就说明该链表为环形链表。否则快指针将到达链表尾部，该链表不为环形链表。</p>
-<ul>
-<li><p>快慢指针</p>
-<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * Definition for singly-linked list.</span></span><br><span class="line"><span class="comment"> * class ListNode &#123;</span></span><br><span class="line"><span class="comment"> *     int val;</span></span><br><span class="line"><span class="comment"> *     ListNode next;</span></span><br><span class="line"><span class="comment"> *     ListNode(int x) &#123;</span></span><br><span class="line"><span class="comment"> *         val = x;</span></span><br><span class="line"><span class="comment"> *         next = null;</span></span><br><span class="line"><span class="comment"> *     &#125;</span></span><br><span class="line"><span class="comment"> * &#125;</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">Solution</span> &#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> boolean <span class="title">hasCycle</span><span class="params">(ListNode head)</span> </span>&#123;</span><br><span class="line">        ListNode slow = head;</span><br><span class="line">        ListNode fast = head;</span><br><span class="line">        <span class="keyword">while</span> (fast != null &amp;&amp; fast.next != null) &#123;</span><br><span class="line">            slow = slow.next;</span><br><span class="line">            fast = fast.next.next;</span><br><span class="line">            <span class="keyword">if</span> (slow == fast) &#123;</span><br><span class="line">                <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></li>
-</ul>
-<h4 id="环形链表-II"><a href="#环形链表-II" class="headerlink" title="环形链表 II"></a><a href="https://leetcode-cn.com/problems/linked-list-cycle-ii/">环形链表 II</a></h4><blockquote>
-<p>给定一个链表，返回链表开始入环的第一个节点。 如果链表无环，则返回 null。</p>
-<p>为了表示给定链表中的环，我们使用整数 pos 来表示链表尾连接到链表中的位置（索引从 0 开始）。 如果 pos 是 -1，则在该链表中没有环。注意，pos 仅仅是用于标识环的情况，并不会作为参数传递到函数中。</p>
-</blockquote>
-<p>使用两个指针，fast 和 slow，它们起始都位于链表的头部。随后，slow 指针每次向后移动一个位置，而 fast 指针向后移动两个位置。如果链表中存在环，则 fast 指针最终将再次与 slow 指针在环中相遇。</p>
-<p>当发现 slow 与 fast 相遇时，我们再额外使用一个指针 ptr。起始，它指向链表头部；随后，它和 slow 每次向后移动一个位置。最终，它们会在入环点相遇。</p>
-<ul>
-<li>快慢指针</li>
-</ul>
-<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * Definition for singly-linked list.</span></span><br><span class="line"><span class="comment"> * class ListNode &#123;</span></span><br><span class="line"><span class="comment"> *     int val;</span></span><br><span class="line"><span class="comment"> *     ListNode next;</span></span><br><span class="line"><span class="comment"> *     ListNode(int x) &#123;</span></span><br><span class="line"><span class="comment"> *         val = x;</span></span><br><span class="line"><span class="comment"> *         next = null;</span></span><br><span class="line"><span class="comment"> *     &#125;</span></span><br><span class="line"><span class="comment"> * &#125;</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">Solution</span> &#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> ListNode <span class="title">detectCycle</span><span class="params">(ListNode head)</span> </span>&#123;</span><br><span class="line">    </span><br><span class="line">        ListNode slow = head;</span><br><span class="line">        ListNode fast = head;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">while</span> (fast != null &amp;&amp; fast.next != null) &#123;</span><br><span class="line">            slow = slow.next;</span><br><span class="line">            fast = fast.next.next;</span><br><span class="line">            <span class="keyword">if</span> (slow == fast) &#123;</span><br><span class="line">                ListNode indexNode = head;</span><br><span class="line">                <span class="keyword">while</span> (indexNode != slow) &#123;</span><br><span class="line">                    slow = slow.next;</span><br><span class="line">                    indexNode = indexNode.next;</span><br><span class="line">                &#125;</span><br><span class="line">                <span class="keyword">return</span> indexNode;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> null;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h1 id="3-关键初始化详解"><a href="#3-关键初始化详解" class="headerlink" title="3.关键初始化详解"></a>3.关键初始化详解</h1><h2 id="3-1-打开-Binder-驱动"><a href="#3-1-打开-Binder-驱动" class="headerlink" title="3.1. 打开 Binder 驱动"></a>3.1. 打开 Binder 驱动</h2><div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CPP"><figure class="iseeu highlight cpp"><table><tr><td class="code"><pre><span class="line"><span class="comment">// frameworks/native/libs/binder/ProcessState.cpp</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// driver = &quot;/dev/binder&quot;</span></span><br><span class="line"><span class="comment">// 内部通过 open(&quot;/dev/binder&quot;, O_RDWR) 获取 mDriverFD</span></span><br><span class="line">sp&lt;ProcessState&gt; ps = ProcessState::<span class="built_in">initWithDriver</span>(driver);</span><br><span class="line"></span><br><span class="line"><span class="function">sp&lt;ProcessState&gt; <span class="title">ProcessState::initWithDriver</span><span class="params">(<span class="type">const</span> <span class="type">char</span>* driver)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="built_in">init</span>(driver, <span class="literal">true</span> <span class="comment">/*requireDefault*/</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
 
-<h4 id="回文链表"><a href="#回文链表" class="headerlink" title="回文链表"></a><a href="https://leetcode-cn.com/problems/palindrome-linked-list/">回文链表</a></h4><blockquote>
-<p>请判断一个链表是否为回文链表。</p>
-</blockquote>
-<ul>
-<li>首先找到中心结点，将链表等分为二</li>
-<li>右半链表进行反转操作</li>
-<li>左链表与反转后的右链表进行比较</li>
-</ul>
-<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * Definition for singly-linked list.</span></span><br><span class="line"><span class="comment"> * public class ListNode &#123;</span></span><br><span class="line"><span class="comment"> *     int val;</span></span><br><span class="line"><span class="comment"> *     ListNode next;</span></span><br><span class="line"><span class="comment"> *     ListNode() &#123;&#125;</span></span><br><span class="line"><span class="comment"> *     ListNode(int val) &#123; this.val = val; &#125;</span></span><br><span class="line"><span class="comment"> *     ListNode(int val, ListNode next) &#123; this.val = val; this.next = next; &#125;</span></span><br><span class="line"><span class="comment"> * &#125;</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">Solution</span> &#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> boolean <span class="title">isPalindrome</span><span class="params">(ListNode head)</span> </span>&#123;</span><br><span class="line">        ListNode slow = head;</span><br><span class="line">        ListNode fast = head.next;</span><br><span class="line">        <span class="keyword">while</span> (fast != null &amp;&amp; fast.next != null) &#123;</span><br><span class="line">            slow = slow.next;</span><br><span class="line">            fast = fast.next.next;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        slow = <span class="built_in">reverseList</span>(slow.next);</span><br><span class="line">        ListNode pre = slow;</span><br><span class="line">        boolean result = <span class="literal">true</span>;</span><br><span class="line">        <span class="keyword">while</span> (slow != null) &#123;</span><br><span class="line">            <span class="keyword">if</span> (slow.val != head.val) &#123;</span><br><span class="line">                result = <span class="literal">false</span>;</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">            &#125;</span><br><span class="line">            slow = slow.next;</span><br><span class="line">            head = head.next;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="built_in">reverseList</span>(pre);</span><br><span class="line">        <span class="keyword">return</span> result;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">private</span> ListNode <span class="title">reverseList</span><span class="params">(ListNode head)</span> </span>&#123;</span><br><span class="line">        ListNode pre = null;</span><br><span class="line">        ListNode current = head;</span><br><span class="line">        <span class="keyword">while</span> (current != null) &#123;</span><br><span class="line">            ListNode temp = current.next;</span><br><span class="line">            current.next = pre;</span><br><span class="line">            pre = current;</span><br><span class="line">            current = temp;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> pre;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>与上一章节打开驱动的方式不同，是调用的 <code>ProcessState::initWithDriver</code> 方法，明确指定驱动，除此之外创建 ProcessState 对象前面流程完全一致。</p>
+<h2 id="3-2-线程池限制"><a href="#3-2-线程池限制" class="headerlink" title="3.2. 线程池限制"></a>3.2. 线程池限制</h2><div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CPP"><figure class="iseeu highlight cpp"><table><tr><td class="code"><pre><span class="line">ps-&gt;<span class="built_in">setThreadPoolMaxThreadCount</span>(<span class="number">0</span>);</span><br><span class="line"><span class="comment">// 告知 binder 驱动不要为这个进程创建额外线程</span></span><br><span class="line"><span class="comment">// ServiceManager 只用主线程处理请求</span></span><br></pre></td></tr></table></figure></div>
 
-
-
-
-
-<h4 id="奇偶链表"><a href="#奇偶链表" class="headerlink" title="奇偶链表"></a><a href="https://leetcode-cn.com/problems/odd-even-linked-list/">奇偶链表</a></h4><blockquote>
-<p>给定一个单链表，把所有的奇数节点和偶数节点分别排在一起。请注意，这里的奇数节点和偶数节点指的是节点编号的奇偶性，而不是节点的值的奇偶性。</p>
-</blockquote>
-<ul>
-<li>定义Even，Odd指针指向第一个奇偶结点，定义EvenNext结点指向第一个Odd，方便之后奇数链表指向</li>
-<li>进行遍历<ul>
-<li>Even指向Odd的next指针，然后Even进行更新</li>
-<li>Odd指向Even的next指针，然后Odd进行更新</li>
-<li>知道有一方的next为空</li>
-</ul>
-</li>
-</ul>
-<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="function">ListNode* <span class="title">oddEvenList</span><span class="params">(ListNode* head)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span>(!head) <span class="keyword">return</span> head;</span><br><span class="line">    ListNode* even = head;</span><br><span class="line">    ListNode* odd = head-&gt;next;</span><br><span class="line">    ListNode* evenNext = odd;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">while</span>(even-&gt;next != <span class="literal">nullptr</span> &amp;&amp; odd-&gt;next != <span class="literal">nullptr</span>) &#123;</span><br><span class="line">        even-&gt;next = odd-&gt;next;</span><br><span class="line">        even = even-&gt;next;</span><br><span class="line">        odd-&gt;next = even-&gt;next;</span><br><span class="line">        odd = odd-&gt;next;</span><br><span class="line">    &#125;</span><br><span class="line">    even-&gt;next = evenNext;</span><br><span class="line">    <span class="keyword">return</span> head;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h4 id="链表相交"><a href="#链表相交" class="headerlink" title="链表相交"></a><a href="https://leetcode-cn.com/problems/intersection-of-two-linked-lists-lcci/">链表相交</a></h4><blockquote>
-<p>给定两个（单向）链表，判定它们是否相交并返回交点。请注意相交的定义基于节点的引用，而不是基于节点的值。换句话说，如果一个链表的第k个节点与另一个链表的第j个节点是同一节点（引用完全相同），则这两个链表相交。</p>
-</blockquote>
-<ul>
-<li>设长链表A长度为LA，短链表长度LB；</li>
-<li>由于速度相同，则在长链表A走完LA长度时，短链表B已经反过头在A上走了LA-LB的长度，剩余要走的长度为LA-(LA-LB) &#x3D; LB；</li>
-<li>之后长链表A要反过头在B上走，剩余要走的长度也是LB；</li>
-<li>也就是说目前两个链表“对齐”了。因此，接下来遇到的第一个相同节点便是两个链表的交点。</li>
-</ul>
-<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * Definition for singly-linked list.</span></span><br><span class="line"><span class="comment"> * public class ListNode &#123;</span></span><br><span class="line"><span class="comment"> *     int val;</span></span><br><span class="line"><span class="comment"> *     ListNode next;</span></span><br><span class="line"><span class="comment"> *     ListNode(int x) &#123;</span></span><br><span class="line"><span class="comment"> *         val = x;</span></span><br><span class="line"><span class="comment"> *         next = null;</span></span><br><span class="line"><span class="comment"> *     &#125;</span></span><br><span class="line"><span class="comment"> * &#125;</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">Solution</span> &#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> ListNode <span class="title">getIntersectionNode</span><span class="params">(ListNode headA, ListNode headB)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (headA == null || headB == null) &#123;</span><br><span class="line">            <span class="keyword">return</span> null;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        ListNode pA = headA, pB = headB;</span><br><span class="line">        <span class="keyword">while</span> (pA != pB) &#123;</span><br><span class="line">            pA = (pA == null ? headB : pA.next);</span><br><span class="line">            pB = (pB == null ? headA : pB.next);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> pA;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h4 id="删除链表的倒数第-N-个结点"><a href="#删除链表的倒数第-N-个结点" class="headerlink" title="删除链表的倒数第 N 个结点"></a><a href="https://leetcode-cn.com/problems/remove-nth-node-from-end-of-list/">删除链表的倒数第 N 个结点</a></h4><blockquote>
-<p>给你一个链表，删除链表的倒数第 <code>n</code> 个结点，并且返回链表的头结点。</p>
-</blockquote>
-<p>由于我们需要找到倒数第 n 个节点，因此我们可以使用两个指针 first 和 second 同时对链表进行遍历，并且 first 比 second 超前 n 个节点。当 first 遍历到链表的末尾时，second 就恰好处于倒数第 n 个节点。</p>
-<ul>
-<li><p>快慢指针</p>
-<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="function">ListNode* <span class="title">removeNthFromEnd</span><span class="params">(ListNode* head, <span class="type">int</span> n)</span> </span>&#123;</span><br><span class="line">    ListNode* dummyHead = <span class="keyword">new</span> <span class="built_in">ListNode</span>(<span class="number">0</span>);</span><br><span class="line">    dummyHead-&gt;next = head;</span><br><span class="line">    ListNode* slow = dummyHead;</span><br><span class="line">    ListNode* fast = dummyHead;</span><br><span class="line">    <span class="keyword">while</span>(n-- &amp;&amp; fast != <span class="literal">NULL</span>) &#123;</span><br><span class="line">        fast = fast-&gt;next;</span><br><span class="line">    &#125;</span><br><span class="line">    fast = fast-&gt;next; <span class="comment">// fast再提前走一步，因为需要让slow指向删除节点的上一个节点</span></span><br><span class="line">    <span class="keyword">while</span> (fast != <span class="literal">NULL</span>) &#123;</span><br><span class="line">        fast = fast-&gt;next;</span><br><span class="line">        slow = slow-&gt;next;</span><br><span class="line">    &#125;</span><br><span class="line">    slow-&gt;next = slow-&gt;next-&gt;next;</span><br><span class="line">    <span class="keyword">return</span> dummyHead-&gt;next;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></li>
-</ul>
-<h4 id="重排链表"><a href="#重排链表" class="headerlink" title="重排链表"></a><a href="https://leetcode-cn.com/problems/reorder-list/">重排链表</a></h4><blockquote>
-<p>给定一个单链表 <em>L</em>：<em>L</em>0→<em>L</em>1→…→<em>L**n</em>-1→<em>L</em>n ，<br>将其重新排列后变为： <em>L</em>0→<em>L**n</em>→<em>L</em>1→<em>L**n</em>-1→<em>L</em>2→<em>L**n</em>-2→…</p>
-</blockquote>
-<p>注意到目标链表即为将原链表的左半端和反转后的右半端合并后的结果。</p>
-<p>这样我们的任务即可划分为三步：</p>
-<ul>
-<li><p>找到原链表的中点（参考「876. 链表的中间结点」）。</p>
-<ul>
-<li>我们可以使用快慢指针来 O(N)地找到链表的中间节点。</li>
-</ul>
-</li>
-<li><p>将原链表的右半端反转（参考「206. 反转链表」）。</p>
-<ul>
-<li>我们可以使用迭代法实现链表的反转。将原链表的两端合并。</li>
-</ul>
-</li>
-<li><p>因为两链表长度相差不超过 1，因此直接合并即可。</p>
-</li>
-</ul>
-<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">Solution</span> &#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="comment">//找到中心节点</span></span><br><span class="line">    <span class="comment">//分成两个链表</span></span><br><span class="line">    <span class="comment">//链表合成重排</span></span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">reorderList</span><span class="params">(ListNode* head)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">if</span>(!head) <span class="keyword">return</span>;</span><br><span class="line">        </span><br><span class="line">       ListNode* firstNode = head;</span><br><span class="line">       ListNode* secondNode = head;</span><br><span class="line">       <span class="keyword">while</span>(secondNode != <span class="literal">nullptr</span> &amp;&amp; secondNode-&gt;next != <span class="literal">nullptr</span>) &#123;</span><br><span class="line">           firstNode = firstNode-&gt;next;</span><br><span class="line">           secondNode = secondNode-&gt;next-&gt;next;</span><br><span class="line">       &#125;</span><br><span class="line">      <span class="comment">// cout &lt;&lt; firstNode-&gt;val &lt;&lt; endl;</span></span><br><span class="line">    </span><br><span class="line">        ListNode* firstEnd = firstNode;</span><br><span class="line">        ListNode* pre = firstNode;</span><br><span class="line">        ListNode* cur = firstNode-&gt;next;</span><br><span class="line">        firstNode = <span class="literal">nullptr</span>;</span><br><span class="line">        <span class="keyword">while</span>(cur) &#123;</span><br><span class="line">            ListNode* temp = cur-&gt;next;</span><br><span class="line">            cur-&gt;next = pre;</span><br><span class="line">            pre = cur;</span><br><span class="line">            cur = temp;</span><br><span class="line">        &#125;</span><br><span class="line">        firstEnd-&gt;next = <span class="literal">nullptr</span>;</span><br><span class="line"></span><br><span class="line">        <span class="built_in">Merge</span>(head, pre);</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line">  	<span class="comment">//head:1-&gt;2-&gt;3</span></span><br><span class="line">  	<span class="comment">//pre: 4-&gt;3</span></span><br><span class="line">  	<span class="comment">//所以head中的3不能使用，等到p-&gt;next = null就截止，最后补上nullptr就行</span></span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">Merge</span><span class="params">(ListNode* head, ListNode*pre)</span> </span>&#123;</span><br><span class="line">        ListNode* p = head;</span><br><span class="line">        <span class="keyword">while</span>(p-&gt;next != <span class="literal">nullptr</span> &amp;&amp; pre != <span class="literal">nullptr</span>) &#123;</span><br><span class="line">            ListNode* temp = p-&gt;next;</span><br><span class="line">            p-&gt;next = pre;</span><br><span class="line">            pre = pre-&gt;next;</span><br><span class="line">            p = p-&gt;next;</span><br><span class="line">            p-&gt;next = temp;</span><br><span class="line">            p = temp;</span><br><span class="line">        &#125;</span><br><span class="line">        p-&gt;next = <span class="literal">nullptr</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
-
-<h4 id="分割链表"><a href="#分割链表" class="headerlink" title="分割链表"></a><a href="https://leetcode-cn.com/problems/partition-list-lcci/">分割链表</a></h4><blockquote>
-<p>编写程序以 x 为基准分割链表，使得所有小于 x 的节点排在大于或等于 x 的节点之前。如果链表中包含 x，x 只需出现在小于 x 的元素之后(如下所示)。分割元素 x 只需处于“右半部分”即可，其不需要被置于左右两部分之间。</p>
-</blockquote>
-<p>:diamond_shape_with_a_dot_inside: <strong>利用双指针来解决</strong></p>
-<p>:large_blue_diamond: left指针指向小于 x 的最后一个元素</p>
-<p>:large_blue_diamond: right指针不断遍历链表，找到小于 x 的元素，插入至 left 区域</p>
-<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="function">ListNode* <span class="title">partition</span><span class="params">(ListNode* head, <span class="type">int</span> x)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span>(!head) <span class="keyword">return</span> <span class="literal">nullptr</span>;</span><br><span class="line">    ListNode* dummyNode = <span class="keyword">new</span> <span class="built_in">ListNode</span>(<span class="number">0</span>);</span><br><span class="line">    dummyNode-&gt;next = head;</span><br><span class="line">    ListNode* left = dummyNode;</span><br><span class="line">    ListNode* right = left-&gt;next;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">while</span>(left-&gt;next != <span class="literal">nullptr</span> &amp;&amp; left-&gt;next-&gt;val &lt; x) &#123;</span><br><span class="line">        <span class="comment">//左指针指向最后一个小于x的元素</span></span><br><span class="line">        left = left-&gt;next;   </span><br><span class="line">    &#125;     </span><br><span class="line">    <span class="comment">//右指针指向左指针右边</span></span><br><span class="line">    right = left-&gt;next;</span><br><span class="line">    <span class="keyword">while</span>(right != <span class="literal">nullptr</span> &amp;&amp; right-&gt;next != <span class="literal">nullptr</span>) &#123;</span><br><span class="line">        <span class="keyword">if</span>(right-&gt;next-&gt;val &gt;= x)</span><br><span class="line">            right = right-&gt;next;</span><br><span class="line">        <span class="keyword">else</span> &#123;</span><br><span class="line">            ListNode* temp = right-&gt;next;</span><br><span class="line">            right-&gt;next = temp-&gt;next;</span><br><span class="line"></span><br><span class="line">            temp-&gt;next = left-&gt;next;</span><br><span class="line">            left-&gt;next = temp;</span><br><span class="line">            left = temp;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> dummyNode-&gt;next;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h4 id="两数相加"><a href="#两数相加" class="headerlink" title="两数相加"></a><a href="https://leetcode-cn.com/problems/add-two-numbers/">两数相加</a></h4><p>:diamond_shape_with_a_dot_inside: 将长度较短的链表在末尾补零使得两个连表长度相等，再一个一个元素对其相加（考虑进位）</p>
+<blockquote>
+<p>值得注意的是，之前的servicemanager设置线程池为0与现在默认为15，以及设置驱动线程池为15并不冲突。</p>
 <ol>
-<li>获取两个链表所对应的长度</li>
-<li>在较短的链表末尾补零</li>
-<li>对齐相加考虑进位</li>
+<li>ServiceManager 的 ProcessState 构造时 mMaxThreads 默认值为 15，但在 startThreadPool 之前就强制设置为 0 写入驱动，驱动从一开始就知道这个进程不需要额外线程。</li>
+<li>Binder 驱动没有自己的内核线程。驱动代码跑在用户线程的 ioctl 上下文中。老版本使用全局锁（binder_main_lock）串行化所有操作，新版本使用细化锁允许不同进程并行处理。</li>
 </ol>
-<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="function">ListNode* <span class="title">addTwoNumbers</span><span class="params">(ListNode* l1, ListNode* l2)</span> </span>&#123;</span><br><span class="line">    ListNode *list1 = l1;</span><br><span class="line">    ListNode *list2 = l2;</span><br><span class="line">    ListNode *dummyNode = <span class="keyword">new</span> <span class="built_in">ListNode</span>(<span class="number">0</span>);</span><br><span class="line">    dummyNode-&gt;next = list2;</span><br><span class="line">  	<span class="comment">//设定前指针是为了方便增加结点的</span></span><br><span class="line">    ListNode* pre = dummyNode;</span><br><span class="line">    <span class="type">int</span> carry = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">while</span>(list1 || list2 || carry) &#123;</span><br><span class="line">        <span class="type">int</span> n1 = list1 != <span class="literal">nullptr</span> ? list1-&gt;val : <span class="number">0</span>;</span><br><span class="line">        <span class="type">int</span> n2 = list2 != <span class="literal">nullptr</span> ? list2-&gt;val : <span class="number">0</span>;</span><br><span class="line">        <span class="comment">//cout &lt;&lt; n1 &lt;&lt; n2 &lt;&lt; endl;</span></span><br><span class="line">        <span class="keyword">if</span>(list2 == <span class="literal">nullptr</span>) &#123;</span><br><span class="line">            ListNode* node = <span class="keyword">new</span> <span class="built_in">ListNode</span>((n1 + n2 + carry) % <span class="number">10</span>);</span><br><span class="line">            pre-&gt;next = node;</span><br><span class="line">            node-&gt;next = <span class="literal">nullptr</span>;</span><br><span class="line">            pre = node;</span><br><span class="line">        &#125; <span class="keyword">else</span> </span><br><span class="line">            list2-&gt;val = (n1 + n2 + carry) % <span class="number">10</span>;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span>((n1 + n2 + carry) &gt; <span class="number">9</span>)</span><br><span class="line">            carry = <span class="number">1</span>;</span><br><span class="line">        <span class="keyword">else</span> </span><br><span class="line">            carry = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span>(list1)</span><br><span class="line">            list1 = list1-&gt;next;</span><br><span class="line">        <span class="keyword">if</span>(list2) &#123;</span><br><span class="line">            list2 = list2-&gt;next;</span><br><span class="line">            pre = pre-&gt;next;</span><br><span class="line">        &#125;</span><br><span class="line">            </span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> l2;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h4 id="合并两个有序链表"><a href="#合并两个有序链表" class="headerlink" title="合并两个有序链表"></a><a href="https://leetcode-cn.com/problems/merge-two-sorted-lists/">合并两个有序链表</a></h4><p>:diamond_shape_with_a_dot_inside: 将链表2插入到链表1上</p>
-<ul>
-<li><p>定义list1,list2指针指向l1与l2的头结点，pre指向list1的上一个结点(为了好插入)</p>
-</li>
-<li><p>在遍历结点都不为空的情况下进行比较</p>
-<ul>
-<li>如果list1 &lt;&#x3D; list2，list1继续迭代</li>
-<li>如果list1 &gt; list2，则将list2结点插入到list1前面</li>
-</ul>
-</li>
-<li><p>遍历结束后，有一个不为空</p>
-<ul>
-<li>list1不为空则不用管</li>
-<li>list2不为空，将list2后面的结点直接移到list1后面</li>
-</ul>
-</li>
-</ul>
-<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * Definition for singly-linked list.</span></span><br><span class="line"><span class="comment"> * public class ListNode &#123;</span></span><br><span class="line"><span class="comment"> *     int val;</span></span><br><span class="line"><span class="comment"> *     ListNode next;</span></span><br><span class="line"><span class="comment"> *     ListNode() &#123;&#125;</span></span><br><span class="line"><span class="comment"> *     ListNode(int val) &#123; this.val = val; &#125;</span></span><br><span class="line"><span class="comment"> *     ListNode(int val, ListNode next) &#123; this.val = val; this.next = next; &#125;</span></span><br><span class="line"><span class="comment"> * &#125;</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">Solution</span> &#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> ListNode <span class="title">mergeTwoLists</span><span class="params">(ListNode list1, ListNode list2)</span> </span>&#123;</span><br><span class="line">        ListNode dum = <span class="keyword">new</span> <span class="built_in">ListNode</span>(<span class="number">-1</span>);</span><br><span class="line">        ListNode currentNode = dum;</span><br><span class="line">        <span class="keyword">while</span> (list1 != null &amp;&amp; list2 != null) &#123;</span><br><span class="line">            <span class="keyword">if</span> (list<span class="number">1.</span>val &lt; list<span class="number">2.</span>val) &#123;</span><br><span class="line">                currentNode.next = list1;</span><br><span class="line">                list1 = list<span class="number">1.</span>next;</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                currentNode.next = list2;</span><br><span class="line">                list2 = list<span class="number">2.</span>next;</span><br><span class="line">            &#125;</span><br><span class="line">            currentNode = currentNode.next;</span><br><span class="line">        &#125;</span><br><span class="line">        currentNode.next = (list1 != null ? list1 : list2);</span><br><span class="line">        <span class="keyword">return</span> dum.next;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h4 id="large-orange-diamond-两两交换链表中的节点"><a href="#large-orange-diamond-两两交换链表中的节点" class="headerlink" title=":large_orange_diamond: 两两交换链表中的节点"></a>:large_orange_diamond: <a href="https://leetcode-cn.com/problems/swap-nodes-in-pairs/">两两交换链表中的节点</a></h4><blockquote>
-<p>给定一个链表，两两交换其中相邻的节点，并返回交换后的链表。</p>
-<p><strong>你不能只是单纯的改变节点内部的值</strong>，而是需要实际的进行节点交换。</p>
-</blockquote>
-<div align="center"><img src="/2025/06/02/LeetcodeGuide/List3.png" width="800px"></div>
-
-<ul>
-<li>创建哑结点 dummyHead，令 dummyHead.next &#x3D; head。令 temp 表示当前到达的节点，初始时 temp &#x3D; dummyHead。每次需要交换 temp 后面的两个节点。</li>
-<li>如果 temp 的后面没有节点或者只有一个节点，则没有更多的节点需要交换，因此结束交换。否则，获得 temp 后面的两个节点 node1 和 node2，通过更新节点的指针关系实现两两交换节点。</li>
-</ul>
-<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="function">ListNode* <span class="title">swapPairs</span><span class="params">(ListNode* head)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span>(!head) <span class="keyword">return</span> head;</span><br><span class="line">    ListNode* dummyNode = <span class="keyword">new</span> <span class="built_in">ListNode</span>(<span class="number">0</span>);</span><br><span class="line">    dummyNode-&gt;next = head;</span><br><span class="line">    ListNode* Pre = dummyNode;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">while</span>(Pre-&gt;next != <span class="literal">nullptr</span> &amp;&amp; Pre-&gt;next-&gt;next != <span class="literal">nullptr</span>) &#123;</span><br><span class="line">        ListNode* node1 = Pre-&gt;next;</span><br><span class="line">        ListNode* node2 = Pre-&gt;next-&gt;next;</span><br><span class="line">				<span class="comment">//进行交换 </span></span><br><span class="line">        Pre-&gt;next = node2;</span><br><span class="line">        node1-&gt;next = node2-&gt;next;</span><br><span class="line">        node2-&gt;next = node1;</span><br><span class="line">        Pre = node1;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> dummyNode-&gt;next;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h4 id="large-orange-diamond-删除排序链表中的重复元素-II"><a href="#large-orange-diamond-删除排序链表中的重复元素-II" class="headerlink" title=":large_orange_diamond: 删除排序链表中的重复元素 II"></a>:large_orange_diamond: <a href="https://leetcode-cn.com/problems/remove-duplicates-from-sorted-list-ii/">删除排序链表中的重复元素 II</a></h4><blockquote>
-<p>存在一个按升序排列的链表，给你这个链表的头节点 <code>head</code> ，请你删除链表中所有存在数字重复情况的节点，只保留原始链表中 <strong>没有重复出现</strong> 的数字。</p>
-</blockquote>
-<ul>
-<li><strong>一边遍历、一边统计相邻节点的值是否相等，如果值相等就继续后移找到值不等的位置，然后删除值相等的这个区间</strong>。</li>
-<li>设置 Pre 与 Cur指针，比较Pre-&gt;next 与 Cur-&gt;next 的值，如果相等，则删除Cur-&gt;next的值，这样会出现第一个相等的值删不掉</li>
-<li>解决上述问题，可以设置flag标志，只要有相等就让flag&#x3D;1，这样最后剩下的元素也能被删除，之后再重新设置为0</li>
-</ul>
-<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="function">ListNode* <span class="title">deleteDuplicates</span><span class="params">(ListNode* head)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span>(!head) <span class="keyword">return</span> head;</span><br><span class="line">    ListNode* dummyNode = <span class="keyword">new</span> <span class="built_in">ListNode</span>(<span class="number">0</span>);</span><br><span class="line">    dummyNode-&gt;next = head;</span><br><span class="line">    ListNode* Cur = head;</span><br><span class="line">    ListNode* Pre = dummyNode;</span><br><span class="line">    <span class="comment">//设置标志</span></span><br><span class="line">    <span class="type">int</span> flag = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">while</span>(Cur != <span class="literal">nullptr</span> &amp;&amp; Cur-&gt;next != <span class="literal">nullptr</span>) &#123;</span><br><span class="line">        <span class="keyword">while</span>(Cur-&gt;next != <span class="literal">nullptr</span> &amp;&amp; Pre-&gt;next-&gt;val == Cur-&gt;next-&gt;val ) &#123;</span><br><span class="line">            ListNode* temp = Cur-&gt;next;</span><br><span class="line">            Cur-&gt;next = temp-&gt;next;</span><br><span class="line">            <span class="keyword">delete</span> temp;</span><br><span class="line">            flag = <span class="number">1</span>;</span><br><span class="line">        &#125; </span><br><span class="line">            </span><br><span class="line">        <span class="comment">//删除最后一个相等的值</span></span><br><span class="line">        <span class="keyword">if</span>(flag) &#123;</span><br><span class="line">            ListNode* temp = Cur;</span><br><span class="line">            Cur = Cur-&gt;next;</span><br><span class="line">            Pre-&gt;next = Cur;</span><br><span class="line">            <span class="keyword">delete</span> temp;</span><br><span class="line">            flag = <span class="number">0</span>;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            Cur = Cur-&gt;next;</span><br><span class="line">            Pre = Pre-&gt;next;</span><br><span class="line">        &#125;</span><br><span class="line">    </span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> dummyNode-&gt;next;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h4 id="diamond-shape-with-a-dot-inside-复制带随机指针的链表"><a href="#diamond-shape-with-a-dot-inside-复制带随机指针的链表" class="headerlink" title=":diamond_shape_with_a_dot_inside: 复制带随机指针的链表"></a>:diamond_shape_with_a_dot_inside: <a href="https://leetcode-cn.com/problems/copy-list-with-random-pointer/">复制带随机指针的链表</a></h4><blockquote>
-<p>请实现 copyRandomList 函数，复制一个复杂链表。在复杂链表中，每个节点除了有一个 next 指针指向下一个节点，还有一个 random 指针指向链表中的任意节点或者 null。</p>
-</blockquote>
-<div align="center"><img src="/2025/06/02/LeetcodeGuide/List4.png" width="800px"></div>
-
-<p>:large_orange_diamond: 利用哈希表的查询特点，考虑构建 原链表节点 和 新链表对应节点 的键值对映射关系，再遍历构建新链表各节点的 next 和 random 引用指向即可。</p>
-<p>算法流程：</p>
+<p>处理过程如下：</p>
 <ol>
-<li><p>若头节点 head 为空节点，直接返回 null ；</p>
-</li>
-<li><p>初始化： 哈希表 dic ， 节点 cur 指向头节点；</p>
-</li>
-<li><p>复制链表：</p>
-<ul>
-<li>建立新节点，并向 dic 添加键值对 (原 cur 节点, 新 cur 节点） ；</li>
-<li>cur 遍历至原链表下一节点；</li>
-</ul>
-</li>
-<li><p>构建新链表的引用指向：</p>
-<ul>
-<li>构建新节点的 next 和 random 引用指向；</li>
-<li>cur 遍历至原链表下一节点；</li>
-</ul>
-</li>
-<li><p>返回值： 新链表的头节点 dic[cur] ；</p>
-</li>
+<li>多个进程发起 getService&#x2F;addService</li>
+<li>各进程线程通过 ioctl(BINDER_WRITE_READ) 携带 BC_TRANSACTION 进入驱动</li>
+<li>驱动（加锁）路由事务到 ServiceManager，放入其待处理队列，唤醒其 binder fd</li>
+<li>ServiceManager 用户态只有一个线程，Looper 检测到 fd 可读后<strong>逐个处理</strong></li>
+<li>其他进程的请求在驱动中排队等待，不会阻塞调用者进程（调用者在 ioctl 上等待回复）</li>
 </ol>
-<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="function">Node* <span class="title">copyRandomList</span><span class="params">(Node* head)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span>(head == <span class="literal">nullptr</span>) <span class="keyword">return</span> <span class="literal">nullptr</span>;</span><br><span class="line">    Node* cur = head;</span><br><span class="line">    unordered_map&lt;Node*, Node*&gt; map;</span><br><span class="line">    <span class="comment">// 3. 复制各节点，并建立 “原节点 -&gt; 新节点” 的 Map 映射</span></span><br><span class="line">    <span class="keyword">while</span>(cur != <span class="literal">nullptr</span>) &#123;</span><br><span class="line">        map[cur] = <span class="keyword">new</span> <span class="built_in">Node</span>(cur-&gt;val);</span><br><span class="line">        cur = cur-&gt;next;</span><br><span class="line">    &#125;</span><br><span class="line">    cur = head;</span><br><span class="line">    <span class="comment">// 4. 构建新链表的 next 和 random 指向</span></span><br><span class="line">    <span class="keyword">while</span>(cur != <span class="literal">nullptr</span>) &#123;</span><br><span class="line">        map[cur]-&gt;next = map[cur-&gt;next];</span><br><span class="line">        map[cur]-&gt;random = map[cur-&gt;random];</span><br><span class="line">        cur = cur-&gt;next;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 5. 返回新链表的头节点</span></span><br><span class="line">    <span class="keyword">return</span> map[head];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>ServiceManager 处理的是 <strong>业务逻辑</strong>，类似于管理 key-value 表 + 权限检查，单线程更安全</p>
+</blockquote>
+<h2 id="3-3-调用限制"><a href="#3-3-调用限制" class="headerlink" title="3.3. 调用限制"></a>3.3. 调用限制</h2><figure class="highlight c++"><table><tr><td class="code"><pre><span class="line">ps-&gt;<span class="built_in">setCallRestriction</span>(ProcessState::CallRestriction::FATAL_IF_NOT_ONEWAY);</span><br><span class="line"><span class="comment">// ServiceManager 不允许发起同步 Binder 调用</span></span><br></pre></td></tr></table></figure>
 
+<p>主要是为了防止死锁的发生，假设 ServiceManager 是<strong>单线程</strong>，且允许发起同步调用：</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="BASH"><figure class="iseeu highlight bash"><table><tr><td class="code"><pre><span class="line">1. App 进程调用 ServiceManager.getService(<span class="string">&quot;window&quot;</span>)</span><br><span class="line">   → ServiceManager 主线程开始处理</span><br><span class="line">   → 查表找到 WMS 的 IBinder</span><br><span class="line">   → 想做额外操作：调用 WMS.getStatus()（假设是个同步调用）</span><br><span class="line"></span><br><span class="line">2. ServiceManager 主线程发起同步调用 WMS.getStatus()</span><br><span class="line">   → ioctl 写入 BC_TRANSACTION → 阻塞等待 BR_REPLY</span><br><span class="line">   → 主线程卡在这里，无法处理任何新请求</span><br><span class="line"></span><br><span class="line">3. WMS 进程收到请求，开始处理 getStatus()</span><br><span class="line">   → 处理过程中需要调用 ServiceManager.checkService(<span class="string">&quot;something&quot;</span>)</span><br><span class="line">   → 发起 Binder 调用 → 请求进入 ServiceManager 的待处理队列</span><br><span class="line"></span><br><span class="line">4. ServiceManager 需要处理 WMS 的请求</span><br><span class="line">   → 但主线程还在步骤 2 阻塞等待 WMS 的回复</span><br><span class="line">   → 没有其他线程可以处理</span><br><span class="line">   → 永远不会处理 WMS 的请求</span><br><span class="line"></span><br><span class="line">5. 死锁形成：</span><br><span class="line">   ServiceManager 等 WMS 回复（步骤 2）</span><br><span class="line">   WMS 等 ServiceManager 回复（步骤 3）</span><br><span class="line">   双方都在等对方，永远解不开</span><br></pre></td></tr></table></figure></div>
 
+<h2 id="3-4-双重注册"><a href="#3-4-双重注册" class="headerlink" title="3.4. 双重注册"></a>3.4. 双重注册</h2><figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="comment">// 用户空间：设置 handle=0 请求的处理对象</span></span><br><span class="line">IPCThreadState::<span class="built_in">self</span>()-&gt;<span class="built_in">setTheContextObject</span>(manager);</span><br><span class="line"><span class="comment">// the_context_object = manager; (全局变量)</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 内核空间：注册为 handle=0 的目标进程</span></span><br><span class="line">ps-&gt;<span class="built_in">becomeContextManager</span>();</span><br><span class="line"><span class="comment">// ioctl(mDriverFD, BINDER_SET_CONTEXT_MGR_EXT, &amp;obj);</span></span><br></pre></td></tr></table></figure>
 
-<h4 id="diamond-shape-with-a-dot-inside-LRU-缓存机制"><a href="#diamond-shape-with-a-dot-inside-LRU-缓存机制" class="headerlink" title=":diamond_shape_with_a_dot_inside: LRU 缓存机制"></a>:diamond_shape_with_a_dot_inside: <a href="https://leetcode-cn.com/problems/lru-cache/">LRU 缓存机制</a></h4><p>[题解]</p>
+<p>两者缺一不可：</p>
+<ul>
+<li><code>setTheContextObject</code>：<strong>对本地 binder 库 “收到 context manager 的事务时，交给这个对象处理”</strong></li>
+<li><code>becomeContextManager</code>：<strong>告诉内核驱动”这个进程就是 context manager”</strong></li>
+</ul>
+<blockquote>
+<p>可以说 <code>setTheContext</code> 与 <code>becomeContextManager</code> 就是整个 Binder 系统中用户态最重要的两个方法了：</p>
+<ol>
+<li>becomeContextManager：告诉 Binder 驱动它是系统中的唯一上下文管理者（将 handle 注册成 0 号，决定它是系统的服务注册中心）</li>
+<li>setTheContextObject：设置本地变量 <code>the_context_object</code>，当 <code>executeCommand</code> 收到 <code>tr.target.ptr == 0</code> 的事务时，用它来处理。纯用户空间的事务分发。系统告诉驱动，这是 0 号的主人。（让 ServiceManager 处理 0 号事务）</li>
+</ol>
+</blockquote>
+<p>具体实现等到剖析 Binder 内核的时候一起分析。</p>
 ]]></content>
       <categories>
-        <category>LeetCode</category>
+        <category>Framework</category>
       </categories>
       <tags>
-        <tag>LeetCode</tag>
-        <tag>算法</tag>
-        <tag>数据结构</tag>
+        <tag>Binder</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>gdb学习</title>
+    <url>/2024/11/09/gdb%E5%AD%A6%E4%B9%A0/</url>
+    <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="/assets/css/APlayer.min.css"><script src="/assets/js/APlayer.min.js" class="aplayer-secondary-script-marker"></script><h1 id="1-GDB-的基本介绍"><a href="#1-GDB-的基本介绍" class="headerlink" title="1.GDB 的基本介绍"></a>1.GDB 的基本介绍</h1><p>GDB, 是 <code>The GNU Project Debugger</code> 的缩写, 是 Linux 下功能全面的调试工具。GDB 支持断点、单步执行、打印变量、观察变量、查看寄存器、查看堆栈等调试手段。在 Linux 环境软件开发中，GDB 是主要的调试工具，用来调试 C 和 C++ 程序。</p>
+<p>在终端输入以下命令安装 GDB：</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SHELL"><figure class="iseeu highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta prompt_">$ </span><span class="language-bash"><span class="built_in">sudo</span> apt-get install gdb</span></span><br></pre></td></tr></table></figure></div>
+
+<h2 id="1-GDB的进入和退出"><a href="#1-GDB的进入和退出" class="headerlink" title="1.GDB的进入和退出"></a>1.GDB的进入和退出</h2><p>首先用bugging.c作为实验例子。</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="C"><figure class="iseeu highlight c"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span><span class="string">&lt;stdio.h&gt;</span></span></span><br><span class="line"> </span><br><span class="line"><span class="type">int</span> <span class="title function_">foo</span><span class="params">(<span class="type">int</span> n)</span></span><br><span class="line">&#123;</span><br><span class="line"> </span><br><span class="line">    <span class="type">int</span> sum;</span><br><span class="line">    <span class="type">int</span> i;</span><br><span class="line"> </span><br><span class="line">    <span class="keyword">for</span> (i=<span class="number">0</span>; i&lt;=n; i++)</span><br><span class="line">    &#123;</span><br><span class="line">        sum = sum+i;</span><br><span class="line">    &#125;</span><br><span class="line"> </span><br><span class="line">    <span class="keyword">return</span> sum;</span><br><span class="line">&#125;</span><br><span class="line"> </span><br><span class="line"><span class="type">int</span> <span class="title function_">main</span><span class="params">(<span class="type">int</span> argc, <span class="type">char</span>** argv)</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="type">int</span> result = <span class="number">0</span>;</span><br><span class="line">    <span class="type">int</span> N = <span class="number">100</span>;</span><br><span class="line"> </span><br><span class="line">    result = foo(N);</span><br><span class="line"> </span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;1+2+3+...+%d= %d\n&quot;</span>, N, result);</span><br><span class="line"> </span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line"> </span><br><span class="line">&#125;        </span><br><span class="line"></span><br></pre></td></tr></table></figure></div>
+
+<p>如果要调试程序，需要在 gcc 编译可执行程序时加上 <code>-g</code> 参数，首先我们编译 <code>bugging.c</code> 程序，生成可执行文件：</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SHELL"><figure class="iseeu highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta prompt_">$ </span><span class="language-bash">gcc bugging.c -o bugging -g -m64</span></span><br></pre></td></tr></table></figure></div>
+
+<p>其中 <code>-o</code> 指定输出文件名, 虚拟机的环境是 64 位的操作系统，所以默认会编译为 64 位的程序，添加 -m64 选项可以编译为 64 位。</p>
+<p>如果在你的环境里编译报错，请安装 <code>libc6-dev-i386</code> 后再次编译：</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SHELL"><figure class="iseeu highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta prompt_">$ </span><span class="language-bash"><span class="built_in">sudo</span> apt-get install libc6-dev-i386</span></span><br></pre></td></tr></table></figure></div>
+
+<p>输入 <code>gdb bugging</code> 进入 gdb 调试 bugging 程序的界面：</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SHELL"><figure class="iseeu highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta prompt_">$ </span><span class="language-bash">gdb bugging</span></span><br></pre></td></tr></table></figure></div>
+
+<p>在 gdb 命令行界面，输入<code>run</code> 执行待调试程序：</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SHELL"><figure class="iseeu highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta prompt_">$ </span><span class="language-bash">(gdb) run</span></span><br></pre></td></tr></table></figure></div>
+
+<p>在 gdb 命令行界面，输入<code>quit</code> 退出 gdb：</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SHELL"><figure class="iseeu highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta prompt_">$ </span><span class="language-bash">(gdb) quit</span></span><br></pre></td></tr></table></figure></div>
+
+<img src="/2024/11/09/gdb%E5%AD%A6%E4%B9%A0/1.png" style="zoom:50%;">
+
+<h2 id="2-GDB-命令行界面使用技巧"><a href="#2-GDB-命令行界面使用技巧" class="headerlink" title="2.GDB 命令行界面使用技巧"></a>2.GDB 命令行界面使用技巧</h2><p>命令补全：</p>
+<blockquote>
+<p>任何时候都可以使用 <code>TAB</code> 进行补全，如果只有一个待选选项则直接补全；否则会列出可选选项，继续键入命令，同时结合 <code>TAB</code> 即可快速输入命令。</p>
+</blockquote>
+<p>部分 gdb 常用命令一览表：</p>
+<table>
+<thead>
+<tr>
+<th align="center">命令</th>
+<th align="center">简写形式</th>
+<th align="center">说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">list</td>
+<td align="center">l</td>
+<td align="center">查看源码</td>
+</tr>
+<tr>
+<td align="center">backtrace</td>
+<td align="center">bt,where</td>
+<td align="center">打印函数栈信息</td>
+</tr>
+<tr>
+<td align="center">next</td>
+<td align="center">n</td>
+<td align="center">执行下一行</td>
+</tr>
+<tr>
+<td align="center">step</td>
+<td align="center">s</td>
+<td align="center">一次执行一行，遇到函数会进入</td>
+</tr>
+<tr>
+<td align="center">finish</td>
+<td align="center"></td>
+<td align="center">运行到函数结束</td>
+</tr>
+<tr>
+<td align="center">continue</td>
+<td align="center">c</td>
+<td align="center">继续运行</td>
+</tr>
+<tr>
+<td align="center">break</td>
+<td align="center">b</td>
+<td align="center">设置断点</td>
+</tr>
+<tr>
+<td align="center">info breakpoints</td>
+<td align="center"></td>
+<td align="center">显示断点信息</td>
+</tr>
+<tr>
+<td align="center">delete</td>
+<td align="center">d</td>
+<td align="center">删除断点</td>
+</tr>
+<tr>
+<td align="center">print</td>
+<td align="center">p</td>
+<td align="center">打印表达式的值</td>
+</tr>
+<tr>
+<td align="center">run</td>
+<td align="center">r</td>
+<td align="center">启动程序</td>
+</tr>
+<tr>
+<td align="center">until</td>
+<td align="center">u</td>
+<td align="center">执行到指定行</td>
+</tr>
+<tr>
+<td align="center">info</td>
+<td align="center">i</td>
+<td align="center">显示信息</td>
+</tr>
+<tr>
+<td align="center">help</td>
+<td align="center">h</td>
+<td align="center">帮助信息</td>
+</tr>
+</tbody></table>
+<p>查询用法：</p>
+<blockquote>
+<p>在 gdb 命令行界面，输入 <code>help command</code> 可以查看命令的用法，command 是你想要查询的命令。</p>
+</blockquote>
+<p>执行 Shell 命令：</p>
+<blockquote>
+<p>在 gdb 命令行界面可以执行外部的 Shell 命令：</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SHELL"><figure class="iseeu highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta prompt_">$ </span><span class="language-bash">(gdb)!shell 命令</span></span><br></pre></td></tr></table></figure></div>
+
+<p>例如查看当前目录的文件：</p>
+<img src="/2024/11/09/gdb%E5%AD%A6%E4%B9%A0/2.png" style="zoom:50%;"></blockquote>
+<h2 id="3-GDB-查看源码"><a href="#3-GDB-查看源码" class="headerlink" title="3.GDB 查看源码"></a>3.GDB 查看源码</h2><p><strong><em>list</em> 命令用来显示源文件中的代码。</strong></p>
+<ul>
+<li>list 行号，显示某一行附近的代码：</li>
+</ul>
+<img src="/2024/11/09/gdb%E5%AD%A6%E4%B9%A0/3.png" style="zoom:50%;">
+
+<ul>
+<li>list 函数名，显示某个函数附近的代码：</li>
+</ul>
+<img src="/2024/11/09/gdb%E5%AD%A6%E4%B9%A0/4.png" style="zoom:50%;">
+
+<ul>
+<li>list 文件名 : 函数名，显示某一个文件某个函数附近的代码，用于多个源文件的情况。</li>
+</ul>
+<h2 id="4-GDB-断点"><a href="#4-GDB-断点" class="headerlink" title="4.GDB 断点"></a>4.GDB 断点</h2><h3 id="1-设置断点"><a href="#1-设置断点" class="headerlink" title="1.设置断点"></a>1.设置断点</h3><p><code>break</code> 命令用来设置断点。</p>
+<ul>
+<li>break 行号，断点设置在该行开始处，<strong>注意：该行代码未被执行</strong>：</li>
+</ul>
+<img src="/2024/11/09/gdb%E5%AD%A6%E4%B9%A0/5.png" style="zoom:50%;">
+
+<ul>
+<li><p>break 文件名 : 行号，适用于有多个源文件的情况。</p>
+</li>
+<li><p>break 函数名，断点设置在该函数的开始处，<strong>断点所在行未被执行</strong>：</p>
+</li>
+</ul>
+<img src="/2024/11/09/gdb%E5%AD%A6%E4%B9%A0/6.png" style="zoom:50%;">
+
+<ul>
+<li>break 文件名 : 函数名，适用于有多个源文件的情况。</li>
+</ul>
+<h4 id="2-查看断点信息"><a href="#2-查看断点信息" class="headerlink" title="2.查看断点信息"></a>2.查看断点信息</h4><p><code>info breakpoints</code> 命令用于显示当前断点信息。</p>
+<img src="/2024/11/09/gdb%E5%AD%A6%E4%B9%A0/7.png" style="zoom:50%;">
+
+<p>其中每一项的信息：</p>
+<blockquote>
+<ul>
+<li>Num 列代表断点编号，该编号可以作为 delete&#x2F;enable&#x2F;disable 等控制断点命令的参数</li>
+<li>Type 列代表断点类型，一般为 breakpoint</li>
+<li>Disp 列代表断点被命中后，该断点保留(keep)、删除(del)还是关闭(dis)</li>
+<li>Enb 列代表该断点是 enable(y) 还是 disable(n)</li>
+<li>Address 列代表该断点处虚拟内存的地址</li>
+<li>What 列代表该断点在源文件中的信息</li>
+</ul>
+</blockquote>
+<h3 id="3-删除断点"><a href="#3-删除断点" class="headerlink" title="3.删除断点"></a>3.删除断点</h3><p><code>delete</code> 命令用于删除断点。</p>
+<ul>
+<li>delete Num，删除指定断点，断点编号可通过 info breakpoints 获得：</li>
+</ul>
+<img src="/2024/11/09/gdb%E5%AD%A6%E4%B9%A0/8.png" style="zoom:50%;">
+
+<ul>
+<li>delete，不带任何参数，默认删除所有断点：</li>
+</ul>
+<h3 id="4-关闭和启用断点"><a href="#4-关闭和启用断点" class="headerlink" title="4.关闭和启用断点"></a>4.关闭和启用断点</h3><p><code>disable</code> 命令和 <code>enable</code> 命令分别用于关闭和启用断点：</p>
+<blockquote>
+<p><em>disable</em> 命令用于关闭断点，有些断点可能暂时不需要但又不想删除，便可以 disable 该断点。</p>
+<p><em>enable</em> 命令用于启用断点。</p>
+</blockquote>
+<ul>
+<li>disable Num，关闭指定断点，断点编号可通过 info breakpoints 获得：</li>
+</ul>
+<img src="/2024/11/09/gdb%E5%AD%A6%E4%B9%A0/9.png" style="zoom:50%;">
+
+<ul>
+<li><p>disable，不带任何参数，默认关闭所有断点。</p>
+</li>
+<li><p>enable Num，启用指定断点，断点编号可通过 info breakpoints 获得。</p>
+</li>
+</ul>
+<img src="/2024/11/09/gdb%E5%AD%A6%E4%B9%A0/10.png" style="zoom:50%;">
+
+<ul>
+<li>enable，不带任何参数，默认启用所有断点。</li>
+</ul>
+<p><strong>disable 和 enable 命令影响的是 info breakpoints 的 Enb 列，表示该断点是启用还是关闭</strong></p>
+<h3 id="5-断点启用的更多方式"><a href="#5-断点启用的更多方式" class="headerlink" title="5.断点启用的更多方式"></a>5.断点启用的更多方式</h3><p><code>enable</code> 命令还可以用来设置断点被执行的次数，比如当断点设在循环中的时候，某断点可能多次被命中。</p>
+<ul>
+<li>enable once Num，断点 hit 一次之后关闭该断点</li>
+<li>enable delete Num，断点 hit 一次之后删除该断点</li>
+</ul>
+<img src="/2024/11/09/gdb%E5%AD%A6%E4%B9%A0/11.png" style="zoom:50%;">
+
+<p><strong>这两个命令影响的是 info breakpoints 的 Disp 列，表示该断点被命中之后的行为。</strong></p>
+<h3 id="6-断点调试的一些命令"><a href="#6-断点调试的一些命令" class="headerlink" title="6. 断点调试的一些命令"></a>6. 断点调试的一些命令</h3><ol>
+<li><strong>打印变量</strong></li>
+</ol>
+<p>调试的过程中需要观察变量或者表达式的值，所以先介绍两个基本的显示变量值的命令：</p>
+<blockquote>
+<ul>
+<li><p><code>info locals</code></p>
+<p>打印当前断点处所在函数的所有局部变量的值，不包括函数参数。</p>
+</li>
+<li><p><code>print 变量或表达式</code></p>
+<p>打印表达式的值，可显示当前函数的变量的值、全局变量的值等</p>
+<p><code>print/FMT</code> 可以控制打印的格式，常见的有x(十六进制)、t(二进制)、c(显示为字符)等。</p>
+</li>
+</ul>
+</blockquote>
+<ol>
+<li><strong>启动程序</strong></li>
+</ol>
+<p><em>run</em> 命令用于启动待调试程序，并运行到断点处停下。</p>
+<blockquote>
+<ul>
+<li><p><code>run</code></p>
+<p>不带任何参数，启动待调试程序，不传递参数。</p>
+</li>
+<li><p><code>run 参数</code></p>
+<p>有些程序需要跟参数，直接带上参数列表即可，会传递给 main 函数的 argc、argv 变量。</p>
+</li>
+</ul>
+</blockquote>
+<ol>
+<li><strong>单步命令</strong></li>
+</ol>
+<p><em>next, step, finish, continue, until</em> 用于控制整个调试过程中，程序执行的流程。</p>
+<blockquote>
+<ul>
+<li><p><code>next</code></p>
+<blockquote>
+<p>next 单步执行，函数调用当做一条指令，<font color="red"><strong>不会进入被调用函数内部</strong></font></p>
+<p>next N，表示单步执行N次</p>
+</blockquote>
+</li>
+<li><p><code>step</code></p>
+<blockquote>
+<p>step 单步执行，<font color="red"><strong>会进入到函数调用内部</strong></font></p>
+<p>step N，表示单步执行N次</p>
+</blockquote>
+</li>
+<li><p><code>finish</code></p>
+<p>执行程序到当前函数结束</p>
+</li>
+<li><p><code>continue</code></p>
+<p>执行程序到下个断点</p>
+</li>
+<li><p><code>until</code></p>
+<p>until N，执行程序到源代码的某一行</p>
+</li>
+</ul>
+</blockquote>
+<h3 id="7-断点小结"><a href="#7-断点小结" class="headerlink" title="7. 断点小结"></a>7. 断点小结</h3><p>断点是调试最基本的方法之一，这一节主要介绍了断点相关的知识。主要是几个断点相关的命令。</p>
+<blockquote>
+<ul>
+<li><code>list</code></li>
+<li><code>info breakpoints</code></li>
+<li><code>break</code></li>
+<li><code>delete</code></li>
+<li><code>disable</code> 和 <code>enable</code></li>
+<li><code>enable once</code> 和 <code>enable delete</code></li>
+<li><code>next</code>, <code>step</code>, <code>finish</code>, <code>continue</code>, <code>until</code></li>
+<li><code>info locals</code> 和 <code>print</code></li>
+</ul>
+</blockquote>
+<p>不熟悉命令的时候，记得在 gdb 命令行下键入 <code>help info breakpoints</code> 等命令，查询帮助文档。</p>
+]]></content>
+      <categories>
+        <category>Linux C</category>
+      </categories>
+      <tags>
+        <tag>gdb</tag>
+        <tag>C</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>大学的四年</title>
+    <url>/2024/11/29/%E5%A4%A7%E5%AD%A6%E7%9A%84%E5%9B%9B%E5%B9%B4/</url>
+    <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="/assets/css/APlayer.min.css"><script src="/assets/js/APlayer.min.js" class="aplayer-secondary-script-marker"></script><blockquote>
+<p>周末夜里闲来无聊，不经意翻阅起大学舍友的博客，看着他记录的点点滴滴，十分感慨。看着自己工作后就一直没有再更新过的博客，不妨在大学十周年之前，趁着记忆还算深刻，都将回忆记录下来，一切都从头开始吧。</p>
+</blockquote>
+<h1 id="序章"><a href="#序章" class="headerlink" title="序章"></a>序章</h1><p>从高考成绩出来的那一刻起，也许大学生活就算是开始了吧。当时考完觉得自己考砸了，跟父母说，如果不在一本线，那直接复读。然后命运给自己的答案就是加上小高考，分数刚好是一本线，不多也不少。。父母和老师都觉得难报专业，记得当时的目标是河海的水利，理想是东大的土木，打电话给表哥，问他所在的土木行业怎么样，给点回复是“碰都别碰”（等到大学毕业，土木确实也算是天坑之一了，也是感谢当时表哥的劝退）。</p>
+<p>巧的是邻家哥哥刚好大学毕业，考上了东大的计算机，趁着暑假在家，和他促膝畅谈了一番，都觉得之后计算机行业应该会更好找工作。也记得初中喜欢的一篇青年文摘上文章男主报的专业也是计算机，就这样选择好了专业。最后在南工程，南审计和南林中选择了唯一有硕士点的南林。然后也为自己大三时候要考研埋下了种子。就这样，大学的四年在南林正式开始。</p>
+<hr>
+<h1 id="大一"><a href="#大一" class="headerlink" title="大一"></a>大一</h1>]]></content>
+      <categories>
+        <category>回忆录</category>
+      </categories>
+      <tags>
+        <tag>涓涓心事</tag>
+        <tag>回忆录</tag>
       </tags>
   </entry>
   <entry>
@@ -1101,434 +1623,8 @@
         <category>Linux C</category>
       </categories>
       <tags>
+        <tag>C</tag>
         <tag>Makefile</tag>
-        <tag>C</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>Netty线程模型</title>
-    <url>/2024/11/10/Netty-%E7%BA%BF%E7%A8%8B%E6%A8%A1%E5%9E%8B/</url>
-    <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="/assets/css/APlayer.min.css"><script src="/assets/js/APlayer.min.js" class="aplayer-secondary-script-marker"></script><blockquote>
-<p>Netty 的线程模型是基于 Reactor 模型改进而来的，因此需要先熟悉 Reactor 模型，帮助对于 Netty 线程模型的理解。</p>
-</blockquote>
-<h1 id="一-Reactor-模型"><a href="#一-Reactor-模型" class="headerlink" title="一. Reactor 模型"></a><strong>一. Reactor 模型</strong></h1><h2 id="1-为什么需要-Reactor-模型"><a href="#1-为什么需要-Reactor-模型" class="headerlink" title="1.为什么需要 Reactor 模型"></a><strong>1.为什么需要 Reactor 模型</strong></h2><p> 传统阻塞 IO 模型具有设计上的不足之处：</p>
-<ul>
-<li>每个连接都需要独立线程处理，当并发数大时，创建线程数多，占用资源</li>
-<li>采用阻塞IO模型，连接建立后，若当前线程没有数据可读，线程会阻塞在读操作上，造成资源浪费</li>
-</ul>
-<p>针对传统阻塞IO模型的两个问题，可以采用如下的方案：</p>
-<ul>
-<li>基于池化思想，避免为每个连接创建线程，连接完成后将业务处理交给线程池处理</li>
-<li>基于IO复用模型，多个连接共用同一个阻塞对象，不用等待所有的连接。遍历到有新数据可以处理时，操作系统会通知程序，线程跳出阻塞状态，进行业务逻辑处理</li>
-</ul>
-<h2 id="2-什么是-Reactor-模型"><a href="#2-什么是-Reactor-模型" class="headerlink" title="2.什么是 Reactor 模型"></a><strong>2.什么是 Reactor 模型</strong></h2><p>The reactor design_pattern is an event_handling pattern for handling service requests delivered concurrently to a service handler by one or more inputs. The service handler then demultiplexes the incoming requests and dispatches them synchronously to the associated request handlers.</p>
-<p>Reactor 设计模型是一种事件处理模式，用于处理通过一个或多个输入同时传递给服务处理程序的服务请求。然后，服务处理程序对传入的请求进行多路分解，并将它们同步分派给关联的请求处理程序。Reactor 模式也被称作 Dispatcher 模式。它的核心是 <strong>多路复用器</strong> ，多路复用器收到事件后会进行分发，这点是网络服务器高并发的关键。Reacotr 模型主要分为三个角色：</p>
-<ol>
-<li><strong>Reactor</strong> ：把 IO 事件分配给对应的 handler 处理</li>
-<li><strong>Acceptor</strong> ：处理客户端连接事件</li>
-<li><strong>Handler</strong> ：处理非阻塞的任务</li>
-</ol>
-<p>通过这三个角色的配合，实现了高并发的操作。而Reactor 模型分为三种：</p>
-<ol>
-<li><strong>单 Reactor 单线程</strong></li>
-<li><strong>单 Reactor 多线程</strong></li>
-<li><strong>多 Reactor 多线程</strong></li>
-</ol>
-<p>这三种模型按顺序来看理解起来复杂度不断提升，也会更接近 Netty 的线程模型，下面来分别看看这三种模型。</p>
-<h3 id="1-单-Reactor-单线程"><a href="#1-单-Reactor-单线程" class="headerlink" title="(1). 单 Reactor 单线程"></a><strong>(1). 单 Reactor 单线程</strong></h3><p>这个最好理解，只有 <strong>一个线程</strong> ，只是会把 <strong>建立连接</strong> 和 <strong>处理请求</strong> 这两种任务分发给不同的类去处理，如下图所示：</p>
-<center class="half"> 
-    <img src="/2024/11/10/Netty-%E7%BA%BF%E7%A8%8B%E6%A8%A1%E5%9E%8B/1.PNG" width="70%">
-    <div>图1:单Reactor单线程</div>
-</center>
-
-<p>整个流程简单来讲就是：</p>
-<ol>
-<li>Reactor 通过 Selector 监听事件</li>
-<li>收到事件使用 dispatch 对事件进行分发<ul>
-<li>如果是连接事件就由 Acceptor 进行处理，处理完成会创建一个 Handler 对后续业务进行处理。</li>
-<li>后面的数据请求都会由 Handler 进行处理</li>
-</ul>
-</li>
-</ol>
-<p><strong>优点</strong></p>
-<ul>
-<li>模型简单，不会有多线程的那些问题</li>
-</ul>
-<p><strong>缺点</strong></p>
-<ul>
-<li>性能问题：单线程无法发挥多核 CPU 的性能</li>
-<li>可靠性问题：处理业务时往往容易出问题，当 Handler 出问题了，由于只有一个线程，整个节点也挂了</li>
-</ul>
-<h3 id="2-单-Reactor-多线程"><a href="#2-单-Reactor-多线程" class="headerlink" title="(2). 单 Reactor 多线程"></a>(2). 单 Reactor 多线程</h3><p>这个线程模型针对前面的问题作出了一定的优化，多出了处理业务的线程池，如下图所示：</p>
-<center class="half"> 
-    <img src="/2024/11/10/Netty-%E7%BA%BF%E7%A8%8B%E6%A8%A1%E5%9E%8B/2.PNG" width="90%">
-    <div>图2:单Reactor多线程</div>
-</center>
-
-<p>前面的流程与单 Reactor 单线程是一致的，到 Handler 这一步就不一样了：</p>
-<ul>
-<li>这个模型 <strong>Handler 只负责读取数据和发送数据部分，业务处理交给了 Worker 线程</strong>，而 Worker 线程是由 Worker 线程池统一管理的。</li>
-</ul>
-<p><strong>优点</strong></p>
-<ul>
-<li>可以充分利用多核 CPU 的处理能力</li>
-</ul>
-<p><strong>缺点</strong></p>
-<ul>
-<li>多线程资源共享和访问处理会比较复杂，在主线程处理所有的连接、监听和响应也会出现性能瓶颈</li>
-</ul>
-<h3 id="3-主从-Reactor-多线程"><a href="#3-主从-Reactor-多线程" class="headerlink" title="(3). 主从 Reactor 多线程"></a>(3). 主从 Reactor 多线程</h3><p>主从 Reactor 多线程模型又在前面的模型基础上做了进一步优化， <strong>增加了子 Reactor</strong> ，如下图所示：</p>
-<center class="half"> 
-    <img src="/2024/11/10/Netty-%E7%BA%BF%E7%A8%8B%E6%A8%A1%E5%9E%8B/3.png" width="80%">
-    <div>图3:多Reactor多线程</div>
-</center>
-
-<p><strong>整个流程大概可以分为以下几步</strong>：</p>
-<ul>
-<li>主线程的 <code>MainReactor</code> 负责监听连接请求，收到连接请求会由 <code>Acceptor</code> 进行处理，成功建立连接之后 <code>MainReactor</code> 会把连接分派给 <code>SubReactor</code> ，由 <code>SubReactor</code> 监听和处理数据请求；</li>
-<li><code>SubReactor</code> 监听到数据请求，会派发给 Handler 处理，Handler 只会处理读取数据和发送数据部分，中间业务处理部分也是放在线程池中完成。</li>
-</ul>
-<p><strong>优点</strong></p>
-<ul>
-<li><code>MainReactor</code> 与 <code>SubReactor</code> 职责分明，一个处理连接事件，一个处理数据请求；</li>
-<li><code>MainReactor</code> 与 <code>SubReactor</code> 交互逻辑比较简单，<code>MainReactor</code> 单向地将建立好的连接传递出去；</li>
-<li>多 Reactor 设计能在高并发场景拥有更好的性能。</li>
-</ul>
-<p><strong>缺点</strong></p>
-<ul>
-<li>编程复杂度较高</li>
-</ul>
-<p>主从 Reactor 多线程模式是业界非常成熟的服务器程序设计模式，在很多中间件中都使用到了这种模式，像 Nginx、Memcached、Netty 等。这种模式也被称为 1 + M + N 模式，分别代指相对少的连接线程（不一定为 1 ），多个 I&#x2F;O 线程和多个业务处理线程。</p>
-<h1 id="二-Netty-线程模型"><a href="#二-Netty-线程模型" class="headerlink" title="二. Netty 线程模型"></a>二. Netty 线程模型</h1><p>Netty 线程模型是基于主从 Reactor 多线程模型优化而来的，整体架构如下图所示：</p>
-<center class="half"> 
-    <img src="/2024/11/10/Netty-%E7%BA%BF%E7%A8%8B%E6%A8%A1%E5%9E%8B/4.png" width="100%">
-    <div>图4:Netty线程</div>
-</center>
-
-<p>Netty 的线程模型主要分为两部分，分别是 <code>BossGroup</code> 和 <code>WorkerGroup</code>，它们都分别管理一个或多个 <code>NioEventLoop</code>。每个 <code>NioEventLoop</code> 对应着一个线程，一个 <code>Selector</code>，一个 <code>Executor</code> 和一个 <code>TaskQueue</code>。<code>NioEventLoop</code> 可以理解成一个事件循环：</p>
-<ul>
-<li>当程序启动后每个 <code>NioEventLoop</code> 都会通过 <code>Executor</code> 启动一个线程，开始执行事件循环。</li>
-<li>在循环中 <code>Selector</code> 会通过 select 方法阻塞并监听就绪事件，当有事件到来时通过 <code>processSeelectedKeys</code> 方法处理 Selector 事件。</li>
-<li>之后再通过 <code>runAllTasks</code> 方法处理其他的任务。</li>
-</ul>
-<p>与前面介绍的 主从 Reactor 多线程模型类似：</p>
-<ul>
-<li><code>BossGoup</code> 负责连接事件，当建立连接之后会生成一个 <code>NioSocketChannel</code> 并注册到 <code>WorkGroup</code> 其中一个 <code>NioEventLoop</code> 的 Selector 上。</li>
-<li><code>WokerGroup</code> 中的 <code>NioEventLoop</code> 负责处理数据请求，当请求到来时会调用 <code>processSelectedKeys</code> 方法，其中的业务处理会依次经过 Pipeline 中的多个 Handler。</li>
-</ul>
-]]></content>
-      <categories>
-        <category>Java</category>
-      </categories>
-      <tags>
-        <tag>Netty</tag>
-        <tag>Java</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>gdb学习</title>
-    <url>/2024/11/09/gdb%E5%AD%A6%E4%B9%A0/</url>
-    <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="/assets/css/APlayer.min.css"><script src="/assets/js/APlayer.min.js" class="aplayer-secondary-script-marker"></script><h1 id="1-GDB-的基本介绍"><a href="#1-GDB-的基本介绍" class="headerlink" title="1.GDB 的基本介绍"></a>1.GDB 的基本介绍</h1><p>GDB, 是 <code>The GNU Project Debugger</code> 的缩写, 是 Linux 下功能全面的调试工具。GDB 支持断点、单步执行、打印变量、观察变量、查看寄存器、查看堆栈等调试手段。在 Linux 环境软件开发中，GDB 是主要的调试工具，用来调试 C 和 C++ 程序。</p>
-<p>在终端输入以下命令安装 GDB：</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SHELL"><figure class="iseeu highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta prompt_">$ </span><span class="language-bash"><span class="built_in">sudo</span> apt-get install gdb</span></span><br></pre></td></tr></table></figure></div>
-
-<h2 id="1-GDB的进入和退出"><a href="#1-GDB的进入和退出" class="headerlink" title="1.GDB的进入和退出"></a>1.GDB的进入和退出</h2><p>首先用bugging.c作为实验例子。</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="C"><figure class="iseeu highlight c"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span><span class="string">&lt;stdio.h&gt;</span></span></span><br><span class="line"> </span><br><span class="line"><span class="type">int</span> <span class="title function_">foo</span><span class="params">(<span class="type">int</span> n)</span></span><br><span class="line">&#123;</span><br><span class="line"> </span><br><span class="line">    <span class="type">int</span> sum;</span><br><span class="line">    <span class="type">int</span> i;</span><br><span class="line"> </span><br><span class="line">    <span class="keyword">for</span> (i=<span class="number">0</span>; i&lt;=n; i++)</span><br><span class="line">    &#123;</span><br><span class="line">        sum = sum+i;</span><br><span class="line">    &#125;</span><br><span class="line"> </span><br><span class="line">    <span class="keyword">return</span> sum;</span><br><span class="line">&#125;</span><br><span class="line"> </span><br><span class="line"><span class="type">int</span> <span class="title function_">main</span><span class="params">(<span class="type">int</span> argc, <span class="type">char</span>** argv)</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="type">int</span> result = <span class="number">0</span>;</span><br><span class="line">    <span class="type">int</span> N = <span class="number">100</span>;</span><br><span class="line"> </span><br><span class="line">    result = foo(N);</span><br><span class="line"> </span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;1+2+3+...+%d= %d\n&quot;</span>, N, result);</span><br><span class="line"> </span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line"> </span><br><span class="line">&#125;        </span><br><span class="line"></span><br></pre></td></tr></table></figure></div>
-
-<p>如果要调试程序，需要在 gcc 编译可执行程序时加上 <code>-g</code> 参数，首先我们编译 <code>bugging.c</code> 程序，生成可执行文件：</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SHELL"><figure class="iseeu highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta prompt_">$ </span><span class="language-bash">gcc bugging.c -o bugging -g -m64</span></span><br></pre></td></tr></table></figure></div>
-
-<p>其中 <code>-o</code> 指定输出文件名, 虚拟机的环境是 64 位的操作系统，所以默认会编译为 64 位的程序，添加 -m64 选项可以编译为 64 位。</p>
-<p>如果在你的环境里编译报错，请安装 <code>libc6-dev-i386</code> 后再次编译：</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SHELL"><figure class="iseeu highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta prompt_">$ </span><span class="language-bash"><span class="built_in">sudo</span> apt-get install libc6-dev-i386</span></span><br></pre></td></tr></table></figure></div>
-
-<p>输入 <code>gdb bugging</code> 进入 gdb 调试 bugging 程序的界面：</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SHELL"><figure class="iseeu highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta prompt_">$ </span><span class="language-bash">gdb bugging</span></span><br></pre></td></tr></table></figure></div>
-
-<p>在 gdb 命令行界面，输入<code>run</code> 执行待调试程序：</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SHELL"><figure class="iseeu highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta prompt_">$ </span><span class="language-bash">(gdb) run</span></span><br></pre></td></tr></table></figure></div>
-
-<p>在 gdb 命令行界面，输入<code>quit</code> 退出 gdb：</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SHELL"><figure class="iseeu highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta prompt_">$ </span><span class="language-bash">(gdb) quit</span></span><br></pre></td></tr></table></figure></div>
-
-<img src="/2024/11/09/gdb%E5%AD%A6%E4%B9%A0/1.png" style="zoom:50%;">
-
-<h2 id="2-GDB-命令行界面使用技巧"><a href="#2-GDB-命令行界面使用技巧" class="headerlink" title="2.GDB 命令行界面使用技巧"></a>2.GDB 命令行界面使用技巧</h2><p>命令补全：</p>
-<blockquote>
-<p>任何时候都可以使用 <code>TAB</code> 进行补全，如果只有一个待选选项则直接补全；否则会列出可选选项，继续键入命令，同时结合 <code>TAB</code> 即可快速输入命令。</p>
-</blockquote>
-<p>部分 gdb 常用命令一览表：</p>
-<table>
-<thead>
-<tr>
-<th align="center">命令</th>
-<th align="center">简写形式</th>
-<th align="center">说明</th>
-</tr>
-</thead>
-<tbody><tr>
-<td align="center">list</td>
-<td align="center">l</td>
-<td align="center">查看源码</td>
-</tr>
-<tr>
-<td align="center">backtrace</td>
-<td align="center">bt,where</td>
-<td align="center">打印函数栈信息</td>
-</tr>
-<tr>
-<td align="center">next</td>
-<td align="center">n</td>
-<td align="center">执行下一行</td>
-</tr>
-<tr>
-<td align="center">step</td>
-<td align="center">s</td>
-<td align="center">一次执行一行，遇到函数会进入</td>
-</tr>
-<tr>
-<td align="center">finish</td>
-<td align="center"></td>
-<td align="center">运行到函数结束</td>
-</tr>
-<tr>
-<td align="center">continue</td>
-<td align="center">c</td>
-<td align="center">继续运行</td>
-</tr>
-<tr>
-<td align="center">break</td>
-<td align="center">b</td>
-<td align="center">设置断点</td>
-</tr>
-<tr>
-<td align="center">info breakpoints</td>
-<td align="center"></td>
-<td align="center">显示断点信息</td>
-</tr>
-<tr>
-<td align="center">delete</td>
-<td align="center">d</td>
-<td align="center">删除断点</td>
-</tr>
-<tr>
-<td align="center">print</td>
-<td align="center">p</td>
-<td align="center">打印表达式的值</td>
-</tr>
-<tr>
-<td align="center">run</td>
-<td align="center">r</td>
-<td align="center">启动程序</td>
-</tr>
-<tr>
-<td align="center">until</td>
-<td align="center">u</td>
-<td align="center">执行到指定行</td>
-</tr>
-<tr>
-<td align="center">info</td>
-<td align="center">i</td>
-<td align="center">显示信息</td>
-</tr>
-<tr>
-<td align="center">help</td>
-<td align="center">h</td>
-<td align="center">帮助信息</td>
-</tr>
-</tbody></table>
-<p>查询用法：</p>
-<blockquote>
-<p>在 gdb 命令行界面，输入 <code>help command</code> 可以查看命令的用法，command 是你想要查询的命令。</p>
-</blockquote>
-<p>执行 Shell 命令：</p>
-<blockquote>
-<p>在 gdb 命令行界面可以执行外部的 Shell 命令：</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SHELL"><figure class="iseeu highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta prompt_">$ </span><span class="language-bash">(gdb)!shell 命令</span></span><br></pre></td></tr></table></figure></div>
-
-<p>例如查看当前目录的文件：</p>
-<img src="/2024/11/09/gdb%E5%AD%A6%E4%B9%A0/2.png" style="zoom:50%;"></blockquote>
-<h2 id="3-GDB-查看源码"><a href="#3-GDB-查看源码" class="headerlink" title="3.GDB 查看源码"></a>3.GDB 查看源码</h2><p><strong><em>list</em> 命令用来显示源文件中的代码。</strong></p>
-<ul>
-<li>list 行号，显示某一行附近的代码：</li>
-</ul>
-<img src="/2024/11/09/gdb%E5%AD%A6%E4%B9%A0/3.png" style="zoom:50%;">
-
-<ul>
-<li>list 函数名，显示某个函数附近的代码：</li>
-</ul>
-<img src="/2024/11/09/gdb%E5%AD%A6%E4%B9%A0/4.png" style="zoom:50%;">
-
-<ul>
-<li>list 文件名 : 函数名，显示某一个文件某个函数附近的代码，用于多个源文件的情况。</li>
-</ul>
-<h2 id="4-GDB-断点"><a href="#4-GDB-断点" class="headerlink" title="4.GDB 断点"></a>4.GDB 断点</h2><h3 id="1-设置断点"><a href="#1-设置断点" class="headerlink" title="1.设置断点"></a>1.设置断点</h3><p><code>break</code> 命令用来设置断点。</p>
-<ul>
-<li>break 行号，断点设置在该行开始处，<strong>注意：该行代码未被执行</strong>：</li>
-</ul>
-<img src="/2024/11/09/gdb%E5%AD%A6%E4%B9%A0/5.png" style="zoom:50%;">
-
-<ul>
-<li><p>break 文件名 : 行号，适用于有多个源文件的情况。</p>
-</li>
-<li><p>break 函数名，断点设置在该函数的开始处，<strong>断点所在行未被执行</strong>：</p>
-</li>
-</ul>
-<img src="/2024/11/09/gdb%E5%AD%A6%E4%B9%A0/6.png" style="zoom:50%;">
-
-<ul>
-<li>break 文件名 : 函数名，适用于有多个源文件的情况。</li>
-</ul>
-<h4 id="2-查看断点信息"><a href="#2-查看断点信息" class="headerlink" title="2.查看断点信息"></a>2.查看断点信息</h4><p><code>info breakpoints</code> 命令用于显示当前断点信息。</p>
-<img src="/2024/11/09/gdb%E5%AD%A6%E4%B9%A0/7.png" style="zoom:50%;">
-
-<p>其中每一项的信息：</p>
-<blockquote>
-<ul>
-<li>Num 列代表断点编号，该编号可以作为 delete&#x2F;enable&#x2F;disable 等控制断点命令的参数</li>
-<li>Type 列代表断点类型，一般为 breakpoint</li>
-<li>Disp 列代表断点被命中后，该断点保留(keep)、删除(del)还是关闭(dis)</li>
-<li>Enb 列代表该断点是 enable(y) 还是 disable(n)</li>
-<li>Address 列代表该断点处虚拟内存的地址</li>
-<li>What 列代表该断点在源文件中的信息</li>
-</ul>
-</blockquote>
-<h3 id="3-删除断点"><a href="#3-删除断点" class="headerlink" title="3.删除断点"></a>3.删除断点</h3><p><code>delete</code> 命令用于删除断点。</p>
-<ul>
-<li>delete Num，删除指定断点，断点编号可通过 info breakpoints 获得：</li>
-</ul>
-<img src="/2024/11/09/gdb%E5%AD%A6%E4%B9%A0/8.png" style="zoom:50%;">
-
-<ul>
-<li>delete，不带任何参数，默认删除所有断点：</li>
-</ul>
-<h3 id="4-关闭和启用断点"><a href="#4-关闭和启用断点" class="headerlink" title="4.关闭和启用断点"></a>4.关闭和启用断点</h3><p><code>disable</code> 命令和 <code>enable</code> 命令分别用于关闭和启用断点：</p>
-<blockquote>
-<p><em>disable</em> 命令用于关闭断点，有些断点可能暂时不需要但又不想删除，便可以 disable 该断点。</p>
-<p><em>enable</em> 命令用于启用断点。</p>
-</blockquote>
-<ul>
-<li>disable Num，关闭指定断点，断点编号可通过 info breakpoints 获得：</li>
-</ul>
-<img src="/2024/11/09/gdb%E5%AD%A6%E4%B9%A0/9.png" style="zoom:50%;">
-
-<ul>
-<li><p>disable，不带任何参数，默认关闭所有断点。</p>
-</li>
-<li><p>enable Num，启用指定断点，断点编号可通过 info breakpoints 获得。</p>
-</li>
-</ul>
-<img src="/2024/11/09/gdb%E5%AD%A6%E4%B9%A0/10.png" style="zoom:50%;">
-
-<ul>
-<li>enable，不带任何参数，默认启用所有断点。</li>
-</ul>
-<p><strong>disable 和 enable 命令影响的是 info breakpoints 的 Enb 列，表示该断点是启用还是关闭</strong></p>
-<h3 id="5-断点启用的更多方式"><a href="#5-断点启用的更多方式" class="headerlink" title="5.断点启用的更多方式"></a>5.断点启用的更多方式</h3><p><code>enable</code> 命令还可以用来设置断点被执行的次数，比如当断点设在循环中的时候，某断点可能多次被命中。</p>
-<ul>
-<li>enable once Num，断点 hit 一次之后关闭该断点</li>
-<li>enable delete Num，断点 hit 一次之后删除该断点</li>
-</ul>
-<img src="/2024/11/09/gdb%E5%AD%A6%E4%B9%A0/11.png" style="zoom:50%;">
-
-<p><strong>这两个命令影响的是 info breakpoints 的 Disp 列，表示该断点被命中之后的行为。</strong></p>
-<h3 id="6-断点调试的一些命令"><a href="#6-断点调试的一些命令" class="headerlink" title="6. 断点调试的一些命令"></a>6. 断点调试的一些命令</h3><ol>
-<li><strong>打印变量</strong></li>
-</ol>
-<p>调试的过程中需要观察变量或者表达式的值，所以先介绍两个基本的显示变量值的命令：</p>
-<blockquote>
-<ul>
-<li><p><code>info locals</code></p>
-<p>打印当前断点处所在函数的所有局部变量的值，不包括函数参数。</p>
-</li>
-<li><p><code>print 变量或表达式</code></p>
-<p>打印表达式的值，可显示当前函数的变量的值、全局变量的值等</p>
-<p><code>print/FMT</code> 可以控制打印的格式，常见的有x(十六进制)、t(二进制)、c(显示为字符)等。</p>
-</li>
-</ul>
-</blockquote>
-<ol>
-<li><strong>启动程序</strong></li>
-</ol>
-<p><em>run</em> 命令用于启动待调试程序，并运行到断点处停下。</p>
-<blockquote>
-<ul>
-<li><p><code>run</code></p>
-<p>不带任何参数，启动待调试程序，不传递参数。</p>
-</li>
-<li><p><code>run 参数</code></p>
-<p>有些程序需要跟参数，直接带上参数列表即可，会传递给 main 函数的 argc、argv 变量。</p>
-</li>
-</ul>
-</blockquote>
-<ol>
-<li><strong>单步命令</strong></li>
-</ol>
-<p><em>next, step, finish, continue, until</em> 用于控制整个调试过程中，程序执行的流程。</p>
-<blockquote>
-<ul>
-<li><p><code>next</code></p>
-<blockquote>
-<p>next 单步执行，函数调用当做一条指令，<font color="red"><strong>不会进入被调用函数内部</strong></font></p>
-<p>next N，表示单步执行N次</p>
-</blockquote>
-</li>
-<li><p><code>step</code></p>
-<blockquote>
-<p>step 单步执行，<font color="red"><strong>会进入到函数调用内部</strong></font></p>
-<p>step N，表示单步执行N次</p>
-</blockquote>
-</li>
-<li><p><code>finish</code></p>
-<p>执行程序到当前函数结束</p>
-</li>
-<li><p><code>continue</code></p>
-<p>执行程序到下个断点</p>
-</li>
-<li><p><code>until</code></p>
-<p>until N，执行程序到源代码的某一行</p>
-</li>
-</ul>
-</blockquote>
-<h3 id="7-断点小结"><a href="#7-断点小结" class="headerlink" title="7. 断点小结"></a>7. 断点小结</h3><p>断点是调试最基本的方法之一，这一节主要介绍了断点相关的知识。主要是几个断点相关的命令。</p>
-<blockquote>
-<ul>
-<li><code>list</code></li>
-<li><code>info breakpoints</code></li>
-<li><code>break</code></li>
-<li><code>delete</code></li>
-<li><code>disable</code> 和 <code>enable</code></li>
-<li><code>enable once</code> 和 <code>enable delete</code></li>
-<li><code>next</code>, <code>step</code>, <code>finish</code>, <code>continue</code>, <code>until</code></li>
-<li><code>info locals</code> 和 <code>print</code></li>
-</ul>
-</blockquote>
-<p>不熟悉命令的时候，记得在 gdb 命令行下键入 <code>help info breakpoints</code> 等命令，查询帮助文档。</p>
-]]></content>
-      <categories>
-        <category>Linux C</category>
-      </categories>
-      <tags>
-        <tag>C</tag>
-        <tag>gdb</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>大学的四年</title>
-    <url>/2024/11/29/%E5%A4%A7%E5%AD%A6%E7%9A%84%E5%9B%9B%E5%B9%B4/</url>
-    <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="/assets/css/APlayer.min.css"><script src="/assets/js/APlayer.min.js" class="aplayer-secondary-script-marker"></script><blockquote>
-<p>周末夜里闲来无聊，不经意翻阅起大学舍友的博客，看着他记录的点点滴滴，十分感慨。看着自己工作后就一直没有再更新过的博客，不妨在大学十周年之前，趁着记忆还算深刻，都将回忆记录下来，一切都从头开始吧。</p>
-</blockquote>
-<h1 id="序章"><a href="#序章" class="headerlink" title="序章"></a>序章</h1><p>从高考成绩出来的那一刻起，也许大学生活就算是开始了吧。当时考完觉得自己考砸了，跟父母说，如果不在一本线，那直接复读。然后命运给自己的答案就是加上小高考，分数刚好是一本线，不多也不少。。父母和老师都觉得难报专业，记得当时的目标是河海的水利，理想是东大的土木，打电话给表哥，问他所在的土木行业怎么样，给点回复是“碰都别碰”（等到大学毕业，土木确实也算是天坑之一了，也是感谢当时表哥的劝退）。</p>
-<p>巧的是邻家哥哥刚好大学毕业，考上了东大的计算机，趁着暑假在家，和他促膝畅谈了一番，都觉得之后计算机行业应该会更好找工作。也记得初中喜欢的一篇青年文摘上文章男主报的专业也是计算机，就这样选择好了专业。最后在南工程，南审计和南林中选择了唯一有硕士点的南林。然后也为自己大三时候要考研埋下了种子。就这样，大学的四年在南林正式开始。</p>
-<hr>
-<h1 id="大一"><a href="#大一" class="headerlink" title="大一"></a>大一</h1>]]></content>
-      <categories>
-        <category>回忆录</category>
-      </categories>
-      <tags>
-        <tag>涓涓心事</tag>
-        <tag>回忆录</tag>
       </tags>
   </entry>
 </search>
