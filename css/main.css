@@ -1625,8 +1625,8 @@ pre .javascript .function {
   text-align: center;
 }
 code {
-  color: #ff7600;
-  background: #fbf7f8;
+  color: #0593d3;
+  background: #e8f4f8;
   margin: 2px;
 }
 .highlight,
@@ -1855,7 +1855,7 @@ pre {
   width: 4px;
   height: 4px;
   border-radius: 50%;
-  background: #41d979;
+  background: #454005;
 }
 .links-of-blogroll {
   font-size: 13px;
@@ -3015,14 +3015,14 @@ pre {
   color: #fff;
 }
 .post-toc .nav .active > a {
-  color: #fc6423 !important;
+  color: #0593d3 !important;
   font-weight: bold;
-  border-bottom-color: #fc6423 !important;
+  border-bottom-color: #0593d3 !important;
 }
 .post-toc .nav .active-current > a {
-  color: #e3461e !important;
+  color: #0478a8 !important;
   font-weight: bold;
-  border-bottom-color: #e3461e !important;
+  border-bottom-color: #0478a8 !important;
 }
 .code +mobile() {
   background: #2593a6;
@@ -3035,4 +3035,58 @@ pre {
 .gt-container .gt-comment-content .highlight ::selection {
   background: #2593a6;
   color: #fff;
+}
+.markdown-alert {
+  padding: 8px 16px;
+  margin-bottom: 16px;
+  border-left: 4px solid;
+  border-radius: 4px;
+}
+.markdown-alert .markdown-alert-title {
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  margin-bottom: 4px;
+}
+.markdown-alert .markdown-alert-title svg {
+  margin-right: 8px;
+  flex-shrink: 0;
+}
+.markdown-alert p:last-child {
+  margin-bottom: 0;
+}
+.markdown-alert-note {
+  border-left-color: #0969da;
+  background-color: #ddf4ff;
+}
+.markdown-alert-note .markdown-alert-title {
+  color: #0969da;
+}
+.markdown-alert-tip {
+  border-left-color: #1a7f37;
+  background-color: #dafbe1;
+}
+.markdown-alert-tip .markdown-alert-title {
+  color: #1a7f37;
+}
+.markdown-alert-warning {
+  border-left-color: #9a6700;
+  background-color: #fff8c5;
+}
+.markdown-alert-warning .markdown-alert-title {
+  color: #9a6700;
+}
+.markdown-alert-caution {
+  border-left-color: #d1242f;
+  background-color: #ffebe9;
+}
+.markdown-alert-caution .markdown-alert-title {
+  color: #d1242f;
+}
+.markdown-alert-important {
+  border-left-color: #8250df;
+  background-color: #fbefff;
+}
+.markdown-alert-important .markdown-alert-title {
+  color: #8250df;
 }
