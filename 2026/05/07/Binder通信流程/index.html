@@ -115,7 +115,7 @@
 <meta property="og:image" content="https://zcorpius.github.io/2026/05/07/Binder%E9%80%9A%E4%BF%A1%E6%B5%81%E7%A8%8B/7-image.png">
 <meta property="og:image" content="https://zcorpius.github.io/2026/05/07/Binder%E9%80%9A%E4%BF%A1%E6%B5%81%E7%A8%8B/8-image.png">
 <meta property="article:published_time" content="2026-05-07T15:34:32.000Z">
-<meta property="article:modified_time" content="2026-05-09T13:44:13.050Z">
+<meta property="article:modified_time" content="2026-05-09T13:45:43.996Z">
 <meta property="article:author" content="Zcorpius">
 <meta property="article:tag" content="Binder">
 <meta name="twitter:card" content="summary">
@@ -781,7 +781,7 @@
 <div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="BASH"><figure class="iseeu highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">service.setStreamVolume(...)                              <span class="comment"># 应用层调用</span></span><br><span class="line">→ IAudioService.Stub.Proxy.setStreamVolume(...)          <span class="comment"># AIDL 代理打包参数</span></span><br><span class="line">→ BinderProxy.transact(TRANSACTION_xxx, data, reply)     <span class="comment"># Java Binder 代理</span></span><br><span class="line">→ JNI → android_os_BinderProxy_transact()               <span class="comment"># JNI 桥接</span></span><br><span class="line">→ BpBinder(handle=X)::transact()                         <span class="comment"># C++ Binder 代理</span></span><br><span class="line">→ IPCThreadState::transact()                             <span class="comment"># 写入 mOut</span></span><br><span class="line">→ ioctl(BINDER_WRITE_READ)                               <span class="comment"># 系统调用进入内核</span></span><br><span class="line">→ Binder 驱动路由 handle=X                                <span class="comment"># 内核态</span></span><br><span class="line">→ AudioService 进程                                      <span class="comment"># 目标进程</span></span><br><span class="line">→ BBinder::transact → onTransact                        <span class="comment"># 虚函数分发</span></span><br><span class="line">→ AudioService.setStreamVolume(...)                      <span class="comment"># 业务处理</span></span><br></pre></td></tr></table></figure></div>
 
 <h3 id="1-6-4-流程再梳理"><a href="#1-6-4-流程再梳理" class="headerlink" title="1.6.4. 流程再梳理"></a>1.6.4. 流程再梳理</h3><p>回顾上面获取整体的梳理，再把流程整理一下，分成 getService 在缓存中命中，如果未命中后的流程，以及获取远程代理后的调用流程。实现看 getService 在命中缓存流程：</p>
-<img src="/2026/05/07/Binder%E9%80%9A%E4%BF%A1%E6%B5%81%E7%A8%8B/6-image.png" width="920px">
+<img src="/2026/05/07/Binder%E9%80%9A%E4%BF%A1%E6%B5%81%E7%A8%8B/6-image.png">
 
 <p>未命中之后的流程：</p>
 <h1 id="2-addService-操作"><a href="#2-addService-操作" class="headerlink" title="2. addService 操作"></a>2. addService 操作</h1><h1 id="3-setStreamVolumeWithAttribution-方法调用流程"><a href="#3-setStreamVolumeWithAttribution-方法调用流程" class="headerlink" title="3. setStreamVolumeWithAttribution 方法调用流程"></a>3. setStreamVolumeWithAttribution 方法调用流程</h1><p>由于链路过长，所以将时序图分成 AudioManger 到 Binder 驱动与 Binder 驱动 到 AudioService 两部分，首先是 AudioManger 到 Binder 驱动调用时序：</p>
