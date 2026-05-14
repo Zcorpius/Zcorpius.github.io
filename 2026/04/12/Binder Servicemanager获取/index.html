@@ -101,18 +101,18 @@
 
 <meta name="description" content="ServiceManager 是 Android 系统中所有 Binder 服务的名字注册中心，它是一个单线程、事件驱动的原生进程。    特征 说明    线程模型 单线程，无线程池 (setThreadPoolMaxThreadCount(0))   事件模型 Looper + epoll 事件驱动   Binder 限制 禁止发起同步调用 (FATAL_IF_NOT_ONEWAY)，防止死锁">
 <meta property="og:type" content="article">
-<meta property="og:title" content="servicemanager 启动流程">
-<meta property="og:url" content="https://zcorpius.github.io/2026/04/16/servicemanager%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/index.html">
+<meta property="og:title" content="servicemanager 获取">
+<meta property="og:url" content="https://zcorpius.github.io/2026/04/12/Binder%20Servicemanager%E8%8E%B7%E5%8F%96/index.html">
 <meta property="og:site_name" content="Zcorpius&#39;s Blog">
 <meta property="og:description" content="ServiceManager 是 Android 系统中所有 Binder 服务的名字注册中心，它是一个单线程、事件驱动的原生进程。    特征 说明    线程模型 单线程，无线程池 (setThreadPoolMaxThreadCount(0))   事件模型 Looper + epoll 事件驱动   Binder 限制 禁止发起同步调用 (FATAL_IF_NOT_ONEWAY)，防止死锁">
 <meta property="og:locale">
-<meta property="og:image" content="https://zcorpius.github.io/2026/04/16/servicemanager%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/%E5%88%9D%E5%A7%8B%E5%8C%96%E6%B5%81%E7%A8%8B.png">
-<meta property="article:published_time" content="2026-04-16T12:52:30.000Z">
-<meta property="article:modified_time" content="2026-05-05T15:23:51.397Z">
+<meta property="og:image" content="https://zcorpius.github.io/2026/04/12/Binder%20Servicemanager%E8%8E%B7%E5%8F%96/%E5%88%9D%E5%A7%8B%E5%8C%96%E6%B5%81%E7%A8%8B.png">
+<meta property="article:published_time" content="2026-04-12T08:23:30.000Z">
+<meta property="article:modified_time" content="2026-05-14T04:44:49.384Z">
 <meta property="article:author" content="Zcorpius">
 <meta property="article:tag" content="Binder">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://zcorpius.github.io/2026/04/16/servicemanager%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/%E5%88%9D%E5%A7%8B%E5%8C%96%E6%B5%81%E7%A8%8B.png">
+<meta name="twitter:image" content="https://zcorpius.github.io/2026/04/12/Binder%20Servicemanager%E8%8E%B7%E5%8F%96/%E5%88%9D%E5%A7%8B%E5%8C%96%E6%B5%81%E7%A8%8B.png">
 
 
 
@@ -142,13 +142,13 @@
 
 
 
-  <link rel="canonical" href="https://Zcorpius.github.io/2026/04/16/servicemanager启动流程/"/>
+  <link rel="canonical" href="https://Zcorpius.github.io/2026/04/12/Binder Servicemanager获取/"/>
 
 
 
 
 
-  <title>servicemanager 启动流程 | Zcorpius's Blog</title>
+  <title>servicemanager 获取 | Zcorpius's Blog</title>
   
 
 
@@ -329,7 +329,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="https://Zcorpius.github.io/2026/04/16/servicemanager%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/">
+    <link itemprop="mainEntityOfPage" href="https://Zcorpius.github.io/2026/04/12/Binder%20Servicemanager%E8%8E%B7%E5%8F%96/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="">
@@ -346,7 +346,7 @@
 
         
         
-          <h1 class="post-title" itemprop="name headline">servicemanager 启动流程</h1>
+          <h1 class="post-title" itemprop="name headline">servicemanager 获取</h1>
         
 
         <div class="post-meta">
@@ -358,8 +358,8 @@
               
                 <span class="post-meta-item-text">发表于</span>
               
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2026-04-16T20:52:30+08:00">
-                2026-04-16
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2026-04-12T16:23:30+08:00">
+                2026-04-12
               </time>
             
 
@@ -383,6 +383,17 @@
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
                   <a href="/categories/Framework/" itemprop="url" rel="index">
                     <span itemprop="name">Framework</span>
+                  </a>
+                </span>
+
+                
+                
+                  ， 
+                
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Framework/Binder/" itemprop="url" rel="index">
+                    <span itemprop="name">Binder</span>
                   </a>
                 </span>
 
@@ -486,7 +497,7 @@
 
 <p>当执行到 start servicemanager 命令时，会通过 <code>fork + execve</code> 来启动 servicemanager 进程，而 servicemanager 是编译生成的可执行文件，位于系统 <code>/system/bin/servicemanager</code> 目录。</p>
 <h1 id="2-初始化流程"><a href="#2-初始化流程" class="headerlink" title="2. 初始化流程"></a>2. 初始化流程</h1><p>初始化时序如下：</p>
-<p><img src="/2026/04/16/servicemanager%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/%E5%88%9D%E5%A7%8B%E5%8C%96%E6%B5%81%E7%A8%8B.png"></p>
+<p><img src="/2026/04/12/Binder%20Servicemanager%E8%8E%B7%E5%8F%96/%E5%88%9D%E5%A7%8B%E5%8C%96%E6%B5%81%E7%A8%8B.png"></p>
 <p>首先来看 servicemanager 实现方式：</p>
 <div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="BASH"><figure class="iseeu highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># frameworks/native/cmds/servicemanager/Android.bp</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># cc_binary编译成二进制文件servicemanager</span></span><br><span class="line">cc_binary &#123;</span><br><span class="line">    name: <span class="string">&quot;servicemanager&quot;</span>,</span><br><span class="line">    defaults: [<span class="string">&quot;servicemanager_defaults&quot;</span>],</span><br><span class="line">    init_rc: [<span class="string">&quot;servicemanager.rc&quot;</span>],</span><br><span class="line">    srcs: [<span class="string">&quot;main.cpp&quot;</span>],</span><br><span class="line">    bootstrap: <span class="literal">true</span>,</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
 
@@ -564,8 +575,8 @@
         <div class="post-nav">
           <div class="post-nav-next post-nav-item">
             
-              <a href="/2026/04/09/Binder%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/" rel="next" title="Binder 启动流程">
-                <i class="fa fa-chevron-left"></i> Binder 启动流程
+              <a href="/2026/04/09/Binder%E5%90%AF%E5%8A%A8/" rel="next" title="Binder 启动">
+                <i class="fa fa-chevron-left"></i> Binder 启动
               </a>
             
           </div>
@@ -574,8 +585,8 @@
 
           <div class="post-nav-prev post-nav-item">
             
-              <a href="/2026/05/07/Binder%E9%80%9A%E4%BF%A1%E6%B5%81%E7%A8%8B/" rel="prev" title="Binder 通信流程">
-                Binder 通信流程 <i class="fa fa-chevron-right"></i>
+              <a href="/2026/04/16/Binder%20Servicemanager%E5%90%AF%E5%8A%A8/" rel="prev" title="servicemanager 启动">
+                servicemanager 启动 <i class="fa fa-chevron-right"></i>
               </a>
             
           </div>
@@ -657,7 +668,7 @@
               
                 <a href="/archives/%7C%7C%20archive">
               
-                  <span class="site-state-item-count">14</span>
+                  <span class="site-state-item-count">18</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
@@ -668,7 +679,7 @@
               
               <div class="site-state-item site-state-categories">
                 <a href="/categories/index.html">
-                  <span class="site-state-item-count">7</span>
+                  <span class="site-state-item-count">8</span>
                   <span class="site-state-item-name">分类</span>
                 </a>
               </div>
