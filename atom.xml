@@ -72,12 +72,12 @@
   
   <entry>
     <title>Binder 使用</title>
-    <link href="https://zcorpius.github.io/2026/05/12/Binder%E4%BD%BF%E7%94%A8md/"/>
-    <id>https://zcorpius.github.io/2026/05/12/Binder%E4%BD%BF%E7%94%A8md/</id>
+    <link href="https://zcorpius.github.io/2026/05/12/Binder%E4%BD%BF%E7%94%A8/"/>
+    <id>https://zcorpius.github.io/2026/05/12/Binder%E4%BD%BF%E7%94%A8/</id>
     <published>2026-05-12T06:23:56.000Z</published>
-    <updated>2026-05-14T04:45:20.633Z</updated>
+    <updated>2026-05-22T03:26:53.855Z</updated>
     
-    <content type="html"><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="/assets/css/APlayer.min.css"><script src="/assets/js/APlayer.min.js" class="aplayer-secondary-script-marker"></script>]]></content>
+    <content type="html"><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="/assets/css/APlayer.min.css"><script src="/assets/js/APlayer.min.js" class="aplayer-secondary-script-marker"></script><style>.download-card {  text-align: center;  margin: 20px 0;}.download-card a {  display: inline-block;  font-size: 28px;  text-decoration: none;  border-bottom: none !important;  transition: transform 0.2s ease;  cursor: pointer;}.download-card a {  position: relative;}.download-card a:hover {  transform: scale(1.15);  border-bottom: none !important;}.download-card a::after {  content: "点击下载 Binder 案例代码";  position: absolute;  bottom: -10px;  left: 50%;  transform: translateX(-50%);  font-size: 10px;  color: #666;  opacity: 0;  transition: opacity 0.2s ease;  white-space: nowrap;}.download-card a:hover::after {  opacity: 1;}</style><div class="download-card">  <a href="/files/NativeBinderDemo.zip" title="点击下载 NativeBinderDemo.zip">📦</a></div>]]></content>
     
     
       
