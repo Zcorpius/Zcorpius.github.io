@@ -501,9 +501,9 @@
     <category term="Linux C" scheme="https://zcorpius.github.io/categories/Linux-C/"/>
     
     
-    <category term="C" scheme="https://zcorpius.github.io/tags/C/"/>
-    
     <category term="gdb" scheme="https://zcorpius.github.io/tags/gdb/"/>
+    
+    <category term="C" scheme="https://zcorpius.github.io/tags/C/"/>
     
   </entry>
   
