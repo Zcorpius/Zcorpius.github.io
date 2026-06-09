@@ -480,7 +480,7 @@
 <td>使用场景较少</td>
 </tr>
 </tbody></table>
-<h2 id="2-9-mode（MODE-STREAM-MODE-STATIC）"><a href="#2-9-mode（MODE-STREAM-MODE-STATIC）" class="headerlink" title="2.9. mode（MODE_STREAM &#x2F; MODE_STATIC）"></a>2.9. mode（MODE_STREAM &#x2F; MODE_STATIC）</h2><table>
+<h2 id="2-9-mode"><a href="#2-9-mode" class="headerlink" title="2.9. mode"></a>2.9. mode</h2><table>
 <thead>
 <tr>
 <th>取值</th>
@@ -668,10 +668,129 @@
 </tbody></table>
 <hr>
 <h1 id="3-AudioTrack-使用"><a href="#3-AudioTrack-使用" class="headerlink" title="3. AudioTrack 使用"></a>3. AudioTrack 使用</h1><p>通过两个案例来实现使用 Java 层的 AudioTrack 接口与 native 层的 AudioTrack 接口。</p>
-<h2 id="3-1-Java-层"><a href="#3-1-Java-层" class="headerlink" title="3.1. Java 层"></a>3.1. Java 层</h2><h2 id="3-2-native-层"><a href="#3-2-native-层" class="headerlink" title="3.2. native 层"></a>3.2. native 层</h2>]]></content>
+<h2 id="3-1-Java-层"><a href="#3-1-Java-层" class="headerlink" title="3.1. Java 层"></a>3.1. Java 层</h2><div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="JAVA"><figure class="iseeu highlight java"><table><tr><td class="code"><pre><span class="line"><span class="comment">// 采样率：每秒44100个点</span></span><br><span class="line"><span class="keyword">static</span> <span class="keyword">final</span> <span class="type">int</span> <span class="variable">SAMPLE_RATE</span> <span class="operator">=</span> <span class="number">44100</span>; </span><br><span class="line"><span class="comment">// 声道数：双声道，立体声</span></span><br><span class="line"><span class="keyword">static</span> <span class="keyword">final</span> <span class="type">int</span> <span class="variable">CHANNEL_CONFIG</span> <span class="operator">=</span> AudioFormat.CHANNEL_OUT_STEREO; </span><br><span class="line"><span class="comment">// 采样精度：一个采样点32比特，即4个字节</span></span><br><span class="line"><span class="keyword">static</span> <span class="keyword">final</span> <span class="type">int</span> <span class="variable">AUDIO_FORMAT</span> <span class="operator">=</span> AudioFormat.ENCODING_PCM_32BIT; </span><br><span class="line"><span class="type">int</span> <span class="variable">minBufferSize</span> <span class="operator">=</span> AudioTrack.getMinBufferSize(</span><br><span class="line">        SAMPLE_RATE,</span><br><span class="line">        CHANNEL_CONFIG,</span><br><span class="line">        AUDIO_FORMAT);</span><br><span class="line">        </span><br><span class="line"><span class="comment">// 音频的内容类型：music, 使用类型是：media        </span></span><br><span class="line"><span class="type">AudioAttributes</span> <span class="variable">audioAttributes</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">AudioAttributes</span>.Builder().</span><br><span class="line">        setContentType(AudioAttributes.CONTENT_TYPE_MUSIC).</span><br><span class="line">        setUsage(AudioAttributes.USAGE_MEDIA).</span><br><span class="line">        build();</span><br><span class="line">        </span><br><span class="line"><span class="comment">// 音频的参数格式设置。通道配置：立体声；采样格式：32bit；采样率 44100</span></span><br><span class="line"><span class="type">AudioFormat</span> <span class="variable">audioFormat</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">AudioFormat</span>.Builder().</span><br><span class="line">        setChannelMask(CHANNEL_CONFIG). <span class="comment">// 声道数：双声道，立体声</span></span><br><span class="line">        setEncoding(AUDIO_FORMAT).      <span class="comment">// 采样精度：一个采样点32比特，即4个字节</span></span><br><span class="line">        setSampleRate(SAMPLE_RATE).     <span class="comment">// 采样率：每秒44100个点</span></span><br><span class="line">        build();</span><br><span class="line">        </span><br><span class="line"><span class="comment">// 创建 AudioTrack        </span></span><br><span class="line"><span class="type">AudioTrack</span> <span class="variable">audioTrack</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">AudioTrack</span>(audioAttributes, audioFormat, minBufferSize, AudioTrack.MODE_STREAM, <span class="number">0</span>);</span><br><span class="line"></span><br><span class="line"><span class="comment">// 开始播放</span></span><br><span class="line">audioTrack.play();</span><br><span class="line"></span><br><span class="line"><span class="comment">// 调用write 写数据</span></span><br><span class="line">audioTrack.write(audioData, offsetInBytes, sizeInBytes);</span><br><span class="line"></span><br><span class="line"><span class="comment">// 停止播放和释放资源</span></span><br><span class="line">audioTrack.stop();</span><br><span class="line">audioTrack.release();</span><br></pre></td></tr></table></figure></div>
+
+
+
+<h2 id="3-2-native-层"><a href="#3-2-native-层" class="headerlink" title="3.2. native 层"></a>3.2. native 层</h2><p>以 AOSP 16为例，在目录下创建 audio_player 目录，实现简单的 Native AudioTrack 实例播放pcm的可执行文件，最后在device中实现播放。</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CPP"><figure class="iseeu highlight cpp"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">define</span> LOG_TAG <span class="string">&quot;NativeAudioTrack&quot;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;media/AudioTrack.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;stdio.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;unistd.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;utils/Log.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> android;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">main</span><span class="params">(<span class="type">int</span> argc, <span class="type">char</span> *argv[])</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (argc &lt; <span class="number">2</span>) &#123;</span><br><span class="line">        <span class="built_in">ALOGE</span>(<span class="string">&quot;Usage: %s &lt;pcm_file&gt;&quot;</span>, argv[<span class="number">0</span>]);</span><br><span class="line">        <span class="keyword">return</span> <span class="number">-1</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="built_in">ALOGI</span>(<span class="string">&quot;PCM file: %s&quot;</span>, argv[<span class="number">1</span>]);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 1. 打开PCM文件</span></span><br><span class="line">    FILE *pcmFile = <span class="built_in">fopen</span>(argv[<span class="number">1</span>], <span class="string">&quot;rb&quot;</span>);</span><br><span class="line">    <span class="keyword">if</span> (!pcmFile) &#123;</span><br><span class="line">        <span class="built_in">ALOGE</span>(<span class="string">&quot;Failed to open PCM file: %s&quot;</span>, argv[<span class="number">1</span>]);</span><br><span class="line">        <span class="keyword">return</span> <span class="number">-1</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="built_in">ALOGI</span>(<span class="string">&quot;PCM file opened successfully&quot;</span>);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 2. 设置音频参数</span></span><br><span class="line">    <span class="type">audio_format_t</span> format = AUDIO_FORMAT_PCM_32_BIT;</span><br><span class="line">    <span class="type">uint32_t</span> sampleRate = <span class="number">44100</span>;</span><br><span class="line">    <span class="type">audio_channel_mask_t</span> channelMask = AUDIO_CHANNEL_OUT_STEREO;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 3. 计算最小缓冲区大小</span></span><br><span class="line">    <span class="type">size_t</span> frameCount = <span class="number">0</span>;</span><br><span class="line">    <span class="type">status_t</span> status = AudioTrack::<span class="built_in">getMinFrameCount</span>(&amp;frameCount, AUDIO_STREAM_MUSIC, sampleRate);</span><br><span class="line"></span><br><span class="line">    <span class="built_in">ALOGI</span>(<span class="string">&quot;getMinFrameCount frameCount %d\n&quot;</span>, (<span class="type">int</span>) frameCount);</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">if</span> (status != OK) &#123;</span><br><span class="line">        <span class="built_in">ALOGE</span>(<span class="string">&quot;Failed to get min frame count&quot;</span>);</span><br><span class="line">        <span class="built_in">fclose</span>(pcmFile);</span><br><span class="line">        <span class="keyword">return</span> <span class="number">-1</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 4. 创建AudioTrack实例</span></span><br><span class="line">    <span class="built_in">ALOGI</span>(<span class="string">&quot;Creating AudioTrack: sampleRate=%u, format=PCM_32_BIT, channelMask=STEREO, frameCount=%zu&quot;</span>,</span><br><span class="line">          sampleRate, frameCount);</span><br><span class="line">    <span class="type">audio_attributes_t</span> attributes = &#123;.content_type = AUDIO_CONTENT_TYPE_MUSIC,</span><br><span class="line">                                     .usage = AUDIO_USAGE_MEDIA&#125;;</span><br><span class="line">    sp&lt;AudioTrack&gt; track =</span><br><span class="line">        <span class="keyword">new</span> <span class="built_in">AudioTrack</span>(AUDIO_STREAM_DEFAULT, sampleRate, format, channelMask,</span><br><span class="line">                       frameCount, AUDIO_OUTPUT_FLAG_NONE, <span class="literal">nullptr</span>, <span class="number">0</span>,</span><br><span class="line">                       AUDIO_SESSION_ALLOCATE, AudioTrack::TRANSFER_DEFAULT,</span><br><span class="line">                       <span class="literal">nullptr</span>, <span class="built_in">AttributionSourceState</span>(), &amp;attributes);</span><br><span class="line"></span><br><span class="line">    <span class="built_in">ALOGI</span>(<span class="string">&quot;AudioTrack created.&quot;</span>);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 5. 启动AudioTrack</span></span><br><span class="line">    track-&gt;<span class="built_in">start</span>();</span><br><span class="line">    <span class="built_in">ALOGI</span>(<span class="string">&quot;AudioTrack started&quot;</span>);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 6. 读取并播放PCM数据</span></span><br><span class="line">    <span class="type">int</span> bufferSize = <span class="number">4096</span>;</span><br><span class="line">    <span class="type">char</span> buffer[<span class="number">4096</span>];</span><br><span class="line">    <span class="type">int</span> totalRead = <span class="number">0</span>;</span><br><span class="line">    <span class="type">int</span> writeCount = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">while</span> (!<span class="built_in">feof</span>(pcmFile)) &#123;</span><br><span class="line">        <span class="type">int</span> read = (<span class="type">int</span>)<span class="built_in">fread</span>(buffer, <span class="number">1</span>, bufferSize, pcmFile);</span><br><span class="line">        <span class="keyword">if</span> (read &gt; <span class="number">0</span>) &#123;</span><br><span class="line">            <span class="type">ssize_t</span> written = track-&gt;<span class="built_in">write</span>(buffer, read);</span><br><span class="line">            totalRead += read;</span><br><span class="line">            writeCount++;</span><br><span class="line">            <span class="keyword">if</span> (writeCount % <span class="number">100</span> == <span class="number">0</span>) &#123;</span><br><span class="line">                <span class="built_in">ALOGI</span>(<span class="string">&quot;Progress: written %d bytes so far (%d calls)&quot;</span>, totalRead, writeCount);</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">if</span> (written &lt; <span class="number">0</span>) &#123;</span><br><span class="line">                <span class="built_in">ALOGE</span>(<span class="string">&quot;AudioTrack write failed: %zd&quot;</span>, written);</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="built_in">ALOGI</span>(<span class="string">&quot;Playback done: totalBytes=%d, writeCalls=%d&quot;</span>, totalRead, writeCount);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 7. 等待播放完成</span></span><br><span class="line">    <span class="built_in">ALOGI</span>(<span class="string">&quot;Waiting for playback to finish...&quot;</span>);</span><br><span class="line">    <span class="built_in">usleep</span>(<span class="number">5000000</span>); <span class="comment">// 5s</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">// 8. 清理资源</span></span><br><span class="line">    track-&gt;<span class="built_in">stop</span>();</span><br><span class="line">    <span class="built_in">ALOGI</span>(<span class="string">&quot;AudioTrack stopped, cleaning up&quot;</span>);</span><br><span class="line">    track.<span class="built_in">clear</span>();</span><br><span class="line">    <span class="built_in">fclose</span>(pcmFile);</span><br><span class="line">    <span class="built_in">ALOGI</span>(<span class="string">&quot;Done&quot;</span>);</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+
+<p>编译后将生成的 audio_player 可执行文件与待播放的pcm文件 push 到设备的 <code>/data/local/tmp</code> 下，是可以直接播放pcm的。</p>
+]]></content>
       <categories>
         <category>Audio</category>
         <category>AudioTrack</category>
+      </categories>
+      <tags>
+        <tag>Audio</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Android Audio 学习之旅</title>
+    <url>/2026/06/02/Audio%E5%AD%A6%E4%B9%A0%E4%B9%8B%E6%97%85/</url>
+    <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="/assets/css/APlayer.min.css"><script src="/assets/js/APlayer.min.js" class="aplayer-secondary-script-marker"></script><h1 id="1-系统架构"><a href="#1-系统架构" class="headerlink" title="1. 系统架构"></a>1. 系统架构</h1><p>Android 音频架构定义了音频功能的实现方式，并指出实现中所涉及的相关源代码。</p>
+<img src="/2026/06/02/Audio%E5%AD%A6%E4%B9%A0%E4%B9%8B%E6%97%85/Audio架构.png" alt=" " width="420px">
+
+<h2 id="1-1-应用框架："><a href="#1-1-应用框架：" class="headerlink" title="1.1. 应用框架："></a>1.1. 应用框架：</h2><p>应用框架包含应用代码，该代码使用 android.media API 与音频硬件进行交互。在内部，此代码会调用相应的 JNI 粘合类来访问与音频硬件互动的原生代码。</p>
+<h2 id="1-2-JNI"><a href="#1-2-JNI" class="headerlink" title="1.2. JNI"></a>1.2. JNI</h2><p>与 android.media 关联的 JNI 代码会调用较低级别的原生代码来访问音频硬件。</p>
+<p>JNI 位于 <code>frameworks/base/core/jni/</code> 和 <code>frameworks/base/media/jni</code> 中。</p>
+<h2 id="1-3-原生框架"><a href="#1-3-原生框架" class="headerlink" title="1.3. 原生框架"></a>1.3. 原生框架</h2><p>原生框架提供相当于 android.media 软件包的原生软件包，它调用 Binder IPC 代理来访问媒体服务器的音频专属服务。 原生框架代码位于 <code>frameworks/av/media/libmedia</code> 中。</p>
+<h2 id="1-4-Binder"><a href="#1-4-Binder" class="headerlink" title="1.4. Binder"></a>1.4. Binder</h2><p>IPCBinder IPC 代理用于促进跨越进程边界的通信。</p>
+<p>代理位于 <code>frameworks/av/media/libmedia</code> 中，并以字母<code>I</code> 开头。</p>
+<h2 id="1-5-媒体服务器"><a href="#1-5-媒体服务器" class="headerlink" title="1.5. 媒体服务器"></a>1.5. 媒体服务器</h2><p>媒体服务器包含音频服务，这些音频服务是与 HAL 实现进行交互的实际代码。</p>
+<p>媒体服务器位于 <code>frameworks/av/services/audioflinger</code> 中。</p>
+<h2 id="1-6-HAL"><a href="#1-6-HAL" class="headerlink" title="1.6. HAL"></a>1.6. HAL</h2><p>HAL 定义了音频服务会调用且必须实现才能使音频硬件正常运行的标准接口。</p>
+<h2 id="1-7-内核驱动程序"><a href="#1-7-内核驱动程序" class="headerlink" title="1.7. 内核驱动程序"></a>1.7. 内核驱动程序</h2><p>音频驱动程序用于硬件和 HAL 实现进行交互。可以使用高级 Linux 声音架构 (ALSA)、开放声音系统 (OSS) 或自定义驱动程序（HAL 与驱动程序无关）。</p>
+<div class="markdown-alert markdown-alert-note">
+<p class="markdown-alert-title"><svg class="octicon octicon-info mr-2" viewbox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"/></svg>Note</p>
+<p>上述为Android官方的描述，个人觉得描述得并不好，不如直接看架构图自己理解。</p>
+</div>
+<p>个人觉得 Audio 的学习与总结可以按照 <strong>数据流</strong>（PCM 往下走）和<strong>控制流</strong>（路由&#x2F;策略往下发）两条并行逻辑链路进行整理。</p>
+<h1 id="2-全景链路"><a href="#2-全景链路" class="headerlink" title="2. 全景链路"></a>2. 全景链路</h1><h2 id="2-1-链路图"><a href="#2-1-链路图" class="headerlink" title="2.1. 链路图"></a>2.1. 链路图</h2><pre class="mermaid">sequenceDiagram
+    participant App as App渲染线程
+    participant FW as Framework层<br>android.media.AudioTrack
+    participant Native as Native层<br>libaudioclient::AudioTrack
+    participant SHM as 共享缓冲<br>ClientProxy / ServerProxy
+    participant AF as AudioFlinger<br>PlaybackThread
+    participant AP as AudioPolicy
+    participant HAL as Audio HAL<br>stream_out.write
+    participant Kernel as Kernel Driver<br>PCM RingBuffer + DMA
+    participant Codec as Codec / 功放<br>蓝牙协议栈
+    participant Out as Speaker / Headset<br>Bluetooth
+
+    App->>FW: AudioTrack.write()
+    FW->>Native: JNI 调用
+    Native->>SHM: 写入 ClientProxy
+    SHM->>AF: ServerProxy 传递数据
+
+    AP-->>AF: 设备选路与策略裁决
+    AP-->>HAL: 路由变化时重连路
+
+    AF->>HAL: stream_out.write()
+    HAL->>Kernel: 写入 PCM RingBuffer
+    Kernel->>Kernel: DMA 传输
+    Kernel->>Codec: 音频数据
+    Codec->>Out: 模拟信号 / 蓝牙传输</pre>
+
+<p>这条链路里有两条并行逻辑：<strong>数据流</strong>（PCM 往下走）和<strong>控制流</strong>（路由&#x2F;策略往下发）。</p>
+<ul>
+<li>数据流决定“有没有声音”</li>
+<li>控制流决定“从哪里出来、走哪种输出路径”。</li>
+</ul>
+<h2 id="2-1-各层职责"><a href="#2-1-各层职责" class="headerlink" title="2.1. 各层职责"></a>2.1. 各层职责</h2><table>
+<thead>
+<tr>
+<th>层级</th>
+<th>典型组件</th>
+<th>核心职责</th>
+<th>工程速记</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>App 层</td>
+<td>播放内核渲染线程</td>
+<td>按节拍把 PCM 写入 AudioTrack，处理短写与错误码</td>
+<td>负责“持续喂数据”，不直接驱动硬件</td>
+</tr>
+<tr>
+<td>Framework&#x2F;Native</td>
+<td>Java AudioTrack +  libaudioclient::AudioTrack</td>
+<td>建链、参数校验、把数据写入共享缓冲</td>
+<td>是应用和系统音频服务的桥接层</td>
+</tr>
+<tr>
+<td>AudioFlinger</td>
+<td>PlaybackThread &#x2F; Track</td>
+<td>按线程周期消费轨道，做混音&#x2F;重采样&#x2F;音量处理</td>
+<td>是系统真正执行播放调度的核心</td>
+</tr>
+<tr>
+<td>AudioPolicy</td>
+<td>AudioPolicyService&#x2F;Manager</td>
+<td>选择输出设备与输出 profile，处理路由变化</td>
+<td>负责“选路与裁决”，不是搬运 PCM</td>
+</tr>
+<tr>
+<td>Audio HAL</td>
+<td>audio_stream_out.write</td>
+<td>把系统音频帧送到厂商驱动&#x2F;设备链路</td>
+<td>是 Android 音频框架到硬件的标准接口</td>
+</tr>
+<tr>
+<td>Kernel&#x2F;Device</td>
+<td>ALSA 驱动、DMA、Codec、蓝牙链路</td>
+<td>完成硬件搬运与电声转换，最终发声</td>
+<td>最后一公里，决定最终听感稳定性</td>
+</tr>
+</tbody></table>
+<div class="markdown-alert markdown-alert-tip">
+<p class="markdown-alert-title"><svg class="octicon octicon-light-bulb mr-2" viewbox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M8 1.5c-2.363 0-4 1.69-4 3.75 0 .984.424 1.625.984 2.304l.214.253c.223.264.47.556.673.848.284.411.537.896.621 1.49a.75.75 0 0 1-1.484.211c-.04-.282-.163-.547-.37-.847a8.456 8.456 0 0 0-.542-.68c-.084-.1-.173-.205-.268-.32C3.201 7.75 2.5 6.766 2.5 5.25 2.5 2.31 4.863 0 8 0s5.5 2.31 5.5 5.25c0 1.516-.701 2.5-1.328 3.259-.095.115-.184.22-.268.319-.207.245-.383.453-.541.681-.208.3-.33.565-.37.847a.751.751 0 0 1-1.485-.212c.084-.593.337-1.078.621-1.489.203-.292.45-.584.673-.848.075-.088.147-.173.213-.253.561-.679.985-1.32.985-2.304 0-2.06-1.637-3.75-4-3.75ZM5.75 12h4.5a.75.75 0 0 1 0 1.5h-4.5a.75.75 0 0 1 0-1.5ZM6 15.25a.75.75 0 0 1 .75-.75h2.5a.75.75 0 0 1 0 1.5h-2.5a.75.75 0 0 1-.75-.75Z"/></svg>Tip</p>
+<p>记忆技巧：<code>App 喂数 -&gt; Flinger 调度 -&gt; Policy 选路 -&gt; HAL 下发 -&gt; Driver 出声</code>。</p>
+</div>
+<p>后面先按照各个层级模块进行分析，结束后再分析从开机到应用使用 Audio 工作的流程。基本也就算是入门Audio了吧。</p>
+]]></content>
+      <categories>
+        <category>Audio</category>
       </categories>
       <tags>
         <tag>Audio</tag>
@@ -1357,117 +1476,6 @@
       </tags>
   </entry>
   <entry>
-    <title>Android Audio 学习之旅</title>
-    <url>/2026/06/02/Audio%E5%AD%A6%E4%B9%A0%E4%B9%8B%E6%97%85/</url>
-    <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="/assets/css/APlayer.min.css"><script src="/assets/js/APlayer.min.js" class="aplayer-secondary-script-marker"></script><h1 id="1-系统架构"><a href="#1-系统架构" class="headerlink" title="1. 系统架构"></a>1. 系统架构</h1><p>Android 音频架构定义了音频功能的实现方式，并指出实现中所涉及的相关源代码。</p>
-<img src="/2026/06/02/Audio%E5%AD%A6%E4%B9%A0%E4%B9%8B%E6%97%85/Audio架构.png" alt=" " width="420px">
-
-<h2 id="1-1-应用框架："><a href="#1-1-应用框架：" class="headerlink" title="1.1. 应用框架："></a>1.1. 应用框架：</h2><p>应用框架包含应用代码，该代码使用 android.media API 与音频硬件进行交互。在内部，此代码会调用相应的 JNI 粘合类来访问与音频硬件互动的原生代码。</p>
-<h2 id="1-2-JNI"><a href="#1-2-JNI" class="headerlink" title="1.2. JNI"></a>1.2. JNI</h2><p>与 android.media 关联的 JNI 代码会调用较低级别的原生代码来访问音频硬件。</p>
-<p>JNI 位于 <code>frameworks/base/core/jni/</code> 和 <code>frameworks/base/media/jni</code> 中。</p>
-<h2 id="1-3-原生框架"><a href="#1-3-原生框架" class="headerlink" title="1.3. 原生框架"></a>1.3. 原生框架</h2><p>原生框架提供相当于 android.media 软件包的原生软件包，它调用 Binder IPC 代理来访问媒体服务器的音频专属服务。 原生框架代码位于 <code>frameworks/av/media/libmedia</code> 中。</p>
-<h2 id="1-4-Binder"><a href="#1-4-Binder" class="headerlink" title="1.4. Binder"></a>1.4. Binder</h2><p>IPCBinder IPC 代理用于促进跨越进程边界的通信。</p>
-<p>代理位于 <code>frameworks/av/media/libmedia</code> 中，并以字母<code>I</code> 开头。</p>
-<h2 id="1-5-媒体服务器"><a href="#1-5-媒体服务器" class="headerlink" title="1.5. 媒体服务器"></a>1.5. 媒体服务器</h2><p>媒体服务器包含音频服务，这些音频服务是与 HAL 实现进行交互的实际代码。</p>
-<p>媒体服务器位于 <code>frameworks/av/services/audioflinger</code> 中。</p>
-<h2 id="1-6-HAL"><a href="#1-6-HAL" class="headerlink" title="1.6. HAL"></a>1.6. HAL</h2><p>HAL 定义了音频服务会调用且必须实现才能使音频硬件正常运行的标准接口。</p>
-<h2 id="1-7-内核驱动程序"><a href="#1-7-内核驱动程序" class="headerlink" title="1.7. 内核驱动程序"></a>1.7. 内核驱动程序</h2><p>音频驱动程序用于硬件和 HAL 实现进行交互。可以使用高级 Linux 声音架构 (ALSA)、开放声音系统 (OSS) 或自定义驱动程序（HAL 与驱动程序无关）。</p>
-<div class="markdown-alert markdown-alert-note">
-<p class="markdown-alert-title"><svg class="octicon octicon-info mr-2" viewbox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"/></svg>Note</p>
-<p>上述为Android官方的描述，个人觉得描述得并不好，不如直接看架构图自己理解。</p>
-</div>
-<p>个人觉得 Audio 的学习与总结可以按照 <strong>数据流</strong>（PCM 往下走）和<strong>控制流</strong>（路由&#x2F;策略往下发）两条并行逻辑链路进行整理。</p>
-<h1 id="2-全景链路"><a href="#2-全景链路" class="headerlink" title="2. 全景链路"></a>2. 全景链路</h1><h2 id="2-1-链路图"><a href="#2-1-链路图" class="headerlink" title="2.1. 链路图"></a>2.1. 链路图</h2><pre class="mermaid">sequenceDiagram
-    participant App as App渲染线程
-    participant FW as Framework层<br>android.media.AudioTrack
-    participant Native as Native层<br>libaudioclient::AudioTrack
-    participant SHM as 共享缓冲<br>ClientProxy / ServerProxy
-    participant AF as AudioFlinger<br>PlaybackThread
-    participant AP as AudioPolicy
-    participant HAL as Audio HAL<br>stream_out.write
-    participant Kernel as Kernel Driver<br>PCM RingBuffer + DMA
-    participant Codec as Codec / 功放<br>蓝牙协议栈
-    participant Out as Speaker / Headset<br>Bluetooth
-
-    App->>FW: AudioTrack.write()
-    FW->>Native: JNI 调用
-    Native->>SHM: 写入 ClientProxy
-    SHM->>AF: ServerProxy 传递数据
-
-    AP-->>AF: 设备选路与策略裁决
-    AP-->>HAL: 路由变化时重连路
-
-    AF->>HAL: stream_out.write()
-    HAL->>Kernel: 写入 PCM RingBuffer
-    Kernel->>Kernel: DMA 传输
-    Kernel->>Codec: 音频数据
-    Codec->>Out: 模拟信号 / 蓝牙传输</pre>
-
-<p>这条链路里有两条并行逻辑：<strong>数据流</strong>（PCM 往下走）和<strong>控制流</strong>（路由&#x2F;策略往下发）。</p>
-<ul>
-<li>数据流决定“有没有声音”</li>
-<li>控制流决定“从哪里出来、走哪种输出路径”。</li>
-</ul>
-<h2 id="2-1-各层职责"><a href="#2-1-各层职责" class="headerlink" title="2.1. 各层职责"></a>2.1. 各层职责</h2><table>
-<thead>
-<tr>
-<th>层级</th>
-<th>典型组件</th>
-<th>核心职责</th>
-<th>工程速记</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>App 层</td>
-<td>播放内核渲染线程</td>
-<td>按节拍把 PCM 写入 AudioTrack，处理短写与错误码</td>
-<td>负责“持续喂数据”，不直接驱动硬件</td>
-</tr>
-<tr>
-<td>Framework&#x2F;Native</td>
-<td>Java AudioTrack +  libaudioclient::AudioTrack</td>
-<td>建链、参数校验、把数据写入共享缓冲</td>
-<td>是应用和系统音频服务的桥接层</td>
-</tr>
-<tr>
-<td>AudioFlinger</td>
-<td>PlaybackThread &#x2F; Track</td>
-<td>按线程周期消费轨道，做混音&#x2F;重采样&#x2F;音量处理</td>
-<td>是系统真正执行播放调度的核心</td>
-</tr>
-<tr>
-<td>AudioPolicy</td>
-<td>AudioPolicyService&#x2F;Manager</td>
-<td>选择输出设备与输出 profile，处理路由变化</td>
-<td>负责“选路与裁决”，不是搬运 PCM</td>
-</tr>
-<tr>
-<td>Audio HAL</td>
-<td>audio_stream_out.write</td>
-<td>把系统音频帧送到厂商驱动&#x2F;设备链路</td>
-<td>是 Android 音频框架到硬件的标准接口</td>
-</tr>
-<tr>
-<td>Kernel&#x2F;Device</td>
-<td>ALSA 驱动、DMA、Codec、蓝牙链路</td>
-<td>完成硬件搬运与电声转换，最终发声</td>
-<td>最后一公里，决定最终听感稳定性</td>
-</tr>
-</tbody></table>
-<div class="markdown-alert markdown-alert-tip">
-<p class="markdown-alert-title"><svg class="octicon octicon-light-bulb mr-2" viewbox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M8 1.5c-2.363 0-4 1.69-4 3.75 0 .984.424 1.625.984 2.304l.214.253c.223.264.47.556.673.848.284.411.537.896.621 1.49a.75.75 0 0 1-1.484.211c-.04-.282-.163-.547-.37-.847a8.456 8.456 0 0 0-.542-.68c-.084-.1-.173-.205-.268-.32C3.201 7.75 2.5 6.766 2.5 5.25 2.5 2.31 4.863 0 8 0s5.5 2.31 5.5 5.25c0 1.516-.701 2.5-1.328 3.259-.095.115-.184.22-.268.319-.207.245-.383.453-.541.681-.208.3-.33.565-.37.847a.751.751 0 0 1-1.485-.212c.084-.593.337-1.078.621-1.489.203-.292.45-.584.673-.848.075-.088.147-.173.213-.253.561-.679.985-1.32.985-2.304 0-2.06-1.637-3.75-4-3.75ZM5.75 12h4.5a.75.75 0 0 1 0 1.5h-4.5a.75.75 0 0 1 0-1.5ZM6 15.25a.75.75 0 0 1 .75-.75h2.5a.75.75 0 0 1 0 1.5h-2.5a.75.75 0 0 1-.75-.75Z"/></svg>Tip</p>
-<p>记忆技巧：<code>App 喂数 -&gt; Flinger 调度 -&gt; Policy 选路 -&gt; HAL 下发 -&gt; Driver 出声</code>。</p>
-</div>
-<p>后面先按照各个层级模块进行分析，结束后再分析从开机到应用使用 Audio 工作的流程。基本也就算是入门Audio了吧。</p>
-]]></content>
-      <categories>
-        <category>Audio</category>
-      </categories>
-      <tags>
-        <tag>Audio</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>servicemanager 启动</title>
     <url>/2026/04/12/Binder-Servicemanager%E5%90%AF%E5%8A%A8/</url>
     <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="/assets/css/APlayer.min.css"><script src="/assets/js/APlayer.min.js" class="aplayer-secondary-script-marker"></script><p>ServiceManager 是 Android 系统中所有 Binder 服务的<strong>名字注册中心</strong>，它是一个单线程、事件驱动的原生进程。</p>
@@ -1963,57 +1971,6 @@
       </tags>
   </entry>
   <entry>
-    <title>Binder 使用</title>
-    <url>/2026/05/10/Binder%E4%BD%BF%E7%94%A8/</url>
-    <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="/assets/css/APlayer.min.css"><script src="/assets/js/APlayer.min.js" class="aplayer-secondary-script-marker"></script><style>
-.download-card {
-  text-align: center;
-  margin: 20px 0;
-}
-.download-card a {
-  display: inline-block;
-  font-size: 28px;
-  text-decoration: none;
-  border-bottom: none !important;
-  transition: transform 0.2s ease;
-  cursor: pointer;
-}
-.download-card a {
-  position: relative;
-}
-.download-card a:hover {
-  transform: scale(1.15);
-  border-bottom: none !important;
-}
-.download-card a::after {
-  content: "点击下载 Binder 案例代码";
-  position: absolute;
-  bottom: -10px;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 10px;
-  color: #666;
-  opacity: 0;
-  transition: opacity 0.2s ease;
-  white-space: nowrap;
-}
-.download-card a:hover::after {
-  opacity: 1;
-}
-</style>
-
-<div class="download-card">
-  <a href="/files/NativeBinderDemo.zip" title="点击下载 NativeBinderDemo.zip">📦</a>
-</div>]]></content>
-      <categories>
-        <category>Framework</category>
-        <category>Binder</category>
-      </categories>
-      <tags>
-        <tag>Binder</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>setService 注册服务</title>
     <url>/2026/05/03/Binder-setService%E6%B3%A8%E5%86%8C%E6%9C%8D%E5%8A%A1/</url>
     <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="/assets/css/APlayer.min.css"><script src="/assets/js/APlayer.min.js" class="aplayer-secondary-script-marker"></script><p>以 AudioManager 中的 <code>getService</code> 与 AudioService 中的 <code>addService</code> 来梳理Binder的通信流程。</p>
@@ -2355,6 +2312,57 @@
 <img src="/2026/05/03/Binder-setService%E6%B3%A8%E5%86%8C%E6%9C%8D%E5%8A%A1/8-image.png" width="920px">
 
 ]]></content>
+      <categories>
+        <category>Framework</category>
+        <category>Binder</category>
+      </categories>
+      <tags>
+        <tag>Binder</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Binder 使用</title>
+    <url>/2026/05/10/Binder%E4%BD%BF%E7%94%A8/</url>
+    <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="/assets/css/APlayer.min.css"><script src="/assets/js/APlayer.min.js" class="aplayer-secondary-script-marker"></script><style>
+.download-card {
+  text-align: center;
+  margin: 20px 0;
+}
+.download-card a {
+  display: inline-block;
+  font-size: 28px;
+  text-decoration: none;
+  border-bottom: none !important;
+  transition: transform 0.2s ease;
+  cursor: pointer;
+}
+.download-card a {
+  position: relative;
+}
+.download-card a:hover {
+  transform: scale(1.15);
+  border-bottom: none !important;
+}
+.download-card a::after {
+  content: "点击下载 Binder 案例代码";
+  position: absolute;
+  bottom: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 10px;
+  color: #666;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  white-space: nowrap;
+}
+.download-card a:hover::after {
+  opacity: 1;
+}
+</style>
+
+<div class="download-card">
+  <a href="/files/NativeBinderDemo.zip" title="点击下载 NativeBinderDemo.zip">📦</a>
+</div>]]></content>
       <categories>
         <category>Framework</category>
         <category>Binder</category>
@@ -2849,6 +2857,29 @@
       </tags>
   </entry>
   <entry>
+    <title>C++重拾之旅</title>
+    <url>/2025/05/26/C++%E9%87%8D%E6%8B%BE%E4%B9%8B%E6%97%85/</url>
+    <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="/assets/css/APlayer.min.css"><script src="/assets/js/APlayer.min.js" class="aplayer-secondary-script-marker"></script>]]></content>
+      <categories>
+        <category>C++</category>
+      </categories>
+      <tags>
+        <tag>C++</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Claude Code 之旅</title>
+    <url>/2026/03/20/ClaudeCode%E4%B9%8B%E6%97%85/</url>
+    <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="/assets/css/APlayer.min.css"><script src="/assets/js/APlayer.min.js" class="aplayer-secondary-script-marker"></script>]]></content>
+      <categories>
+        <category>ClaudeCode</category>
+      </categories>
+      <tags>
+        <tag>AI</tag>
+        <tag>ClaudeCode</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Binder 启动</title>
     <url>/2026/04/09/Binder%E5%90%AF%E5%8A%A8/</url>
     <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="/assets/css/APlayer.min.css"><script src="/assets/js/APlayer.min.js" class="aplayer-secondary-script-marker"></script><blockquote>
@@ -3328,29 +3359,6 @@
       </tags>
   </entry>
   <entry>
-    <title>C++重拾之旅</title>
-    <url>/2025/05/26/C++%E9%87%8D%E6%8B%BE%E4%B9%8B%E6%97%85/</url>
-    <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="/assets/css/APlayer.min.css"><script src="/assets/js/APlayer.min.js" class="aplayer-secondary-script-marker"></script>]]></content>
-      <categories>
-        <category>C++</category>
-      </categories>
-      <tags>
-        <tag>C++</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>Claude Code 之旅</title>
-    <url>/2026/03/20/ClaudeCode%E4%B9%8B%E6%97%85/</url>
-    <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="/assets/css/APlayer.min.css"><script src="/assets/js/APlayer.min.js" class="aplayer-secondary-script-marker"></script>]]></content>
-      <categories>
-        <category>ClaudeCode</category>
-      </categories>
-      <tags>
-        <tag>AI</tag>
-        <tag>ClaudeCode</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>Git提速代理</title>
     <url>/2024/11/09/Git%E6%8F%90%E9%80%9F%E4%BB%A3%E7%90%86/</url>
     <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="/assets/css/APlayer.min.css"><script src="/assets/js/APlayer.min.js" class="aplayer-secondary-script-marker"></script><blockquote>
@@ -3724,312 +3732,6 @@
       <tags>
         <tag>Netty</tag>
         <tag>Java</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>gdb学习</title>
-    <url>/2024/11/09/gdb%E5%AD%A6%E4%B9%A0/</url>
-    <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="/assets/css/APlayer.min.css"><script src="/assets/js/APlayer.min.js" class="aplayer-secondary-script-marker"></script><h1 id="1-GDB-的基本介绍"><a href="#1-GDB-的基本介绍" class="headerlink" title="1.GDB 的基本介绍"></a>1.GDB 的基本介绍</h1><p>GDB, 是 <code>The GNU Project Debugger</code> 的缩写, 是 Linux 下功能全面的调试工具。GDB 支持断点、单步执行、打印变量、观察变量、查看寄存器、查看堆栈等调试手段。在 Linux 环境软件开发中，GDB 是主要的调试工具，用来调试 C 和 C++ 程序。</p>
-<p>在终端输入以下命令安装 GDB：</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SHELL"><figure class="iseeu highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta prompt_">$ </span><span class="language-bash"><span class="built_in">sudo</span> apt-get install gdb</span></span><br></pre></td></tr></table></figure></div>
-
-<h2 id="1-GDB的进入和退出"><a href="#1-GDB的进入和退出" class="headerlink" title="1.GDB的进入和退出"></a>1.GDB的进入和退出</h2><p>首先用bugging.c作为实验例子。</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="C"><figure class="iseeu highlight c"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span><span class="string">&lt;stdio.h&gt;</span></span></span><br><span class="line"> </span><br><span class="line"><span class="type">int</span> <span class="title function_">foo</span><span class="params">(<span class="type">int</span> n)</span></span><br><span class="line">&#123;</span><br><span class="line"> </span><br><span class="line">    <span class="type">int</span> sum;</span><br><span class="line">    <span class="type">int</span> i;</span><br><span class="line"> </span><br><span class="line">    <span class="keyword">for</span> (i=<span class="number">0</span>; i&lt;=n; i++)</span><br><span class="line">    &#123;</span><br><span class="line">        sum = sum+i;</span><br><span class="line">    &#125;</span><br><span class="line"> </span><br><span class="line">    <span class="keyword">return</span> sum;</span><br><span class="line">&#125;</span><br><span class="line"> </span><br><span class="line"><span class="type">int</span> <span class="title function_">main</span><span class="params">(<span class="type">int</span> argc, <span class="type">char</span>** argv)</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="type">int</span> result = <span class="number">0</span>;</span><br><span class="line">    <span class="type">int</span> N = <span class="number">100</span>;</span><br><span class="line"> </span><br><span class="line">    result = foo(N);</span><br><span class="line"> </span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;1+2+3+...+%d= %d\n&quot;</span>, N, result);</span><br><span class="line"> </span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line"> </span><br><span class="line">&#125;        </span><br><span class="line"></span><br></pre></td></tr></table></figure></div>
-
-<p>如果要调试程序，需要在 gcc 编译可执行程序时加上 <code>-g</code> 参数，首先我们编译 <code>bugging.c</code> 程序，生成可执行文件：</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SHELL"><figure class="iseeu highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta prompt_">$ </span><span class="language-bash">gcc bugging.c -o bugging -g -m64</span></span><br></pre></td></tr></table></figure></div>
-
-<p>其中 <code>-o</code> 指定输出文件名, 虚拟机的环境是 64 位的操作系统，所以默认会编译为 64 位的程序，添加 -m64 选项可以编译为 64 位。</p>
-<p>如果在你的环境里编译报错，请安装 <code>libc6-dev-i386</code> 后再次编译：</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SHELL"><figure class="iseeu highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta prompt_">$ </span><span class="language-bash"><span class="built_in">sudo</span> apt-get install libc6-dev-i386</span></span><br></pre></td></tr></table></figure></div>
-
-<p>输入 <code>gdb bugging</code> 进入 gdb 调试 bugging 程序的界面：</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SHELL"><figure class="iseeu highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta prompt_">$ </span><span class="language-bash">gdb bugging</span></span><br></pre></td></tr></table></figure></div>
-
-<p>在 gdb 命令行界面，输入<code>run</code> 执行待调试程序：</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SHELL"><figure class="iseeu highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta prompt_">$ </span><span class="language-bash">(gdb) run</span></span><br></pre></td></tr></table></figure></div>
-
-<p>在 gdb 命令行界面，输入<code>quit</code> 退出 gdb：</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SHELL"><figure class="iseeu highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta prompt_">$ </span><span class="language-bash">(gdb) quit</span></span><br></pre></td></tr></table></figure></div>
-
-<img src="/2024/11/09/gdb%E5%AD%A6%E4%B9%A0/1.png" style="zoom:50%;">
-
-<h2 id="2-GDB-命令行界面使用技巧"><a href="#2-GDB-命令行界面使用技巧" class="headerlink" title="2.GDB 命令行界面使用技巧"></a>2.GDB 命令行界面使用技巧</h2><p>命令补全：</p>
-<blockquote>
-<p>任何时候都可以使用 <code>TAB</code> 进行补全，如果只有一个待选选项则直接补全；否则会列出可选选项，继续键入命令，同时结合 <code>TAB</code> 即可快速输入命令。</p>
-</blockquote>
-<p>部分 gdb 常用命令一览表：</p>
-<table>
-<thead>
-<tr>
-<th align="center">命令</th>
-<th align="center">简写形式</th>
-<th align="center">说明</th>
-</tr>
-</thead>
-<tbody><tr>
-<td align="center">list</td>
-<td align="center">l</td>
-<td align="center">查看源码</td>
-</tr>
-<tr>
-<td align="center">backtrace</td>
-<td align="center">bt,where</td>
-<td align="center">打印函数栈信息</td>
-</tr>
-<tr>
-<td align="center">next</td>
-<td align="center">n</td>
-<td align="center">执行下一行</td>
-</tr>
-<tr>
-<td align="center">step</td>
-<td align="center">s</td>
-<td align="center">一次执行一行，遇到函数会进入</td>
-</tr>
-<tr>
-<td align="center">finish</td>
-<td align="center"></td>
-<td align="center">运行到函数结束</td>
-</tr>
-<tr>
-<td align="center">continue</td>
-<td align="center">c</td>
-<td align="center">继续运行</td>
-</tr>
-<tr>
-<td align="center">break</td>
-<td align="center">b</td>
-<td align="center">设置断点</td>
-</tr>
-<tr>
-<td align="center">info breakpoints</td>
-<td align="center"></td>
-<td align="center">显示断点信息</td>
-</tr>
-<tr>
-<td align="center">delete</td>
-<td align="center">d</td>
-<td align="center">删除断点</td>
-</tr>
-<tr>
-<td align="center">print</td>
-<td align="center">p</td>
-<td align="center">打印表达式的值</td>
-</tr>
-<tr>
-<td align="center">run</td>
-<td align="center">r</td>
-<td align="center">启动程序</td>
-</tr>
-<tr>
-<td align="center">until</td>
-<td align="center">u</td>
-<td align="center">执行到指定行</td>
-</tr>
-<tr>
-<td align="center">info</td>
-<td align="center">i</td>
-<td align="center">显示信息</td>
-</tr>
-<tr>
-<td align="center">help</td>
-<td align="center">h</td>
-<td align="center">帮助信息</td>
-</tr>
-</tbody></table>
-<p>查询用法：</p>
-<blockquote>
-<p>在 gdb 命令行界面，输入 <code>help command</code> 可以查看命令的用法，command 是你想要查询的命令。</p>
-</blockquote>
-<p>执行 Shell 命令：</p>
-<blockquote>
-<p>在 gdb 命令行界面可以执行外部的 Shell 命令：</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SHELL"><figure class="iseeu highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta prompt_">$ </span><span class="language-bash">(gdb)!shell 命令</span></span><br></pre></td></tr></table></figure></div>
-
-<p>例如查看当前目录的文件：</p>
-<img src="/2024/11/09/gdb%E5%AD%A6%E4%B9%A0/2.png" style="zoom:50%;"></blockquote>
-<h2 id="3-GDB-查看源码"><a href="#3-GDB-查看源码" class="headerlink" title="3.GDB 查看源码"></a>3.GDB 查看源码</h2><p><strong><em>list</em> 命令用来显示源文件中的代码。</strong></p>
-<ul>
-<li>list 行号，显示某一行附近的代码：</li>
-</ul>
-<img src="/2024/11/09/gdb%E5%AD%A6%E4%B9%A0/3.png" style="zoom:50%;">
-
-<ul>
-<li>list 函数名，显示某个函数附近的代码：</li>
-</ul>
-<img src="/2024/11/09/gdb%E5%AD%A6%E4%B9%A0/4.png" style="zoom:50%;">
-
-<ul>
-<li>list 文件名 : 函数名，显示某一个文件某个函数附近的代码，用于多个源文件的情况。</li>
-</ul>
-<h2 id="4-GDB-断点"><a href="#4-GDB-断点" class="headerlink" title="4.GDB 断点"></a>4.GDB 断点</h2><h3 id="1-设置断点"><a href="#1-设置断点" class="headerlink" title="1.设置断点"></a>1.设置断点</h3><p><code>break</code> 命令用来设置断点。</p>
-<ul>
-<li>break 行号，断点设置在该行开始处，<strong>注意：该行代码未被执行</strong>：</li>
-</ul>
-<img src="/2024/11/09/gdb%E5%AD%A6%E4%B9%A0/5.png" style="zoom:50%;">
-
-<ul>
-<li><p>break 文件名 : 行号，适用于有多个源文件的情况。</p>
-</li>
-<li><p>break 函数名，断点设置在该函数的开始处，<strong>断点所在行未被执行</strong>：</p>
-</li>
-</ul>
-<img src="/2024/11/09/gdb%E5%AD%A6%E4%B9%A0/6.png" style="zoom:50%;">
-
-<ul>
-<li>break 文件名 : 函数名，适用于有多个源文件的情况。</li>
-</ul>
-<h4 id="2-查看断点信息"><a href="#2-查看断点信息" class="headerlink" title="2.查看断点信息"></a>2.查看断点信息</h4><p><code>info breakpoints</code> 命令用于显示当前断点信息。</p>
-<img src="/2024/11/09/gdb%E5%AD%A6%E4%B9%A0/7.png" style="zoom:50%;">
-
-<p>其中每一项的信息：</p>
-<blockquote>
-<ul>
-<li>Num 列代表断点编号，该编号可以作为 delete&#x2F;enable&#x2F;disable 等控制断点命令的参数</li>
-<li>Type 列代表断点类型，一般为 breakpoint</li>
-<li>Disp 列代表断点被命中后，该断点保留(keep)、删除(del)还是关闭(dis)</li>
-<li>Enb 列代表该断点是 enable(y) 还是 disable(n)</li>
-<li>Address 列代表该断点处虚拟内存的地址</li>
-<li>What 列代表该断点在源文件中的信息</li>
-</ul>
-</blockquote>
-<h3 id="3-删除断点"><a href="#3-删除断点" class="headerlink" title="3.删除断点"></a>3.删除断点</h3><p><code>delete</code> 命令用于删除断点。</p>
-<ul>
-<li>delete Num，删除指定断点，断点编号可通过 info breakpoints 获得：</li>
-</ul>
-<img src="/2024/11/09/gdb%E5%AD%A6%E4%B9%A0/8.png" style="zoom:50%;">
-
-<ul>
-<li>delete，不带任何参数，默认删除所有断点：</li>
-</ul>
-<h3 id="4-关闭和启用断点"><a href="#4-关闭和启用断点" class="headerlink" title="4.关闭和启用断点"></a>4.关闭和启用断点</h3><p><code>disable</code> 命令和 <code>enable</code> 命令分别用于关闭和启用断点：</p>
-<blockquote>
-<p><em>disable</em> 命令用于关闭断点，有些断点可能暂时不需要但又不想删除，便可以 disable 该断点。</p>
-<p><em>enable</em> 命令用于启用断点。</p>
-</blockquote>
-<ul>
-<li>disable Num，关闭指定断点，断点编号可通过 info breakpoints 获得：</li>
-</ul>
-<img src="/2024/11/09/gdb%E5%AD%A6%E4%B9%A0/9.png" style="zoom:50%;">
-
-<ul>
-<li><p>disable，不带任何参数，默认关闭所有断点。</p>
-</li>
-<li><p>enable Num，启用指定断点，断点编号可通过 info breakpoints 获得。</p>
-</li>
-</ul>
-<img src="/2024/11/09/gdb%E5%AD%A6%E4%B9%A0/10.png" style="zoom:50%;">
-
-<ul>
-<li>enable，不带任何参数，默认启用所有断点。</li>
-</ul>
-<p><strong>disable 和 enable 命令影响的是 info breakpoints 的 Enb 列，表示该断点是启用还是关闭</strong></p>
-<h3 id="5-断点启用的更多方式"><a href="#5-断点启用的更多方式" class="headerlink" title="5.断点启用的更多方式"></a>5.断点启用的更多方式</h3><p><code>enable</code> 命令还可以用来设置断点被执行的次数，比如当断点设在循环中的时候，某断点可能多次被命中。</p>
-<ul>
-<li>enable once Num，断点 hit 一次之后关闭该断点</li>
-<li>enable delete Num，断点 hit 一次之后删除该断点</li>
-</ul>
-<img src="/2024/11/09/gdb%E5%AD%A6%E4%B9%A0/11.png" style="zoom:50%;">
-
-<p><strong>这两个命令影响的是 info breakpoints 的 Disp 列，表示该断点被命中之后的行为。</strong></p>
-<h3 id="6-断点调试的一些命令"><a href="#6-断点调试的一些命令" class="headerlink" title="6. 断点调试的一些命令"></a>6. 断点调试的一些命令</h3><ol>
-<li><strong>打印变量</strong></li>
-</ol>
-<p>调试的过程中需要观察变量或者表达式的值，所以先介绍两个基本的显示变量值的命令：</p>
-<blockquote>
-<ul>
-<li><p><code>info locals</code></p>
-<p>打印当前断点处所在函数的所有局部变量的值，不包括函数参数。</p>
-</li>
-<li><p><code>print 变量或表达式</code></p>
-<p>打印表达式的值，可显示当前函数的变量的值、全局变量的值等</p>
-<p><code>print/FMT</code> 可以控制打印的格式，常见的有x(十六进制)、t(二进制)、c(显示为字符)等。</p>
-</li>
-</ul>
-</blockquote>
-<ol>
-<li><strong>启动程序</strong></li>
-</ol>
-<p><em>run</em> 命令用于启动待调试程序，并运行到断点处停下。</p>
-<blockquote>
-<ul>
-<li><p><code>run</code></p>
-<p>不带任何参数，启动待调试程序，不传递参数。</p>
-</li>
-<li><p><code>run 参数</code></p>
-<p>有些程序需要跟参数，直接带上参数列表即可，会传递给 main 函数的 argc、argv 变量。</p>
-</li>
-</ul>
-</blockquote>
-<ol>
-<li><strong>单步命令</strong></li>
-</ol>
-<p><em>next, step, finish, continue, until</em> 用于控制整个调试过程中，程序执行的流程。</p>
-<blockquote>
-<ul>
-<li><p><code>next</code></p>
-<blockquote>
-<p>next 单步执行，函数调用当做一条指令，<font color="red"><strong>不会进入被调用函数内部</strong></font></p>
-<p>next N，表示单步执行N次</p>
-</blockquote>
-</li>
-<li><p><code>step</code></p>
-<blockquote>
-<p>step 单步执行，<font color="red"><strong>会进入到函数调用内部</strong></font></p>
-<p>step N，表示单步执行N次</p>
-</blockquote>
-</li>
-<li><p><code>finish</code></p>
-<p>执行程序到当前函数结束</p>
-</li>
-<li><p><code>continue</code></p>
-<p>执行程序到下个断点</p>
-</li>
-<li><p><code>until</code></p>
-<p>until N，执行程序到源代码的某一行</p>
-</li>
-</ul>
-</blockquote>
-<h3 id="7-断点小结"><a href="#7-断点小结" class="headerlink" title="7. 断点小结"></a>7. 断点小结</h3><p>断点是调试最基本的方法之一，这一节主要介绍了断点相关的知识。主要是几个断点相关的命令。</p>
-<blockquote>
-<ul>
-<li><code>list</code></li>
-<li><code>info breakpoints</code></li>
-<li><code>break</code></li>
-<li><code>delete</code></li>
-<li><code>disable</code> 和 <code>enable</code></li>
-<li><code>enable once</code> 和 <code>enable delete</code></li>
-<li><code>next</code>, <code>step</code>, <code>finish</code>, <code>continue</code>, <code>until</code></li>
-<li><code>info locals</code> 和 <code>print</code></li>
-</ul>
-</blockquote>
-<p>不熟悉命令的时候，记得在 gdb 命令行下键入 <code>help info breakpoints</code> 等命令，查询帮助文档。</p>
-]]></content>
-      <categories>
-        <category>Linux C</category>
-      </categories>
-      <tags>
-        <tag>gdb</tag>
-        <tag>C</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>大学的四年</title>
-    <url>/2024/11/29/%E5%A4%A7%E5%AD%A6%E7%9A%84%E5%9B%9B%E5%B9%B4/</url>
-    <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="/assets/css/APlayer.min.css"><script src="/assets/js/APlayer.min.js" class="aplayer-secondary-script-marker"></script><blockquote>
-<p>周末夜里闲来无聊，不经意翻阅起大学舍友的博客，看着他记录的点点滴滴，十分感慨。看着自己工作后就一直没有再更新过的博客，不妨在大学十周年之前，趁着记忆还算深刻，都将回忆记录下来，一切都从头开始吧。</p>
-</blockquote>
-<h1 id="序章"><a href="#序章" class="headerlink" title="序章"></a>序章</h1><p>从高考成绩出来的那一刻起，也许大学生活就算是开始了吧。当时考完觉得自己考砸了，跟父母说，如果不在一本线，那直接复读。然后命运给自己的答案就是加上小高考，分数刚好是一本线，不多也不少。。父母和老师都觉得难报专业，记得当时的目标是河海的水利，理想是东大的土木，打电话给表哥，问他所在的土木行业怎么样，给点回复是“碰都别碰”（等到大学毕业，土木确实也算是天坑之一了，也是感谢当时表哥的劝退）。</p>
-<p>巧的是邻家哥哥刚好大学毕业，考上了东大的计算机，趁着暑假在家，和他促膝畅谈了一番，都觉得之后计算机行业应该会更好找工作。也记得初中喜欢的一篇青年文摘上文章男主报的专业也是计算机，就这样选择好了专业。最后在南工程，南审计和南林中选择了唯一有硕士点的南林。然后也为自己大三时候要考研埋下了种子。就这样，大学的四年在南林正式开始。</p>
-<hr>
-<h1 id="大一"><a href="#大一" class="headerlink" title="大一"></a>大一</h1>]]></content>
-      <categories>
-        <category>回忆录</category>
-      </categories>
-      <tags>
-        <tag>涓涓心事</tag>
-        <tag>回忆录</tag>
       </tags>
   </entry>
   <entry>
@@ -4410,8 +4112,314 @@
         <category>Linux C</category>
       </categories>
       <tags>
-        <tag>C</tag>
         <tag>Makefile</tag>
+        <tag>C</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>gdb学习</title>
+    <url>/2024/11/09/gdb%E5%AD%A6%E4%B9%A0/</url>
+    <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="/assets/css/APlayer.min.css"><script src="/assets/js/APlayer.min.js" class="aplayer-secondary-script-marker"></script><h1 id="1-GDB-的基本介绍"><a href="#1-GDB-的基本介绍" class="headerlink" title="1.GDB 的基本介绍"></a>1.GDB 的基本介绍</h1><p>GDB, 是 <code>The GNU Project Debugger</code> 的缩写, 是 Linux 下功能全面的调试工具。GDB 支持断点、单步执行、打印变量、观察变量、查看寄存器、查看堆栈等调试手段。在 Linux 环境软件开发中，GDB 是主要的调试工具，用来调试 C 和 C++ 程序。</p>
+<p>在终端输入以下命令安装 GDB：</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SHELL"><figure class="iseeu highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta prompt_">$ </span><span class="language-bash"><span class="built_in">sudo</span> apt-get install gdb</span></span><br></pre></td></tr></table></figure></div>
+
+<h2 id="1-GDB的进入和退出"><a href="#1-GDB的进入和退出" class="headerlink" title="1.GDB的进入和退出"></a>1.GDB的进入和退出</h2><p>首先用bugging.c作为实验例子。</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="C"><figure class="iseeu highlight c"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span><span class="string">&lt;stdio.h&gt;</span></span></span><br><span class="line"> </span><br><span class="line"><span class="type">int</span> <span class="title function_">foo</span><span class="params">(<span class="type">int</span> n)</span></span><br><span class="line">&#123;</span><br><span class="line"> </span><br><span class="line">    <span class="type">int</span> sum;</span><br><span class="line">    <span class="type">int</span> i;</span><br><span class="line"> </span><br><span class="line">    <span class="keyword">for</span> (i=<span class="number">0</span>; i&lt;=n; i++)</span><br><span class="line">    &#123;</span><br><span class="line">        sum = sum+i;</span><br><span class="line">    &#125;</span><br><span class="line"> </span><br><span class="line">    <span class="keyword">return</span> sum;</span><br><span class="line">&#125;</span><br><span class="line"> </span><br><span class="line"><span class="type">int</span> <span class="title function_">main</span><span class="params">(<span class="type">int</span> argc, <span class="type">char</span>** argv)</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="type">int</span> result = <span class="number">0</span>;</span><br><span class="line">    <span class="type">int</span> N = <span class="number">100</span>;</span><br><span class="line"> </span><br><span class="line">    result = foo(N);</span><br><span class="line"> </span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;1+2+3+...+%d= %d\n&quot;</span>, N, result);</span><br><span class="line"> </span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line"> </span><br><span class="line">&#125;        </span><br><span class="line"></span><br></pre></td></tr></table></figure></div>
+
+<p>如果要调试程序，需要在 gcc 编译可执行程序时加上 <code>-g</code> 参数，首先我们编译 <code>bugging.c</code> 程序，生成可执行文件：</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SHELL"><figure class="iseeu highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta prompt_">$ </span><span class="language-bash">gcc bugging.c -o bugging -g -m64</span></span><br></pre></td></tr></table></figure></div>
+
+<p>其中 <code>-o</code> 指定输出文件名, 虚拟机的环境是 64 位的操作系统，所以默认会编译为 64 位的程序，添加 -m64 选项可以编译为 64 位。</p>
+<p>如果在你的环境里编译报错，请安装 <code>libc6-dev-i386</code> 后再次编译：</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SHELL"><figure class="iseeu highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta prompt_">$ </span><span class="language-bash"><span class="built_in">sudo</span> apt-get install libc6-dev-i386</span></span><br></pre></td></tr></table></figure></div>
+
+<p>输入 <code>gdb bugging</code> 进入 gdb 调试 bugging 程序的界面：</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SHELL"><figure class="iseeu highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta prompt_">$ </span><span class="language-bash">gdb bugging</span></span><br></pre></td></tr></table></figure></div>
+
+<p>在 gdb 命令行界面，输入<code>run</code> 执行待调试程序：</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SHELL"><figure class="iseeu highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta prompt_">$ </span><span class="language-bash">(gdb) run</span></span><br></pre></td></tr></table></figure></div>
+
+<p>在 gdb 命令行界面，输入<code>quit</code> 退出 gdb：</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SHELL"><figure class="iseeu highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta prompt_">$ </span><span class="language-bash">(gdb) quit</span></span><br></pre></td></tr></table></figure></div>
+
+<img src="/2024/11/09/gdb%E5%AD%A6%E4%B9%A0/1.png" style="zoom:50%;">
+
+<h2 id="2-GDB-命令行界面使用技巧"><a href="#2-GDB-命令行界面使用技巧" class="headerlink" title="2.GDB 命令行界面使用技巧"></a>2.GDB 命令行界面使用技巧</h2><p>命令补全：</p>
+<blockquote>
+<p>任何时候都可以使用 <code>TAB</code> 进行补全，如果只有一个待选选项则直接补全；否则会列出可选选项，继续键入命令，同时结合 <code>TAB</code> 即可快速输入命令。</p>
+</blockquote>
+<p>部分 gdb 常用命令一览表：</p>
+<table>
+<thead>
+<tr>
+<th align="center">命令</th>
+<th align="center">简写形式</th>
+<th align="center">说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">list</td>
+<td align="center">l</td>
+<td align="center">查看源码</td>
+</tr>
+<tr>
+<td align="center">backtrace</td>
+<td align="center">bt,where</td>
+<td align="center">打印函数栈信息</td>
+</tr>
+<tr>
+<td align="center">next</td>
+<td align="center">n</td>
+<td align="center">执行下一行</td>
+</tr>
+<tr>
+<td align="center">step</td>
+<td align="center">s</td>
+<td align="center">一次执行一行，遇到函数会进入</td>
+</tr>
+<tr>
+<td align="center">finish</td>
+<td align="center"></td>
+<td align="center">运行到函数结束</td>
+</tr>
+<tr>
+<td align="center">continue</td>
+<td align="center">c</td>
+<td align="center">继续运行</td>
+</tr>
+<tr>
+<td align="center">break</td>
+<td align="center">b</td>
+<td align="center">设置断点</td>
+</tr>
+<tr>
+<td align="center">info breakpoints</td>
+<td align="center"></td>
+<td align="center">显示断点信息</td>
+</tr>
+<tr>
+<td align="center">delete</td>
+<td align="center">d</td>
+<td align="center">删除断点</td>
+</tr>
+<tr>
+<td align="center">print</td>
+<td align="center">p</td>
+<td align="center">打印表达式的值</td>
+</tr>
+<tr>
+<td align="center">run</td>
+<td align="center">r</td>
+<td align="center">启动程序</td>
+</tr>
+<tr>
+<td align="center">until</td>
+<td align="center">u</td>
+<td align="center">执行到指定行</td>
+</tr>
+<tr>
+<td align="center">info</td>
+<td align="center">i</td>
+<td align="center">显示信息</td>
+</tr>
+<tr>
+<td align="center">help</td>
+<td align="center">h</td>
+<td align="center">帮助信息</td>
+</tr>
+</tbody></table>
+<p>查询用法：</p>
+<blockquote>
+<p>在 gdb 命令行界面，输入 <code>help command</code> 可以查看命令的用法，command 是你想要查询的命令。</p>
+</blockquote>
+<p>执行 Shell 命令：</p>
+<blockquote>
+<p>在 gdb 命令行界面可以执行外部的 Shell 命令：</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SHELL"><figure class="iseeu highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta prompt_">$ </span><span class="language-bash">(gdb)!shell 命令</span></span><br></pre></td></tr></table></figure></div>
+
+<p>例如查看当前目录的文件：</p>
+<img src="/2024/11/09/gdb%E5%AD%A6%E4%B9%A0/2.png" style="zoom:50%;"></blockquote>
+<h2 id="3-GDB-查看源码"><a href="#3-GDB-查看源码" class="headerlink" title="3.GDB 查看源码"></a>3.GDB 查看源码</h2><p><strong><em>list</em> 命令用来显示源文件中的代码。</strong></p>
+<ul>
+<li>list 行号，显示某一行附近的代码：</li>
+</ul>
+<img src="/2024/11/09/gdb%E5%AD%A6%E4%B9%A0/3.png" style="zoom:50%;">
+
+<ul>
+<li>list 函数名，显示某个函数附近的代码：</li>
+</ul>
+<img src="/2024/11/09/gdb%E5%AD%A6%E4%B9%A0/4.png" style="zoom:50%;">
+
+<ul>
+<li>list 文件名 : 函数名，显示某一个文件某个函数附近的代码，用于多个源文件的情况。</li>
+</ul>
+<h2 id="4-GDB-断点"><a href="#4-GDB-断点" class="headerlink" title="4.GDB 断点"></a>4.GDB 断点</h2><h3 id="1-设置断点"><a href="#1-设置断点" class="headerlink" title="1.设置断点"></a>1.设置断点</h3><p><code>break</code> 命令用来设置断点。</p>
+<ul>
+<li>break 行号，断点设置在该行开始处，<strong>注意：该行代码未被执行</strong>：</li>
+</ul>
+<img src="/2024/11/09/gdb%E5%AD%A6%E4%B9%A0/5.png" style="zoom:50%;">
+
+<ul>
+<li><p>break 文件名 : 行号，适用于有多个源文件的情况。</p>
+</li>
+<li><p>break 函数名，断点设置在该函数的开始处，<strong>断点所在行未被执行</strong>：</p>
+</li>
+</ul>
+<img src="/2024/11/09/gdb%E5%AD%A6%E4%B9%A0/6.png" style="zoom:50%;">
+
+<ul>
+<li>break 文件名 : 函数名，适用于有多个源文件的情况。</li>
+</ul>
+<h4 id="2-查看断点信息"><a href="#2-查看断点信息" class="headerlink" title="2.查看断点信息"></a>2.查看断点信息</h4><p><code>info breakpoints</code> 命令用于显示当前断点信息。</p>
+<img src="/2024/11/09/gdb%E5%AD%A6%E4%B9%A0/7.png" style="zoom:50%;">
+
+<p>其中每一项的信息：</p>
+<blockquote>
+<ul>
+<li>Num 列代表断点编号，该编号可以作为 delete&#x2F;enable&#x2F;disable 等控制断点命令的参数</li>
+<li>Type 列代表断点类型，一般为 breakpoint</li>
+<li>Disp 列代表断点被命中后，该断点保留(keep)、删除(del)还是关闭(dis)</li>
+<li>Enb 列代表该断点是 enable(y) 还是 disable(n)</li>
+<li>Address 列代表该断点处虚拟内存的地址</li>
+<li>What 列代表该断点在源文件中的信息</li>
+</ul>
+</blockquote>
+<h3 id="3-删除断点"><a href="#3-删除断点" class="headerlink" title="3.删除断点"></a>3.删除断点</h3><p><code>delete</code> 命令用于删除断点。</p>
+<ul>
+<li>delete Num，删除指定断点，断点编号可通过 info breakpoints 获得：</li>
+</ul>
+<img src="/2024/11/09/gdb%E5%AD%A6%E4%B9%A0/8.png" style="zoom:50%;">
+
+<ul>
+<li>delete，不带任何参数，默认删除所有断点：</li>
+</ul>
+<h3 id="4-关闭和启用断点"><a href="#4-关闭和启用断点" class="headerlink" title="4.关闭和启用断点"></a>4.关闭和启用断点</h3><p><code>disable</code> 命令和 <code>enable</code> 命令分别用于关闭和启用断点：</p>
+<blockquote>
+<p><em>disable</em> 命令用于关闭断点，有些断点可能暂时不需要但又不想删除，便可以 disable 该断点。</p>
+<p><em>enable</em> 命令用于启用断点。</p>
+</blockquote>
+<ul>
+<li>disable Num，关闭指定断点，断点编号可通过 info breakpoints 获得：</li>
+</ul>
+<img src="/2024/11/09/gdb%E5%AD%A6%E4%B9%A0/9.png" style="zoom:50%;">
+
+<ul>
+<li><p>disable，不带任何参数，默认关闭所有断点。</p>
+</li>
+<li><p>enable Num，启用指定断点，断点编号可通过 info breakpoints 获得。</p>
+</li>
+</ul>
+<img src="/2024/11/09/gdb%E5%AD%A6%E4%B9%A0/10.png" style="zoom:50%;">
+
+<ul>
+<li>enable，不带任何参数，默认启用所有断点。</li>
+</ul>
+<p><strong>disable 和 enable 命令影响的是 info breakpoints 的 Enb 列，表示该断点是启用还是关闭</strong></p>
+<h3 id="5-断点启用的更多方式"><a href="#5-断点启用的更多方式" class="headerlink" title="5.断点启用的更多方式"></a>5.断点启用的更多方式</h3><p><code>enable</code> 命令还可以用来设置断点被执行的次数，比如当断点设在循环中的时候，某断点可能多次被命中。</p>
+<ul>
+<li>enable once Num，断点 hit 一次之后关闭该断点</li>
+<li>enable delete Num，断点 hit 一次之后删除该断点</li>
+</ul>
+<img src="/2024/11/09/gdb%E5%AD%A6%E4%B9%A0/11.png" style="zoom:50%;">
+
+<p><strong>这两个命令影响的是 info breakpoints 的 Disp 列，表示该断点被命中之后的行为。</strong></p>
+<h3 id="6-断点调试的一些命令"><a href="#6-断点调试的一些命令" class="headerlink" title="6. 断点调试的一些命令"></a>6. 断点调试的一些命令</h3><ol>
+<li><strong>打印变量</strong></li>
+</ol>
+<p>调试的过程中需要观察变量或者表达式的值，所以先介绍两个基本的显示变量值的命令：</p>
+<blockquote>
+<ul>
+<li><p><code>info locals</code></p>
+<p>打印当前断点处所在函数的所有局部变量的值，不包括函数参数。</p>
+</li>
+<li><p><code>print 变量或表达式</code></p>
+<p>打印表达式的值，可显示当前函数的变量的值、全局变量的值等</p>
+<p><code>print/FMT</code> 可以控制打印的格式，常见的有x(十六进制)、t(二进制)、c(显示为字符)等。</p>
+</li>
+</ul>
+</blockquote>
+<ol>
+<li><strong>启动程序</strong></li>
+</ol>
+<p><em>run</em> 命令用于启动待调试程序，并运行到断点处停下。</p>
+<blockquote>
+<ul>
+<li><p><code>run</code></p>
+<p>不带任何参数，启动待调试程序，不传递参数。</p>
+</li>
+<li><p><code>run 参数</code></p>
+<p>有些程序需要跟参数，直接带上参数列表即可，会传递给 main 函数的 argc、argv 变量。</p>
+</li>
+</ul>
+</blockquote>
+<ol>
+<li><strong>单步命令</strong></li>
+</ol>
+<p><em>next, step, finish, continue, until</em> 用于控制整个调试过程中，程序执行的流程。</p>
+<blockquote>
+<ul>
+<li><p><code>next</code></p>
+<blockquote>
+<p>next 单步执行，函数调用当做一条指令，<font color="red"><strong>不会进入被调用函数内部</strong></font></p>
+<p>next N，表示单步执行N次</p>
+</blockquote>
+</li>
+<li><p><code>step</code></p>
+<blockquote>
+<p>step 单步执行，<font color="red"><strong>会进入到函数调用内部</strong></font></p>
+<p>step N，表示单步执行N次</p>
+</blockquote>
+</li>
+<li><p><code>finish</code></p>
+<p>执行程序到当前函数结束</p>
+</li>
+<li><p><code>continue</code></p>
+<p>执行程序到下个断点</p>
+</li>
+<li><p><code>until</code></p>
+<p>until N，执行程序到源代码的某一行</p>
+</li>
+</ul>
+</blockquote>
+<h3 id="7-断点小结"><a href="#7-断点小结" class="headerlink" title="7. 断点小结"></a>7. 断点小结</h3><p>断点是调试最基本的方法之一，这一节主要介绍了断点相关的知识。主要是几个断点相关的命令。</p>
+<blockquote>
+<ul>
+<li><code>list</code></li>
+<li><code>info breakpoints</code></li>
+<li><code>break</code></li>
+<li><code>delete</code></li>
+<li><code>disable</code> 和 <code>enable</code></li>
+<li><code>enable once</code> 和 <code>enable delete</code></li>
+<li><code>next</code>, <code>step</code>, <code>finish</code>, <code>continue</code>, <code>until</code></li>
+<li><code>info locals</code> 和 <code>print</code></li>
+</ul>
+</blockquote>
+<p>不熟悉命令的时候，记得在 gdb 命令行下键入 <code>help info breakpoints</code> 等命令，查询帮助文档。</p>
+]]></content>
+      <categories>
+        <category>Linux C</category>
+      </categories>
+      <tags>
+        <tag>C</tag>
+        <tag>gdb</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>大学的四年</title>
+    <url>/2024/11/29/%E5%A4%A7%E5%AD%A6%E7%9A%84%E5%9B%9B%E5%B9%B4/</url>
+    <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="/assets/css/APlayer.min.css"><script src="/assets/js/APlayer.min.js" class="aplayer-secondary-script-marker"></script><blockquote>
+<p>周末夜里闲来无聊，不经意翻阅起大学舍友的博客，看着他记录的点点滴滴，十分感慨。看着自己工作后就一直没有再更新过的博客，不妨在大学十周年之前，趁着记忆还算深刻，都将回忆记录下来，一切都从头开始吧。</p>
+</blockquote>
+<h1 id="序章"><a href="#序章" class="headerlink" title="序章"></a>序章</h1><p>从高考成绩出来的那一刻起，也许大学生活就算是开始了吧。当时考完觉得自己考砸了，跟父母说，如果不在一本线，那直接复读。然后命运给自己的答案就是加上小高考，分数刚好是一本线，不多也不少。。父母和老师都觉得难报专业，记得当时的目标是河海的水利，理想是东大的土木，打电话给表哥，问他所在的土木行业怎么样，给点回复是“碰都别碰”（等到大学毕业，土木确实也算是天坑之一了，也是感谢当时表哥的劝退）。</p>
+<p>巧的是邻家哥哥刚好大学毕业，考上了东大的计算机，趁着暑假在家，和他促膝畅谈了一番，都觉得之后计算机行业应该会更好找工作。也记得初中喜欢的一篇青年文摘上文章男主报的专业也是计算机，就这样选择好了专业。最后在南工程，南审计和南林中选择了唯一有硕士点的南林。然后也为自己大三时候要考研埋下了种子。就这样，大学的四年在南林正式开始。</p>
+<hr>
+<h1 id="大一"><a href="#大一" class="headerlink" title="大一"></a>大一</h1>]]></content>
+      <categories>
+        <category>回忆录</category>
+      </categories>
+      <tags>
+        <tag>涓涓心事</tag>
+        <tag>回忆录</tag>
       </tags>
   </entry>
 </search>
