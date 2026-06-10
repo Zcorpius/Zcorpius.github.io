@@ -676,6 +676,126 @@
 <div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CPP"><figure class="iseeu highlight cpp"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">define</span> LOG_TAG <span class="string">&quot;NativeAudioTrack&quot;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;media/AudioTrack.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;stdio.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;unistd.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;utils/Log.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> android;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">main</span><span class="params">(<span class="type">int</span> argc, <span class="type">char</span> *argv[])</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (argc &lt; <span class="number">2</span>) &#123;</span><br><span class="line">        <span class="built_in">ALOGE</span>(<span class="string">&quot;Usage: %s &lt;pcm_file&gt;&quot;</span>, argv[<span class="number">0</span>]);</span><br><span class="line">        <span class="keyword">return</span> <span class="number">-1</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="built_in">ALOGI</span>(<span class="string">&quot;PCM file: %s&quot;</span>, argv[<span class="number">1</span>]);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 1. 打开PCM文件</span></span><br><span class="line">    FILE *pcmFile = <span class="built_in">fopen</span>(argv[<span class="number">1</span>], <span class="string">&quot;rb&quot;</span>);</span><br><span class="line">    <span class="keyword">if</span> (!pcmFile) &#123;</span><br><span class="line">        <span class="built_in">ALOGE</span>(<span class="string">&quot;Failed to open PCM file: %s&quot;</span>, argv[<span class="number">1</span>]);</span><br><span class="line">        <span class="keyword">return</span> <span class="number">-1</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="built_in">ALOGI</span>(<span class="string">&quot;PCM file opened successfully&quot;</span>);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 2. 设置音频参数</span></span><br><span class="line">    <span class="type">audio_format_t</span> format = AUDIO_FORMAT_PCM_32_BIT;</span><br><span class="line">    <span class="type">uint32_t</span> sampleRate = <span class="number">44100</span>;</span><br><span class="line">    <span class="type">audio_channel_mask_t</span> channelMask = AUDIO_CHANNEL_OUT_STEREO;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 3. 计算最小缓冲区大小</span></span><br><span class="line">    <span class="type">size_t</span> frameCount = <span class="number">0</span>;</span><br><span class="line">    <span class="type">status_t</span> status = AudioTrack::<span class="built_in">getMinFrameCount</span>(&amp;frameCount, AUDIO_STREAM_MUSIC, sampleRate);</span><br><span class="line"></span><br><span class="line">    <span class="built_in">ALOGI</span>(<span class="string">&quot;getMinFrameCount frameCount %d\n&quot;</span>, (<span class="type">int</span>) frameCount);</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">if</span> (status != OK) &#123;</span><br><span class="line">        <span class="built_in">ALOGE</span>(<span class="string">&quot;Failed to get min frame count&quot;</span>);</span><br><span class="line">        <span class="built_in">fclose</span>(pcmFile);</span><br><span class="line">        <span class="keyword">return</span> <span class="number">-1</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 4. 创建AudioTrack实例</span></span><br><span class="line">    <span class="built_in">ALOGI</span>(<span class="string">&quot;Creating AudioTrack: sampleRate=%u, format=PCM_32_BIT, channelMask=STEREO, frameCount=%zu&quot;</span>,</span><br><span class="line">          sampleRate, frameCount);</span><br><span class="line">    <span class="type">audio_attributes_t</span> attributes = &#123;.content_type = AUDIO_CONTENT_TYPE_MUSIC,</span><br><span class="line">                                     .usage = AUDIO_USAGE_MEDIA&#125;;</span><br><span class="line">    sp&lt;AudioTrack&gt; track =</span><br><span class="line">        <span class="keyword">new</span> <span class="built_in">AudioTrack</span>(AUDIO_STREAM_DEFAULT, sampleRate, format, channelMask,</span><br><span class="line">                       frameCount, AUDIO_OUTPUT_FLAG_NONE, <span class="literal">nullptr</span>, <span class="number">0</span>,</span><br><span class="line">                       AUDIO_SESSION_ALLOCATE, AudioTrack::TRANSFER_DEFAULT,</span><br><span class="line">                       <span class="literal">nullptr</span>, <span class="built_in">AttributionSourceState</span>(), &amp;attributes);</span><br><span class="line"></span><br><span class="line">    <span class="built_in">ALOGI</span>(<span class="string">&quot;AudioTrack created.&quot;</span>);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 5. 启动AudioTrack</span></span><br><span class="line">    track-&gt;<span class="built_in">start</span>();</span><br><span class="line">    <span class="built_in">ALOGI</span>(<span class="string">&quot;AudioTrack started&quot;</span>);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 6. 读取并播放PCM数据</span></span><br><span class="line">    <span class="type">int</span> bufferSize = <span class="number">4096</span>;</span><br><span class="line">    <span class="type">char</span> buffer[<span class="number">4096</span>];</span><br><span class="line">    <span class="type">int</span> totalRead = <span class="number">0</span>;</span><br><span class="line">    <span class="type">int</span> writeCount = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">while</span> (!<span class="built_in">feof</span>(pcmFile)) &#123;</span><br><span class="line">        <span class="type">int</span> read = (<span class="type">int</span>)<span class="built_in">fread</span>(buffer, <span class="number">1</span>, bufferSize, pcmFile);</span><br><span class="line">        <span class="keyword">if</span> (read &gt; <span class="number">0</span>) &#123;</span><br><span class="line">            <span class="type">ssize_t</span> written = track-&gt;<span class="built_in">write</span>(buffer, read);</span><br><span class="line">            totalRead += read;</span><br><span class="line">            writeCount++;</span><br><span class="line">            <span class="keyword">if</span> (writeCount % <span class="number">100</span> == <span class="number">0</span>) &#123;</span><br><span class="line">                <span class="built_in">ALOGI</span>(<span class="string">&quot;Progress: written %d bytes so far (%d calls)&quot;</span>, totalRead, writeCount);</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">if</span> (written &lt; <span class="number">0</span>) &#123;</span><br><span class="line">                <span class="built_in">ALOGE</span>(<span class="string">&quot;AudioTrack write failed: %zd&quot;</span>, written);</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="built_in">ALOGI</span>(<span class="string">&quot;Playback done: totalBytes=%d, writeCalls=%d&quot;</span>, totalRead, writeCount);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 7. 等待播放完成</span></span><br><span class="line">    <span class="built_in">ALOGI</span>(<span class="string">&quot;Waiting for playback to finish...&quot;</span>);</span><br><span class="line">    <span class="built_in">usleep</span>(<span class="number">5000000</span>); <span class="comment">// 5s</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">// 8. 清理资源</span></span><br><span class="line">    track-&gt;<span class="built_in">stop</span>();</span><br><span class="line">    <span class="built_in">ALOGI</span>(<span class="string">&quot;AudioTrack stopped, cleaning up&quot;</span>);</span><br><span class="line">    track.<span class="built_in">clear</span>();</span><br><span class="line">    <span class="built_in">fclose</span>(pcmFile);</span><br><span class="line">    <span class="built_in">ALOGI</span>(<span class="string">&quot;Done&quot;</span>);</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
 
 <p>编译后将生成的 audio_player 可执行文件与待播放的pcm文件 push 到设备的 <code>/data/local/tmp</code> 下，是可以直接播放pcm的。</p>
+<h1 id="4-AudioTrack-构造流程"><a href="#4-AudioTrack-构造流程" class="headerlink" title="4. AudioTrack 构造流程"></a>4. AudioTrack 构造流程</h1><h2 id="4-1-Java-层构造流程"><a href="#4-1-Java-层构造流程" class="headerlink" title="4.1. Java 层构造流程"></a>4.1. Java 层构造流程</h2><p>目前 Android 16 中，AudioTrack 主要有三个构造函数：</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="JAVA"><figure class="iseeu highlight java"><table><tr><td class="code"><pre><span class="line"><span class="comment">// frameworks/base/media/java/android/media/AudioTrack.java</span></span><br><span class="line"><span class="keyword">public</span> <span class="title function_">AudioTrack</span><span class="params">(<span class="type">int</span> streamType, <span class="type">int</span> sampleRateInHz, <span class="type">int</span> channelConfig, <span class="type">int</span> audioFormat,</span></span><br><span class="line"><span class="params">        <span class="type">int</span> bufferSizeInBytes, <span class="type">int</span> mode)</span></span><br><span class="line"><span class="keyword">throws</span> IllegalArgumentException &#123;</span><br><span class="line">    <span class="built_in">this</span>(streamType, sampleRateInHz, channelConfig, audioFormat,</span><br><span class="line">            bufferSizeInBytes, mode, AUDIO_SESSION_ID_GENERATE);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="title function_">AudioTrack</span><span class="params">(<span class="type">int</span> streamType, <span class="type">int</span> sampleRateInHz, <span class="type">int</span> channelConfig, <span class="type">int</span> audioFormat,</span></span><br><span class="line"><span class="params">        <span class="type">int</span> bufferSizeInBytes, <span class="type">int</span> mode, <span class="type">int</span> sessionId)</span></span><br><span class="line"><span class="keyword">throws</span> IllegalArgumentException &#123;</span><br><span class="line">    <span class="comment">// mState already == STATE_UNINITIALIZED</span></span><br><span class="line">    <span class="built_in">this</span>((<span class="keyword">new</span> <span class="title class_">AudioAttributes</span>.Builder())</span><br><span class="line">                .setLegacyStreamType(streamType)</span><br><span class="line">                .build(),</span><br><span class="line">            (<span class="keyword">new</span> <span class="title class_">AudioFormat</span>.Builder())</span><br><span class="line">                .setChannelMask(channelConfig)</span><br><span class="line">                .setEncoding(audioFormat)</span><br><span class="line">                .setSampleRate(sampleRateInHz)</span><br><span class="line">                .build(),</span><br><span class="line">            bufferSizeInBytes,</span><br><span class="line">            mode, sessionId);</span><br><span class="line">    deprecateStreamTypeForPlayback(streamType, <span class="string">&quot;AudioTrack&quot;</span>, <span class="string">&quot;AudioTrack()&quot;</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="title function_">AudioTrack</span><span class="params">(AudioAttributes attributes, AudioFormat format, <span class="type">int</span> bufferSizeInBytes,</span></span><br><span class="line"><span class="params">        <span class="type">int</span> mode, <span class="type">int</span> sessionId)</span></span><br><span class="line">                <span class="keyword">throws</span> IllegalArgumentException &#123;</span><br><span class="line">    <span class="built_in">this</span>(<span class="literal">null</span> <span class="comment">/* context */</span>, attributes, format, bufferSizeInBytes, mode, sessionId,</span><br><span class="line">            <span class="literal">false</span> <span class="comment">/*offload*/</span>, ENCAPSULATION_MODE_NONE, <span class="literal">null</span> <span class="comment">/* tunerConfiguration */</span>);</span><br><span class="line">&#125;                </span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span> <span class="title function_">AudioTrack</span><span class="params">(<span class="meta">@Nullable</span> Context context, AudioAttributes attributes, AudioFormat format,</span></span><br><span class="line"><span class="params">        <span class="type">int</span> bufferSizeInBytes, <span class="type">int</span> mode, <span class="type">int</span> sessionId, <span class="type">boolean</span> offload, <span class="type">int</span> encapsulationMode,</span></span><br><span class="line"><span class="params">        <span class="meta">@Nullable</span> TunerConfiguration tunerConfiguration)</span></span><br><span class="line">                <span class="keyword">throws</span> IllegalArgumentException &#123;</span><br><span class="line">    <span class="built_in">super</span>(attributes, AudioPlaybackConfiguration.PLAYER_TYPE_JAM_AUDIOTRACK);</span><br><span class="line">    ...</span><br><span class="line">    <span class="comment">// native initialization</span></span><br><span class="line">    <span class="keyword">try</span> (<span class="type">ScopedParcelState</span> <span class="variable">attributionSourceState</span> <span class="operator">=</span> attributionSource.asScopedParcelState()) &#123;</span><br><span class="line">        <span class="type">int</span> <span class="variable">initResult</span> <span class="operator">=</span> native_setup(</span><br><span class="line">            <span class="keyword">new</span> <span class="title class_">WeakReference</span>&lt;AudioTrack&gt;(<span class="built_in">this</span>),   <span class="comment">// Java 对象的弱引用，供 Native 回调</span></span><br><span class="line">            mAttributes,                            <span class="comment">// AudioAttributes</span></span><br><span class="line">            sampleRate,                             <span class="comment">// 采样率（int[] 可被 Native 修改）</span></span><br><span class="line">            mChannelMask,                           <span class="comment">// 通道掩码</span></span><br><span class="line">            mChannelIndexMask,                      <span class="comment">// 通道索引掩码</span></span><br><span class="line">            mAudioFormat,                           <span class="comment">// 编码格式</span></span><br><span class="line">            mNativeBufferSizeInBytes,               <span class="comment">// 缓冲区大小</span></span><br><span class="line">            mDataLoadMode,                          <span class="comment">// MODE_STATIC 或 MODE_STREAM</span></span><br><span class="line">            session,                                <span class="comment">// 会话 ID（int[] 可被 Native 修改）</span></span><br><span class="line">            attributionSourceState.getParcel(),     <span class="comment">// 权限归属信息（序列化为 Parcel）</span></span><br><span class="line">            <span class="number">0</span>,                                      <span class="comment">// nativeTrackInJavaObj（此处为 0，非代理模式）</span></span><br><span class="line">            offload,                                <span class="comment">// 是否 offload</span></span><br><span class="line">            encapsulationMode,                      <span class="comment">// 封装模式</span></span><br><span class="line">            tunerConfiguration,                     <span class="comment">// TV Tuner 配置</span></span><br><span class="line">            getCurrentOpPackageName()               <span class="comment">// 操作包名</span></span><br><span class="line">        );</span><br><span class="line">        <span class="keyword">if</span> (initResult != SUCCESS) &#123;</span><br><span class="line">            loge(<span class="string">&quot;Error code &quot;</span> + initResult + <span class="string">&quot; when initializing AudioTrack.&quot;</span>);</span><br><span class="line">            <span class="keyword">return</span>; <span class="comment">// with mState == STATE_UNINITIALIZED</span></span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+
+<div class="markdown-alert markdown-alert-note">
+<p class="markdown-alert-title"><svg class="octicon octicon-info mr-2" viewbox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"/></svg>Note</p>
+<p>前面两个构造函数在 Android 8 之后就不推荐使用了。而通过此方法构造 AudioTrack 时，会在后续会在 <code>setInternalLegacyStreamType</code> 方法，根据 policy 配置重新获取 AudioAttributes。</p>
+</div>
+<p>AudioTrack 构造方法最后就到了私有实现方法中，最后进入 JNI 方法 <code>native_setup</code> 进入 native 层进行初始化。而 <code>native_setup</code> 方法对应 native 方法 <code>android_media_AudioTrack_setup</code> 。</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CPP"><figure class="iseeu highlight cpp"><table><tr><td class="code"><pre><span class="line"><span class="comment">// frameworks/base/core/jni/android_media_AudioTrack.cpp</span></span><br><span class="line">&#123;<span class="string">&quot;native_setup&quot;</span>,</span><br><span class="line"> <span class="string">&quot;(Ljava/lang/Object;Ljava/lang/Object;[IIIIII[ILandroid/os/Parcel;&quot;</span></span><br><span class="line"> <span class="string">&quot;JZILjava/lang/Object;Ljava/lang/String;)I&quot;</span>,</span><br><span class="line"> (<span class="type">void</span> *)android_media_AudioTrack_setup&#125;</span><br><span class="line"> </span><br><span class="line"> <span class="function"><span class="type">static</span> jint <span class="title">android_media_AudioTrack_setup</span><span class="params">(JNIEnv *env, jobject thiz, jobject weak_this,</span></span></span><br><span class="line"><span class="params"><span class="function">                                           jobject jaa, jintArray jSampleRate,</span></span></span><br><span class="line"><span class="params"><span class="function">                                           jint channelPositionMask, jint channelIndexMask,</span></span></span><br><span class="line"><span class="params"><span class="function">                                           jint audioFormat, jint buffSizeInBytes, jint memoryMode,</span></span></span><br><span class="line"><span class="params"><span class="function">                                           jintArray jSession, jobject jAttributionSource,</span></span></span><br><span class="line"><span class="params"><span class="function">                                           jlong nativeAudioTrack, jboolean offload,</span></span></span><br><span class="line"><span class="params"><span class="function">                                           jint encapsulationMode, jobject tunerConfiguration,</span></span></span><br><span class="line"><span class="params"><span class="function">                                           jstring opPackageName)</span> </span>&#123;</span><br><span class="line">   ...</span><br><span class="line">   <span class="comment">// 是第一次创建 AudioTrack</span></span><br><span class="line">   <span class="keyword">if</span> (nativeAudioTrack == <span class="number">0</span>) &#123;</span><br><span class="line">        ...</span><br><span class="line">         <span class="type">int</span>* sampleRates = env-&gt;<span class="built_in">GetIntArrayElements</span>(jSampleRate, <span class="literal">NULL</span>);</span><br><span class="line">        <span class="comment">// 采样率</span></span><br><span class="line">        <span class="type">int</span> sampleRateInHertz = sampleRates[<span class="number">0</span>];</span><br><span class="line">        env-&gt;<span class="built_in">ReleaseIntArrayElements</span>(jSampleRate, sampleRates, JNI_ABORT);</span><br><span class="line">        <span class="comment">// 通道掩码：将 Java 的 position mask + index mask 转换为 Native 格式</span></span><br><span class="line">        <span class="type">audio_channel_mask_t</span> nativeChannelMask = <span class="built_in">nativeChannelMaskFromJavaChannelMasks</span>(</span><br><span class="line">                channelPositionMask, channelIndexMask);</span><br><span class="line">        <span class="keyword">if</span> (!<span class="built_in">audio_is_output_channel</span>(nativeChannelMask)) &#123;</span><br><span class="line">            <span class="built_in">ALOGE</span>(<span class="string">&quot;Error creating AudioTrack: invalid native channel mask %#x.&quot;</span>, nativeChannelMask);</span><br><span class="line">            <span class="keyword">return</span> (jint) AUDIOTRACK_ERROR_SETUP_INVALIDCHANNELMASK;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// 通道数</span></span><br><span class="line">        <span class="type">uint32_t</span> channelCount = <span class="built_in">audio_channel_count_from_out_mask</span>(nativeChannelMask);</span><br><span class="line">        <span class="comment">// 编码格式：Java 编码 → Native 编码</span></span><br><span class="line">        <span class="type">audio_format_t</span> format = <span class="built_in">audioFormatToNative</span>(audioFormat);</span><br><span class="line">        <span class="keyword">if</span> (format == AUDIO_FORMAT_INVALID) &#123;</span><br><span class="line">            <span class="built_in">ALOGE</span>(<span class="string">&quot;Error creating AudioTrack: unsupported audio format %d.&quot;</span>, audioFormat);</span><br><span class="line">            <span class="keyword">return</span> (jint) AUDIOTRACK_ERROR_SETUP_INVALIDFORMAT;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// 帧数计算</span></span><br><span class="line">        <span class="type">size_t</span> frameCount;</span><br><span class="line">        <span class="keyword">if</span> (<span class="built_in">audio_has_proportional_frames</span>(format)) &#123;</span><br><span class="line">            <span class="comment">// PCM 等格式：frameCount = 总字节 / (通道数 × 每采样字节数)</span></span><br><span class="line">            <span class="type">const</span> <span class="type">size_t</span> bytesPerSample = <span class="built_in">audio_bytes_per_sample</span>(format);</span><br><span class="line">            frameCount = buffSizeInBytes / (channelCount * bytesPerSample);</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="comment">// 压缩格式（如 MP3）：frameCount = bufferSize</span></span><br><span class="line">            frameCount = buffSizeInBytes;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// create the native AudioTrack object</span></span><br><span class="line">        <span class="function">ScopedUtfChars <span class="title">opPackageNameStr</span><span class="params">(env, opPackageName)</span></span>;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 从 Java Parcel 反序列化为 Native AttributionSourceState</span></span><br><span class="line">        android::content::AttributionSourceState attributionSource;</span><br><span class="line">        attributionSource.<span class="built_in">readFromParcel</span>(<span class="built_in">parcelForJavaObject</span>(env, jAttributionSource));</span><br><span class="line">        <span class="comment">// 创建空的 Native AudioTrack</span></span><br><span class="line">        lpTrack = sp&lt;AudioTrack&gt;::<span class="built_in">make</span>(attributionSource);</span><br><span class="line">        <span class="comment">// 通过 attributionSource 来创建 AudioTrack</span></span><br><span class="line">        android::content::AttributionSourceState attributionSource;</span><br><span class="line">        attributionSource.<span class="built_in">readFromParcel</span>(<span class="built_in">parcelForJavaObject</span>(env, jAttributionSource));</span><br><span class="line">        lpTrack = sp&lt;AudioTrack&gt;::<span class="built_in">make</span>(attributionSource);</span><br><span class="line">        ...</span><br><span class="line">        <span class="keyword">switch</span> (memoryMode) &#123;</span><br><span class="line">            <span class="keyword">case</span> MODE_STREAM:</span><br><span class="line">                <span class="comment">// 流类型，真正的参数赋值是在 set 方法中。</span></span><br><span class="line">                status = lpTrack-&gt;<span class="built_in">set</span>(</span><br><span class="line">                                AUDIO_STREAM_DEFAULT,                                  <span class="comment">// streamType: 音频流类型，使用默认值，实际信息通过 pAttributes 传递                                                 </span></span><br><span class="line">                                sampleRateInHertz,                                     <span class="comment">// sampleRate: 采样率 (Hz)                                                                                           </span></span><br><span class="line">                                format,                                                <span class="comment">// format: 音频编码格式 (PCM_16BIT 等)，转为 native 格式                                                             </span></span><br><span class="line">                                nativeChannelMask,                                     <span class="comment">// channelMask: 通道掩码 (native 格式)                                                                               </span></span><br><span class="line">                                offload ? <span class="number">0</span> : frameCount,                              <span class="comment">// frameCount: 帧数。offload 模式传 0，普通模式传计算出的帧数                                                        </span></span><br><span class="line">                                offload ? AUDIO_OUTPUT_FLAG_COMPRESS_OFFLOAD           <span class="comment">// flags: 输出标志。offload 模式使用压缩卸载标志，                                                                   </span></span><br><span class="line">                                        : AUDIO_OUTPUT_FLAG_NONE,                      <span class="comment">//        普通模式无特殊标志                                                                                         </span></span><br><span class="line">                                lpJniStorage,                                          <span class="comment">// callback: IAudioTrackCallback 回调接口，用于接收 AudioFlinger 事件                                                </span></span><br><span class="line">                                <span class="number">0</span>,                                                     <span class="comment">// notificationFrames: 通知帧数，0 表示不使用 EVENT_MORE_DATA 回调喂数据                                             </span></span><br><span class="line">                                <span class="number">0</span>,                                                     <span class="comment">// sharedBuffer: 共享内存，MODE_STREAM 不使用，传 0                                                                  </span></span><br><span class="line">                                <span class="literal">true</span>,                                                  <span class="comment">// threadCanCallJava: native 回调线程是否可以调用 Java 方法                                                          </span></span><br><span class="line">                                sessionId,                                             <span class="comment">// sessionId: 音频会话 ID                                                                                            </span></span><br><span class="line">                                offload ? AudioTrack::TRANSFER_SYNC_NOTIF_CALLBACK     <span class="comment">// transferType: 数据传输方式。offload 使用同步通知回调，                                                       </span></span><br><span class="line">                                        : AudioTrack::TRANSFER_SYNC,                   <span class="comment">//             普通流式使用同步写入                                                                               </span></span><br><span class="line">                                (offload || encapsulationMode) ? &amp;offloadInfo : <span class="literal">NULL</span>,  <span class="comment">// offloadInfo: 卸载/封装模式附加信息，否则传 NULL                                                            </span></span><br><span class="line">                                attributionSource,                                     <span class="comment">// attributionSource: 调用方归属来源 (用于权限追踪)                                                                  </span></span><br><span class="line">                                paa.<span class="built_in">get</span>());                                            <span class="comment">// pAttributes: 音频属性 (usage、content_type、flags、tags)  </span></span><br><span class="line">                    );</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">    </span><br><span class="line">            <span class="keyword">case</span> MODE_STATIC:</span><br><span class="line">            &#123;   <span class="comment">// 静态类型</span></span><br><span class="line">                <span class="type">const</span> <span class="keyword">auto</span> iMem = <span class="built_in">allocSharedMem</span>(buffSizeInBytes); <span class="comment">// AudioTrack is using shared memory</span></span><br><span class="line">                ...</span><br><span class="line">                status = lpTrack-&gt;<span class="built_in">set</span>(</span><br><span class="line">                                AUDIO_STREAM_DEFAULT,          <span class="comment">// streamType: 音频流类型，使用默认值，实际信息通过 pAttributes 传递</span></span><br><span class="line">                                sampleRateInHertz,             <span class="comment">// sampleRate: 采样率 (Hz)                                                                                                           </span></span><br><span class="line">                                format,                        <span class="comment">// format: 音频编码格式 (native 格式)                                                                                                </span></span><br><span class="line">                                nativeChannelMask,             <span class="comment">// channelMask: 通道掩码 (native 格式)                                                                                               </span></span><br><span class="line">                                frameCount,                    <span class="comment">// frameCount: 帧数 (总字节 / 通道数 / 每采样字节数)                                                                                 </span></span><br><span class="line">                                AUDIO_OUTPUT_FLAG_NONE,        <span class="comment">// flags: 输出标志，MODE_STATIC 无特殊标志                                                                                           </span></span><br><span class="line">                                lpJniStorage,                  <span class="comment">// callback: IAudioTrackCallback 回调接口                                                                                            </span></span><br><span class="line">                                <span class="number">0</span>,                             <span class="comment">// notificationFrames: 通知帧数，0 表示不使用 EVENT_MORE_DATA 回调                                                                   </span></span><br><span class="line">                                iMem,                          <span class="comment">// sharedBuffer: 共享内存，MODE_STATIC 预先分配好的共享内存块                                                                        </span></span><br><span class="line">                                <span class="literal">true</span>,                          <span class="comment">// threadCanCallJava: native 回调线程可以调用 Java 方法                                                                              </span></span><br><span class="line">                                sessionId,                     <span class="comment">// sessionId: 音频会话 ID                                                                                                            </span></span><br><span class="line">                                AudioTrack::TRANSFER_SHARED,   <span class="comment">// transferType: 数据传输方式，共享内存模式 (一次性写入)                                                                             </span></span><br><span class="line">                                <span class="literal">nullptr</span>,                       <span class="comment">// offloadInfo: 卸载附加信息，MODE_STATIC 不使用 offload                                                                             </span></span><br><span class="line">                                attributionSource,             <span class="comment">// attributionSource: 调用方归属来源 (用于权限追踪)                                                                                  </span></span><br><span class="line">                                paa.<span class="built_in">get</span>()                      <span class="comment">// pAttributes: 音频属性 (usage、content_type、flags、tags) </span></span><br><span class="line">                                 );</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">default</span>:</span><br><span class="line">                <span class="built_in">ALOGE</span>(<span class="string">&quot;Unknown mode %d&quot;</span>, memoryMode);</span><br><span class="line">                <span class="keyword">goto</span> native_init_failure;</span><br><span class="line">            &#125;</span><br><span class="line">        ...</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;  <span class="comment">// end if (nativeAudioTrack == 0)</span></span><br><span class="line">        lpTrack = sp&lt;AudioTrack&gt;::<span class="built_in">fromExisting</span>(<span class="built_in">reinterpret_cast</span>&lt;AudioTrack*&gt;(nativeAudioTrack));</span><br><span class="line">        ...</span><br><span class="line">    &#125;</span><br><span class="line">    ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+
+<table>
+<thead>
+<tr>
+<th></th>
+<th>MODE_STREAM</th>
+<th>MODE_STATIC</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>数据传输方式</td>
+<td>TRANSFER_SYNC — Java 线程同步 write() 推送</td>
+<td>TRANSFER_SHARED — 共享内存，写入一次</td>
+</tr>
+<tr>
+<td>内存来源</td>
+<td>无（AudioFlinger 分配 buffer）</td>
+<td>allocSharedMem() 创建共享内存</td>
+</tr>
+<tr>
+<td>适用场景</td>
+<td>连续播放的流媒体</td>
+<td>短小音效（游戏&#x2F;UI 音效）</td>
+</tr>
+<tr>
+<td>Offload 传输</td>
+<td>TRANSFER_SYNC_NOTIF_CALLBACK</td>
+<td>不支持</td>
+</tr>
+</tbody></table>
+<h2 id="4-2-Native-层构造流程"><a href="#4-2-Native-层构造流程" class="headerlink" title="4.2. Native 层构造流程"></a>4.2. Native 层构造流程</h2><p>JNI 调用到 native 层 AudioTrack 构造方法：</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CPP"><figure class="iseeu highlight cpp"><table><tr><td class="code"><pre><span class="line"><span class="comment">// frameworks/av/media/libaudioclient/AudioTrack.cpp</span></span><br><span class="line">AudioTrack::<span class="built_in">AudioTrack</span>(<span class="type">const</span> AttributionSourceState&amp; attributionSource)</span><br><span class="line">    : <span class="built_in">mClientAttributionSource</span>(attributionSource)</span><br><span class="line">&#123;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+
+<p><code>AttributionSourceState</code> 是 Android 中的一个结构体，用于描述「调用者的身份」。向 AudioFlinger 关于 UID、PID 等权限信息。</p>
+<p>再看 <code>set</code> 调用，这个函数有很多内容，代码如下所示：</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CPP"><figure class="iseeu highlight cpp"><table><tr><td class="code"><pre><span class="line"><span class="comment">// frameworks/av/media/libaudioclient/AudioTrack.cpp</span></span><br><span class="line"><span class="function"><span class="type">status_t</span> <span class="title">AudioTrack::set</span><span class="params">(</span></span></span><br><span class="line"><span class="params"><span class="function">        <span class="type">audio_stream_type_t</span> streamType,</span></span></span><br><span class="line"><span class="params"><span class="function">        <span class="type">uint32_t</span> sampleRate,</span></span></span><br><span class="line"><span class="params"><span class="function">        <span class="type">audio_format_t</span> format,</span></span></span><br><span class="line"><span class="params"><span class="function">        <span class="type">audio_channel_mask_t</span> channelMask,</span></span></span><br><span class="line"><span class="params"><span class="function">        <span class="type">size_t</span> frameCount,</span></span></span><br><span class="line"><span class="params"><span class="function">        <span class="type">audio_output_flags_t</span> flags,</span></span></span><br><span class="line"><span class="params"><span class="function">        <span class="type">const</span> wp&lt;IAudioTrackCallback&gt;&amp; callback,</span></span></span><br><span class="line"><span class="params"><span class="function">        <span class="type">int32_t</span> notificationFrames,</span></span></span><br><span class="line"><span class="params"><span class="function">        <span class="type">const</span> sp&lt;IMemory&gt;&amp; sharedBuffer,</span></span></span><br><span class="line"><span class="params"><span class="function">        <span class="type">bool</span> threadCanCallJava,</span></span></span><br><span class="line"><span class="params"><span class="function">        <span class="type">audio_session_t</span> sessionId,</span></span></span><br><span class="line"><span class="params"><span class="function">        transfer_type transferType,</span></span></span><br><span class="line"><span class="params"><span class="function">        <span class="type">const</span> <span class="type">audio_offload_info_t</span> *offloadInfo,</span></span></span><br><span class="line"><span class="params"><span class="function">        <span class="type">const</span> AttributionSourceState&amp; attributionSource,</span></span></span><br><span class="line"><span class="params"><span class="function">        <span class="type">const</span> <span class="type">audio_attributes_t</span>* pAttributes,</span></span></span><br><span class="line"><span class="params"><span class="function">        <span class="type">bool</span> doNotReconnect,</span></span></span><br><span class="line"><span class="params"><span class="function">        <span class="type">float</span> maxRequiredSpeed,</span></span></span><br><span class="line"><span class="params"><span class="function">        <span class="type">audio_port_handle_t</span> selectedDeviceId)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="comment">// 一系列参数再赋值</span></span><br><span class="line">    ...</span><br><span class="line">    mAuxEffectId = <span class="number">0</span>;</span><br><span class="line">    mCallback = callback;</span><br><span class="line">    <span class="comment">// 如果有回调，则启动 AudioTrackThread，用于接收 underrun/marker/position 回调事件。</span></span><br><span class="line">    <span class="keyword">if</span> (callback != <span class="literal">nullptr</span>) &#123;</span><br><span class="line">        mAudioTrackThread = sp&lt;AudioTrackThread&gt;::<span class="built_in">make</span>(*<span class="keyword">this</span>);</span><br><span class="line">        mAudioTrackThread-&gt;<span class="built_in">run</span>(<span class="string">&quot;AudioTrack&quot;</span>, ANDROID_PRIORITY_AUDIO, <span class="number">0</span> <span class="comment">/*stack*/</span>);</span><br><span class="line">        <span class="comment">// thread begins in paused state, and will not reference us until start()</span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// create the IAudioTrack</span></span><br><span class="line">    &#123;</span><br><span class="line">        <span class="function">AutoMutex <span class="title">lock</span><span class="params">(mLock)</span></span>;</span><br><span class="line">        status = <span class="built_in">createTrack_l</span>();</span><br><span class="line">    &#125;</span><br><span class="line">    ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+
+<p><code>createTrack_l()</code> 是整个 <code>set()</code> 中最关键的一步，它通过 <strong>Binder IPC</strong> 与 AudioFlinger 通信，完成创建流程：</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CPP"><figure class="iseeu highlight cpp"><table><tr><td class="code"><pre><span class="line"><span class="comment">// frameworks/av/media/libaudioclient/AudioTrack.cpp</span></span><br><span class="line"><span class="function"><span class="type">status_t</span> <span class="title">AudioTrack::createTrack_l</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="type">status_t</span> status;</span><br><span class="line">    <span class="comment">// 获取 AudioFlinger 代理</span></span><br><span class="line">    <span class="type">const</span> sp&lt;IAudioFlinger&gt;&amp; audioFlinger = AudioSystem::<span class="built_in">get_audio_flinger</span>();</span><br><span class="line">    </span><br><span class="line">    ...</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 将所需要传递给 AudioFlinger 的参数封装成 input 对象</span></span><br><span class="line">    IAudioFlinger::CreateTrackInput input;</span><br><span class="line">    ... <span class="comment">// input 赋值</span></span><br><span class="line">    media::CreateTrackResponse response; <span class="comment">// response 是 AudioTrack 传递回来的对象</span></span><br><span class="line">    <span class="keyword">auto</span> aidlInput = input.<span class="built_in">toAidl</span>(); <span class="comment">// 转化成 aidl 对象进行跨进程传递</span></span><br><span class="line">    ...</span><br><span class="line">    status = audioFlinger-&gt;<span class="built_in">createTrack</span>(aidlInput.<span class="built_in">value</span>(), response);</span><br><span class="line"></span><br><span class="line">    IAudioFlinger::CreateTrackOutput output&#123;&#125;; <span class="comment">// output 本地对象</span></span><br><span class="line">    <span class="keyword">if</span> (status == NO_ERROR) &#123;</span><br><span class="line">        <span class="keyword">auto</span> trackOutput = IAudioFlinger::CreateTrackOutput::<span class="built_in">fromAidl</span>(response);</span><br><span class="line">        ...</span><br><span class="line">        output = trackOutput.<span class="built_in">value</span>(); <span class="comment">//将 aidl 对象转换为本地对象，为后续参数进行再赋值，真正的赋值是policy策略端决定的。</span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    </span><br><span class="line">    ...</span><br><span class="line">    <span class="comment">// 实现应用 client 端与 Flinger Server 端的AudioTrack一一对应。</span></span><br><span class="line">    mAudioTrack = output.audioTrack;</span><br><span class="line">    ...</span><br><span class="line">    <span class="keyword">return</span> <span class="built_in">logIfErrorAndReturnStatus</span>(status, <span class="string">&quot;&quot;</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+
+<pre class="mermaid">sequenceDiagram
+    participant Caller as 调用者<br>(JNI / onFirstRef)
+    participant Set as AudioTrack::set()
+    participant CTL as createTrack_l()
+    participant Sys as AudioSystem
+    participant AF as AudioFlinger
+    participant Proxy as ClientProxy
+
+    Caller->>Set: set(18个参数)
+    Note over Set: 防重入 + uid/pid 校验
+    Note over Set: 保存音频参数到成员变量
+    Note over Set: Flags 调整（非PCM→DIRECT, HW_AV_SYNC→DIRECT）
+    Note over Set: 传输模式决策（DEFAULT→SHARED/SYNC/CALLBACK）
+    Note over Set: 参数合法性校验（format/channel/sampleRate）
+    Note over Set: 归属修正 + 创建回调线程（如有 callback）
+
+    rect rgb(255, 240, 240)
+        Note over Set, AF: ⭐ 创建 IAudioTrack（Binder IPC）
+        Set->>CTL: AutoMutex lock(mLock)<br>createTrack_l()
+        CTL->>Sys: getOutputForAttr()
+        Sys-->>CTL: output (audio_io_handle_t)
+        CTL->>AF: createTrack(input)
+        AF-->>CTL: IAudioTrack + frameCount + sessionId
+        CTL->>AF: IAudioTrack::getCblk()
+        AF-->>CTL: SharedFileRegion → IMemory
+        CTL->>CTL: 解析 audio_track_cblk_t
+        alt 流模式
+            CTL->>Proxy: new AudioTrackClientProxy
+        else 静态模式
+            CTL->>Proxy: new StaticAudioTrackClientProxy
+        end
+        CTL->>AF: linkToDeath(mDeathNotifier)
+        CTL-->>Set: return status
+    end
+
+    alt status != OK
+        Set->>Set: 清理 AudioTrackThread
+        Set-->>Caller: return error
+    else status == OK
+            Note over Set: 初始化状态变量
+            Set->>Sys: acquireAudioSessionId()
+            Set->>Set: new VolumeHandler()
+        Set-->>Caller: return NO_ERROR
+    end</pre>
+
+<div class="markdown-alert markdown-alert-note">
+<p class="markdown-alert-title"><svg class="octicon octicon-info mr-2" viewbox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"/></svg>Note</p>
+<p><strong>为什么 AudioTrack 与 AudioFlinger 之间会进行 fromAidl&#x2F;toAidl 频繁转化？</strong></p>
+<p>主要跨进程传递对象必须是 parcel 的，很多参数对象都要被包装成元数据类型，比如 flag 类型对象转化成 int 类型。</p>
+</div>
+<p>紧接着，终于进入 AudioFlinger 中了:</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CPP"><figure class="iseeu highlight cpp"><table><tr><td class="code"><pre><span class="line"><span class="comment">// frameworks/av/services/audioflinger/AudioFlinger.cpp</span></span><br><span class="line"><span class="function"><span class="type">status_t</span> <span class="title">AudioFlinger::createTrack</span><span class="params">(<span class="type">const</span> media::CreateTrackRequest&amp; _input,</span></span></span><br><span class="line"><span class="params"><span class="function">                                   media::CreateTrackResponse&amp; _output)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="comment">// 把 Aidl 对象转换为本地对象   </span></span><br><span class="line">    CreateTrackInput input = <span class="built_in">VALUE_OR_RETURN_STATUS</span>(CreateTrackInput::<span class="built_in">fromAidl</span>(_input));</span><br><span class="line">    CreateTrackOutput output;</span><br><span class="line">    ... <span class="comment">// 参数赋值</span></span><br><span class="line">    <span class="comment">// 属性最终是在 Policy 策略中决定的</span></span><br><span class="line">    lStatus = AudioSystem::<span class="built_in">getOutputForAttr</span>(&amp;localAttr, &amp;output.outputId, sessionId, &amp;streamType,</span><br><span class="line">                                            adjAttributionSource, &amp;input.config, input.flags,</span><br><span class="line">                                            &amp;output.selectedDeviceId, &amp;portId, &amp;secondaryOutputs,</span><br><span class="line">                                            &amp;isSpatialized, &amp;isBitPerfect, &amp;volume);</span><br><span class="line"></span><br><span class="line">    ... <span class="comment">// 参数验证</span></span><br><span class="line">    &#123;</span><br><span class="line">        audio_utils::lock_guard _l(<span class="built_in">mutex</span>());</span><br><span class="line">        <span class="comment">// 通过策略中获取的 outputId (I/O handle) 确定 output Thread.</span></span><br><span class="line">        IAfPlaybackThread* thread = <span class="built_in">checkPlaybackThread_l</span>(output.outputId);</span><br><span class="line">        ...</span><br><span class="line">        client = <span class="built_in">registerPid</span>(adjAttributionSource.pid);</span><br><span class="line">        ...</span><br><span class="line">        <span class="comment">// 真正创建 Track 的地方</span></span><br><span class="line">        track = thread-&gt;<span class="built_in">createTrack_l</span>(client, streamType, localAttr, &amp;output.sampleRate,</span><br><span class="line">                                      input.config.format, input.config.channel_mask,</span><br><span class="line">                                      &amp;output.frameCount, &amp;output.notificationFrameCount,</span><br><span class="line">                                      input.notificationsPerBuffer, input.speed,</span><br><span class="line">                                      input.sharedBuffer, sessionId, &amp;output.flags,</span><br><span class="line">                                      callingPid, adjAttributionSource, input.clientInfo.clientTid,</span><br><span class="line">                                      &amp;lStatus, portId, input.audioTrackCallback, isSpatialized,</span><br><span class="line">                                      isBitPerfect, &amp;output.afTrackFlags, volume);</span><br><span class="line">        <span class="built_in">LOG_ALWAYS_FATAL_IF</span>((lStatus == NO_ERROR) &amp;&amp; (track == <span class="number">0</span>));</span><br><span class="line">        ...</span><br><span class="line">    &#125;</span><br><span class="line">    ...</span><br><span class="line">    <span class="comment">// 再次转化为 Aidl 对象传回给 AudioTrack</span></span><br><span class="line">    output.audioTrack = IAfTrack::<span class="built_in">createIAudioTrackAdapter</span>(track);</span><br><span class="line">    _output = <span class="built_in">VALUE_OR_FATAL</span>(output.<span class="built_in">toAidl</span>());</span><br><span class="line"></span><br><span class="line">Exit:</span><br><span class="line">    <span class="keyword">if</span> (lStatus != NO_ERROR &amp;&amp; output.outputId != AUDIO_IO_HANDLE_NONE) &#123;</span><br><span class="line">        AudioSystem::<span class="built_in">releaseOutput</span>(portId);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> lStatus;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+
+<p>进入 AudioFlinger::Thread 创建Track：</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CPP"><figure class="iseeu highlight cpp"><table><tr><td class="code"><pre><span class="line"><span class="comment">// frameworks/av/services/audioflinger/Thread.cpp</span></span><br><span class="line"><span class="function">sp&lt;IAfTrack&gt; <span class="title">PlaybackThread::createTrack_l</span><span class="params">(</span></span></span><br><span class="line"><span class="params"><span class="function">        <span class="type">const</span> sp&lt;Client&gt;&amp; client,</span></span></span><br><span class="line"><span class="params"><span class="function">        <span class="type">audio_stream_type_t</span> streamType,</span></span></span><br><span class="line"><span class="params"><span class="function">        <span class="type">const</span> <span class="type">audio_attributes_t</span>&amp; attr,</span></span></span><br><span class="line"><span class="params"><span class="function">        <span class="type">uint32_t</span> *pSampleRate,</span></span></span><br><span class="line"><span class="params"><span class="function">        <span class="type">audio_format_t</span> format,</span></span></span><br><span class="line"><span class="params"><span class="function">        <span class="type">audio_channel_mask_t</span> channelMask,</span></span></span><br><span class="line"><span class="params"><span class="function">        <span class="type">size_t</span> *pFrameCount,</span></span></span><br><span class="line"><span class="params"><span class="function">        <span class="type">size_t</span> *pNotificationFrameCount,</span></span></span><br><span class="line"><span class="params"><span class="function">        <span class="type">uint32_t</span> notificationsPerBuffer,</span></span></span><br><span class="line"><span class="params"><span class="function">        <span class="type">float</span> speed,</span></span></span><br><span class="line"><span class="params"><span class="function">        <span class="type">const</span> sp&lt;IMemory&gt;&amp; sharedBuffer,</span></span></span><br><span class="line"><span class="params"><span class="function">        <span class="type">audio_session_t</span> sessionId,</span></span></span><br><span class="line"><span class="params"><span class="function">        <span class="type">audio_output_flags_t</span> *flags,</span></span></span><br><span class="line"><span class="params"><span class="function">        <span class="type">pid_t</span> creatorPid,</span></span></span><br><span class="line"><span class="params"><span class="function">        <span class="type">const</span> AttributionSourceState&amp; attributionSource,</span></span></span><br><span class="line"><span class="params"><span class="function">        <span class="type">pid_t</span> tid,</span></span></span><br><span class="line"><span class="params"><span class="function">        <span class="type">status_t</span> *status,</span></span></span><br><span class="line"><span class="params"><span class="function">        <span class="type">audio_port_handle_t</span> portId,</span></span></span><br><span class="line"><span class="params"><span class="function">        <span class="type">const</span> sp&lt;media::IAudioTrackCallback&gt;&amp; callback,</span></span></span><br><span class="line"><span class="params"><span class="function">        <span class="type">bool</span> isSpatialized,</span></span></span><br><span class="line"><span class="params"><span class="function">        <span class="type">bool</span> isBitPerfect,</span></span></span><br><span class="line"><span class="params"><span class="function">        <span class="type">audio_output_flags_t</span> *afTrackFlags,</span></span></span><br><span class="line"><span class="params"><span class="function">        <span class="type">float</span> volume)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    ... <span class="comment">// 参数赋值与校验</span></span><br><span class="line">    &#123; <span class="comment">// scope for mutex()</span></span><br><span class="line">        track = IAfTrack::<span class="built_in">create</span>(<span class="keyword">this</span>, client, streamType, attr, sampleRate, format,</span><br><span class="line">                          channelMask, frameCount,</span><br><span class="line">                          <span class="literal">nullptr</span> <span class="comment">/* buffer */</span>, (<span class="type">size_t</span>)<span class="number">0</span> <span class="comment">/* bufferSize */</span>, sharedBuffer,</span><br><span class="line">                          sessionId, creatorPid, attributionSource, trackFlags,</span><br><span class="line">                          IAfTrackBase::TYPE_DEFAULT, portId, SIZE_MAX <span class="comment">/*frameCountToBeReady*/</span>,</span><br><span class="line">                          speed, isSpatialized, isBitPerfect, volume);</span><br><span class="line">        lStatus = track != <span class="number">0</span> ? track-&gt;<span class="built_in">initCheck</span>() : (<span class="type">status_t</span>) NO_MEMORY;</span><br><span class="line">        ...</span><br><span class="line">        mTracks.<span class="built_in">add</span>(track); <span class="comment">// 放入集合中</span></span><br><span class="line">        ...</span><br><span class="line">    &#125;</span><br><span class="line">    ...</span><br><span class="line">Exit:</span><br><span class="line">    *status = lStatus;</span><br><span class="line">    <span class="keyword">return</span> track;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+
+<p>最终进入 AudioFlinger::Track 进行创建：</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CPP"><figure class="iseeu highlight cpp"><table><tr><td class="code"><pre><span class="line"><span class="comment">// frameworks/av/services/audioflinger/Tracks.cpp</span></span><br><span class="line"><span class="function">sp&lt;IAfTrack&gt; <span class="title">IAfTrack::create</span><span class="params">(</span></span></span><br><span class="line"><span class="params"><span class="function">        IAfPlaybackThread* thread,</span></span></span><br><span class="line"><span class="params"><span class="function">        <span class="type">const</span> sp&lt;Client&gt;&amp; client,</span></span></span><br><span class="line"><span class="params"><span class="function">        <span class="type">audio_stream_type_t</span> streamType,</span></span></span><br><span class="line"><span class="params"><span class="function">        <span class="type">const</span> <span class="type">audio_attributes_t</span>&amp; attr,</span></span></span><br><span class="line"><span class="params"><span class="function">        <span class="type">uint32_t</span> sampleRate,</span></span></span><br><span class="line"><span class="params"><span class="function">        <span class="type">audio_format_t</span> format,</span></span></span><br><span class="line"><span class="params"><span class="function">        <span class="type">audio_channel_mask_t</span> channelMask,</span></span></span><br><span class="line"><span class="params"><span class="function">        <span class="type">size_t</span> frameCount,</span></span></span><br><span class="line"><span class="params"><span class="function">        <span class="type">void</span> *buffer,</span></span></span><br><span class="line"><span class="params"><span class="function">        <span class="type">size_t</span> bufferSize,</span></span></span><br><span class="line"><span class="params"><span class="function">        <span class="type">const</span> sp&lt;IMemory&gt;&amp; sharedBuffer,</span></span></span><br><span class="line"><span class="params"><span class="function">        <span class="type">audio_session_t</span> sessionId,</span></span></span><br><span class="line"><span class="params"><span class="function">        <span class="type">pid_t</span> creatorPid,</span></span></span><br><span class="line"><span class="params"><span class="function">        <span class="type">const</span> AttributionSourceState&amp; attributionSource,</span></span></span><br><span class="line"><span class="params"><span class="function">        <span class="type">audio_output_flags_t</span> flags,</span></span></span><br><span class="line"><span class="params"><span class="function">        track_type type,</span></span></span><br><span class="line"><span class="params"><span class="function">        <span class="type">audio_port_handle_t</span> portId,</span></span></span><br><span class="line"><span class="params"><span class="function">        <span class="comment">/** default behaviour is to start when there are as many frames</span></span></span></span><br><span class="line"><span class="comment"><span class="params"><span class="function">          * ready as possible (aka. Buffer is full). */</span></span></span></span><br><span class="line"><span class="params"><span class="function">        <span class="type">size_t</span> frameCountToBeReady,</span></span></span><br><span class="line"><span class="params"><span class="function">        <span class="type">float</span> speed,</span></span></span><br><span class="line"><span class="params"><span class="function">        <span class="type">bool</span> isSpatialized,</span></span></span><br><span class="line"><span class="params"><span class="function">        <span class="type">bool</span> isBitPerfect,</span></span></span><br><span class="line"><span class="params"><span class="function">        <span class="type">float</span> volume)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> sp&lt;Track&gt;::<span class="built_in">make</span>(thread,</span><br><span class="line">            client,</span><br><span class="line">            streamType,</span><br><span class="line">            attr,</span><br><span class="line">            sampleRate,</span><br><span class="line">            format,</span><br><span class="line">            channelMask,</span><br><span class="line">            frameCount,</span><br><span class="line">            buffer,</span><br><span class="line">            bufferSize,</span><br><span class="line">            sharedBuffer,</span><br><span class="line">            sessionId,</span><br><span class="line">            creatorPid,</span><br><span class="line">            attributionSource,</span><br><span class="line">            flags,</span><br><span class="line">            type,</span><br><span class="line">            portId,</span><br><span class="line">            frameCountToBeReady,</span><br><span class="line">            speed,</span><br><span class="line">            isSpatialized,</span><br><span class="line">            isBitPerfect,</span><br><span class="line">            volume);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">Track::<span class="built_in">Track</span>(</span><br><span class="line">        IAfPlaybackThread* thread,</span><br><span class="line">            <span class="type">const</span> sp&lt;Client&gt;&amp; client,</span><br><span class="line">            <span class="type">audio_stream_type_t</span> streamType,</span><br><span class="line">            <span class="type">const</span> <span class="type">audio_attributes_t</span>&amp; attr,</span><br><span class="line">            <span class="type">uint32_t</span> sampleRate,</span><br><span class="line">            <span class="type">audio_format_t</span> format,</span><br><span class="line">            <span class="type">audio_channel_mask_t</span> channelMask,</span><br><span class="line">            <span class="type">size_t</span> frameCount,</span><br><span class="line">            <span class="type">void</span> *buffer,</span><br><span class="line">            <span class="type">size_t</span> bufferSize,</span><br><span class="line">            <span class="type">const</span> sp&lt;IMemory&gt;&amp; sharedBuffer,</span><br><span class="line">            <span class="type">audio_session_t</span> sessionId,</span><br><span class="line">            <span class="type">pid_t</span> creatorPid,</span><br><span class="line">            <span class="type">const</span> AttributionSourceState&amp; attributionSource,</span><br><span class="line">            <span class="type">audio_output_flags_t</span> flags,</span><br><span class="line">            track_type type,</span><br><span class="line">            <span class="type">audio_port_handle_t</span> portId,</span><br><span class="line">            <span class="type">size_t</span> frameCountToBeReady,</span><br><span class="line">            <span class="type">float</span> speed,</span><br><span class="line">            <span class="type">bool</span> isSpatialized,</span><br><span class="line">            <span class="type">bool</span> isBitPerfect,</span><br><span class="line">            <span class="type">float</span> volume)</span><br><span class="line">    :   <span class="built_in">TrackBase</span>(thread, client, attr, sampleRate, format, channelMask, frameCount,</span><br><span class="line">                  <span class="comment">// <span class="doctag">TODO:</span> Using unsecurePointer() has some associated security pitfalls</span></span><br><span class="line">                  <span class="comment">//       (see declaration for details).</span></span><br><span class="line">                  <span class="comment">//       Either document why it is safe in this case or address the</span></span><br><span class="line">                  <span class="comment">//       issue (e.g. by copying).</span></span><br><span class="line">                  (sharedBuffer != <span class="number">0</span>) ? sharedBuffer-&gt;<span class="built_in">unsecurePointer</span>() : buffer,</span><br><span class="line">                  (sharedBuffer != <span class="number">0</span>) ? sharedBuffer-&gt;<span class="built_in">size</span>() : bufferSize,</span><br><span class="line">                  sessionId, creatorPid,</span><br><span class="line">                  <span class="built_in">VALUE_OR_FATAL</span>(<span class="built_in">aidl2legacy_int32_t_uid_t</span>(attributionSource.uid)), <span class="literal">true</span> <span class="comment">/*isOut*/</span>,</span><br><span class="line">                  (type == TYPE_PATCH) ? ( buffer == <span class="literal">NULL</span> ? ALLOC_LOCAL : ALLOC_NONE) : ALLOC_CBLK,</span><br><span class="line">                  type,</span><br><span class="line">                  portId,</span><br><span class="line">                  std::<span class="built_in">string</span>(AMEDIAMETRICS_KEY_PREFIX_AUDIO_TRACK) + std::<span class="built_in">to_string</span>(portId)),</span><br><span class="line">    <span class="built_in">mFillingStatus</span>(FS_INVALID),</span><br><span class="line">    <span class="comment">// mRetryCount initialized later when needed</span></span><br><span class="line">    <span class="built_in">mSharedBuffer</span>(sharedBuffer),</span><br><span class="line">    <span class="built_in">mStreamType</span>(streamType),</span><br><span class="line">    <span class="built_in">mMainBuffer</span>(thread-&gt;<span class="built_in">sinkBuffer</span>()),</span><br><span class="line">    <span class="built_in">mAuxBuffer</span>(<span class="literal">NULL</span>),</span><br><span class="line">    <span class="built_in">mAuxEffectId</span>(<span class="number">0</span>), <span class="built_in">mHasVolumeController</span>(<span class="literal">false</span>),</span><br><span class="line">    <span class="built_in">mFrameMap</span>(<span class="number">16</span> <span class="comment">/* sink-frame-to-track-frame map memory */</span>),</span><br><span class="line">    <span class="built_in">mVolumeHandler</span>(<span class="keyword">new</span> media::<span class="built_in">VolumeHandler</span>(sampleRate)),</span><br><span class="line">    <span class="built_in">mOpPlayAudioMonitor</span>(OpPlayAudioMonitor::<span class="built_in">createIfNeeded</span>(thread, attributionSource, attr, <span class="built_in">id</span>(),</span><br><span class="line">        streamType)),</span><br><span class="line">    <span class="comment">// mSinkTimestamp</span></span><br><span class="line">    <span class="built_in">mFastIndex</span>(<span class="number">-1</span>),</span><br><span class="line">    <span class="built_in">mCachedVolume</span>(<span class="number">1.0</span>),</span><br><span class="line">    <span class="comment">/* The track might not play immediately after being active, similarly as if its volume was 0.</span></span><br><span class="line"><span class="comment">     * When the track starts playing, its volume will be computed. */</span></span><br><span class="line">    <span class="built_in">mFinalVolume</span>(<span class="number">0.f</span>),</span><br><span class="line">    <span class="built_in">mResumeToStopping</span>(<span class="literal">false</span>),</span><br><span class="line">    <span class="built_in">mFlushHwPending</span>(<span class="literal">false</span>),</span><br><span class="line">    <span class="built_in">mFlags</span>(flags),</span><br><span class="line">    <span class="built_in">mSpeed</span>(speed),</span><br><span class="line">    <span class="built_in">mIsSpatialized</span>(isSpatialized),</span><br><span class="line">    <span class="built_in">mIsBitPerfect</span>(isBitPerfect),</span><br><span class="line">    <span class="built_in">mVolume</span>(volume)</span><br><span class="line">&#123;</span><br><span class="line">    ... <span class="comment">// 参数校验</span></span><br><span class="line">    <span class="comment">// 流模式还是静态模式</span></span><br><span class="line">    <span class="keyword">if</span> (sharedBuffer == <span class="number">0</span>) &#123;</span><br><span class="line">        mAudioTrackServerProxy = <span class="keyword">new</span> <span class="built_in">AudioTrackServerProxy</span>(mCblk, mBuffer, frameCount,</span><br><span class="line">                mFrameSize, !<span class="built_in">isExternalTrack</span>(), sampleRate);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        mAudioTrackServerProxy = <span class="keyword">new</span> <span class="built_in">StaticAudioTrackServerProxy</span>(mCblk, mBuffer, frameCount,</span><br><span class="line">                mFrameSize, sampleRate);</span><br><span class="line">    &#125;</span><br><span class="line">    mServerProxy = mAudioTrackServerProxy;</span><br><span class="line">    <span class="comment">// 启动门槛，达到对应帧数后进行播放</span></span><br><span class="line">    mServerProxy-&gt;<span class="built_in">setStartThresholdInFrames</span>(frameCountToBeReady); <span class="comment">// update the Cblk value</span></span><br><span class="line">    ...</span><br><span class="line">    <span class="comment">// Audio patch and call assistant volume are always max</span></span><br><span class="line">    <span class="keyword">if</span> (mAttr.usage == AUDIO_USAGE_CALL_ASSISTANT</span><br><span class="line">            || mAttr.usage == AUDIO_USAGE_VIRTUAL_SOURCE) &#123;</span><br><span class="line">        mVolume = <span class="number">1.0f</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]></content>
       <categories>
         <category>Audio</category>
@@ -1573,6 +1693,18 @@
       </tags>
   </entry>
   <entry>
+    <title>Binder framework层分析</title>
+    <url>/2026/05/12/Binder-framework%E5%B1%82%E5%88%86%E6%9E%90/</url>
+    <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="/assets/css/APlayer.min.css"><script src="/assets/js/APlayer.min.js" class="aplayer-secondary-script-marker"></script>]]></content>
+      <categories>
+        <category>Framework</category>
+        <category>Binder</category>
+      </categories>
+      <tags>
+        <tag>Binder</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>servicemanager 获取</title>
     <url>/2026/04/16/Binder-Servicemanager%E8%8E%B7%E5%8F%96/</url>
     <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="/assets/css/APlayer.min.css"><script src="/assets/js/APlayer.min.js" class="aplayer-secondary-script-marker"></script><div class="markdown-alert markdown-alert-note">
@@ -1803,18 +1935,6 @@
       </tags>
   </entry>
   <entry>
-    <title>Binder framework层分析</title>
-    <url>/2026/05/12/Binder-framework%E5%B1%82%E5%88%86%E6%9E%90/</url>
-    <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="/assets/css/APlayer.min.css"><script src="/assets/js/APlayer.min.js" class="aplayer-secondary-script-marker"></script>]]></content>
-      <categories>
-        <category>Framework</category>
-        <category>Binder</category>
-      </categories>
-      <tags>
-        <tag>Binder</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>getService 获取服务</title>
     <url>/2026/05/07/Binder-getService%E8%8E%B7%E5%8F%96%E6%9C%8D%E5%8A%A1/</url>
     <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="/assets/css/APlayer.min.css"><script src="/assets/js/APlayer.min.js" class="aplayer-secondary-script-marker"></script><div class="markdown-alert markdown-alert-note">
@@ -1962,6 +2082,57 @@
 <img src="/2026/05/07/Binder-getService%E8%8E%B7%E5%8F%96%E6%9C%8D%E5%8A%A1/8-image.png" width="920px">
 
 ]]></content>
+      <categories>
+        <category>Framework</category>
+        <category>Binder</category>
+      </categories>
+      <tags>
+        <tag>Binder</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Binder 使用</title>
+    <url>/2026/05/10/Binder%E4%BD%BF%E7%94%A8/</url>
+    <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="/assets/css/APlayer.min.css"><script src="/assets/js/APlayer.min.js" class="aplayer-secondary-script-marker"></script><style>
+.download-card {
+  text-align: center;
+  margin: 20px 0;
+}
+.download-card a {
+  display: inline-block;
+  font-size: 28px;
+  text-decoration: none;
+  border-bottom: none !important;
+  transition: transform 0.2s ease;
+  cursor: pointer;
+}
+.download-card a {
+  position: relative;
+}
+.download-card a:hover {
+  transform: scale(1.15);
+  border-bottom: none !important;
+}
+.download-card a::after {
+  content: "点击下载 Binder 案例代码";
+  position: absolute;
+  bottom: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 10px;
+  color: #666;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  white-space: nowrap;
+}
+.download-card a:hover::after {
+  opacity: 1;
+}
+</style>
+
+<div class="download-card">
+  <a href="/files/NativeBinderDemo.zip" title="点击下载 NativeBinderDemo.zip">📦</a>
+</div>]]></content>
       <categories>
         <category>Framework</category>
         <category>Binder</category>
@@ -2312,57 +2483,6 @@
 <img src="/2026/05/03/Binder-setService%E6%B3%A8%E5%86%8C%E6%9C%8D%E5%8A%A1/8-image.png" width="920px">
 
 ]]></content>
-      <categories>
-        <category>Framework</category>
-        <category>Binder</category>
-      </categories>
-      <tags>
-        <tag>Binder</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>Binder 使用</title>
-    <url>/2026/05/10/Binder%E4%BD%BF%E7%94%A8/</url>
-    <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="/assets/css/APlayer.min.css"><script src="/assets/js/APlayer.min.js" class="aplayer-secondary-script-marker"></script><style>
-.download-card {
-  text-align: center;
-  margin: 20px 0;
-}
-.download-card a {
-  display: inline-block;
-  font-size: 28px;
-  text-decoration: none;
-  border-bottom: none !important;
-  transition: transform 0.2s ease;
-  cursor: pointer;
-}
-.download-card a {
-  position: relative;
-}
-.download-card a:hover {
-  transform: scale(1.15);
-  border-bottom: none !important;
-}
-.download-card a::after {
-  content: "点击下载 Binder 案例代码";
-  position: absolute;
-  bottom: -10px;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 10px;
-  color: #666;
-  opacity: 0;
-  transition: opacity 0.2s ease;
-  white-space: nowrap;
-}
-.download-card a:hover::after {
-  opacity: 1;
-}
-</style>
-
-<div class="download-card">
-  <a href="/files/NativeBinderDemo.zip" title="点击下载 NativeBinderDemo.zip">📦</a>
-</div>]]></content>
       <categories>
         <category>Framework</category>
         <category>Binder</category>
@@ -2857,29 +2977,6 @@
       </tags>
   </entry>
   <entry>
-    <title>C++重拾之旅</title>
-    <url>/2025/05/26/C++%E9%87%8D%E6%8B%BE%E4%B9%8B%E6%97%85/</url>
-    <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="/assets/css/APlayer.min.css"><script src="/assets/js/APlayer.min.js" class="aplayer-secondary-script-marker"></script>]]></content>
-      <categories>
-        <category>C++</category>
-      </categories>
-      <tags>
-        <tag>C++</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>Claude Code 之旅</title>
-    <url>/2026/03/20/ClaudeCode%E4%B9%8B%E6%97%85/</url>
-    <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="/assets/css/APlayer.min.css"><script src="/assets/js/APlayer.min.js" class="aplayer-secondary-script-marker"></script>]]></content>
-      <categories>
-        <category>ClaudeCode</category>
-      </categories>
-      <tags>
-        <tag>AI</tag>
-        <tag>ClaudeCode</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>Binder 启动</title>
     <url>/2026/04/09/Binder%E5%90%AF%E5%8A%A8/</url>
     <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="/assets/css/APlayer.min.css"><script src="/assets/js/APlayer.min.js" class="aplayer-secondary-script-marker"></script><blockquote>
@@ -3359,28 +3456,26 @@
       </tags>
   </entry>
   <entry>
-    <title>Git提速代理</title>
-    <url>/2024/11/09/Git%E6%8F%90%E9%80%9F%E4%BB%A3%E7%90%86/</url>
-    <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="/assets/css/APlayer.min.css"><script src="/assets/js/APlayer.min.js" class="aplayer-secondary-script-marker"></script><blockquote>
-<p>因为平时在Ubuntu虚拟机上使用Git clone的时候速度特别慢，使用干脆写个代理文件进行提速。</p>
-</blockquote>
-<h2 id="梯子准备"><a href="#梯子准备" class="headerlink" title="梯子准备"></a>梯子准备</h2><p>在主机上挂个梯子，然后查看IP地址与端口(确保能使用)。</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SHELL"><figure class="iseeu highlight shell"><table><tr><td class="code"><pre><span class="line">en0: flags=8863&lt;UP,BROADCAST,SMART,RUNNING,SIMPLEX,MULTICAST&gt; mtu 1500</span><br><span class="line">	options=400&lt;CHANNEL_IO&gt;</span><br><span class="line">	ether 38:f9:d3:8d:58:3e</span><br><span class="line">	inet6 fe80::1434:df1:87d5:7e09%en0 prefixlen 64 secured scopeid 0x6</span><br><span class="line">	inet 192.168.1.4 netmask 0xffffff00 broadcast 192.168.1.255</span><br><span class="line">	nd6 options=201&lt;PERFORMNUD,DAD&gt;</span><br><span class="line">	media: autoselect</span><br><span class="line">	status: active</span><br></pre></td></tr></table></figure></div>
-
-<img src="/2024/11/09/Git%E6%8F%90%E9%80%9F%E4%BB%A3%E7%90%86/1.png" style="zoom:50%;">
-
-<p>我的IP与端口:192.168.1.4:7890</p>
-<h2 id="写代理文件"><a href="#写代理文件" class="headerlink" title="写代理文件"></a>写代理文件</h2><p>在Ubuntu上写代理文件，在与Desktop同一级的目录下新建.gitconfig文件并进行编辑。</p>
-<p><img src="/2024/11/09/Git%E6%8F%90%E9%80%9F%E4%BB%A3%E7%90%86/2.png"></p>
-<p>这样就可以加速了。实践一下。</p>
-<p><img src="/2024/11/09/Git%E6%8F%90%E9%80%9F%E4%BB%A3%E7%90%86/3.png"></p>
-<p>这个速度就爽多！</p>
-]]></content>
+    <title>C++重拾之旅</title>
+    <url>/2025/05/26/C++%E9%87%8D%E6%8B%BE%E4%B9%8B%E6%97%85/</url>
+    <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="/assets/css/APlayer.min.css"><script src="/assets/js/APlayer.min.js" class="aplayer-secondary-script-marker"></script>]]></content>
       <categories>
-        <category>Linux</category>
+        <category>C++</category>
       </categories>
       <tags>
-        <tag>Git</tag>
+        <tag>C++</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Claude Code 之旅</title>
+    <url>/2026/03/20/ClaudeCode%E4%B9%8B%E6%97%85/</url>
+    <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="/assets/css/APlayer.min.css"><script src="/assets/js/APlayer.min.js" class="aplayer-secondary-script-marker"></script>]]></content>
+      <categories>
+        <category>ClaudeCode</category>
+      </categories>
+      <tags>
+        <tag>AI</tag>
+        <tag>ClaudeCode</tag>
       </tags>
   </entry>
   <entry>
@@ -3612,126 +3707,6 @@
         <tag>LeetCode</tag>
         <tag>算法</tag>
         <tag>数据结构</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>Netty线程模型</title>
-    <url>/2024/11/10/Netty-%E7%BA%BF%E7%A8%8B%E6%A8%A1%E5%9E%8B/</url>
-    <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="/assets/css/APlayer.min.css"><script src="/assets/js/APlayer.min.js" class="aplayer-secondary-script-marker"></script><blockquote>
-<p>Netty 的线程模型是基于 Reactor 模型改进而来的，因此需要先熟悉 Reactor 模型，帮助对于 Netty 线程模型的理解。</p>
-</blockquote>
-<h1 id="一-Reactor-模型"><a href="#一-Reactor-模型" class="headerlink" title="一. Reactor 模型"></a><strong>一. Reactor 模型</strong></h1><h2 id="1-为什么需要-Reactor-模型"><a href="#1-为什么需要-Reactor-模型" class="headerlink" title="1.为什么需要 Reactor 模型"></a><strong>1.为什么需要 Reactor 模型</strong></h2><p> 传统阻塞 IO 模型具有设计上的不足之处：</p>
-<ul>
-<li>每个连接都需要独立线程处理，当并发数大时，创建线程数多，占用资源</li>
-<li>采用阻塞IO模型，连接建立后，若当前线程没有数据可读，线程会阻塞在读操作上，造成资源浪费</li>
-</ul>
-<p>针对传统阻塞IO模型的两个问题，可以采用如下的方案：</p>
-<ul>
-<li>基于池化思想，避免为每个连接创建线程，连接完成后将业务处理交给线程池处理</li>
-<li>基于IO复用模型，多个连接共用同一个阻塞对象，不用等待所有的连接。遍历到有新数据可以处理时，操作系统会通知程序，线程跳出阻塞状态，进行业务逻辑处理</li>
-</ul>
-<h2 id="2-什么是-Reactor-模型"><a href="#2-什么是-Reactor-模型" class="headerlink" title="2.什么是 Reactor 模型"></a><strong>2.什么是 Reactor 模型</strong></h2><p>The reactor design_pattern is an event_handling pattern for handling service requests delivered concurrently to a service handler by one or more inputs. The service handler then demultiplexes the incoming requests and dispatches them synchronously to the associated request handlers.</p>
-<p>Reactor 设计模型是一种事件处理模式，用于处理通过一个或多个输入同时传递给服务处理程序的服务请求。然后，服务处理程序对传入的请求进行多路分解，并将它们同步分派给关联的请求处理程序。Reactor 模式也被称作 Dispatcher 模式。它的核心是 <strong>多路复用器</strong> ，多路复用器收到事件后会进行分发，这点是网络服务器高并发的关键。Reacotr 模型主要分为三个角色：</p>
-<ol>
-<li><strong>Reactor</strong> ：把 IO 事件分配给对应的 handler 处理</li>
-<li><strong>Acceptor</strong> ：处理客户端连接事件</li>
-<li><strong>Handler</strong> ：处理非阻塞的任务</li>
-</ol>
-<p>通过这三个角色的配合，实现了高并发的操作。而Reactor 模型分为三种：</p>
-<ol>
-<li><strong>单 Reactor 单线程</strong></li>
-<li><strong>单 Reactor 多线程</strong></li>
-<li><strong>多 Reactor 多线程</strong></li>
-</ol>
-<p>这三种模型按顺序来看理解起来复杂度不断提升，也会更接近 Netty 的线程模型，下面来分别看看这三种模型。</p>
-<h3 id="1-单-Reactor-单线程"><a href="#1-单-Reactor-单线程" class="headerlink" title="(1). 单 Reactor 单线程"></a><strong>(1). 单 Reactor 单线程</strong></h3><p>这个最好理解，只有 <strong>一个线程</strong> ，只是会把 <strong>建立连接</strong> 和 <strong>处理请求</strong> 这两种任务分发给不同的类去处理，如下图所示：</p>
-<center class="half"> 
-    <img src="/2024/11/10/Netty-%E7%BA%BF%E7%A8%8B%E6%A8%A1%E5%9E%8B/1.PNG" width="70%">
-    <div>图1:单Reactor单线程</div>
-</center>
-
-<p>整个流程简单来讲就是：</p>
-<ol>
-<li>Reactor 通过 Selector 监听事件</li>
-<li>收到事件使用 dispatch 对事件进行分发<ul>
-<li>如果是连接事件就由 Acceptor 进行处理，处理完成会创建一个 Handler 对后续业务进行处理。</li>
-<li>后面的数据请求都会由 Handler 进行处理</li>
-</ul>
-</li>
-</ol>
-<p><strong>优点</strong></p>
-<ul>
-<li>模型简单，不会有多线程的那些问题</li>
-</ul>
-<p><strong>缺点</strong></p>
-<ul>
-<li>性能问题：单线程无法发挥多核 CPU 的性能</li>
-<li>可靠性问题：处理业务时往往容易出问题，当 Handler 出问题了，由于只有一个线程，整个节点也挂了</li>
-</ul>
-<h3 id="2-单-Reactor-多线程"><a href="#2-单-Reactor-多线程" class="headerlink" title="(2). 单 Reactor 多线程"></a>(2). 单 Reactor 多线程</h3><p>这个线程模型针对前面的问题作出了一定的优化，多出了处理业务的线程池，如下图所示：</p>
-<center class="half"> 
-    <img src="/2024/11/10/Netty-%E7%BA%BF%E7%A8%8B%E6%A8%A1%E5%9E%8B/2.PNG" width="90%">
-    <div>图2:单Reactor多线程</div>
-</center>
-
-<p>前面的流程与单 Reactor 单线程是一致的，到 Handler 这一步就不一样了：</p>
-<ul>
-<li>这个模型 <strong>Handler 只负责读取数据和发送数据部分，业务处理交给了 Worker 线程</strong>，而 Worker 线程是由 Worker 线程池统一管理的。</li>
-</ul>
-<p><strong>优点</strong></p>
-<ul>
-<li>可以充分利用多核 CPU 的处理能力</li>
-</ul>
-<p><strong>缺点</strong></p>
-<ul>
-<li>多线程资源共享和访问处理会比较复杂，在主线程处理所有的连接、监听和响应也会出现性能瓶颈</li>
-</ul>
-<h3 id="3-主从-Reactor-多线程"><a href="#3-主从-Reactor-多线程" class="headerlink" title="(3). 主从 Reactor 多线程"></a>(3). 主从 Reactor 多线程</h3><p>主从 Reactor 多线程模型又在前面的模型基础上做了进一步优化， <strong>增加了子 Reactor</strong> ，如下图所示：</p>
-<center class="half"> 
-    <img src="/2024/11/10/Netty-%E7%BA%BF%E7%A8%8B%E6%A8%A1%E5%9E%8B/3.png" width="80%">
-    <div>图3:多Reactor多线程</div>
-</center>
-
-<p><strong>整个流程大概可以分为以下几步</strong>：</p>
-<ul>
-<li>主线程的 <code>MainReactor</code> 负责监听连接请求，收到连接请求会由 <code>Acceptor</code> 进行处理，成功建立连接之后 <code>MainReactor</code> 会把连接分派给 <code>SubReactor</code> ，由 <code>SubReactor</code> 监听和处理数据请求；</li>
-<li><code>SubReactor</code> 监听到数据请求，会派发给 Handler 处理，Handler 只会处理读取数据和发送数据部分，中间业务处理部分也是放在线程池中完成。</li>
-</ul>
-<p><strong>优点</strong></p>
-<ul>
-<li><code>MainReactor</code> 与 <code>SubReactor</code> 职责分明，一个处理连接事件，一个处理数据请求；</li>
-<li><code>MainReactor</code> 与 <code>SubReactor</code> 交互逻辑比较简单，<code>MainReactor</code> 单向地将建立好的连接传递出去；</li>
-<li>多 Reactor 设计能在高并发场景拥有更好的性能。</li>
-</ul>
-<p><strong>缺点</strong></p>
-<ul>
-<li>编程复杂度较高</li>
-</ul>
-<p>主从 Reactor 多线程模式是业界非常成熟的服务器程序设计模式，在很多中间件中都使用到了这种模式，像 Nginx、Memcached、Netty 等。这种模式也被称为 1 + M + N 模式，分别代指相对少的连接线程（不一定为 1 ），多个 I&#x2F;O 线程和多个业务处理线程。</p>
-<h1 id="二-Netty-线程模型"><a href="#二-Netty-线程模型" class="headerlink" title="二. Netty 线程模型"></a>二. Netty 线程模型</h1><p>Netty 线程模型是基于主从 Reactor 多线程模型优化而来的，整体架构如下图所示：</p>
-<center class="half"> 
-    <img src="/2024/11/10/Netty-%E7%BA%BF%E7%A8%8B%E6%A8%A1%E5%9E%8B/4.png" width="100%">
-    <div>图4:Netty线程</div>
-</center>
-
-<p>Netty 的线程模型主要分为两部分，分别是 <code>BossGroup</code> 和 <code>WorkerGroup</code>，它们都分别管理一个或多个 <code>NioEventLoop</code>。每个 <code>NioEventLoop</code> 对应着一个线程，一个 <code>Selector</code>，一个 <code>Executor</code> 和一个 <code>TaskQueue</code>。<code>NioEventLoop</code> 可以理解成一个事件循环：</p>
-<ul>
-<li>当程序启动后每个 <code>NioEventLoop</code> 都会通过 <code>Executor</code> 启动一个线程，开始执行事件循环。</li>
-<li>在循环中 <code>Selector</code> 会通过 select 方法阻塞并监听就绪事件，当有事件到来时通过 <code>processSeelectedKeys</code> 方法处理 Selector 事件。</li>
-<li>之后再通过 <code>runAllTasks</code> 方法处理其他的任务。</li>
-</ul>
-<p>与前面介绍的 主从 Reactor 多线程模型类似：</p>
-<ul>
-<li><code>BossGoup</code> 负责连接事件，当建立连接之后会生成一个 <code>NioSocketChannel</code> 并注册到 <code>WorkGroup</code> 其中一个 <code>NioEventLoop</code> 的 Selector 上。</li>
-<li><code>WokerGroup</code> 中的 <code>NioEventLoop</code> 负责处理数据请求，当请求到来时会调用 <code>processSelectedKeys</code> 方法，其中的业务处理会依次经过 Pipeline 中的多个 Handler。</li>
-</ul>
-]]></content>
-      <categories>
-        <category>Java</category>
-      </categories>
-      <tags>
-        <tag>Netty</tag>
-        <tag>Java</tag>
       </tags>
   </entry>
   <entry>
@@ -4117,6 +4092,169 @@
       </tags>
   </entry>
   <entry>
+    <title>Netty线程模型</title>
+    <url>/2024/11/10/Netty-%E7%BA%BF%E7%A8%8B%E6%A8%A1%E5%9E%8B/</url>
+    <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="/assets/css/APlayer.min.css"><script src="/assets/js/APlayer.min.js" class="aplayer-secondary-script-marker"></script><blockquote>
+<p>Netty 的线程模型是基于 Reactor 模型改进而来的，因此需要先熟悉 Reactor 模型，帮助对于 Netty 线程模型的理解。</p>
+</blockquote>
+<h1 id="一-Reactor-模型"><a href="#一-Reactor-模型" class="headerlink" title="一. Reactor 模型"></a><strong>一. Reactor 模型</strong></h1><h2 id="1-为什么需要-Reactor-模型"><a href="#1-为什么需要-Reactor-模型" class="headerlink" title="1.为什么需要 Reactor 模型"></a><strong>1.为什么需要 Reactor 模型</strong></h2><p> 传统阻塞 IO 模型具有设计上的不足之处：</p>
+<ul>
+<li>每个连接都需要独立线程处理，当并发数大时，创建线程数多，占用资源</li>
+<li>采用阻塞IO模型，连接建立后，若当前线程没有数据可读，线程会阻塞在读操作上，造成资源浪费</li>
+</ul>
+<p>针对传统阻塞IO模型的两个问题，可以采用如下的方案：</p>
+<ul>
+<li>基于池化思想，避免为每个连接创建线程，连接完成后将业务处理交给线程池处理</li>
+<li>基于IO复用模型，多个连接共用同一个阻塞对象，不用等待所有的连接。遍历到有新数据可以处理时，操作系统会通知程序，线程跳出阻塞状态，进行业务逻辑处理</li>
+</ul>
+<h2 id="2-什么是-Reactor-模型"><a href="#2-什么是-Reactor-模型" class="headerlink" title="2.什么是 Reactor 模型"></a><strong>2.什么是 Reactor 模型</strong></h2><p>The reactor design_pattern is an event_handling pattern for handling service requests delivered concurrently to a service handler by one or more inputs. The service handler then demultiplexes the incoming requests and dispatches them synchronously to the associated request handlers.</p>
+<p>Reactor 设计模型是一种事件处理模式，用于处理通过一个或多个输入同时传递给服务处理程序的服务请求。然后，服务处理程序对传入的请求进行多路分解，并将它们同步分派给关联的请求处理程序。Reactor 模式也被称作 Dispatcher 模式。它的核心是 <strong>多路复用器</strong> ，多路复用器收到事件后会进行分发，这点是网络服务器高并发的关键。Reacotr 模型主要分为三个角色：</p>
+<ol>
+<li><strong>Reactor</strong> ：把 IO 事件分配给对应的 handler 处理</li>
+<li><strong>Acceptor</strong> ：处理客户端连接事件</li>
+<li><strong>Handler</strong> ：处理非阻塞的任务</li>
+</ol>
+<p>通过这三个角色的配合，实现了高并发的操作。而Reactor 模型分为三种：</p>
+<ol>
+<li><strong>单 Reactor 单线程</strong></li>
+<li><strong>单 Reactor 多线程</strong></li>
+<li><strong>多 Reactor 多线程</strong></li>
+</ol>
+<p>这三种模型按顺序来看理解起来复杂度不断提升，也会更接近 Netty 的线程模型，下面来分别看看这三种模型。</p>
+<h3 id="1-单-Reactor-单线程"><a href="#1-单-Reactor-单线程" class="headerlink" title="(1). 单 Reactor 单线程"></a><strong>(1). 单 Reactor 单线程</strong></h3><p>这个最好理解，只有 <strong>一个线程</strong> ，只是会把 <strong>建立连接</strong> 和 <strong>处理请求</strong> 这两种任务分发给不同的类去处理，如下图所示：</p>
+<center class="half"> 
+    <img src="/2024/11/10/Netty-%E7%BA%BF%E7%A8%8B%E6%A8%A1%E5%9E%8B/1.PNG" width="70%">
+    <div>图1:单Reactor单线程</div>
+</center>
+
+<p>整个流程简单来讲就是：</p>
+<ol>
+<li>Reactor 通过 Selector 监听事件</li>
+<li>收到事件使用 dispatch 对事件进行分发<ul>
+<li>如果是连接事件就由 Acceptor 进行处理，处理完成会创建一个 Handler 对后续业务进行处理。</li>
+<li>后面的数据请求都会由 Handler 进行处理</li>
+</ul>
+</li>
+</ol>
+<p><strong>优点</strong></p>
+<ul>
+<li>模型简单，不会有多线程的那些问题</li>
+</ul>
+<p><strong>缺点</strong></p>
+<ul>
+<li>性能问题：单线程无法发挥多核 CPU 的性能</li>
+<li>可靠性问题：处理业务时往往容易出问题，当 Handler 出问题了，由于只有一个线程，整个节点也挂了</li>
+</ul>
+<h3 id="2-单-Reactor-多线程"><a href="#2-单-Reactor-多线程" class="headerlink" title="(2). 单 Reactor 多线程"></a>(2). 单 Reactor 多线程</h3><p>这个线程模型针对前面的问题作出了一定的优化，多出了处理业务的线程池，如下图所示：</p>
+<center class="half"> 
+    <img src="/2024/11/10/Netty-%E7%BA%BF%E7%A8%8B%E6%A8%A1%E5%9E%8B/2.PNG" width="90%">
+    <div>图2:单Reactor多线程</div>
+</center>
+
+<p>前面的流程与单 Reactor 单线程是一致的，到 Handler 这一步就不一样了：</p>
+<ul>
+<li>这个模型 <strong>Handler 只负责读取数据和发送数据部分，业务处理交给了 Worker 线程</strong>，而 Worker 线程是由 Worker 线程池统一管理的。</li>
+</ul>
+<p><strong>优点</strong></p>
+<ul>
+<li>可以充分利用多核 CPU 的处理能力</li>
+</ul>
+<p><strong>缺点</strong></p>
+<ul>
+<li>多线程资源共享和访问处理会比较复杂，在主线程处理所有的连接、监听和响应也会出现性能瓶颈</li>
+</ul>
+<h3 id="3-主从-Reactor-多线程"><a href="#3-主从-Reactor-多线程" class="headerlink" title="(3). 主从 Reactor 多线程"></a>(3). 主从 Reactor 多线程</h3><p>主从 Reactor 多线程模型又在前面的模型基础上做了进一步优化， <strong>增加了子 Reactor</strong> ，如下图所示：</p>
+<center class="half"> 
+    <img src="/2024/11/10/Netty-%E7%BA%BF%E7%A8%8B%E6%A8%A1%E5%9E%8B/3.png" width="80%">
+    <div>图3:多Reactor多线程</div>
+</center>
+
+<p><strong>整个流程大概可以分为以下几步</strong>：</p>
+<ul>
+<li>主线程的 <code>MainReactor</code> 负责监听连接请求，收到连接请求会由 <code>Acceptor</code> 进行处理，成功建立连接之后 <code>MainReactor</code> 会把连接分派给 <code>SubReactor</code> ，由 <code>SubReactor</code> 监听和处理数据请求；</li>
+<li><code>SubReactor</code> 监听到数据请求，会派发给 Handler 处理，Handler 只会处理读取数据和发送数据部分，中间业务处理部分也是放在线程池中完成。</li>
+</ul>
+<p><strong>优点</strong></p>
+<ul>
+<li><code>MainReactor</code> 与 <code>SubReactor</code> 职责分明，一个处理连接事件，一个处理数据请求；</li>
+<li><code>MainReactor</code> 与 <code>SubReactor</code> 交互逻辑比较简单，<code>MainReactor</code> 单向地将建立好的连接传递出去；</li>
+<li>多 Reactor 设计能在高并发场景拥有更好的性能。</li>
+</ul>
+<p><strong>缺点</strong></p>
+<ul>
+<li>编程复杂度较高</li>
+</ul>
+<p>主从 Reactor 多线程模式是业界非常成熟的服务器程序设计模式，在很多中间件中都使用到了这种模式，像 Nginx、Memcached、Netty 等。这种模式也被称为 1 + M + N 模式，分别代指相对少的连接线程（不一定为 1 ），多个 I&#x2F;O 线程和多个业务处理线程。</p>
+<h1 id="二-Netty-线程模型"><a href="#二-Netty-线程模型" class="headerlink" title="二. Netty 线程模型"></a>二. Netty 线程模型</h1><p>Netty 线程模型是基于主从 Reactor 多线程模型优化而来的，整体架构如下图所示：</p>
+<center class="half"> 
+    <img src="/2024/11/10/Netty-%E7%BA%BF%E7%A8%8B%E6%A8%A1%E5%9E%8B/4.png" width="100%">
+    <div>图4:Netty线程</div>
+</center>
+
+<p>Netty 的线程模型主要分为两部分，分别是 <code>BossGroup</code> 和 <code>WorkerGroup</code>，它们都分别管理一个或多个 <code>NioEventLoop</code>。每个 <code>NioEventLoop</code> 对应着一个线程，一个 <code>Selector</code>，一个 <code>Executor</code> 和一个 <code>TaskQueue</code>。<code>NioEventLoop</code> 可以理解成一个事件循环：</p>
+<ul>
+<li>当程序启动后每个 <code>NioEventLoop</code> 都会通过 <code>Executor</code> 启动一个线程，开始执行事件循环。</li>
+<li>在循环中 <code>Selector</code> 会通过 select 方法阻塞并监听就绪事件，当有事件到来时通过 <code>processSeelectedKeys</code> 方法处理 Selector 事件。</li>
+<li>之后再通过 <code>runAllTasks</code> 方法处理其他的任务。</li>
+</ul>
+<p>与前面介绍的 主从 Reactor 多线程模型类似：</p>
+<ul>
+<li><code>BossGoup</code> 负责连接事件，当建立连接之后会生成一个 <code>NioSocketChannel</code> 并注册到 <code>WorkGroup</code> 其中一个 <code>NioEventLoop</code> 的 Selector 上。</li>
+<li><code>WokerGroup</code> 中的 <code>NioEventLoop</code> 负责处理数据请求，当请求到来时会调用 <code>processSelectedKeys</code> 方法，其中的业务处理会依次经过 Pipeline 中的多个 Handler。</li>
+</ul>
+]]></content>
+      <categories>
+        <category>Java</category>
+      </categories>
+      <tags>
+        <tag>Netty</tag>
+        <tag>Java</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>大学的四年</title>
+    <url>/2024/11/29/%E5%A4%A7%E5%AD%A6%E7%9A%84%E5%9B%9B%E5%B9%B4/</url>
+    <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="/assets/css/APlayer.min.css"><script src="/assets/js/APlayer.min.js" class="aplayer-secondary-script-marker"></script><blockquote>
+<p>周末夜里闲来无聊，不经意翻阅起大学舍友的博客，看着他记录的点点滴滴，十分感慨。看着自己工作后就一直没有再更新过的博客，不妨在大学十周年之前，趁着记忆还算深刻，都将回忆记录下来，一切都从头开始吧。</p>
+</blockquote>
+<h1 id="序章"><a href="#序章" class="headerlink" title="序章"></a>序章</h1><p>从高考成绩出来的那一刻起，也许大学生活就算是开始了吧。当时考完觉得自己考砸了，跟父母说，如果不在一本线，那直接复读。然后命运给自己的答案就是加上小高考，分数刚好是一本线，不多也不少。。父母和老师都觉得难报专业，记得当时的目标是河海的水利，理想是东大的土木，打电话给表哥，问他所在的土木行业怎么样，给点回复是“碰都别碰”（等到大学毕业，土木确实也算是天坑之一了，也是感谢当时表哥的劝退）。</p>
+<p>巧的是邻家哥哥刚好大学毕业，考上了东大的计算机，趁着暑假在家，和他促膝畅谈了一番，都觉得之后计算机行业应该会更好找工作。也记得初中喜欢的一篇青年文摘上文章男主报的专业也是计算机，就这样选择好了专业。最后在南工程，南审计和南林中选择了唯一有硕士点的南林。然后也为自己大三时候要考研埋下了种子。就这样，大学的四年在南林正式开始。</p>
+<hr>
+<h1 id="大一"><a href="#大一" class="headerlink" title="大一"></a>大一</h1>]]></content>
+      <categories>
+        <category>回忆录</category>
+      </categories>
+      <tags>
+        <tag>涓涓心事</tag>
+        <tag>回忆录</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Git提速代理</title>
+    <url>/2024/11/09/Git%E6%8F%90%E9%80%9F%E4%BB%A3%E7%90%86/</url>
+    <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="/assets/css/APlayer.min.css"><script src="/assets/js/APlayer.min.js" class="aplayer-secondary-script-marker"></script><blockquote>
+<p>因为平时在Ubuntu虚拟机上使用Git clone的时候速度特别慢，使用干脆写个代理文件进行提速。</p>
+</blockquote>
+<h2 id="梯子准备"><a href="#梯子准备" class="headerlink" title="梯子准备"></a>梯子准备</h2><p>在主机上挂个梯子，然后查看IP地址与端口(确保能使用)。</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SHELL"><figure class="iseeu highlight shell"><table><tr><td class="code"><pre><span class="line">en0: flags=8863&lt;UP,BROADCAST,SMART,RUNNING,SIMPLEX,MULTICAST&gt; mtu 1500</span><br><span class="line">	options=400&lt;CHANNEL_IO&gt;</span><br><span class="line">	ether 38:f9:d3:8d:58:3e</span><br><span class="line">	inet6 fe80::1434:df1:87d5:7e09%en0 prefixlen 64 secured scopeid 0x6</span><br><span class="line">	inet 192.168.1.4 netmask 0xffffff00 broadcast 192.168.1.255</span><br><span class="line">	nd6 options=201&lt;PERFORMNUD,DAD&gt;</span><br><span class="line">	media: autoselect</span><br><span class="line">	status: active</span><br></pre></td></tr></table></figure></div>
+
+<img src="/2024/11/09/Git%E6%8F%90%E9%80%9F%E4%BB%A3%E7%90%86/1.png" style="zoom:50%;">
+
+<p>我的IP与端口:192.168.1.4:7890</p>
+<h2 id="写代理文件"><a href="#写代理文件" class="headerlink" title="写代理文件"></a>写代理文件</h2><p>在Ubuntu上写代理文件，在与Desktop同一级的目录下新建.gitconfig文件并进行编辑。</p>
+<p><img src="/2024/11/09/Git%E6%8F%90%E9%80%9F%E4%BB%A3%E7%90%86/2.png"></p>
+<p>这样就可以加速了。实践一下。</p>
+<p><img src="/2024/11/09/Git%E6%8F%90%E9%80%9F%E4%BB%A3%E7%90%86/3.png"></p>
+<p>这个速度就爽多！</p>
+]]></content>
+      <categories>
+        <category>Linux</category>
+      </categories>
+      <tags>
+        <tag>Git</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>gdb学习</title>
     <url>/2024/11/09/gdb%E5%AD%A6%E4%B9%A0/</url>
     <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="/assets/css/APlayer.min.css"><script src="/assets/js/APlayer.min.js" class="aplayer-secondary-script-marker"></script><h1 id="1-GDB-的基本介绍"><a href="#1-GDB-的基本介绍" class="headerlink" title="1.GDB 的基本介绍"></a>1.GDB 的基本介绍</h1><p>GDB, 是 <code>The GNU Project Debugger</code> 的缩写, 是 Linux 下功能全面的调试工具。GDB 支持断点、单步执行、打印变量、观察变量、查看寄存器、查看堆栈等调试手段。在 Linux 环境软件开发中，GDB 是主要的调试工具，用来调试 C 和 C++ 程序。</p>
@@ -4402,24 +4540,6 @@
       <tags>
         <tag>C</tag>
         <tag>gdb</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>大学的四年</title>
-    <url>/2024/11/29/%E5%A4%A7%E5%AD%A6%E7%9A%84%E5%9B%9B%E5%B9%B4/</url>
-    <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="/assets/css/APlayer.min.css"><script src="/assets/js/APlayer.min.js" class="aplayer-secondary-script-marker"></script><blockquote>
-<p>周末夜里闲来无聊，不经意翻阅起大学舍友的博客，看着他记录的点点滴滴，十分感慨。看着自己工作后就一直没有再更新过的博客，不妨在大学十周年之前，趁着记忆还算深刻，都将回忆记录下来，一切都从头开始吧。</p>
-</blockquote>
-<h1 id="序章"><a href="#序章" class="headerlink" title="序章"></a>序章</h1><p>从高考成绩出来的那一刻起，也许大学生活就算是开始了吧。当时考完觉得自己考砸了，跟父母说，如果不在一本线，那直接复读。然后命运给自己的答案就是加上小高考，分数刚好是一本线，不多也不少。。父母和老师都觉得难报专业，记得当时的目标是河海的水利，理想是东大的土木，打电话给表哥，问他所在的土木行业怎么样，给点回复是“碰都别碰”（等到大学毕业，土木确实也算是天坑之一了，也是感谢当时表哥的劝退）。</p>
-<p>巧的是邻家哥哥刚好大学毕业，考上了东大的计算机，趁着暑假在家，和他促膝畅谈了一番，都觉得之后计算机行业应该会更好找工作。也记得初中喜欢的一篇青年文摘上文章男主报的专业也是计算机，就这样选择好了专业。最后在南工程，南审计和南林中选择了唯一有硕士点的南林。然后也为自己大三时候要考研埋下了种子。就这样，大学的四年在南林正式开始。</p>
-<hr>
-<h1 id="大一"><a href="#大一" class="headerlink" title="大一"></a>大一</h1>]]></content>
-      <categories>
-        <category>回忆录</category>
-      </categories>
-      <tags>
-        <tag>涓涓心事</tag>
-        <tag>回忆录</tag>
       </tags>
   </entry>
 </search>
