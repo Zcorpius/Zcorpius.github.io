@@ -1,0 +1,1534 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next muse use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+<script>
+    (function(){
+        if(''){
+            if (prompt('请输入密码') !== ''){
+                alert('密码错误');
+                history.back();
+            }
+        }
+    })();
+</script>
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/head.jpg?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/head.jpg?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/head.jpg?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/head.jpg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="C," />
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="Zcorpius's Blog" type="application/atom+xml" />
+
+
+
+
+
+
+<meta name="description" content="1. 引言最开始读 AOSP 源码看到下面这段代码时直接愣住： 123456789static struct &#123;    const char* name;    int (*func)(int, char**);&#125; tools[] &#x3D; &#123;#define TOOL(name) &#123; #name, name##_main &#125;,#include &amp;quot">
+<meta property="og:type" content="article">
+<meta property="og:title" content="X-Macro 模式详解 —— C 语言的&quot;编译时反射">
+<meta property="og:url" content="https://zcorpius.github.io/2026/06/14/X-Macro%20%E6%A8%A1%E5%BC%8F/index.html">
+<meta property="og:site_name" content="Zcorpius&#39;s Blog">
+<meta property="og:description" content="1. 引言最开始读 AOSP 源码看到下面这段代码时直接愣住： 123456789static struct &#123;    const char* name;    int (*func)(int, char**);&#125; tools[] &#x3D; &#123;#define TOOL(name) &#123; #name, name##_main &#125;,#include &amp;quot">
+<meta property="og:locale">
+<meta property="article:published_time" content="2026-06-14T10:17:15.000Z">
+<meta property="article:modified_time" content="2026-07-09T11:52:03.178Z">
+<meta property="article:author" content="Zcorpius">
+<meta property="article:tag" content="C">
+<meta name="twitter:card" content="summary">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Muse',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":true,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://Zcorpius.github.io/2026/06/14/X-Macro 模式/"/>
+
+
+
+
+
+  <title>X-Macro 模式详解 —— C 语言的"编译时反射 | Zcorpius's Blog</title>
+  
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Zcorpius's Blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">追寻自我的崎岖路上从不缺勇敢。</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-路径">
+          <a href="/top/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-fire"></i> <br />
+            
+            路径
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://Zcorpius.github.io/2026/06/14/X-Macro%20%E6%A8%A1%E5%BC%8F/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/head.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Zcorpius's Blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">X-Macro 模式详解 —— C 语言的"编译时反射</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2026-06-14T18:17:15+08:00">
+                2026-06-14
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/C/" itemprop="url" rel="index">
+                    <span itemprop="name">C</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+            <div class="post-wordcount">
+              
+                
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-file-word-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">字数统计&#58;</span>
+                
+                <span title="字数统计">
+                  3.5k
+                </span>
+              
+
+              
+                <span class="post-meta-divider">|</span>
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-clock-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">阅读时长 &asymp;</span>
+                
+                <span title="阅读时长">
+                  15
+                </span>
+              
+            </div>
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="1-引言"><a href="#1-引言" class="headerlink" title="1. 引言"></a>1. 引言</h1><p>最开始读 AOSP 源码看到下面这段代码时直接愣住：</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="C"><figure class="iseeu highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">static</span> <span class="class"><span class="keyword">struct</span> &#123;</span></span><br><span class="line">    <span class="type">const</span> <span class="type">char</span>* name;</span><br><span class="line">    <span class="type">int</span> (*func)(<span class="type">int</span>, <span class="type">char</span>**);</span><br><span class="line">&#125; tools[] = &#123;</span><br><span class="line"><span class="meta">#<span class="keyword">define</span> TOOL(name) &#123; #name, name##_main &#125;,</span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&quot;tools.h&quot;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">undef</span> TOOL</span></span><br><span class="line">    &#123; <span class="number">0</span>, <span class="number">0</span> &#125;,</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure></div>
+
+<p>短短几行就藏着很常用的 C 语言技巧——<strong>X-Macro 模式</strong>。 Linux 内核、Android 框架、BusyBox、OpenSSL 都靠它运转。<strong>学会它，整个系统编程世界的”魔法”都不再神秘</strong>。</p>
+<hr>
+<h1 id="2-前置：Macro-是什么"><a href="#2-前置：Macro-是什么" class="headerlink" title="2. 前置：Macro 是什么"></a>2. 前置：Macro 是什么</h1><p>要彻底理解 <strong>X-Macro</strong>，必须先把 <strong>Macro</strong> 这个词搞清楚——因为 X-Macro 这个技巧的<strong>全部基础</strong>就是 C 语言的宏系统。</p>
+<h2 id="2-1-定义"><a href="#2-1-定义" class="headerlink" title="2.1. 定义"></a>2.1. 定义</h2><div class="markdown-alert markdown-alert-note">
+<p class="markdown-alert-title"><svg class="octicon octicon-info mr-2" viewbox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"/></svg>Note</p>
+<p><strong>Macro（宏）&#x3D; C 预处理器的一种”文本替换规则”</strong>——给一段代码起个名字，用的时候预处理器会<strong>自动替换</strong>。</p>
+</div>
+<h2 id="2-2-Macro-在-C-语言里是什么"><a href="#2-2-Macro-在-C-语言里是什么" class="headerlink" title="2.2. Macro 在 C 语言里是什么"></a>2.2. Macro 在 C 语言里是什么</h2><p>C 编译过程分两阶段：</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="BASH"><figure class="iseeu highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">源代码 (.c)</span><br><span class="line">    ↓ ① 预处理器（CPP）展开宏、include 文件、去掉注释</span><br><span class="line">预处理后的代码 (.i)</span><br><span class="line">    ↓ ② 编译器真正编译</span><br><span class="line">目标代码 (.o)</span><br></pre></td></tr></table></figure></div>
+
+<p><strong>Macro 在第 ① 阶段工作</strong>——它就是预处理器的”查找替换规则”。</p>
+<p>编译器（第 ② 阶段）<strong>完全不知道宏的存在</strong>，它看到的是已经替换完的代码。</p>
+<h2 id="2-3-宏的两种形式"><a href="#2-3-宏的两种形式" class="headerlink" title="2.3. 宏的两种形式"></a>2.3. 宏的两种形式</h2><h3 id="对象式宏（Object-like-Macro）——-不带参数"><a href="#对象式宏（Object-like-Macro）——-不带参数" class="headerlink" title="对象式宏（Object-like Macro）—— 不带参数"></a>对象式宏（Object-like Macro）—— 不带参数</h3><div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="C"><figure class="iseeu highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">define</span> PI          3.14159</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> MAX_SIZE    100</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> LOG_TAG     <span class="string">&quot;InputManager&quot;</span></span></span><br></pre></td></tr></table></figure></div>
+
+<p>用法：</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="C"><figure class="iseeu highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">double</span> area = PI * r * r;                  <span class="comment">// → double area = 3.14159 * r * r;</span></span><br><span class="line"><span class="type">char</span> buf[MAX_SIZE];                         <span class="comment">// → char buf[100];</span></span><br><span class="line">__android_log_print(..., LOG_TAG, ...);     <span class="comment">// → ..., &quot;InputManager&quot;, ...</span></span><br></pre></td></tr></table></figure></div>
+
+<p><strong>本质</strong>：给常量或代码片段起个<strong>别名</strong>，纯文本替换。</p>
+<h3 id="函数式宏（Function-like-Macro）——-带参数"><a href="#函数式宏（Function-like-Macro）——-带参数" class="headerlink" title="函数式宏（Function-like Macro）—— 带参数"></a>函数式宏（Function-like Macro）—— 带参数</h3><div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="C"><figure class="iseeu highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">define</span> SQUARE(x)       ((x) * (x))</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> MAX(a, b)       ((a) &gt; (b) ? (a) : (b))</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> TOOL(name)      int name##_main(int, char**);</span></span><br></pre></td></tr></table></figure></div>
+
+<p>用法：</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="C"><figure class="iseeu highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">int</span> y = SQUARE(<span class="number">5</span>);              <span class="comment">// → int y = ((5) * (5));</span></span><br><span class="line"><span class="type">int</span> m = MAX(<span class="number">3</span>, <span class="number">7</span>);              <span class="comment">// → int m = ((3) &gt; (7) ? (3) : (7));</span></span><br><span class="line">TOOL(getevent)                  <span class="comment">// → int getevent_main(int, char**);</span></span><br></pre></td></tr></table></figure></div>
+
+<p><strong>本质</strong>：像函数一样接受参数，但<strong>纯文本替换</strong>——没有类型检查、没有调用开销。</p>
+<h2 id="2-4-宏的关键操作符"><a href="#2-4-宏的关键操作符" class="headerlink" title="2.4. 宏的关键操作符"></a>2.4. 宏的关键操作符</h2><p>宏的能力来自几个特殊操作符：</p>
+<table>
+<thead>
+<tr>
+<th>操作符</th>
+<th>名字</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>#param</code></td>
+<td>字符串化（stringize）</td>
+<td>把宏参数变成字符串字面量</td>
+</tr>
+<tr>
+<td><code>a##b</code></td>
+<td>标记粘贴（token paste）</td>
+<td>把两个标记拼接成新标识符</td>
+</tr>
+<tr>
+<td><code>__VA_ARGS__</code></td>
+<td>可变参数</td>
+<td>接受可变数量参数</td>
+</tr>
+<tr>
+<td><code>\</code></td>
+<td>行续（line continuation）</td>
+<td>多行宏</td>
+</tr>
+</tbody></table>
+<p>X-Macro 主要靠 <strong><code>#</code> 和 <code>##</code></strong> 工作：</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="C"><figure class="iseeu highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">define</span> TOOL(name) &#123; #name, name##_main &#125;,</span></span><br><span class="line"><span class="comment">//                    ↑↑↑        ↑↑↑</span></span><br><span class="line"><span class="comment">//                     #         ##</span></span><br><span class="line"><span class="comment">//                   字符串化    标记粘贴</span></span><br><span class="line"></span><br><span class="line">TOOL(getevent)</span><br><span class="line"><span class="comment">// 展开成:</span></span><br><span class="line">&#123; <span class="string">&quot;getevent&quot;</span>  ,    getevent_main &#125;,</span><br><span class="line"><span class="comment">//  ↑                   ↑</span></span><br><span class="line"><span class="comment">//  #name          name##_main</span></span><br><span class="line"><span class="comment">//  把 getevent   把 getevent 和 _main 拼接</span></span><br><span class="line"><span class="comment">//  变成字符串        成函数名</span></span><br></pre></td></tr></table></figure></div>
+
+<h2 id="2-5-宏-vs-函数-vs-const-vs-inline"><a href="#2-5-宏-vs-函数-vs-const-vs-inline" class="headerlink" title="2.5. 宏 vs 函数 vs const vs inline"></a>2.5. 宏 vs 函数 vs const vs inline</h2><p>C 程序员面对同一问题有多种选择：</p>
+<table>
+<thead>
+<tr>
+<th>方式</th>
+<th>类型安全</th>
+<th>性能</th>
+<th>调试</th>
+<th>适用场景</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>宏</td>
+<td>✗</td>
+<td>极快</td>
+<td>困难</td>
+<td>X-Macro、跨平台开关、字符串拼接</td>
+</tr>
+<tr>
+<td>函数</td>
+<td>✓</td>
+<td>慢（调用开销）</td>
+<td>容易</td>
+<td>通用</td>
+</tr>
+<tr>
+<td>const</td>
+<td>✓</td>
+<td>快</td>
+<td>容易</td>
+<td>类型化常量</td>
+</tr>
+<tr>
+<td>inline 函数</td>
+<td>✓</td>
+<td>极快</td>
+<td>较易</td>
+<td>C99+，替代性能敏感的函数式宏</td>
+</tr>
+</tbody></table>
+<p><strong>现代 C 编程原则</strong>：</p>
+<ul>
+<li>能用 <code>const</code> 就别用 <code>#define</code></li>
+<li>能用 <code>inline</code> 就别用函数式宏</li>
+<li><strong>但 X-Macro 没有替代品</strong>——这是宏仍然存在的核心理由之一</li>
+</ul>
+<h2 id="2-6-在-X-Macro-里-Macro-具体指什么"><a href="#2-6-在-X-Macro-里-Macro-具体指什么" class="headerlink" title="2.6. 在 X-Macro 里 Macro 具体指什么"></a>2.6. 在 X-Macro 里 Macro 具体指什么</h2><p>回到 toolbox.c：</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="C"><figure class="iseeu highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">define</span> TOOL(name) &#123; #name, name##_main &#125;,</span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&quot;tools.h&quot;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">undef</span> TOOL</span></span><br></pre></td></tr></table></figure></div>
+
+<p>这里的 <code>TOOL(name)</code> 就是一个<strong>函数式宏</strong>——它接受参数 <code>name</code>，展开成 <code>&#123; #name, name##_main &#125;,</code>。</p>
+<p><strong>X-Macro 这个名字的拆解</strong>：</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="BASH"><figure class="iseeu highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"> X   -   Macro</span><br><span class="line"> ↑        ↑</span><br><span class="line">占位符     宏</span><br></pre></td></tr></table></figure></div>
+
+<ul>
+<li><strong>Macro</strong>：C 语言的”宏”——表示这是个<strong>用 C 预处理器实现</strong>的技巧</li>
+<li><strong>X</strong>：占位符——表示宏的<strong>具体名字不重要</strong></li>
+</ul>
+<p>合起来 <strong>X-Macro</strong> 的意思就是：<strong>“用一个未定义名字的宏（X）作为占位符，通过预处理器的 #define + #include 实现代码生成” 的技巧</strong>。</p>
+<h2 id="2-7-一个具体例子：宏的展开"><a href="#2-7-一个具体例子：宏的展开" class="headerlink" title="2.7. 一个具体例子：宏的展开"></a>2.7. 一个具体例子：宏的展开</h2><p>最简单的例子帮助理解：</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="C"><figure class="iseeu highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 1. 定义一个宏</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> DOUBLE(x) ((x) * 2)</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 2. 使用宏</span></span><br><span class="line"><span class="type">int</span> a = DOUBLE(<span class="number">5</span>);</span><br><span class="line"><span class="type">int</span> b = DOUBLE(<span class="number">3</span> + <span class="number">1</span>);</span><br></pre></td></tr></table></figure></div>
+
+<p>预处理器替换后的代码：</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="C"><figure class="iseeu highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">int</span> a = ((<span class="number">5</span>) * <span class="number">2</span>);              <span class="comment">// DOUBLE(5) 展开成 ((5) * 2)</span></span><br><span class="line"><span class="type">int</span> b = ((<span class="number">3</span> + <span class="number">1</span>) * <span class="number">2</span>);          <span class="comment">// DOUBLE(3+1) 展开成 ((3 + 1) * 2)</span></span><br></pre></td></tr></table></figure></div>
+
+<p><strong>编译器看到的根本不是 <code>DOUBLE</code>，而是已经替换好的 <code>((x) * 2)</code></strong>。</p>
+<p>理解了 Macro 这个基础概念，再看 X-Macro 文档里的所有代码就一通百通了。下一节我们就来正式介绍 X-Macro。</p>
+<hr>
+<h1 id="3-什么是-X-Macro"><a href="#3-什么是-X-Macro" class="headerlink" title="3. 什么是 X-Macro"></a>3. 什么是 X-Macro</h1><h2 id="3-1-定义"><a href="#3-1-定义" class="headerlink" title="3.1. 定义"></a>3.1. 定义</h2><p>X-Macro 模式早在 1980 年代就被贝尔实验室的 C 程序员使用，1994 年由 <strong>Andrew Koenig</strong>（C++ 之父 Bjarne Stroustrup 的同事，著作《C 陷阱与缺陷》）在 <strong>《C Traps and Pitfalls》</strong> 一书的相关讨论中正式命名。</p>
+<p>从此 X-Macro 成为 C&#x2F;C++ 系统编程的标准武器，Linux 内核、Windows SDK、OpenSSL、BusyBox 大量使用。</p>
+<div class="markdown-alert markdown-alert-note">
+<p class="markdown-alert-title"><svg class="octicon octicon-info mr-2" viewbox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"/></svg>Note</p>
+<p><strong>X-Macro &#x3D; 把”数据列表”放在 <code>.h</code> 文件里，通过多次 <code>#include</code> + 每次重新定义宏，让同一份数据驱动多处代码自动生成。</strong></p>
+</div>
+<p><strong>X-Macro 不是 C 标准的关键字或特性</strong>，而是利用 C 预处理器（CPP）的 <code>#define</code>、<code>#include</code>、<code>#</code>、<code>##</code> 组合出的<strong>编程技巧</strong>（idiom）。</p>
+<p>C 标准没有规定这个模式，但 C 预处理器的能力使它自然成立。任何符合标准的 C 编译器都支持。</p>
+<hr>
+<h2 id="3-2-基本结构（三步走）"><a href="#3-2-基本结构（三步走）" class="headerlink" title="3.2. 基本结构（三步走）"></a>3.2. 基本结构（三步走）</h2><h3 id="第-1-步：定义”数据列表”文件（不写头文件守卫）"><a href="#第-1-步：定义”数据列表”文件（不写头文件守卫）" class="headerlink" title="第 1 步：定义”数据列表”文件（不写头文件守卫）"></a>第 1 步：定义”数据列表”文件（不写头文件守卫）</h3><div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="C"><figure class="iseeu highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// list.h</span></span><br><span class="line">ITEM(getevent)</span><br><span class="line">ITEM(getprop)</span><br><span class="line">ITEM(modprobe)</span><br></pre></td></tr></table></figure></div>
+
+<p><strong>关键点</strong>：</p>
+<ol>
+<li><strong>没有 <code>#ifndef</code> 守卫</strong>——它要被多次 include</li>
+<li><strong><code>ITEM</code> 在这里没定义</strong>——它是抽象占位符</li>
+<li>文件内容只是”宏调用列表”</li>
+</ol>
+<h3 id="第-2-步：第一次-include-——-用宏-A-展开"><a href="#第-2-步：第一次-include-——-用宏-A-展开" class="headerlink" title="第 2 步：第一次 include —— 用宏 A 展开"></a>第 2 步：第一次 include —— 用宏 A 展开</h3><div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="C"><figure class="iseeu highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">define</span> ITEM(name) int name##_main(int, char**);    <span class="comment">// ITEM = 前向声明</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&quot;list.h&quot;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">undef</span> ITEM</span></span><br></pre></td></tr></table></figure></div>
+
+<p>展开后：</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="C"><figure class="iseeu highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">int</span> <span class="title function_">getevent_main</span><span class="params">(<span class="type">int</span>, <span class="type">char</span>**)</span>;</span><br><span class="line"><span class="type">int</span> <span class="title function_">getprop_main</span><span class="params">(<span class="type">int</span>, <span class="type">char</span>**)</span>;</span><br><span class="line"><span class="type">int</span> <span class="title function_">modprobe_main</span><span class="params">(<span class="type">int</span>, <span class="type">char</span>**)</span>;</span><br></pre></td></tr></table></figure></div>
+
+<h3 id="第-3-步：第二次-include-——-用宏-B-展开"><a href="#第-3-步：第二次-include-——-用宏-B-展开" class="headerlink" title="第 3 步：第二次 include —— 用宏 B 展开"></a>第 3 步：第二次 include —— 用宏 B 展开</h3><div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="C"><figure class="iseeu highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">static</span> <span class="class"><span class="keyword">struct</span> &#123;</span> ... &#125; table[] = &#123;</span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ITEM(name) &#123; #name, name##_main &#125;,          <span class="comment">// ITEM = 表条目</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&quot;list.h&quot;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">undef</span> ITEM</span></span><br><span class="line">    &#123; <span class="number">0</span>, <span class="number">0</span> &#125;,</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure></div>
+
+<p>展开后：</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="C"><figure class="iseeu highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">static</span> <span class="class"><span class="keyword">struct</span> &#123;</span> ... &#125; table[] = &#123;</span><br><span class="line">    &#123; <span class="string">&quot;getevent&quot;</span>, getevent_main &#125;,</span><br><span class="line">    &#123; <span class="string">&quot;getprop&quot;</span>,  getprop_main  &#125;,</span><br><span class="line">    &#123; <span class="string">&quot;modprobe&quot;</span>, modprobe_main &#125;,</span><br><span class="line">    &#123; <span class="number">0</span>, <span class="number">0</span> &#125;,</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure></div>
+
+<p><strong>同一份 <code>list.h</code>，因为宏定义不同，生成了完全不同的代码</strong>。这就是 X-Macro 的精髓。</p>
+<hr>
+<h2 id="3-3-第一个完整示例：颜色枚举"><a href="#3-3-第一个完整示例：颜色枚举" class="headerlink" title="3.3. 第一个完整示例：颜色枚举"></a>3.3. 第一个完整示例：颜色枚举</h2><p>来看一个可以<strong>直接编译运行</strong>的最小完整示例。</p>
+<h3 id="list-h（数据文件）"><a href="#list-h（数据文件）" class="headerlink" title="list.h（数据文件）"></a>list.h（数据文件）</h3><div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="C"><figure class="iseeu highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">ITEM(red)</span><br><span class="line">ITEM(green)</span><br><span class="line">ITEM(blue)</span><br></pre></td></tr></table></figure></div>
+
+<h3 id="main-c（使用-X-Macro）"><a href="#main-c（使用-X-Macro）" class="headerlink" title="main.c（使用 X-Macro）"></a>main.c（使用 X-Macro）</h3><div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="C"><figure class="iseeu highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;stdio.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="comment">// ① 生成枚举</span></span><br><span class="line"><span class="class"><span class="keyword">enum</span> <span class="title">Color</span> &#123;</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ITEM(name) name,</span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&quot;list.h&quot;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">undef</span> ITEM</span></span><br><span class="line">&#125;;</span><br><span class="line"><span class="comment">// 展开: enum Color &#123; red, green, blue, &#125;;</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// ② 生成字符串数组</span></span><br><span class="line"><span class="type">const</span> <span class="type">char</span>* color_names[] = &#123;</span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ITEM(name) #name,</span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&quot;list.h&quot;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">undef</span> ITEM</span></span><br><span class="line">&#125;;</span><br><span class="line"><span class="comment">// 展开: const char* color_names[] = &#123; &quot;red&quot;, &quot;green&quot;, &quot;blue&quot;, &#125;;</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// ③ 生成&quot;字符串 → 枚举&quot;解析函数</span></span><br><span class="line">Color <span class="title function_">parse_color</span><span class="params">(<span class="type">const</span> <span class="type">char</span>* s)</span> &#123;</span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ITEM(name) <span class="keyword">if</span> (!strcmp(s, #name)) return name;</span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&quot;list.h&quot;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">undef</span> ITEM</span></span><br><span class="line">    <span class="keyword">return</span> (Color)<span class="number">-1</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="type">int</span> <span class="title function_">main</span><span class="params">()</span> &#123;</span><br><span class="line">    <span class="type">int</span> n = <span class="keyword">sizeof</span>(color_names) / <span class="keyword">sizeof</span>(color_names[<span class="number">0</span>]);</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; n; i++) &#123;</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">&quot;Color %d: %s\n&quot;</span>, i, color_names[i]);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+
+<h3 id="输出"><a href="#输出" class="headerlink" title="输出"></a>输出</h3><div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="PLAINTEXT"><figure class="iseeu highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Color 0: red</span><br><span class="line">Color 1: green</span><br><span class="line">Color 2: blue</span><br></pre></td></tr></table></figure></div>
+
+<h3 id="重点：单一数据源"><a href="#重点：单一数据源" class="headerlink" title="重点：单一数据源"></a>重点：单一数据源</h3><p>加一个颜色 <code>yellow</code>，<strong>只改 <code>list.h</code></strong>：</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="DIFF"><figure class="iseeu highlight diff"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">ITEM(red)</span><br><span class="line">ITEM(green)</span><br><span class="line">ITEM(blue)</span><br><span class="line"><span class="addition">+ITEM(yellow)</span></span><br></pre></td></tr></table></figure></div>
+
+<p><strong>枚举、字符串数组、解析函数全部自动同步</strong>——这就是 SSOT（Single Source of Truth，单一数据源）的力量。</p>
+<hr>
+<h2 id="3-4-核心思想：菜单-vs-厨师"><a href="#3-4-核心思想：菜单-vs-厨师" class="headerlink" title="3.4. 核心思想：菜单 vs 厨师"></a>3.4. 核心思想：菜单 vs 厨师</h2><p>X-Macro 用一个生活化的比喻最容易理解。</p>
+<h3 id="比喻对照"><a href="#比喻对照" class="headerlink" title="比喻对照"></a>比喻对照</h3><table>
+<thead>
+<tr>
+<th>X-Macro 组件</th>
+<th>比喻</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong><code>list.h</code></strong>（数据文件）</td>
+<td><strong>菜单</strong>：列出有哪些原料</td>
+</tr>
+<tr>
+<td><strong><code>#define</code></strong>（宏定义）</td>
+<td><strong>厨师</strong>：决定怎么处理原料</td>
+</tr>
+<tr>
+<td><strong>生成的代码</strong></td>
+<td><strong>最终的菜</strong>：同一份菜单，不同厨师做出不同菜</td>
+</tr>
+</tbody></table>
+<h3 id="示例"><a href="#示例" class="headerlink" title="示例"></a>示例</h3><div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="C"><figure class="iseeu highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// menu.h —— 菜单</span></span><br><span class="line">MENU_ITEM(西红柿)</span><br><span class="line">MENU_ITEM(鸡蛋)</span><br><span class="line">MENU_ITEM(青椒)</span><br><span class="line"></span><br><span class="line"><span class="comment">// 厨师 1：炒菜</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> MENU_ITEM(x) stir_fry(x);</span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&quot;menu.h&quot;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">undef</span> MENU_ITEM</span></span><br><span class="line"><span class="comment">// → stir_fry(西红柿); stir_fry(西红柿); stir_fry(青椒);</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 厨师 2：煮汤</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> MENU_ITEM(x) make_soup(x);</span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&quot;menu.h&quot;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">undef</span> MENU_ITEM</span></span><br><span class="line"><span class="comment">// → make_soup(西红柿); make_soup(鸡蛋); make_soup(青椒);</span></span><br></pre></td></tr></table></figure></div>
+
+<p><strong>同一份菜单，不同厨师做出完全不同的菜</strong>——这就是 X-Macro 的工作机制。</p>
+<hr>
+<h2 id="3-5-解决的核心问题：DRY-原则"><a href="#3-5-解决的核心问题：DRY-原则" class="headerlink" title="3.5. 解决的核心问题：DRY 原则"></a>3.5. 解决的核心问题：DRY 原则</h2><h3 id="问题：DRY-违反"><a href="#问题：DRY-违反" class="headerlink" title="问题：DRY 违反"></a>问题：DRY 违反</h3><p>DRY &#x3D; <strong>Don’t Repeat Yourself</strong>（不要重复自己），是软件工程最核心的原则之一。</p>
+<p>不用 X-Macro 维护”颜色”概念，你需要写 4 处代码：</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="C"><figure class="iseeu highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 1. 枚举</span></span><br><span class="line"><span class="class"><span class="keyword">enum</span> <span class="title">Color</span> &#123;</span> RED, GREEN, BLUE &#125;;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 2. 字符串数组</span></span><br><span class="line"><span class="type">const</span> <span class="type">char</span>* color_names[] = &#123; <span class="string">&quot;red&quot;</span>, <span class="string">&quot;green&quot;</span>, <span class="string">&quot;blue&quot;</span> &#125;;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 3. 字符串 → 枚举的解析</span></span><br><span class="line">Color <span class="title function_">parse_color</span><span class="params">(<span class="type">const</span> <span class="type">char</span>* s)</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> (!<span class="built_in">strcmp</span>(s, <span class="string">&quot;red&quot;</span>))   <span class="keyword">return</span> RED;</span><br><span class="line">    <span class="keyword">if</span> (!<span class="built_in">strcmp</span>(s, <span class="string">&quot;green&quot;</span>)) <span class="keyword">return</span> GREEN;</span><br><span class="line">    <span class="keyword">if</span> (!<span class="built_in">strcmp</span>(s, <span class="string">&quot;blue&quot;</span>))  <span class="keyword">return</span> BLUE;</span><br><span class="line">    <span class="keyword">return</span> <span class="number">-1</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 4. 帮助文本</span></span><br><span class="line"><span class="type">void</span> <span class="title function_">print_colors</span><span class="params">()</span> &#123;</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;Available: red, green, blue\n&quot;</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+
+<p><strong>加一个颜色 <code>YELLOW</code> 要改 4 个地方</strong>——漏掉任何一个就出 bug：</p>
+<ul>
+<li>忘了枚举 → 编译错误或运行时数据不全</li>
+<li>忘了字符串数组 → 字符串和枚举不同步</li>
+<li>忘了解析函数 → 用户输入 <code>yellow</code> 解析失败</li>
+<li>忘了帮助文本 → 用户不知道有这个颜色</li>
+</ul>
+<p>这是<strong>典型的 DRY 违反</strong>——同一份”颜色列表”信息在 4 处重复维护。</p>
+<h3 id="X-Macro-的解决方案"><a href="#X-Macro-的解决方案" class="headerlink" title="X-Macro 的解决方案"></a>X-Macro 的解决方案</h3><div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="C"><figure class="iseeu highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// list.h</span></span><br><span class="line">ITEM(red)</span><br><span class="line">ITEM(green)</span><br><span class="line">ITEM(blue)</span><br><span class="line"></span><br><span class="line"><span class="comment">// main.c —— 4 处代码全部由 list.h 自动生成</span></span><br><span class="line"><span class="class"><span class="keyword">enum</span> <span class="title">Color</span> &#123;</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ITEM(name) name,</span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&quot;list.h&quot;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">undef</span> ITEM</span></span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="type">const</span> <span class="type">char</span>* color_names[] = &#123;</span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ITEM(name) #name,</span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&quot;list.h&quot;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">undef</span> ITEM</span></span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line">Color <span class="title function_">parse_color</span><span class="params">(<span class="type">const</span> <span class="type">char</span>* s)</span> &#123;</span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ITEM(name) <span class="keyword">if</span> (!strcmp(s, #name)) return name;</span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&quot;list.h&quot;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">undef</span> ITEM</span></span><br><span class="line">    <span class="keyword">return</span> (Color)<span class="number">-1</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="type">void</span> <span class="title function_">print_colors</span><span class="params">()</span> &#123;</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;Available:&quot;</span>);</span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ITEM(name) printf(<span class="string">&quot; %s&quot;</span>, #name);</span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&quot;list.h&quot;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">undef</span> ITEM</span></span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;\n&quot;</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+
+<p>加 <code>yellow</code>：<strong>只在 <code>list.h</code> 加一行</strong>，4 处代码全部自动更新。<strong>永远不会不同步</strong>。</p>
+<hr>
+<h2 id="3-6-真实案例：toolbox-c"><a href="#3-6-真实案例：toolbox-c" class="headerlink" title="3.6. 真实案例：toolbox.c"></a>3.6. 真实案例：toolbox.c</h2><p>回到文档开头那段”魔法”代码，这是 X-Macro 最经典的实战应用。</p>
+<h3 id="tools-h（数据）"><a href="#tools-h（数据）" class="headerlink" title="tools.h（数据）"></a>tools.h（数据）</h3><div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="C"><figure class="iseeu highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">TOOL(getevent)</span><br><span class="line">TOOL(getprop)</span><br><span class="line">TOOL(modprobe)</span><br><span class="line">TOOL(setprop)</span><br><span class="line">TOOL(start)</span><br><span class="line">TOOL(stop)</span><br><span class="line">TOOL(toolbox)</span><br></pre></td></tr></table></figure></div>
+
+<h3 id="toolbox-c（使用）"><a href="#toolbox-c（使用）" class="headerlink" title="toolbox.c（使用）"></a>toolbox.c（使用）</h3><div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="C"><figure class="iseeu highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 第一次 include：前向声明函数</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> TOOL(name) int name##_main(int, char**);</span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&quot;tools.h&quot;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">undef</span> TOOL</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 第二次 include：dispatch 表</span></span><br><span class="line"><span class="type">static</span> <span class="class"><span class="keyword">struct</span> &#123;</span></span><br><span class="line">    <span class="type">const</span> <span class="type">char</span>* name;</span><br><span class="line">    <span class="type">int</span> (*func)(<span class="type">int</span>, <span class="type">char</span>**);</span><br><span class="line">&#125; tools[] = &#123;</span><br><span class="line"><span class="meta">#<span class="keyword">define</span> TOOL(name) &#123; #name, name##_main &#125;,</span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&quot;tools.h&quot;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">undef</span> TOOL</span></span><br><span class="line">    &#123; <span class="number">0</span>, <span class="number">0</span> &#125;,                              <span class="comment">// 哨兵</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure></div>
+
+<h3 id="预处理后的真实代码"><a href="#预处理后的真实代码" class="headerlink" title="预处理后的真实代码"></a>预处理后的真实代码</h3><div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="C"><figure class="iseeu highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 第一次 include 展开</span></span><br><span class="line"><span class="type">int</span> <span class="title function_">getevent_main</span><span class="params">(<span class="type">int</span>, <span class="type">char</span>**)</span>;</span><br><span class="line"><span class="type">int</span> <span class="title function_">getprop_main</span><span class="params">(<span class="type">int</span>, <span class="type">char</span>**)</span>;</span><br><span class="line"><span class="type">int</span> <span class="title function_">modprobe_main</span><span class="params">(<span class="type">int</span>, <span class="type">char</span>**)</span>;</span><br><span class="line"><span class="type">int</span> <span class="title function_">setprop_main</span><span class="params">(<span class="type">int</span>, <span class="type">char</span>**)</span>;</span><br><span class="line"><span class="type">int</span> <span class="title function_">start_main</span><span class="params">(<span class="type">int</span>, <span class="type">char</span>**)</span>;</span><br><span class="line"><span class="type">int</span> <span class="title function_">stop_main</span><span class="params">(<span class="type">int</span>, <span class="type">char</span>**)</span>;</span><br><span class="line"><span class="type">int</span> <span class="title function_">toolbox_main</span><span class="params">(<span class="type">int</span>, <span class="type">char</span>**)</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 第二次 include 展开</span></span><br><span class="line"><span class="type">static</span> <span class="class"><span class="keyword">struct</span> &#123;</span></span><br><span class="line">    <span class="type">const</span> <span class="type">char</span>* name;</span><br><span class="line">    <span class="type">int</span> (*func)(<span class="type">int</span>, <span class="type">char</span>**);</span><br><span class="line">&#125; tools[] = &#123;</span><br><span class="line">    &#123; <span class="string">&quot;getevent&quot;</span>, getevent_main &#125;,</span><br><span class="line">    &#123; <span class="string">&quot;getprop&quot;</span>,  getprop_main  &#125;,</span><br><span class="line">    &#123; <span class="string">&quot;modprobe&quot;</span>, modprobe_main &#125;,</span><br><span class="line">    &#123; <span class="string">&quot;setprop&quot;</span>,  setprop_main  &#125;,</span><br><span class="line">    &#123; <span class="string">&quot;start&quot;</span>,    start_main    &#125;,</span><br><span class="line">    &#123; <span class="string">&quot;stop&quot;</span>,     stop_main     &#125;,</span><br><span class="line">    &#123; <span class="string">&quot;toolbox&quot;</span>,  toolbox_main  &#125;,</span><br><span class="line">    &#123; <span class="number">0</span>, <span class="number">0</span> &#125;,</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure></div>
+
+<hr>
+<h2 id="3-7-与其他语言的对比"><a href="#3-7-与其他语言的对比" class="headerlink" title="3.7. 与其他语言的对比"></a>3.7. 与其他语言的对比</h2><p>X-Macro 本质上是 C 的”反射机制”——只是更原始、更难用，但<strong>零运行时开销</strong>。</p>
+<table>
+<thead>
+<tr>
+<th>语言</th>
+<th>解决方案</th>
+<th>何时执行</th>
+<th>性能开销</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Python</td>
+<td><code>for x in items: ...</code></td>
+<td>运行时</td>
+<td>中（解释执行）</td>
+</tr>
+<tr>
+<td>Java</td>
+<td>反射 + 注解</td>
+<td>运行时</td>
+<td>高（反射慢）</td>
+</tr>
+<tr>
+<td>C#</td>
+<td>Attribute + Reflection</td>
+<td>运行时</td>
+<td>高</td>
+</tr>
+<tr>
+<td>Go</td>
+<td><code>reflect</code> 包</td>
+<td>运行时</td>
+<td>中</td>
+</tr>
+<tr>
+<td>C++</td>
+<td>模板元编程</td>
+<td>编译时</td>
+<td>零</td>
+</tr>
+<tr>
+<td>Rust</td>
+<td>宏 &#x2F; derive</td>
+<td>编译时</td>
+<td>零</td>
+</tr>
+<tr>
+<td><strong>C</strong></td>
+<td><strong>X-Macro</strong></td>
+<td><strong>预处理时</strong></td>
+<td><strong>零</strong></td>
+</tr>
+</tbody></table>
+<h3 id="关键差异"><a href="#关键差异" class="headerlink" title="关键差异"></a>关键差异</h3><ul>
+<li><strong>运行时反射</strong>（Java&#x2F;Python&#x2F;C#）：灵活但慢，能根据运行时信息动态生成代码</li>
+<li><strong>编译时反射</strong>（C++&#x2F;Rust）：编译器内置，类型安全，但语法复杂</li>
+<li><strong>预处理时反射</strong>（C&#x2F;X-Macro）：纯文本替换，最原始也最自由，但没有类型检查</li>
+</ul>
+<p>C 没有 C++ 的模板也没有运行时反射，<strong>X-Macro 是 C 程序员的唯一选择</strong>——但它在很多场景下足够好。</p>
+<hr>
+<h1 id="4-调试技巧"><a href="#4-调试技巧" class="headerlink" title="4. 调试技巧"></a>4. 调试技巧</h1><p>X-Macro 最大的痛点是<strong>预处理后的代码看不到</strong>。几个实用技巧：</p>
+<h3 id="4-1-用-gcc-E-看预处理结果"><a href="#4-1-用-gcc-E-看预处理结果" class="headerlink" title="4.1 用 gcc -E 看预处理结果"></a>4.1 用 <code>gcc -E</code> 看预处理结果</h3><div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="BASH"><figure class="iseeu highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 让 gcc 输出预处理结果（保留注释、行号）</span></span><br><span class="line">gcc -E toolbox.c -o toolbox.i</span><br><span class="line"></span><br><span class="line"><span class="comment"># 看展开后的代码</span></span><br><span class="line">less toolbox.i</span><br></pre></td></tr></table></figure></div>
+
+<p><code>-E</code> 选项让 gcc 只跑预处理器，不编译。这是理解 X-Macro 工作原理的最好方法。</p>
+<h3 id="4-2-用-gcc-P-去掉行号标记"><a href="#4-2-用-gcc-P-去掉行号标记" class="headerlink" title="4.2 用 gcc -P 去掉行号标记"></a>4.2 用 <code>gcc -P</code> 去掉行号标记</h3><div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="BASH"><figure class="iseeu highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">gcc -E -P toolbox.c -o toolbox.i</span><br><span class="line"><span class="comment"># -P 去掉 # linenum file 这样的行号注释，输出更干净</span></span><br></pre></td></tr></table></figure></div>
+
+<h3 id="4-3-在宏里加-pragma-message"><a href="#4-3-在宏里加-pragma-message" class="headerlink" title="4.3 在宏里加 #pragma message"></a>4.3 在宏里加 <code>#pragma message</code></h3><div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="C"><figure class="iseeu highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">define</span> ITEM(name) <span class="keyword">_Pragma</span>(#name <span class="string">&quot; is being processed&quot;</span>) name,</span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&quot;list.h&quot;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">undef</span> ITEM</span></span><br></pre></td></tr></table></figure></div>
+
+<p>编译时会打印每条记录被处理的提示，便于调试。</p>
+<h3 id="4-4-静态断言检查"><a href="#4-4-静态断言检查" class="headerlink" title="4.4 静态断言检查"></a>4.4 静态断言检查</h3><div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="C"><figure class="iseeu highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">define</span> ITEM(name) name,</span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&quot;list.h&quot;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">undef</span> ITEM</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">_Static_assert</span>(<span class="keyword">sizeof</span>(...), <span class="string">&quot;list mismatch&quot;</span>);</span><br></pre></td></tr></table></figure></div>
+
+<p>用 <code>_Static_assert</code>（C11）在编译时验证宏展开结果符合预期。</p>
+<h3 id="4-5-用-IDE-跳转"><a href="#4-5-用-IDE-跳转" class="headerlink" title="4.5 用 IDE 跳转"></a>4.5 用 IDE 跳转</h3><p>VS Code + clangd 配合，可以在 <code>list.h</code> 上右键 → “查看预处理结果”。CLion 也有类似功能。</p>
+<hr>
+<h1 id="5-Linux-Android-经典实例"><a href="#5-Linux-Android-经典实例" class="headerlink" title="5. Linux&#x2F;Android 经典实例"></a>5. Linux&#x2F;Android 经典实例</h1><p>X-Macro 不是孤例——系统代码里到处都是。</p>
+<h2 id="5-1-Linux-kernel-initcall"><a href="#5-1-Linux-kernel-initcall" class="headerlink" title="5.1 Linux kernel initcall"></a>5.1 Linux kernel initcall</h2><p><code>include/linux/init.h</code>：</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="C"><figure class="iseeu highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">define</span> pure_initcall(fn)       __define_initcall(fn, 0, pure)</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> core_initcall(fn)       __define_initcall(fn, 1, core)</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> postcore_initcall(fn)   __define_initcall(fn, 2, postcore)</span></span><br><span class="line"><span class="comment">// ...</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 驱动代码</span></span><br><span class="line"><span class="type">static</span> <span class="type">int</span> __init <span class="title function_">my_driver_init</span><span class="params">(<span class="type">void</span>)</span> &#123; ... &#125;</span><br><span class="line">module_init(my_driver_init);</span><br><span class="line"><span class="comment">// 等价于 device_initcall(my_driver_init)</span></span><br></pre></td></tr></table></figure></div>
+
+<p>编译时链接器把所有 <code>__initcall</code> 收集到一个特殊的 ELF section，启动时 <code>do_initcalls()</code> 遍历调用。<strong>不需要中央注册表</strong>——每个驱动自己声明自己。</p>
+<h2 id="5-2-Linux-TRACE-EVENT-宏"><a href="#5-2-Linux-TRACE-EVENT-宏" class="headerlink" title="5.2 Linux TRACE_EVENT 宏"></a>5.2 Linux TRACE_EVENT 宏</h2><p><code>include/trace/events/sched.h</code>：</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="C"><figure class="iseeu highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">DECLARE_EVENT_CLASS(sched_process_template,</span><br><span class="line">    TP_PROTO(<span class="keyword">struct</span> task_struct *p),</span><br><span class="line">    TP_ARGS(p),</span><br><span class="line">    TP_STRUCT__entry(</span><br><span class="line">        __array(<span class="type">char</span>, comm, TASK_COMM_LEN)</span><br><span class="line">        __field(<span class="type">pid_t</span>, pid)</span><br><span class="line">    ),</span><br><span class="line">    TP_fast_assign(</span><br><span class="line">        <span class="built_in">memcpy</span>(__entry-&gt;comm, p-&gt;comm, TASK_COMM_LEN);</span><br><span class="line">        __entry-&gt;pid = p-&gt;pid;</span><br><span class="line">    ),</span><br><span class="line">    TP_printk(<span class="string">&quot;comm=%s pid=%d&quot;</span>, __entry-&gt;comm, __entry-&gt;pid)</span><br><span class="line">);</span><br></pre></td></tr></table></figure></div>
+
+<p><code>TRACE_EVENT</code> 宏一次性展开成 <strong>6 个东西</strong>：</p>
+<ol>
+<li>tracepoint 函数声明</li>
+<li>静态 inline 调用包装</li>
+<li>event class 结构</li>
+<li>event 实例</li>
+<li>format 文件内容（用户态读取的格式定义）</li>
+<li>打印函数</li>
+</ol>
+<p><strong>一份宏定义 → 6 处代码生成</strong>——X-Macro 的极致运用。</p>
+<h2 id="5-3-Android-JNI-注册表"><a href="#5-3-Android-JNI-注册表" class="headerlink" title="5.3 Android JNI 注册表"></a>5.3 Android JNI 注册表</h2><div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="C"><figure class="iseeu highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/base/core/jni/AndroidRuntime.cpp</span></span><br><span class="line"><span class="type">static</span> <span class="type">const</span> JNINativeMethod gMethods[] = &#123;</span><br><span class="line">    &#123;<span class="string">&quot;nativeInit&quot;</span>,     <span class="string">&quot;()V&quot;</span>,  (<span class="type">void</span>*)android_server_NativeInit&#125;,</span><br><span class="line">    &#123;<span class="string">&quot;nativeCleanup&quot;</span>,  <span class="string">&quot;()V&quot;</span>,  (<span class="type">void</span>*)android_server_NativeCleanup&#125;,</span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">    &#123;<span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>&#125;,                              <span class="comment">// 哨兵</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure></div>
+
+<p>字段：<code>&#123;方法名, JNI签名, C 函数指针&#125;</code>——和 toolbox.c 的 <code>&#123;工具名, 函数指针&#125;</code> <strong>本质完全相同</strong>。虽然这里手写而非用 X-Macro，但<strong>思想一致</strong>。</p>
+<h2 id="5-4-Android-HAL-接口"><a href="#5-4-Android-HAL-接口" class="headerlink" title="5.4 Android HAL 接口"></a>5.4 Android HAL 接口</h2><div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="C"><figure class="iseeu highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// hardware/libhardware/include/hardware/hardware.h</span></span><br><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">hw_module_t</span> &#123;</span></span><br><span class="line">    <span class="type">uint32_t</span> tag;</span><br><span class="line">    <span class="type">uint16_t</span> version_major;</span><br><span class="line">    <span class="type">uint16_t</span> version_minor;</span><br><span class="line">    <span class="type">const</span> <span class="type">char</span> *id;</span><br><span class="line">    <span class="type">const</span> <span class="type">char</span> *name;</span><br><span class="line">    <span class="type">const</span> <span class="type">char</span> *author;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">hw_module_methods_t</span>* <span class="title">methods</span>;</span></span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">&#125; <span class="type">hw_module_t</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">hw_module_methods_t</span> &#123;</span></span><br><span class="line">    <span class="type">int</span> (*open)(<span class="type">const</span> <span class="keyword">struct</span> <span class="type">hw_module_t</span>* module, <span class="type">const</span> <span class="type">char</span>* id,</span><br><span class="line">                <span class="keyword">struct</span> <span class="type">hw_device_t</span>** device);</span><br><span class="line">&#125; <span class="type">hw_module_methods_t</span>;</span><br></pre></td></tr></table></figure></div>
+
+<p>每个 HAL 模块（音频、相机、传感器…）都以 <code>hw_module_t</code> 开头，通过 <code>methods-&gt;open</code> 函数指针提供操作。<strong>面向对象风格的 C</strong>——结构体 &#x3D; 类，函数指针 &#x3D; 方法。</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/C/" rel="tag"># C</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2026/06/06/Input%E5%AD%A6%E4%B9%A0%E4%B9%8B%E6%97%85/" rel="next" title="Android Input 学习之旅">
+                <i class="fa fa-chevron-left"></i> Android Input 学习之旅
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="/images/head.jpg"
+                alt="" />
+            
+              <p class="site-author-name" itemprop="name"></p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/%7C%7C%20archive">
+              
+                  <span class="site-state-item-count">23</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">13</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">21</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+            <div class="feed-link motion-element">
+              <a href="/atom.xml" rel="alternate">
+                <i class="fa fa-rss"></i>
+                RSS
+              </a>
+            </div>
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/ZYBO-o" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-github"></i>GitHub</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://www.zhihu.com/people/lin-li-yike-cao/activities" target="_blank" title="ZhiHu">
+                      
+                        <i class="fa fa-fw fa-globe"></i>ZhiHu</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+            <div class="links-of-blogroll motion-element links-of-blogroll-block">
+              <div class="links-of-blogroll-title">
+                <i class="fa  fa-fw fa-link"></i>
+                Links
+              </div>
+              <ul class="links-of-blogroll-list">
+                
+                  <li class="links-of-blogroll-item">
+                    <a href="https://blog.schwarzeni.com/" title="Schwarzeni" target="_blank">Schwarzeni</a>
+                  </li>
+                
+                  <li class="links-of-blogroll-item">
+                    <a href="https://www.qcmoke.cn/" title="qcmoke" target="_blank">qcmoke</a>
+                  </li>
+                
+                  <li class="links-of-blogroll-item">
+                    <a href="https://www.zhoujianguo.ltd/" title="ZhouJianGuo" target="_blank">ZhouJianGuo</a>
+                  </li>
+                
+                  <li class="links-of-blogroll-item">
+                    <a href="https://hishiro-xiao.github.io/" title="hishiro-xiao" target="_blank">hishiro-xiao</a>
+                  </li>
+                
+              </ul>
+            </div>
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#1-%E5%BC%95%E8%A8%80"><span class="nav-text">1. 引言</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#2-%E5%89%8D%E7%BD%AE%EF%BC%9AMacro-%E6%98%AF%E4%BB%80%E4%B9%88"><span class="nav-text">2. 前置：Macro 是什么</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#2-1-%E5%AE%9A%E4%B9%89"><span class="nav-text">2.1. 定义</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-2-Macro-%E5%9C%A8-C-%E8%AF%AD%E8%A8%80%E9%87%8C%E6%98%AF%E4%BB%80%E4%B9%88"><span class="nav-text">2.2. Macro 在 C 语言里是什么</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-3-%E5%AE%8F%E7%9A%84%E4%B8%A4%E7%A7%8D%E5%BD%A2%E5%BC%8F"><span class="nav-text">2.3. 宏的两种形式</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AF%B9%E8%B1%A1%E5%BC%8F%E5%AE%8F%EF%BC%88Object-like-Macro%EF%BC%89%E2%80%94%E2%80%94-%E4%B8%8D%E5%B8%A6%E5%8F%82%E6%95%B0"><span class="nav-text">对象式宏（Object-like Macro）—— 不带参数</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%87%BD%E6%95%B0%E5%BC%8F%E5%AE%8F%EF%BC%88Function-like-Macro%EF%BC%89%E2%80%94%E2%80%94-%E5%B8%A6%E5%8F%82%E6%95%B0"><span class="nav-text">函数式宏（Function-like Macro）—— 带参数</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-4-%E5%AE%8F%E7%9A%84%E5%85%B3%E9%94%AE%E6%93%8D%E4%BD%9C%E7%AC%A6"><span class="nav-text">2.4. 宏的关键操作符</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-5-%E5%AE%8F-vs-%E5%87%BD%E6%95%B0-vs-const-vs-inline"><span class="nav-text">2.5. 宏 vs 函数 vs const vs inline</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-6-%E5%9C%A8-X-Macro-%E9%87%8C-Macro-%E5%85%B7%E4%BD%93%E6%8C%87%E4%BB%80%E4%B9%88"><span class="nav-text">2.6. 在 X-Macro 里 Macro 具体指什么</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-7-%E4%B8%80%E4%B8%AA%E5%85%B7%E4%BD%93%E4%BE%8B%E5%AD%90%EF%BC%9A%E5%AE%8F%E7%9A%84%E5%B1%95%E5%BC%80"><span class="nav-text">2.7. 一个具体例子：宏的展开</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#3-%E4%BB%80%E4%B9%88%E6%98%AF-X-Macro"><span class="nav-text">3. 什么是 X-Macro</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#3-1-%E5%AE%9A%E4%B9%89"><span class="nav-text">3.1. 定义</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-2-%E5%9F%BA%E6%9C%AC%E7%BB%93%E6%9E%84%EF%BC%88%E4%B8%89%E6%AD%A5%E8%B5%B0%EF%BC%89"><span class="nav-text">3.2. 基本结构（三步走）</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%AC%AC-1-%E6%AD%A5%EF%BC%9A%E5%AE%9A%E4%B9%89%E2%80%9D%E6%95%B0%E6%8D%AE%E5%88%97%E8%A1%A8%E2%80%9D%E6%96%87%E4%BB%B6%EF%BC%88%E4%B8%8D%E5%86%99%E5%A4%B4%E6%96%87%E4%BB%B6%E5%AE%88%E5%8D%AB%EF%BC%89"><span class="nav-text">第 1 步：定义”数据列表”文件（不写头文件守卫）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%AC%AC-2-%E6%AD%A5%EF%BC%9A%E7%AC%AC%E4%B8%80%E6%AC%A1-include-%E2%80%94%E2%80%94-%E7%94%A8%E5%AE%8F-A-%E5%B1%95%E5%BC%80"><span class="nav-text">第 2 步：第一次 include —— 用宏 A 展开</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%AC%AC-3-%E6%AD%A5%EF%BC%9A%E7%AC%AC%E4%BA%8C%E6%AC%A1-include-%E2%80%94%E2%80%94-%E7%94%A8%E5%AE%8F-B-%E5%B1%95%E5%BC%80"><span class="nav-text">第 3 步：第二次 include —— 用宏 B 展开</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-3-%E7%AC%AC%E4%B8%80%E4%B8%AA%E5%AE%8C%E6%95%B4%E7%A4%BA%E4%BE%8B%EF%BC%9A%E9%A2%9C%E8%89%B2%E6%9E%9A%E4%B8%BE"><span class="nav-text">3.3. 第一个完整示例：颜色枚举</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#list-h%EF%BC%88%E6%95%B0%E6%8D%AE%E6%96%87%E4%BB%B6%EF%BC%89"><span class="nav-text">list.h（数据文件）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#main-c%EF%BC%88%E4%BD%BF%E7%94%A8-X-Macro%EF%BC%89"><span class="nav-text">main.c（使用 X-Macro）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%BE%93%E5%87%BA"><span class="nav-text">输出</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%87%8D%E7%82%B9%EF%BC%9A%E5%8D%95%E4%B8%80%E6%95%B0%E6%8D%AE%E6%BA%90"><span class="nav-text">重点：单一数据源</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-4-%E6%A0%B8%E5%BF%83%E6%80%9D%E6%83%B3%EF%BC%9A%E8%8F%9C%E5%8D%95-vs-%E5%8E%A8%E5%B8%88"><span class="nav-text">3.4. 核心思想：菜单 vs 厨师</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%AF%94%E5%96%BB%E5%AF%B9%E7%85%A7"><span class="nav-text">比喻对照</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%A4%BA%E4%BE%8B"><span class="nav-text">示例</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-5-%E8%A7%A3%E5%86%B3%E7%9A%84%E6%A0%B8%E5%BF%83%E9%97%AE%E9%A2%98%EF%BC%9ADRY-%E5%8E%9F%E5%88%99"><span class="nav-text">3.5. 解决的核心问题：DRY 原则</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%97%AE%E9%A2%98%EF%BC%9ADRY-%E8%BF%9D%E5%8F%8D"><span class="nav-text">问题：DRY 违反</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#X-Macro-%E7%9A%84%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88"><span class="nav-text">X-Macro 的解决方案</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-6-%E7%9C%9F%E5%AE%9E%E6%A1%88%E4%BE%8B%EF%BC%9Atoolbox-c"><span class="nav-text">3.6. 真实案例：toolbox.c</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#tools-h%EF%BC%88%E6%95%B0%E6%8D%AE%EF%BC%89"><span class="nav-text">tools.h（数据）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#toolbox-c%EF%BC%88%E4%BD%BF%E7%94%A8%EF%BC%89"><span class="nav-text">toolbox.c（使用）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%A2%84%E5%A4%84%E7%90%86%E5%90%8E%E7%9A%84%E7%9C%9F%E5%AE%9E%E4%BB%A3%E7%A0%81"><span class="nav-text">预处理后的真实代码</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-7-%E4%B8%8E%E5%85%B6%E4%BB%96%E8%AF%AD%E8%A8%80%E7%9A%84%E5%AF%B9%E6%AF%94"><span class="nav-text">3.7. 与其他语言的对比</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%85%B3%E9%94%AE%E5%B7%AE%E5%BC%82"><span class="nav-text">关键差异</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#4-%E8%B0%83%E8%AF%95%E6%8A%80%E5%B7%A7"><span class="nav-text">4. 调试技巧</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#4-1-%E7%94%A8-gcc-E-%E7%9C%8B%E9%A2%84%E5%A4%84%E7%90%86%E7%BB%93%E6%9E%9C"><span class="nav-text">4.1 用 gcc -E 看预处理结果</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-2-%E7%94%A8-gcc-P-%E5%8E%BB%E6%8E%89%E8%A1%8C%E5%8F%B7%E6%A0%87%E8%AE%B0"><span class="nav-text">4.2 用 gcc -P 去掉行号标记</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-3-%E5%9C%A8%E5%AE%8F%E9%87%8C%E5%8A%A0-pragma-message"><span class="nav-text">4.3 在宏里加 #pragma message</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-4-%E9%9D%99%E6%80%81%E6%96%AD%E8%A8%80%E6%A3%80%E6%9F%A5"><span class="nav-text">4.4 静态断言检查</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-5-%E7%94%A8-IDE-%E8%B7%B3%E8%BD%AC"><span class="nav-text">4.5 用 IDE 跳转</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#5-Linux-Android-%E7%BB%8F%E5%85%B8%E5%AE%9E%E4%BE%8B"><span class="nav-text">5. Linux&#x2F;Android 经典实例</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#5-1-Linux-kernel-initcall"><span class="nav-text">5.1 Linux kernel initcall</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-2-Linux-TRACE-EVENT-%E5%AE%8F"><span class="nav-text">5.2 Linux TRACE_EVENT 宏</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-3-Android-JNI-%E6%B3%A8%E5%86%8C%E8%A1%A8"><span class="nav-text">5.3 Android JNI 注册表</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-4-Android-HAL-%E6%8E%A5%E5%8F%A3"><span class="nav-text">5.4 Android HAL 接口</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Zcorpius</span>
+
+  
+</div>
+
+<!--
+
+
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Muse</a> v5.1.4</div>
+
+
+-->
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+          <span id="scrollpercent"><span>0</span>%</span>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+  
+
+
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@9/dist/mermaid.min.js"></script>
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: 'default'
+    });
+  </script>
+  
+  
+
+  
+
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"debug":false,"model":{"jsonPath":"https://cdn.jsdelivr.net/gh/evrstr/live2d-widget-models/live2d_evrstr/mashiro_shifuku/model.json"},"display":{"position":"left","width":200,"height":500},"mobile":{"show":true},"encrypt":{"enable":true},"log":false});</script></body>
+</html>
+
+<!-- 页面点击小红心 -->
+<script type="text/javascript" src="/js/src/love.js"></script>
