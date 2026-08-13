@@ -21,7 +21,7 @@ $(document).ready(function () {
       })
       .on('clear.bs.scrollspy', removeCurrentActiveClass);
 
-    $('body').scrollspy({ target: tocSelector });
+    // $('body').scrollspy({ target: tocSelector }); // 已停用：offset-based 在图片懒加载/布局变化时失准，改用 nexora-toc.js 的 IntersectionObserver
 
     function removeCurrentActiveClass () {
       $(tocSelector + ' ' + activeCurrentSelector)
