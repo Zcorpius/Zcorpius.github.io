@@ -158,7 +158,9 @@
 
 
 
-<meta name="generator" content="Hexo 7.3.0"></head>
+<meta name="generator" content="Hexo 7.3.0">
+<style>.github-emoji { position: relative; display: inline-block; width: 1.2em; min-height: 1.2em; overflow: hidden; vertical-align: top; color: transparent; }  .github-emoji > span { position: relative; z-index: 10; }  .github-emoji img, .github-emoji .fancybox { margin: 0 !important; padding: 0 !important; border: none !important; outline: none !important; text-decoration: none !important; user-select: none !important; cursor: auto !important; }  .github-emoji img { height: 1.2em !important; width: 1.2em !important; position: absolute !important; left: 50% !important; top: 50% !important; transform: translate(-50%, -50%) !important; user-select: none !important; cursor: auto !important; } .github-emoji-fallback { color: inherit; } .github-emoji-fallback img { opacity: 0 !important; }</style>
+</head>
 
 <body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
 
@@ -412,7 +414,7 @@
                   <span class="post-meta-item-text">字数统计&#58;</span>
                 
                 <span title="字数统计">
-                  986
+                  999
                 </span>
               
 
@@ -463,10 +465,10 @@
 <h2 id="1-6-HAL"><a href="#1-6-HAL" class="headerlink" title="1.6. HAL"></a>1.6. HAL</h2><p>HAL 定义了音频服务会调用且必须实现才能使音频硬件正常运行的标准接口。</p>
 <h2 id="1-7-内核驱动程序"><a href="#1-7-内核驱动程序" class="headerlink" title="1.7. 内核驱动程序"></a>1.7. 内核驱动程序</h2><p>音频驱动程序用于硬件和 HAL 实现进行交互。可以使用高级 Linux 声音架构 (ALSA)、开放声音系统 (OSS) 或自定义驱动程序（HAL 与驱动程序无关）。</p>
 <div class="markdown-alert markdown-alert-note">
-<p class="markdown-alert-title"><svg class="octicon octicon-info mr-2" viewbox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"/></svg>Note</p>
+<p class="markdown-alert-title"><svg class="octicon octicon-info mr-2" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"></path></svg>Note</p>
 <p>上述为Android官方的描述，个人觉得描述得并不好，不如直接看架构图自己理解。</p>
 </div>
-<p>个人觉得 Audio 的学习与总结可以按照 <strong>数据流</strong>（PCM 往下走）和<strong>控制流</strong>（路由&#x2F;策略往下发）两条并行逻辑链路进行整理。</p>
+<p>个人觉得 Audio 的学习与总结可以按照 <strong>数据流</strong>（PCM 往下走）和<strong>控制流</strong>（路由/策略往下发）两条并行逻辑链路进行整理。</p>
 <h1 id="2-全景链路"><a href="#2-全景链路" class="headerlink" title="2. 全景链路"></a>2. 全景链路</h1><h2 id="2-1-链路图"><a href="#2-1-链路图" class="headerlink" title="2.1. 链路图"></a>2.1. 链路图</h2><pre class="mermaid">sequenceDiagram
     participant App as App渲染线程
     participant FW as Framework层<br>android.media.AudioTrack
@@ -479,21 +481,21 @@
     participant Codec as Codec / 功放<br>蓝牙协议栈
     participant Out as Speaker / Headset<br>Bluetooth
 
-    App->>FW: AudioTrack.write()
-    FW->>Native: JNI 调用
-    Native->>SHM: 写入 ClientProxy
-    SHM->>AF: ServerProxy 传递数据
+    App-&gt;&gt;FW: AudioTrack.write()
+    FW-&gt;&gt;Native: JNI 调用
+    Native-&gt;&gt;SHM: 写入 ClientProxy
+    SHM-&gt;&gt;AF: ServerProxy 传递数据
 
-    AP-->>AF: 设备选路与策略裁决
-    AP-->>HAL: 路由变化时重连路
+    AP--&gt;&gt;AF: 设备选路与策略裁决
+    AP--&gt;&gt;HAL: 路由变化时重连路
 
-    AF->>HAL: stream_out.write()
-    HAL->>Kernel: 写入 PCM RingBuffer
-    Kernel->>Kernel: DMA 传输
-    Kernel->>Codec: 音频数据
-    Codec->>Out: 模拟信号 / 蓝牙传输</pre>
+    AF-&gt;&gt;HAL: stream_out.write()
+    HAL-&gt;&gt;Kernel: 写入 PCM RingBuffer
+    Kernel-&gt;&gt;Kernel: DMA 传输
+    Kernel-&gt;&gt;Codec: 音频数据
+    Codec-&gt;&gt;Out: 模拟信号 / 蓝牙传输</pre>
 
-<p>这条链路里有两条并行逻辑：<strong>数据流</strong>（PCM 往下走）和<strong>控制流</strong>（路由&#x2F;策略往下发）。</p>
+<p>这条链路里有两条并行逻辑：<strong>数据流</strong>（PCM 往下走）和<strong>控制流</strong>（路由/策略往下发）。</p>
 <ul>
 <li>数据流决定“有没有声音”</li>
 <li>控制流决定“从哪里出来、走哪种输出路径”。</li>
@@ -514,38 +516,38 @@
 <td>负责“持续喂数据”，不直接驱动硬件</td>
 </tr>
 <tr>
-<td>Framework&#x2F;Native</td>
+<td>Framework/Native</td>
 <td>Java AudioTrack +  libaudioclient::AudioTrack</td>
 <td>建链、参数校验、把数据写入共享缓冲</td>
 <td>是应用和系统音频服务的桥接层</td>
 </tr>
 <tr>
 <td>AudioFlinger</td>
-<td>PlaybackThread &#x2F; Track</td>
-<td>按线程周期消费轨道，做混音&#x2F;重采样&#x2F;音量处理</td>
+<td>PlaybackThread / Track</td>
+<td>按线程周期消费轨道，做混音/重采样/音量处理</td>
 <td>是系统真正执行播放调度的核心</td>
 </tr>
 <tr>
 <td>AudioPolicy</td>
-<td>AudioPolicyService&#x2F;Manager</td>
+<td>AudioPolicyService/Manager</td>
 <td>选择输出设备与输出 profile，处理路由变化</td>
 <td>负责“选路与裁决”，不是搬运 PCM</td>
 </tr>
 <tr>
 <td>Audio HAL</td>
 <td>audio_stream_out.write</td>
-<td>把系统音频帧送到厂商驱动&#x2F;设备链路</td>
+<td>把系统音频帧送到厂商驱动/设备链路</td>
 <td>是 Android 音频框架到硬件的标准接口</td>
 </tr>
 <tr>
-<td>Kernel&#x2F;Device</td>
+<td>Kernel/Device</td>
 <td>ALSA 驱动、DMA、Codec、蓝牙链路</td>
 <td>完成硬件搬运与电声转换，最终发声</td>
 <td>最后一公里，决定最终听感稳定性</td>
 </tr>
 </tbody></table>
 <div class="markdown-alert markdown-alert-tip">
-<p class="markdown-alert-title"><svg class="octicon octicon-light-bulb mr-2" viewbox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M8 1.5c-2.363 0-4 1.69-4 3.75 0 .984.424 1.625.984 2.304l.214.253c.223.264.47.556.673.848.284.411.537.896.621 1.49a.75.75 0 0 1-1.484.211c-.04-.282-.163-.547-.37-.847a8.456 8.456 0 0 0-.542-.68c-.084-.1-.173-.205-.268-.32C3.201 7.75 2.5 6.766 2.5 5.25 2.5 2.31 4.863 0 8 0s5.5 2.31 5.5 5.25c0 1.516-.701 2.5-1.328 3.259-.095.115-.184.22-.268.319-.207.245-.383.453-.541.681-.208.3-.33.565-.37.847a.751.751 0 0 1-1.485-.212c.084-.593.337-1.078.621-1.489.203-.292.45-.584.673-.848.075-.088.147-.173.213-.253.561-.679.985-1.32.985-2.304 0-2.06-1.637-3.75-4-3.75ZM5.75 12h4.5a.75.75 0 0 1 0 1.5h-4.5a.75.75 0 0 1 0-1.5ZM6 15.25a.75.75 0 0 1 .75-.75h2.5a.75.75 0 0 1 0 1.5h-2.5a.75.75 0 0 1-.75-.75Z"/></svg>Tip</p>
+<p class="markdown-alert-title"><svg class="octicon octicon-light-bulb mr-2" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M8 1.5c-2.363 0-4 1.69-4 3.75 0 .984.424 1.625.984 2.304l.214.253c.223.264.47.556.673.848.284.411.537.896.621 1.49a.75.75 0 0 1-1.484.211c-.04-.282-.163-.547-.37-.847a8.456 8.456 0 0 0-.542-.68c-.084-.1-.173-.205-.268-.32C3.201 7.75 2.5 6.766 2.5 5.25 2.5 2.31 4.863 0 8 0s5.5 2.31 5.5 5.25c0 1.516-.701 2.5-1.328 3.259-.095.115-.184.22-.268.319-.207.245-.383.453-.541.681-.208.3-.33.565-.37.847a.751.751 0 0 1-1.485-.212c.084-.593.337-1.078.621-1.489.203-.292.45-.584.673-.848.075-.088.147-.173.213-.253.561-.679.985-1.32.985-2.304 0-2.06-1.637-3.75-4-3.75ZM5.75 12h4.5a.75.75 0 0 1 0 1.5h-4.5a.75.75 0 0 1 0-1.5ZM6 15.25a.75.75 0 0 1 .75-.75h2.5a.75.75 0 0 1 0 1.5h-2.5a.75.75 0 0 1-.75-.75Z"></path></svg>Tip</p>
 <p>记忆技巧：<code>App 喂数 -&gt; Flinger 调度 -&gt; Policy 选路 -&gt; HAL 下发 -&gt; Driver 出声</code>。</p>
 </div>
 <p>后面先按照各个层级模块进行分析，结束后再分析从开机到应用使用 Audio 工作的流程。基本也就算是入门Audio了吧。</p>
@@ -683,7 +685,7 @@
               
               <div class="site-state-item site-state-categories">
                 <a href="/categories/index.html">
-                  <span class="site-state-item-count">15</span>
+                  <span class="site-state-item-count">11</span>
                   <span class="site-state-item-name">分类</span>
                 </a>
               </div>
@@ -694,7 +696,7 @@
               
               <div class="site-state-item site-state-tags">
                 <a href="/tags/index.html">
-                  <span class="site-state-item-count">23</span>
+                  <span class="site-state-item-count">24</span>
                   <span class="site-state-item-name">标签</span>
                 </a>
               </div>
