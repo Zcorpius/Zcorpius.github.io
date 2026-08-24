@@ -1855,7 +1855,7 @@ pre {
   width: 4px;
   height: 4px;
   border-radius: 50%;
-  background: #ffd5ff;
+  background: #7c79ff;
 }
 .links-of-blogroll {
   font-size: 13px;
@@ -3521,6 +3521,9 @@ embed {
   border: none;
   vertical-align: top;
   padding: 0;
+}
+.post-body figure.highlight td.gutter {
+  width: 1px;
 }
 .post-body figure.highlight td.gutter pre {
   margin: 0;

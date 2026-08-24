@@ -1,0 +1,1706 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next muse use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+<script>
+    (function(){
+        if(''){
+            if (prompt('请输入密码') !== ''){
+                alert('密码错误');
+                history.back();
+            }
+        }
+    })();
+</script>
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/head.jpg?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/head.jpg?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/head.jpg?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/head.jpg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="Input," />
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="Zcorpius's Blog" type="application/atom+xml" />
+
+
+
+
+
+
+<meta name="description" content="1. 概述当用户触摸屏幕或者按键操作，首次触发的是硬件驱动，驱动收到事件后，将该相应事件写入到 &#x2F;dev&#x2F;input 下的输入设备节点，这便产生了最原生态的内核事件。 接着，输入系统通过 EventHub 取出原生态事件，由 InputReader 解析为 NotifyArgs，再经 InputListener 流水线（UnwantedInteractionBlocker → InputProce">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Input 构造流程">
+<meta property="og:url" content="https://zcorpius.github.io/2026/08/13/Input%E6%9E%84%E9%80%A0%E6%B5%81%E7%A8%8B/index.html">
+<meta property="og:site_name" content="Zcorpius&#39;s Blog">
+<meta property="og:description" content="1. 概述当用户触摸屏幕或者按键操作，首次触发的是硬件驱动，驱动收到事件后，将该相应事件写入到 &#x2F;dev&#x2F;input 下的输入设备节点，这便产生了最原生态的内核事件。 接着，输入系统通过 EventHub 取出原生态事件，由 InputReader 解析为 NotifyArgs，再经 InputListener 流水线（UnwantedInteractionBlocker → InputProce">
+<meta property="og:locale">
+<meta property="article:published_time" content="2026-08-13T11:45:24.000Z">
+<meta property="article:modified_time" content="2026-08-13T15:04:21.898Z">
+<meta property="article:author" content="Zcorpius">
+<meta property="article:tag" content="Input">
+<meta name="twitter:card" content="summary">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Muse',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":true,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://Zcorpius.github.io/2026/08/13/Input构造流程/"/>
+
+
+
+
+
+  <title>Input 构造流程 | Zcorpius's Blog</title>
+  
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 7.3.0">
+<style>.github-emoji { position: relative; display: inline-block; width: 1.2em; min-height: 1.2em; overflow: hidden; vertical-align: top; color: transparent; }  .github-emoji > span { position: relative; z-index: 10; }  .github-emoji img, .github-emoji .fancybox { margin: 0 !important; padding: 0 !important; border: none !important; outline: none !important; text-decoration: none !important; user-select: none !important; cursor: auto !important; }  .github-emoji img { height: 1.2em !important; width: 1.2em !important; position: absolute !important; left: 50% !important; top: 50% !important; transform: translate(-50%, -50%) !important; user-select: none !important; cursor: auto !important; } .github-emoji-fallback { color: inherit; } .github-emoji-fallback img { opacity: 0 !important; }</style>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Zcorpius's Blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">追寻自我的崎岖路上从不缺勇敢。</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-路径">
+          <a href="/top/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-fire"></i> <br />
+            
+            路径
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://Zcorpius.github.io/2026/08/13/Input%E6%9E%84%E9%80%A0%E6%B5%81%E7%A8%8B/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/head.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Zcorpius's Blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Input 构造流程</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2026-08-13T19:45:24+08:00">
+                2026-08-13
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Framework/" itemprop="url" rel="index">
+                    <span itemprop="name">Framework</span>
+                  </a>
+                </span>
+
+                
+                
+                  ， 
+                
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Framework/Input/" itemprop="url" rel="index">
+                    <span itemprop="name">Input</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+            <div class="post-wordcount">
+              
+                
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-file-word-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">字数统计&#58;</span>
+                
+                <span title="字数统计">
+                  6.3k
+                </span>
+              
+
+              
+                <span class="post-meta-divider">|</span>
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-clock-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">阅读时长 &asymp;</span>
+                
+                <span title="阅读时长">
+                  28
+                </span>
+              
+            </div>
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="1-概述"><a href="#1-概述" class="headerlink" title="1. 概述"></a>1. 概述</h1><p>当用户触摸屏幕或者按键操作，首次触发的是硬件驱动，驱动收到事件后，将该相应事件写入到 <code>/dev/input</code> 下的输入设备节点，这便产生了最原生态的内核事件。</p>
+<p>接着，输入系统通过 EventHub 取出原生态事件，由 InputReader 解析为 NotifyArgs，再经 InputListener 流水线（<code>UnwantedInteractionBlocker → InputProcessor</code>）层层封装，最终在 InputDispatcher 内组装成 KeyEvent 或 MotionEvent；</p>
+<p>最后通过 InputChannel（socketpair）交付给相应的目标窗口（Window）来消费该输入事件。可见，输入系统在整个过程起到承上启下的衔接作用。整体链路：</p>
+<figure class="highlight lua"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">硬件驱动  ──►  /dev/<span class="built_in">input</span>/eventX 设备节点  ──►  EventHub (epoll/inotify)</span><br><span class="line">         ──►  InputReader (RawEvent → NotifyArgs)</span><br><span class="line">         ──►  InputListener 流水线 (UnwantedInteractionBlocker → InputProcessor)</span><br><span class="line">         ──►  InputDispatcher</span><br><span class="line">         ──►  InputChannel (socketpair)</span><br><span class="line">         ──►  目标窗口 (ViewRootImpl)</span><br></pre></td></tr></tbody></table></figure>
+
+<p>Input 模块的主要组成：</p>
+<ul>
+<li><strong>EventHub</strong>：通过 epoll + inotify 监听 <code>/dev/input</code> 下的设备节点，读出 <code>struct input_event</code> 封装为 RawEvent；</li>
+<li><strong>InputReader</strong>：起独立线程 <code>"InputReader"</code> 从 EventHub 拉取 RawEvent，经 InputDevice / InputMapper 解析为 NotifyKeyArgs、NotifyMotionArgs 等 NotifyArgs，推给下游 InputListener 流水线；</li>
+<li><strong>InputListener 流水线（仅 2 个中间 stage）</strong>：<ul>
+<li><strong>UnwantedInteractionBlocker</strong>：手掌抑制（PalmRejector）、PreferStylusOverTouch（手写笔按下时忽略触摸），运行在 InputReader 线程；</li>
+<li><strong>InputProcessor</strong>：调用 <code>IInputProcessor</code> HAL 给 motion 做分类（MotionClassifier，区分手掌/笔/手指等）。分类是<strong>异步</strong>的——它额外起一条 <code>"InputProcessor"</code> HAL 线程去调 HAL，主事件流不被阻塞；</li>
+</ul>
+</li>
+<li><strong>InputDispatcher</strong>：起独立线程 <code>"InputDispatcher"</code> 接收流水线下游事件并入队 <code>mInboundQueue</code>，同时向 <strong>SurfaceFlinger</strong> 注册 WindowInfosListener 获取窗口信息，按窗口可见性/focus 计算目标窗口，再通过 InputChannel 把 KeyEvent/MotionEvent 派发出去；</li>
+<li><strong>InputManagerService</strong>：在 SystemServer 启动时被创建，内部持有 native InputManager，承担策略回调、设备热插拔、键位布局、PointerController（鼠标光标/show touches）、Accessibility 过滤（<code>filterInputEvent</code>）、VelocityTracker 配置等职责，并经 WindowManagerCallbacks 与 WMS 协作处理 lid switch、touch mode 等系统状态。</li>
+</ul>
+<div class="markdown-alert markdown-alert-important">
+<p class="markdown-alert-title"><svg class="octicon octicon-report mr-2" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M0 1.75C0 .784.784 0 1.75 0h12.5C15.216 0 16 .784 16 1.75v9.5A1.75 1.75 0 0 1 14.25 13H8.06l-2.573 2.573A1.458 1.458 0 0 1 3 14.543V13H1.75A1.75 1.75 0 0 1 0 11.25Zm1.75-.25a.25.25 0 0 0-.25.25v9.5c0 .138.112.25.25.25h2a.75.75 0 0 1 .75.75v2.19l2.72-2.72a.749.749 0 0 1 .53-.22h6.5a.25.25 0 0 0 .25-.25v-9.5a.25.25 0 0 0-.25-.25Zm7 2.25v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 9a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"></path></svg>Important</p>
+<p><strong>AOSP14 与网络上多数老资料（基于 Android 6.0~11）的核心差异</strong>：</p>
+<ol>
+<li>Reader 与 Dispatcher 之间<strong>多了 2 个中间 stage</strong>（<code>UnwantedInteractionBlocker</code>、<code>InputProcessor</code>），不再是 Reader 直接调 Dispatcher；</li>
+<li>窗口信息<strong>不再由 WMS 同步给 InputDispatcher</strong>，而是 InputDispatcher 直接向 SurfaceFlinger 注册监听；</li>
+<li>Motion 分类走独立的 <code>IInputProcessor</code> AIDL HAL，且分类在独立的 HAL 线程上异步进行。</li>
+</ol>
+</div>
+<hr>
+<h1 id="2-构造流程：从-SystemServer-到-Native-InputManager"><a href="#2-构造流程：从-SystemServer-到-Native-InputManager" class="headerlink" title="2. 构造流程：从 SystemServer 到 Native InputManager"></a>2. 构造流程：从 SystemServer 到 Native InputManager</h1><h2 id="2-1-Java-层-SystemServer-启动-IMS"><a href="#2-1-Java-层-SystemServer-启动-IMS" class="headerlink" title="2.1 Java 层 SystemServer 启动 IMS"></a>2.1 Java 层 SystemServer 启动 IMS</h2><p>IMS 在 <code>SystemServer.startOtherServices(t)</code> 中被创建。AOSP14 里<strong>没有</strong> <code>InputManagerService.Lifecycle</code> 这个内部类，IMS 是被直接 <code>new</code> 出来的（<code>SystemServer.java:1589-1647</code>）：</p>
+<figure class="highlight java"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/base/services/java/com/android/server/SystemServer.java</span></span><br><span class="line"> t.traceBegin(<span class="string">"StartInputManagerService"</span>);</span><br><span class="line">inputManager = <span class="keyword">new</span> <span class="title class_">InputManagerService</span>(context);</span><br><span class="line">t.traceEnd();</span><br><span class="line">...</span><br><span class="line">t.traceBegin(<span class="string">"StartWindowManagerService"</span>);</span><br><span class="line"><span class="comment">// WMS needs sensor service ready</span></span><br><span class="line">mSystemServiceManager.startBootPhase(t, SystemService.PHASE_WAIT_FOR_SENSOR_SERVICE);</span><br><span class="line">wm = WindowManagerService.main(context, inputManager, !mFirstBoot,</span><br><span class="line">        <span class="keyword">new</span> <span class="title class_">PhoneWindowManager</span>(), mActivityManagerService.mActivityTaskManager);</span><br><span class="line">ServiceManager.addService(Context.WINDOW_SERVICE, wm, <span class="comment">/* allowIsolated= */</span> <span class="literal">false</span>,</span><br><span class="line">        DUMP_FLAG_PRIORITY_CRITICAL | DUMP_FLAG_PROTO);</span><br><span class="line">ServiceManager.addService(Context.INPUT_SERVICE, inputManager,</span><br><span class="line">        <span class="comment">/* allowIsolated= */</span> <span class="literal">false</span>, DUMP_FLAG_PRIORITY_CRITICAL);</span><br><span class="line">t.traceEnd();</span><br></pre></td></tr></tbody></table></figure>
+
+<div class="markdown-alert markdown-alert-note">
+<p class="markdown-alert-title"><svg class="octicon octicon-info mr-2" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"></path></svg>Note</p>
+<ul>
+<li><strong>IMS 先于 WMS 启动</strong>：<code>new InputManagerService(context)</code>在 <code>WindowManagerService.main(...)</code>之前；WMS 启动时把 IMS 作为参数注入。</li>
+<li><code>"input"</code> Binder 服务是 SystemServer 直接通过 <code>ServiceManager.addService(Context.INPUT_SERVICE, inputManager, ...)</code> 注册，<strong>不在</strong> IMS 内部的某个 <code>Lifecycle.onStart()</code> 里。</li>
+</ul>
+</div>
+<h2 id="2-2-InputManagerService-构造与-NativeImpl"><a href="#2-2-InputManagerService-构造与-NativeImpl" class="headerlink" title="2.2 InputManagerService 构造与 NativeImpl"></a>2.2 InputManagerService 构造与 NativeImpl</h2><p>AOSP14 的 IMS 用一个 <code>Injector</code> 做依赖注入，构造链很短（<code>InputManagerService.java:399-462</code>）：</p>
+<figure class="highlight java"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/base/services/core/java/com/android/server/input/InputManagerService.java</span></span><br><span class="line"><span class="keyword">static</span> <span class="keyword">class</span> <span class="title class_">Injector</span> {</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> Context mContext;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> Looper mLooper;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> UEventManager mUEventManager;</span><br><span class="line"></span><br><span class="line">    Injector(Context context, Looper looper, UEventManager uEventManager) {</span><br><span class="line">        mContext = context;</span><br><span class="line">        mLooper = looper;</span><br><span class="line">        mUEventManager = uEventManager;</span><br><span class="line">    }</span><br><span class="line">	...</span><br><span class="line">    NativeInputManagerService <span class="title function_">getNativeService</span><span class="params">(InputManagerService service)</span> {</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">NativeInputManagerService</span>.NativeImpl(service, mLooper.getQueue());</span><br><span class="line">    }</span><br><span class="line"></span><br><span class="line">    <span class="keyword">void</span> <span class="title function_">registerLocalService</span><span class="params">(InputManagerInternal localService)</span> {</span><br><span class="line">        LocalServices.addService(InputManagerInternal.class, localService);</span><br><span class="line">    }</span><br><span class="line">}</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="title function_">InputManagerService</span><span class="params">(Context context)</span> {</span><br><span class="line">    <span class="built_in">this</span>(<span class="keyword">new</span> <span class="title class_">Injector</span>(context, DisplayThread.get().getLooper(), <span class="keyword">new</span> <span class="title class_">UEventManager</span>() {}));</span><br><span class="line">}</span><br><span class="line"></span><br><span class="line"><span class="meta">@VisibleForTesting</span></span><br><span class="line">InputManagerService(Injector injector) {</span><br><span class="line">    mStaticAssociations = loadStaticInputPortAssociations();</span><br><span class="line"></span><br><span class="line">    mContext = injector.getContext();</span><br><span class="line">    mHandler = <span class="keyword">new</span> <span class="title class_">InputManagerHandler</span>(injector.getLooper());</span><br><span class="line">    mNative = injector.getNativeService(<span class="built_in">this</span>);</span><br><span class="line">    mSettingsObserver = <span class="keyword">new</span> <span class="title class_">InputSettingsObserver</span>(mContext, mHandler, <span class="built_in">this</span>, mNative);</span><br><span class="line">    ...</span><br><span class="line">    injector.registerLocalService(<span class="keyword">new</span> <span class="title class_">LocalService</span>());</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<p>其中关键一行：</p>
+<figure class="highlight java"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">mNative = injector.getNativeService(<span class="built_in">this</span>);   <span class="comment">// line 437 → new </span></span><br></pre></td></tr></tbody></table></figure>
+
+<p>注意 <code>NativeImpl</code> <strong>不是</strong> IMS 的内部类，而是独立文件 <code>NativeInputManagerService.java</code> 里的一个类（<code>NativeInputManagerService.java:255-267</code>）：</p>
+<figure class="highlight java"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/base/services/core/java/com/android/server/input/NativeInputManagerService.java</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">interface</span> <span class="title class_">NativeInputManagerService</span> {                            </span><br><span class="line">    ...</span><br><span class="line">    <span class="keyword">class</span> <span class="title class_">NativeImpl</span> <span class="keyword">implements</span> <span class="title class_">NativeInputManagerService</span> {       </span><br><span class="line">        <span class="keyword">private</span> <span class="keyword">final</span> <span class="type">long</span> mPtr;</span><br><span class="line"></span><br><span class="line">        NativeImpl(InputManagerService service, MessageQueue messageQueue) {   </span><br><span class="line">            mPtr = init(service, messageQueue);                                </span><br><span class="line">        }</span><br><span class="line"></span><br><span class="line">        <span class="keyword">private</span> <span class="keyword">native</span> <span class="type">long</span> <span class="title function_">init</span><span class="params">(InputManagerService service, MessageQueue messageQueue)</span>;  </span><br><span class="line">        <span class="keyword">public</span> <span class="keyword">native</span> <span class="keyword">void</span> <span class="title function_">start</span><span class="params">()</span>;                                           </span><br><span class="line">        ...</span><br><span class="line">    }</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<p><code>mPtr</code> 是指向 native <code>NativeInputManager</code> 对象的指针，所有 <code>native</code> 方法都通过它桥接到 C++。</p>
+<p><code>start()</code> 也很薄，直接转发：</p>
+<figure class="highlight java"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">start</span><span class="params">()</span> {                <span class="comment">// line 497</span></span><br><span class="line">    Slog.i(TAG, <span class="string">"Starting input manager"</span>);</span><br><span class="line">    mNative.start();                 <span class="comment">// line 499</span></span><br><span class="line">    Watchdog.getInstance().addMonitor(<span class="built_in">this</span>);</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<p>先看 init 的流程：</p>
+<h2 id="2-3-JNI-入口-nativeInit"><a href="#2-3-JNI-入口-nativeInit" class="headerlink" title="2.3 JNI 入口 nativeInit"></a>2.3 JNI 入口 nativeInit</h2><blockquote>
+<p>init 和 JNI 的绑定是通过 <code>RegisterNatives</code> 显式注册完成。而不是靠函数名自动匹配。</p>
+</blockquote>
+<p><strong>C++ 实现函数：</strong> <code>NativeImpl.init(...)</code> 对应的 JNI 函数是 <code>nativeInit</code> 方法：</p>
+<figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/base/services/core/jni/com_android_server_input_InputManagerService.cpp</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">static</span> jlong <span class="title">nativeInit</span><span class="params">(JNIEnv* env, jclass <span class="comment">/* clazz */</span>, jobject serviceObj,</span></span></span><br><span class="line"><span class="params"><span class="function">                        jobject messageQueueObj)</span> </span>{</span><br><span class="line">    sp&lt;MessageQueue&gt; messageQueue = <span class="built_in">android_os_MessageQueue_getMessageQueue</span>(env, messageQueueObj);</span><br><span class="line">    <span class="keyword">if</span> (messageQueue == <span class="literal">nullptr</span>) {</span><br><span class="line">        <span class="built_in">jniThrowRuntimeException</span>(env, <span class="string">"MessageQueue is not initialized."</span>);</span><br><span class="line">        <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">    }</span><br><span class="line"></span><br><span class="line">    <span class="type">static</span> std::once_flag nativeInitialize;</span><br><span class="line">    NativeInputManager* im = <span class="literal">nullptr</span>;</span><br><span class="line">    std::<span class="built_in">call_once</span>(nativeInitialize, [&amp;]() {</span><br><span class="line">        <span class="comment">// Create the NativeInputManager, which should not be destroyed or deallocated for the</span></span><br><span class="line">        <span class="comment">// lifetime of the process.</span></span><br><span class="line">        im = <span class="keyword">new</span> <span class="built_in">NativeInputManager</span>(serviceObj, messageQueue-&gt;<span class="built_in">getLooper</span>());</span><br><span class="line">    });</span><br><span class="line">    <span class="built_in">LOG_ALWAYS_FATAL_IF</span>(im == <span class="literal">nullptr</span>, <span class="string">"NativeInputManager was already initialized."</span>);</span><br><span class="line">    <span class="keyword">return</span> <span class="built_in">reinterpret_cast</span>&lt;jlong&gt;(im);</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<p><strong>映射表：</strong> 把 Java 方法名 <code>"init"</code> + 签名 <code>(Lcom/.../InputManagerService;Landroid/os/MessageQueue;)</code>显式绑定到 C++ 函数指针 <code>nativeInit</code> :</p>
+<figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">static</span> <span class="type">const</span> JNINativeMethod gInputManagerMethods[] = {</span><br><span class="line">        <span class="comment">/* name, signature, funcPtr */</span></span><br><span class="line">        {<span class="string">"init"</span>,</span><br><span class="line">         <span class="string">"(Lcom/android/server/input/InputManagerService;Landroid/os/MessageQueue;)J"</span>,</span><br><span class="line">         (<span class="type">void</span>*)nativeInit}, </span><br><span class="line">        ...</span><br><span class="line">};</span><br></pre></td></tr></tbody></table></figure>
+
+<p><strong>注册动作：</strong> 把上面这张表注册到具体的 Java 类上——注意是内部类 NativeImpl ：</p>
+<figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">int</span> <span class="title">register_android_server_InputManager</span><span class="params">(JNIEnv* env)</span> </span>{</span><br><span class="line">    <span class="type">int</span> res = <span class="built_in">jniRegisterNativeMethods</span>(env,</span><br><span class="line">                                       <span class="string">"com/android/server/input/"</span></span><br><span class="line">                                       <span class="string">"NativeInputManagerService$NativeImpl"</span>,</span><br><span class="line">                                       gInputManagerMethods,<span class="built_in">NELEM</span>(gInputManagerMethods));</span><br><span class="line">    ...</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<div class="markdown-alert markdown-alert-note">
+<p class="markdown-alert-title"><svg class="octicon octicon-info mr-2" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"></path></svg>Note</p>
+<p><code>register_android_server_InputManager</code> 在 JNI_OnLoad 阶段被 <code>onload.cpp</code> 调用,于是 JVM 在加载 <code>NativeImpl</code> 类时就知道：<strong>init 这个 native 方法对应 nativeInit。</strong></p>
+</div>
+<p>接着看具体实现： <code>NativeInputManager</code> 是进程内单例（<code>std::call_once</code> 保证）。看它的类声明和构造函数：</p>
+<figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">NativeInputManager</span> : <span class="keyword">public</span> <span class="keyword">virtual</span> InputReaderPolicyInterface,</span><br><span class="line">                           <span class="keyword">public</span> <span class="keyword">virtual</span> InputDispatcherPolicyInterface,</span><br><span class="line">                           <span class="keyword">public</span> <span class="keyword">virtual</span> PointerControllerPolicyInterface {</span><br><span class="line"><span class="keyword">protected</span>:</span><br><span class="line">    <span class="keyword">virtual</span> ~<span class="built_in">NativeInputManager</span>();</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="built_in">NativeInputManager</span>(jobject serviceObj, <span class="type">const</span> sp&lt;Looper&gt;&amp; looper);</span><br><span class="line">   ...</span><br><span class="line">};</span><br><span class="line"></span><br><span class="line">NativeInputManager::<span class="built_in">NativeInputManager</span>(jobject serviceObj, <span class="type">const</span> sp&lt;Looper&gt;&amp; looper)</span><br><span class="line">      : <span class="built_in">mLooper</span>(looper), <span class="built_in">mInteractive</span>(<span class="literal">true</span>) {</span><br><span class="line">    JNIEnv* env = <span class="built_in">jniEnv</span>();</span><br><span class="line">          </span><br><span class="line">    mServiceObj = env-&gt;<span class="built_in">NewGlobalRef</span>(serviceObj);</span><br><span class="line">          </span><br><span class="line">    InputManager* im = <span class="keyword">new</span> <span class="built_in">InputManager</span>(<span class="keyword">this</span>, *<span class="keyword">this</span>); </span><br><span class="line">    mInputManager = im;</span><br><span class="line">    <span class="built_in">defaultServiceManager</span>()-&gt;<span class="built_in">addService</span>(<span class="built_in">String16</span>(<span class="string">"inputflinger"</span>), im);</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<p>两个关键点：</p>
+<ul>
+<li><code>NativeInputManager</code> 同时继承 <code>InputReaderPolicyInterface</code>、<code>InputDispatcherPolicyInterface</code>、<code>PointerControllerPolicyInterface</code> 三个策略接口，所以 <code>new InputManager(this, *this)</code> 把<strong>同一个对象</strong>当成 Reader 策略和 Dispatcher 策略两份传入（<code>this</code> 和 <code>*this</code> 的区别见下文 2.3.1）。</li>
+<li>native <code>InputManager</code> 继承 <code>BnInputFlinger</code>，被注册成名为 <code>"inputflinger"</code> 的 Binder 服务，其它进程可以通过 <code>ServiceManager</code> 拿到它的代理。</li>
+</ul>
+<p><strong>再引申：</strong></p>
+<p><code>new InputManager(this, *this)</code> 出现在 <code>NativeInputManager</code> 构造函数里（<code>com_android_server_input_...cpp:456</code>），<code>this</code> 就是<strong>正在构造的 <code>NativeInputManager</code> 对象的指针</strong>。<code>this</code> 和 <code>*this</code> 指向<strong>同一个对象</strong>，之所以写法不同，是因为 InputManager 构造函数的两个形参类型不对称：</p>
+<figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">InputManager</span>(<span class="type">const</span> sp&lt;InputReaderPolicyInterface&gt;&amp; readerPolicy,   <span class="comment">// 形参1：sp 智能指针的引用</span></span><br><span class="line">             InputDispatcherPolicyInterface&amp; dispatcherPolicy);    <span class="comment">// 形参2：普通引用</span></span><br></pre></td></tr></tbody></table></figure>
+
+<p>NativeInputManager 之所以能“一人分饰两角”，是因为它多继承了三个 policy 接口（见声明）。它既是 <code>InputReaderPolicyInterface</code> 又是 <code>InputDispatcherPolicyInterface</code>，所以一个对象就能同时充当两种策略。两个实参分别这样落到形参上：</p>
+<table>
+<thead>
+<tr>
+<th>实参</th>
+<th>类型</th>
+<th>落到</th>
+<th>转换链</th>
+<th>最终存储</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>this</code></td>
+<td><code>NativeInputManager*</code>（指针）</td>
+<td>形参1 <code>const sp&lt;InputReaderPolicyInterface&gt;&amp;</code></td>
+<td>指针 →（派生→基）<code>InputReaderPolicyInterface*</code> →（sp 构造 <code>sp(T*)</code>）<code>sp&lt;...&gt;</code> → 绑定 const ref</td>
+<td>InputReader 存为 <code>sp&lt;InputReaderPolicyInterface&gt; mPolicy</code>（强引用，计数 +1）</td>
+</tr>
+<tr>
+<td><code>*this</code></td>
+<td><code>NativeInputManager&amp;</code>（对象）</td>
+<td>形参2 <code>InputDispatcherPolicyInterface&amp;</code></td>
+<td>对象 →（派生→基引用）<code>InputDispatcherPolicyInterface&amp;</code></td>
+<td>InputDispatcher 存为 <code>InputDispatcherPolicyInterface&amp; mPolicy</code>（裸引用，不计数）</td>
+</tr>
+</tbody></table>
+<p><strong>为什么不对称是“被逼出来的”：</strong></p>
+<ul>
+<li>形参1 要 <code>sp&lt;&gt;</code>，而构造 <code>sp</code> 必须从<strong>指针</strong>来（<code>sp(T*)</code>），不能用引用 <code>*this</code> → 只能传 <code>this</code>；</li>
+<li>形参2 是裸引用 <code>&amp;</code>，引用必须绑定<strong>对象（左值）</strong>，不能绑指针 → 必须解引用用 <code>*this</code>。</li>
+</ul>
+<p>两边互换都传不进去（<code>*this</code> 喂不了 sp 构造，<code>this</code> 绑不了引用形参）。</p>
+<figure class="highlight lua"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">                    NativeInputManager 对象(this 指向它)</span><br><span class="line">           ┌────────────────────────────────────────────────────┐</span><br><span class="line">           │  : public virtual InputReaderPolicyInterface       │</span><br><span class="line">           │  : public virtual InputDispatcherPolicyInterface   │</span><br><span class="line">           │  : public virtual PointerControllerPolicyInterface │</span><br><span class="line">           └────────────────────────────────────────────────────┘</span><br><span class="line">                 this(指针,包进 sp)              *this(裸引用)</span><br><span class="line">                    │                              │</span><br><span class="line">                    ▼                              ▼</span><br><span class="line">  形参<span class="number">1</span>: const sp&lt;InputReaderPolicyInterface&gt;&amp;   形参<span class="number">2</span>: InputDispatcherPolicyInterface&amp;</span><br><span class="line">                    │                              │</span><br><span class="line">                    ▼                              ▼</span><br><span class="line">InputReader 存为 sp&lt;...&gt; mPolicy(强引用)    InputDispatcher 存为 ...&amp; mPolicy(裸引用,不计数)</span><br></pre></td></tr></tbody></table></figure>
+
+<p><strong>一个引用计数上的微妙差异：</strong> Reader 策略被 <code>sp</code> 持有（强引用、计数 +1），Dispatcher 策略只是裸引用（不计数）。这之所以安全，是因为 NativeInputManager 是<strong>进程级单例</strong>（<code>nativeInit</code> 里 <code>std::call_once</code> 保证，注释明说 “should not be destroyed for the lifetime of the process”）——它永生，裸引用永不悬空。</p>
+<p>在往下展开前，先展开聊一下 input 和 inputfinger 这两个 Binder 服务。</p>
+<h2 id="2-4-input-模块的两个注册服务"><a href="#2-4-input-模块的两个注册服务" class="headerlink" title="2.4 input 模块的两个注册服务"></a>2.4 input 模块的两个注册服务</h2><p>Input 启动过程中实际上发生了<strong>两次独立</strong>的 <code>addService</code>，分别在 Java 侧和 native 侧。两者最终都注册到<strong>同一个 servicemanager 守护进程</strong>的同一张表里，但注册的是两个完全不同的 Binder 对象。</p>
+<p>首先看 SystemServer Java 侧：</p>
+<figure class="highlight java"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/base/services/java/com/android/server/SystemServer.java  startOtherServices()</span></span><br><span class="line">ServiceManager.addService(Context.INPUT_SERVICE, inputManager,</span><br><span class="line">        <span class="comment">/* allowIsolated= */</span> <span class="literal">false</span>, DUMP_FLAG_PRIORITY_CRITICAL);</span><br></pre></td></tr></tbody></table></figure>
+
+<p>Java 的 <code>ServiceManager.addService</code> 经 JNI 进入 C++ 后，调用的就是 libbinder 的 <code>defaultServiceManager()-&gt;addService()</code>——和 native 代码用的是<strong>同一个入口</strong>。</p>
+<p>然后是 Native 侧：</p>
+<figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/base/services/core/jni/com_android_server_input_InputManagerService.cpp</span></span><br><span class="line"><span class="comment">// NativeInputManager 构造函数</span></span><br><span class="line">InputManager* im = <span class="keyword">new</span> <span class="built_in">InputManager</span>(<span class="keyword">this</span>, *<span class="keyword">this</span>);</span><br><span class="line">mInputManager = im;</span><br><span class="line"><span class="built_in">defaultServiceManager</span>()-&gt;<span class="built_in">addService</span>(<span class="built_in">String16</span>(<span class="string">"inputflinger"</span>), im);</span><br></pre></td></tr></tbody></table></figure>
+
+<p>注册的 <code>im</code> 是 native <code>InputManager</code> 对象，继承自 <code>BnInputFlinger</code> → <code>BBinder</code>，本身就是一个 IBinder。<strong>上面两条路径汇入同一个 servicemanager：</strong></p>
+<figure class="highlight lua"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">Java:    ServiceManager.addService(<span class="string">"input"</span>, IMS)         ─┐</span><br><span class="line">           → JNI → libbinder                              │</span><br><span class="line">              -&gt; defaultServiceManager()                  ├─→ 同一个 servicemanager 进程</span><br><span class="line">                 -&gt;addService(...)                        │     的同一张 svclist 表</span><br><span class="line">                                                          │</span><br><span class="line">Native:  defaultServiceManager()-&gt;addService(             │</span><br><span class="line">            String16(<span class="string">"inputflinger"</span>), im)                ─┘</span><br></pre></td></tr></tbody></table></figure>
+
+<p>Java 和 native 共用同一个 servicemanager 进程，只是 Java 的 <code>ServiceManager</code> 类是 libbinder 的 JNI 封装，底层和 native 代码调的是同一个 <code>defaultServiceManager()</code>。对比如下：</p>
+<table>
+<thead>
+<tr>
+<th>维度</th>
+<th><code>"input"</code> (Java)</th>
+<th><code>"inputflinger"</code> (Native)</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>注册位置</td>
+<td><code>SystemServer.startOtherServices()</code></td>
+<td><code>NativeInputManager</code> 构造函数</td>
+</tr>
+<tr>
+<td>Binder 对象</td>
+<td>Java <code>InputManagerService</code> 实例</td>
+<td>native <code>InputManager</code> 实例</td>
+</tr>
+<tr>
+<td>AIDL 接口</td>
+<td><code>android.hardware.input.IInputManager</code></td>
+<td><code>android.os.IInputFlinger</code></td>
+</tr>
+<tr>
+<td>AIDL 文件</td>
+<td><code>frameworks/base/core/java/android/hardware/input/IInputManager.aidl</code></td>
+<td><code>frameworks/native/libs/input/android/os/IInputFlinger.aidl</code></td>
+</tr>
+<tr>
+<td>方法数</td>
+<td>几十个</td>
+<td>3 个</td>
+</tr>
+<tr>
+<td>典型方法</td>
+<td><code>getInputDeviceIds</code> / <code>injectInputEvent</code> / <code>getKeyboardLayouts</code> / …</td>
+<td><code>createInputChannel</code> / <code>removeInputChannel</code> / <code>setFocusedWindow</code></td>
+</tr>
+<tr>
+<td>主要调用者</td>
+<td>Java 应用（通过 <code>Context.INPUT_SERVICE</code>）</td>
+<td>native 系统/HAL（如 SurfaceFlinger）</td>
+</tr>
+<tr>
+<td>注册时机</td>
+<td>SystemServer <code>startOtherServices</code> 阶段（<code>SystemServer.java:1610</code>）</td>
+<td>Java IMS 构造时（经 <code>nativeInit</code> 触发，<code>com_android_server_input_...cpp:455</code>）</td>
+</tr>
+</tbody></table>
+<div class="markdown-alert markdown-alert-note">
+<p class="markdown-alert-title"><svg class="octicon octicon-info mr-2" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"></path></svg>Note</p>
+<p>native 的 <code>"inputflinger"</code> 比 Java 的 <code>"input"</code> 注册得<strong>早一步</strong> 。</p>
+<p>因为 Java IMS 构造时（ <code>mNative = injector.getNativeService(this)</code> 触发 <code>nativeInit</code>）已经在 native 构造函数里完成 native 注册，而 Java 自己的 <code>ServiceManager.addService</code> 要等到 SystemServer 的 <code>startOtherServices</code> 后面才执行。</p>
+</div>
+<p>然后也可以用 <code>service list</code> 验证：</p>
+<figure class="highlight bash"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">matrix_x86_64:/ $ service list | grep -E <span class="string">"input|inputflinger"</span></span><br><span class="line">148    input: [android.hardware.input.IInputManager]</span><br><span class="line">149    input_method: [com.android.internal.view.IInputMethodManager]</span><br><span class="line">150    inputflinger: [android.os.IInputFlinger]</span><br></pre></td></tr></tbody></table></figure>
+
+<div class="markdown-alert markdown-alert-note">
+<p class="markdown-alert-title"><svg class="octicon octicon-info mr-2" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"></path></svg>Note</p>
+<p>方括号里是各自的 AIDL 接口全名：</p>
+<ul>
+<li><code>input</code> → Java（用户面 API）</li>
+<li><code>inputflinger</code> → native InputManager（底层通道 API）</li>
+<li><code>input_method</code> → 输入法服务（IME 管理，与事件派发无关，只是名字相近）</li>
+</ul>
+<p>三条独立服务，实现代码、接口、用途、调用群体都完全不同。</p>
+</div>
+<p>而且两个 Binder 对象底层都指向同一套 native 输入子系统，只是对外暴露的 AIDL 方法集<strong>完全不重叠</strong>：</p>
+<ul>
+<li><code>IInputManager</code>：面向应用和系统 Java 代码，提供设备查询、事件注入、键盘布局等”用户面”能力；</li>
+<li><code>IInputFlinger</code>：面向其他 native 进程，只提供 <code>createInputChannel</code> / <code>removeInputChannel</code> / <code>setFocusedWindow</code> 三个”管道面”能力。</li>
+</ul>
+<h2 id="2-5-Native-InputManager-的创建"><a href="#2-5-Native-InputManager-的创建" class="headerlink" title="2.5 Native InputManager 的创建"></a>2.5 Native InputManager 的创建</h2><p>进行梳理 InputManager 的内容，首先看 <code>NativeInputManager</code> 构造函数：</p>
+<figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">InputManager* im = <span class="keyword">new</span> <span class="built_in">InputManager</span>(<span class="keyword">this</span>, *<span class="keyword">this</span>);</span><br></pre></td></tr></tbody></table></figure>
+
+<p>这一节就展开看 native <code>InputManager</code> 这个类<strong>长什么样</strong>、构造函数里<strong>做了什么</strong>。</p>
+<h3 id="2-5-1-InputManager-类结构"><a href="#2-5-1-InputManager-类结构" class="headerlink" title="2.5.1 InputManager 类结构"></a>2.5.1 InputManager 类结构</h3><p>native <code>InputManager</code> 核心就两部分：<strong>双重继承</strong> + <strong>4 个私有成员</strong>。类头部的注释已经把整个架构说清楚了，是理解 inputflinger 最重要的一段话：</p>
+<figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/native/services/inputflinger/InputManager.h</span></span><br><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment"> * The input manager is the core of the system event processing.</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * The input manager has three components.</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * 1. The InputReader class starts a thread that reads and preprocesses raw input events, applies</span></span><br><span class="line"><span class="comment"> *    policy, and posts messages to a queue managed by the UnwantedInteractionBlocker.</span></span><br><span class="line"><span class="comment"> * 2. The UnwantedInteractionBlocker is responsible for removing unwanted interactions. For example,</span></span><br><span class="line"><span class="comment"> *    this could be a palm on the screen. ... The events are processed on the InputReader thread,</span></span><br><span class="line"><span class="comment"> *    without any additional queue. The events are then posted to the queue managed by the</span></span><br><span class="line"><span class="comment"> *    InputProcessor.</span></span><br><span class="line"><span class="comment"> * 3. The InputProcessor class starts a thread to communicate with the device-specific</span></span><br><span class="line"><span class="comment"> *    IInputProcessor HAL. It then waits on the queue of events from UnwantedInteractionBlocker,</span></span><br><span class="line"><span class="comment"> *    processes the events (for example, applies a classification to the events), and queues them</span></span><br><span class="line"><span class="comment"> *    for the InputDispatcher.</span></span><br><span class="line"><span class="comment"> * 4. The InputDispatcher class starts a thread that waits for new events on the</span></span><br><span class="line"><span class="comment"> *    previous queue and asynchronously dispatches them to applications.</span></span><br><span class="line"><span class="comment"> * ...</span></span><br><span class="line"><span class="comment"> */</span></span><br></pre></td></tr></tbody></table></figure>
+
+<div class="markdown-alert markdown-alert-important">
+<p class="markdown-alert-title"><svg class="octicon octicon-report mr-2" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M0 1.75C0 .784.784 0 1.75 0h12.5C15.216 0 16 .784 16 1.75v9.5A1.75 1.75 0 0 1 14.25 13H8.06l-2.573 2.573A1.458 1.458 0 0 1 3 14.543V13H1.75A1.75 1.75 0 0 1 0 11.25Zm1.75-.25a.25.25 0 0 0-.25.25v9.5c0 .138.112.25.25.25h2a.75.75 0 0 1 .75.75v2.19l2.72-2.72a.749.749 0 0 1 .53-.22h6.5a.25.25 0 0 0 .25-.25v-9.5a.25.25 0 0 0-.25-.25Zm7 2.25v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 9a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"></path></svg>Important</p>
+<p>InputManager 是输入系统的核心容器——它本身不干活,而是把 4 个组件(流水线)装进来、对外作为一个 Binder 服务(“inputflinger”)。</p>
+<p>三条核心设计原则:</p>
+<ol>
+<li><p><strong>各 stage 不共享内部状态</strong> —— 每个 stage 自己管自己的锁和数据,互相只通过 <code>notify*</code> 接口传事件。这让每个 stage 可以独立演进、独立测试。</p>
+</li>
+<li><p><strong>单向流动,绝不回流</strong> —— 事件只能 <code>Reader → … → Dispatcher</code> 往前走,永远不会从 Dispatcher 反向调Reader。这是防死锁的关键(配合”flush 必须在锁外”的规矩)。</p>
+</li>
+<li><p><strong>要跟外界打交道时,统一走 Policy</strong> —— 各 stage 不直接调系统服务,而是通过 Policy 接口回调。</p>
+</li>
+</ol>
+</div>
+<p>首先看头函数，<code>InputManager</code> 是双重继承：功能接口 + Binder 服务骨架的结构</p>
+<figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">InputManager</span> : <span class="keyword">public</span> InputManagerInterface, <span class="keyword">public</span> BnInputFlinger {</span><br><span class="line">    ...</span><br><span class="line">};</span><br></pre></td></tr></tbody></table></figure>
+
+<figure class="highlight lua"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">      RefBase (引用计数基类)</span><br><span class="line">            ▲</span><br><span class="line">            │</span><br><span class="line">InputManagerInterface    BnInputFlinger</span><br><span class="line"> (纯虚功能接口)          (Binder native 端骨架,</span><br><span class="line">     ▲                   暴露 IInputFlinger AIDL)</span><br><span class="line">     │                          │</span><br><span class="line">     └─────────┬────────────────┘</span><br><span class="line">               │</span><br><span class="line">          class InputManager</span><br></pre></td></tr></tbody></table></figure>
+
+<ul>
+<li><strong><code>InputManagerInterface</code></strong>：纯虚功能接口（<code>start、stop、getReader、getProcessor、getDispatcher等</code>），让测试可以 mock；</li>
+<li><strong><code>BnInputFlinger</code></strong>：Binder native 端骨架，继承自 <code>BBinder</code>，让 InputManager 对象<strong>本身就是一个 IBinder</strong> 。注册的 Binder 对象就是 <code>im</code> 本身，而非某个内部成员。</li>
+</ul>
+<p>然后再看私有成员：4 个 stage，4 个字段正好对应流水线上的 4 个组件。</p>
+<figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/native/services/inputflinger/InputManager.h</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span>:                                                        </span><br><span class="line">    std::unique_ptr&lt;InputReaderInterface&gt; mReader;</span><br><span class="line">    std::unique_ptr&lt;UnwantedInteractionBlockerInterface&gt; mBlocker; </span><br><span class="line">    std::unique_ptr&lt;InputProcessorInterface&gt; mProcessor;</span><br><span class="line">    std::unique_ptr&lt;InputDispatcherInterface&gt; mDispatcher;</span><br><span class="line">};</span><br></pre></td></tr></tbody></table></figure>
+
+<table>
+<thead>
+<tr>
+<th>字段</th>
+<th>类型</th>
+<th>流水线位置</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>mReader</code></td>
+<td><code>InputReaderInterface</code></td>
+<td>1. 最上游，从 EventHub 读 RawEvent</td>
+</tr>
+<tr>
+<td><code>mBlocker</code></td>
+<td><code>UnwantedInteractionBlockerInterface</code></td>
+<td>2. 手掌 / 误触抑制（Reader 线程同步执行）</td>
+</tr>
+<tr>
+<td><code>mProcessor</code></td>
+<td><code>InputProcessorInterface</code></td>
+<td>3. motion 分类 HAL（Reader 线程同步执行 + 独立 HAL 线程）</td>
+</tr>
+<tr>
+<td><code>mDispatcher</code></td>
+<td><code>InputDispatcherInterface</code></td>
+<td>4. 最下游，派发到窗口</td>
+</tr>
+</tbody></table>
+<div class="markdown-alert markdown-alert-note">
+<p class="markdown-alert-title"><svg class="octicon octicon-info mr-2" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"></path></svg>Note</p>
+<p>字段在 <code>.h</code> 里的<strong>声明顺序</strong>是上游→下游（Reader → Blocker → Processor → Dispatcher），但<strong>构造时的创建顺序是反向的</strong>（先 Dispatcher，最后 Reader）。</p>
+</div>
+<p>再看 public 方法：是薄薄的转发层， <code>InputManager</code>  自己定义的 public 方法都很短，基本是转发：</p>
+<figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/native/services/inputflinger/InputManager.h</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">status_t</span> <span class="title">start</span><span class="params">()</span> <span class="keyword">override</span></span>;                 <span class="comment">// 启动 Reader/Dispatcher 线程</span></span><br><span class="line"><span class="function"><span class="type">status_t</span> <span class="title">stop</span><span class="params">()</span> <span class="keyword">override</span></span>;</span><br><span class="line"></span><br><span class="line"><span class="function">InputReaderInterface&amp; <span class="title">getReader</span><span class="params">()</span> <span class="keyword">override</span></span>;       <span class="comment">// 返回 *mReader</span></span><br><span class="line"><span class="function">InputProcessorInterface&amp; <span class="title">getProcessor</span><span class="params">()</span> <span class="keyword">override</span></span>; <span class="comment">// 返回 *mProcessor</span></span><br><span class="line"><span class="function">InputDispatcherInterface&amp; <span class="title">getDispatcher</span><span class="params">()</span> <span class="keyword">override</span></span>;</span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">monitor</span><span class="params">()</span> <span class="keyword">override</span></span>;                   <span class="comment">// 转发给所有 stage</span></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">dump</span><span class="params">(std::string&amp; dump)</span> <span class="keyword">override</span></span>;     <span class="comment">// 转发给所有 stage</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// BnInputFlinger 接口（3 个 Binder 方法）</span></span><br><span class="line"><span class="function"><span class="type">status_t</span> <span class="title">dump</span><span class="params">(<span class="type">int</span> fd, <span class="type">const</span> Vector&lt;String16&gt;&amp; args)</span> <span class="keyword">override</span></span>;</span><br><span class="line"><span class="function">binder::Status <span class="title">createInputChannel</span><span class="params">(<span class="type">const</span> std::string&amp; name, InputChannel* outChannel)</span> <span class="keyword">override</span></span>;</span><br><span class="line"><span class="function">binder::Status <span class="title">removeInputChannel</span><span class="params">(<span class="type">const</span> sp&lt;IBinder&gt;&amp; connectionToken)</span> <span class="keyword">override</span></span>;</span><br><span class="line"><span class="function">binder::Status <span class="title">setFocusedWindow</span><span class="params">(<span class="type">const</span> gui::FocusRequest&amp;)</span> <span class="keyword">override</span></span>;</span><br></pre></td></tr></tbody></table></figure>
+
+<p>3 个 Binder 方法的实现**全部直接转发给 <code>mDispatcher</code> ：</p>
+<figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/native/services/inputflinger/InputManager.cpp</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// Used by tests only.</span></span><br><span class="line"><span class="function">binder::Status <span class="title">InputManager::createInputChannel</span><span class="params">(<span class="type">const</span> std::string&amp; name, InputChannel* outChannel)</span> </span>{   </span><br><span class="line">    ...</span><br><span class="line">    base::Result&lt;std::unique_ptr&lt;InputChannel&gt;&gt; channel = mDispatcher-&gt;<span class="built_in">createInputChannel</span>(name);       </span><br><span class="line">    ...</span><br><span class="line">}</span><br><span class="line"><span class="function">binder::Status <span class="title">InputManager::removeInputChannel</span><span class="params">(<span class="type">const</span> sp&lt;IBinder&gt;&amp; connectionToken)</span> </span>{                </span><br><span class="line">    mDispatcher-&gt;<span class="built_in">removeInputChannel</span>(connectionToken);</span><br><span class="line">    <span class="keyword">return</span> binder::Status::<span class="built_in">ok</span>();</span><br><span class="line">}</span><br><span class="line"><span class="function">binder::Status <span class="title">InputManager::setFocusedWindow</span><span class="params">(<span class="type">const</span> FocusRequest&amp; request)</span> </span>{                          </span><br><span class="line">    mDispatcher-&gt;<span class="built_in">setFocusedWindow</span>(request);</span><br><span class="line">    <span class="keyword">return</span> binder::Status::<span class="built_in">ok</span>();</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<p>也就是说 InputDispatcher 把 input 通道、窗口焦点这些”管道面”能力全包了，InputManager 只是个 Binder 门面。</p>
+<p>而且类本身没什么”业务逻辑”，把上面拼起来看，<code>InputManager</code> 自己的代码非常薄：</p>
+<table>
+<thead>
+<tr>
+<th>方法</th>
+<th>干的事</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>构造函数</td>
+<td>组装 4 级流水线</td>
+</tr>
+<tr>
+<td><code>start()</code> / <code>stop()</code></td>
+<td>启停 Reader/Dispatcher 两个线程</td>
+</tr>
+<tr>
+<td>3 个 getter</td>
+<td>返回对应 stage 的引用</td>
+</tr>
+<tr>
+<td>3 个 Binder 方法</td>
+<td>转发给 <code>mDispatcher</code></td>
+</tr>
+<tr>
+<td><code>monitor()</code> / <code>dump()</code></td>
+<td>转发给所有 stage</td>
+</tr>
+</tbody></table>
+<p>真正的业务逻辑全在 4 个 stage 内部。<strong>可以把 InputManager 理解成”输入系统的容器 / 门面”</strong>——它持有所有组件、暴露统一功能接口、对外作为 Binder 服务，但自己不干活。这种设计让外部调用者（IMS、其它 native 进程）不需要知道内部 4 个 stage 的存在，只跟 InputManager 一个对象打交道就够了。</p>
+<h3 id="2-5-2-构造函数做的事"><a href="#2-5-2-构造函数做的事" class="headerlink" title="2.5.2 构造函数做的事"></a>2.5.2 构造函数做的事</h3><p>理解了类结构，再回过来看构造函数。它只做<strong>一件事</strong>——按<strong>反向顺序</strong>把 stage 串成流水线；唯一的“逻辑”是一个 metrics 开关，决定 <code>InputDeviceMetricsCollector</code> 这一级<strong>插不插进链里</strong>。</p>
+<figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/native/services/inputflinger/InputManager.cpp</span></span><br><span class="line"></span><br><span class="line">InputManager::<span class="built_in">InputManager</span>(<span class="type">const</span> sp&lt;InputReaderPolicyInterface&gt;&amp; readerPolicy,</span><br><span class="line">                           InputDispatcherPolicyInterface&amp; dispatcherPolicy) {</span><br><span class="line">    mDispatcher = <span class="built_in">createInputDispatcher</span>(dispatcherPolicy);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (ENABLE_INPUT_DEVICE_USAGE_METRICS) {</span><br><span class="line">        mCollector = std::<span class="built_in">make_unique</span>&lt;InputDeviceMetricsCollector&gt;(*mDispatcher);</span><br><span class="line">    }</span><br><span class="line"></span><br><span class="line">    mProcessor = ENABLE_INPUT_DEVICE_USAGE_METRICS ? std::<span class="built_in">make_unique</span>&lt;InputProcessor&gt;(*mCollector) : std::<span class="built_in">make_unique</span>&lt;InputProcessor&gt;(*mDispatcher);</span><br><span class="line">    </span><br><span class="line">    mBlocker = std::<span class="built_in">make_unique</span>&lt;UnwantedInteractionBlocker&gt;(*mProcessor);</span><br><span class="line">    </span><br><span class="line">    mReader = <span class="built_in">createInputReader</span>(readerPolicy, *mBlocker);</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<p>先看那个开关：</p>
+<figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">static</span> <span class="type">const</span> <span class="type">bool</span> ENABLE_INPUT_DEVICE_USAGE_METRICS =</span><br><span class="line">        sysprop::InputProperties::<span class="built_in">enable_input_device_usage_metrics</span>().<span class="built_in">value_or</span>(<span class="literal">true</span>);</span><br></pre></td></tr></tbody></table></figure>
+
+<ul>
+<li>读系统属性 <code>InputProperties.enable_input_device_usage_metrics</code>，<strong>默认 true</strong>；</li>
+<li>是 <code>static const bool</code>——进程启动时读一次定死，运行中改 sysprop 不生效（要重启）。</li>
+</ul>
+<p>开关决定的是 <strong><code>mProcessor</code> 的“下一站”指向谁</strong>，从而决定 Collector 在不在链里：</p>
+<figure class="highlight lua"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">开关 ON（默认）: InputReader → UnwantedInteractionBlocker → InputProcessor → InputDeviceMetricsCollector → InputDispatcher</span><br><span class="line"></span><br><span class="line">开关 OFF:        InputReader → UnwantedInteractionBlocker → InputProcessor → InputDispatcher</span><br></pre></td></tr></tbody></table></figure>
+
+<div class="markdown-alert markdown-alert-note">
+<p class="markdown-alert-title"><svg class="octicon octicon-info mr-2" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"></path></svg>Note</p>
+<ul>
+<li><strong>反向构建</strong>：每个 stage 的“下一站”是构造时传入的，必须先有下一站才能建当前 stage。</li>
+<li><strong><code>mCollector</code> 是条件 <code>unique_ptr</code></strong>：关掉时保持 <code>nullptr</code>，所以<strong>所有访问它的地方都得先判 flag</strong> 。</li>
+<li><strong>Collector 不只是单向 stage</strong>：它还多一个反向接口 ，由 <strong>InputDispatcher 线程</strong> 反向告知“某设备的事件实际派发给了哪些 uid 的 app”，用于设备使用指标采集。这不违反“事件单向流”——主流事件仍单向，这里只是 Dispatcher 通过专门接口把消费结果反馈给采集器。</li>
+</ul>
+</div>
+<p>两个工厂函数很薄，只是 <code>make_unique</code> ：</p>
+<figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/native/services/inputflinger/reader/InputReaderFactory.cpp</span></span><br><span class="line"><span class="function">std::unique_ptr&lt;InputReaderInterface&gt; <span class="title">createInputReader</span><span class="params">(</span></span></span><br><span class="line"><span class="params"><span class="function">        <span class="type">const</span> sp&lt;InputReaderPolicyInterface&gt;&amp; policy, InputListenerInterface&amp; listener)</span> </span>{</span><br><span class="line">    <span class="keyword">return</span> std::<span class="built_in">make_unique</span>&lt;InputReader&gt;(std::<span class="built_in">make_unique</span>&lt;EventHub&gt;(), policy, listener); </span><br><span class="line">}</span><br><span class="line"></span><br><span class="line"><span class="comment">// frameworks/native/services/inputflinger/dispatcher/InputDispatcherFactory.cpp</span></span><br><span class="line"><span class="function">std::unique_ptr&lt;InputDispatcherInterface&gt; <span class="title">createInputDispatcher</span><span class="params">(InputDispatcherPolicyInterface&amp; policy)</span> </span>{</span><br><span class="line">    <span class="keyword">return</span> std::<span class="built_in">make_unique</span>&lt;android::inputdispatcher::InputDispatcher&gt;(policy);           </span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<p>注意 <code>createInputReader</code> 顺带 <code>std::make_unique&lt;EventHub&gt;()</code>——EventHub 没有被 InputManager 直接持有，而是塞进了 InputReader 内部 的 <code>mEventHub(eventHub)</code>）。</p>
+<p>到这里 InputManager 构造完成，但<strong>还没开始工作</strong>——流水线只是”装配好了”，Reader / Dispatcher 线程都还没启动。真正的”启动”要等 <code>InputManager::start()</code> 才发生。在这之前先了解 input 中的一些设计。</p>
+<h1 id="3-整体构造流程"><a href="#3-整体构造流程" class="headerlink" title="3. 整体构造流程"></a>3. 整体构造流程</h1><p>把 input 构造过程，用一张时序图串起来——看清“从 SystemServer 一路 <code>new</code> 到 native InputManager”的完整调用链和返回链：</p>
+<pre class="mermaid">sequenceDiagram
+    autonumber
+    participant SS as SystemServer
+    participant IMS as InputManagerService (Java)
+    participant NImpl as NativeImpl (Java)
+    participant JNI as nativeInit (JNI)
+    participant NIM as NativeInputManager (C++)
+    participant IM as InputManager (C++)
+    participant SM as ServiceManager
+
+    SS-&gt;&gt;IMS: new InputManagerService(context)
+    IMS-&gt;&gt;IMS: new Injector(context, DisplayThread.looper)
+    IMS-&gt;&gt;NImpl: getNativeService(this) → <br> new NativeImpl(this, msgQueue)
+    NImpl-&gt;&gt;JNI: init(service, messageQueue)
+    Note over JNI,NIM: ★ 跨越 JNI 边界（RegisterNatives 绑定 init → nativeInit）
+    JNI-&gt;&gt;NIM: new NativeInputManager(serviceObj, looper)
+    NIM-&gt;&gt;NIM: mServiceObj = NewGlobalRef(serviceObj)
+    NIM-&gt;&gt;IM: new InputManager(this, *this)
+    Note right of NIM: this = Reader 策略<br>*this = Dispatcher 策略（同一对象）
+    Note over IM: 反向构建流水线（先下游，后上游）
+    IM-&gt;&gt;IM: ① mDispatcher = createInputDispatcher(dispatcherPolicy)
+    IM-&gt;&gt;IM: ② mCollector = new InputDeviceMetricsCollector(*mDispatcher) [可选]
+    IM-&gt;&gt;IM: ③ mProcessor = new InputProcessor(*mCollector 或 *mDispatcher)
+    IM-&gt;&gt;IM: ④ mBlocker = new UnwantedInteractionBlocker(*mProcessor)
+    IM-&gt;&gt;IM: ⑤ mReader = createInputReader(readerPolicy, *mBlocker)
+    Note right of IM: createInputReader 内部 new EventHub，<br>塞进 InputReader.mEventHub
+    NIM-&gt;&gt;SM: addService("inputflinger", im)
+    NIM--&gt;&gt;JNI: 返回 NativeInputManager* 指针
+    JNI--&gt;&gt;NImpl: return jlong(ptr)
+    NImpl--&gt;&gt;IMS: NativeImpl 对象（持有 mPtr）
+    IMS--&gt;&gt;SS: IMS 实例构造完成
+    SS-&gt;&gt;SM: addService("input", inputManager)
+    Note over SS,SM: 注意：Reader/Dispatcher 线程此刻还没启动，<br>要等后面 inputManager.start()</pre>
+
+<p>读图要点：</p>
+<ul>
+<li><strong>嵌套 <code>new</code> 的调用与返回</strong>：<code>SystemServer → new IMS → new NativeImpl → init() → JNI nativeInit → new NativeInputManager → new InputManager</code>；返回时 <code>NativeInputManager*</code> 被重解释成 <code>jlong</code> 一路回传，最终存进 <code>NativeImpl.mPtr</code>，这就是 Java 调 native 的桥。</li>
+<li><strong>inputflinger 比 input 先注册</strong>：<code>addService("inputflinger")</code> 在 <code>NativeInputManager</code> 构造里就完成了（还在 IMS 构造链中）；而 <code>addService("input")</code> 要等 IMS 构造完、控制权回到 SystemServer 才执行。</li>
+<li><strong>构造完成 ≠ 开始工作</strong>：此时流水线只是“装配好了”，Reader / Dispatcher 线程都还没起，要等后面的 <code>inputManager.start()</code>。</li>
+</ul>
+<h1 id="4-input-中的设计"><a href="#4-input-中的设计" class="headerlink" title="4. input 中的设计"></a>4. input 中的设计</h1><h2 id="4-1-什么是”流水线”"><a href="#4-1-什么是”流水线”" class="headerlink" title="4.1 什么是”流水线”"></a>4.1 什么是”流水线”</h2><p>事件从底层硬件到最终派发给窗口，中间要经过<strong>一道道”加工站”</strong>，每个加工站只做一件事，做完就传给下一站：</p>
+<figure class="highlight plaintext"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">InputReader ──► UnwantedInteractionBlocker ──► InputProcessor ──► InputDispatcher</span><br></pre></td></tr></tbody></table></figure>
+
+<p>每个”加工站”叫一个 <strong>stage</strong>，本质都是一个实现了 <code>InputListenerInterface</code> 的 C++ 对象。</p>
+<h2 id="4-2-责任链接力机制"><a href="#4-2-责任链接力机制" class="headerlink" title="4.2 责任链接力机制"></a>4.2 责任链接力机制</h2><p><code>InputListenerInterface</code> 是所有 stage 的共同基类，核心是一组 <code>notify*</code> 纯虚函数 + 一个统一的 <code>notify()</code> 入口：</p>
+<figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/native/services/inputflinger/include/InputListener.h</span></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">InputListenerInterface</span> {</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    ...</span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="type">void</span> <span class="title">notifyInputDevicesChanged</span><span class="params">(<span class="type">const</span> NotifyInputDevicesChangedArgs&amp; args)</span> </span>= <span class="number">0</span>;</span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="type">void</span> <span class="title">notifyConfigurationChanged</span><span class="params">(<span class="type">const</span> NotifyConfigurationChangedArgs&amp; args)</span> </span>= <span class="number">0</span>;</span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="type">void</span> <span class="title">notifyKey</span><span class="params">(<span class="type">const</span> NotifyKeyArgs&amp; args)</span> </span>= <span class="number">0</span>;</span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="type">void</span> <span class="title">notifyMotion</span><span class="params">(<span class="type">const</span> NotifyMotionArgs&amp; args)</span> </span>= <span class="number">0</span>;</span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="type">void</span> <span class="title">notifySwitch</span><span class="params">(<span class="type">const</span> NotifySwitchArgs&amp; args)</span> </span>= <span class="number">0</span>;</span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="type">void</span> <span class="title">notifySensor</span><span class="params">(<span class="type">const</span> NotifySensorArgs&amp; args)</span> </span>= <span class="number">0</span>;</span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="type">void</span> <span class="title">notifyVibratorState</span><span class="params">(<span class="type">const</span> NotifyVibratorStateArgs&amp; args)</span> </span>= <span class="number">0</span>;</span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="type">void</span> <span class="title">notifyDeviceReset</span><span class="params">(<span class="type">const</span> NotifyDeviceResetArgs&amp; args)</span> </span>= <span class="number">0</span>;</span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="type">void</span> <span class="title">notifyPointerCaptureChanged</span><span class="params">(<span class="type">const</span> NotifyPointerCaptureChangedArgs&amp; args)</span> </span>= <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">notify</span><span class="params">(<span class="type">const</span> NotifyArgs&amp; args)</span></span>;   <span class="comment">// line 50  统一入口，std::visit 分发到具体 notify*</span></span><br><span class="line">};</span><br></pre></td></tr></tbody></table></figure>
+
+<p><code>notify()</code> 用 <code>std::visit</code> 把变体 <code>NotifyArgs</code> 分发到具体函数：</p>
+<figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">InputListenerInterface::notify</span><span class="params">(<span class="type">const</span> NotifyArgs&amp; generalArgs)</span> </span>{</span><br><span class="line">    Visitor v{</span><br><span class="line">            [&amp;](<span class="type">const</span> NotifyInputDevicesChangedArgs&amp; args) { <span class="built_in">notifyInputDevicesChanged</span>(args); },</span><br><span class="line">            [&amp;](<span class="type">const</span> NotifyConfigurationChangedArgs&amp; args) { <span class="built_in">notifyConfigurationChanged</span>(args); },</span><br><span class="line">            [&amp;](<span class="type">const</span> NotifyKeyArgs&amp; args) { <span class="built_in">notifyKey</span>(args); },</span><br><span class="line">            [&amp;](<span class="type">const</span> NotifyMotionArgs&amp; args) { <span class="built_in">notifyMotion</span>(args); },</span><br><span class="line">            ...</span><br><span class="line">    };</span><br><span class="line">    std::<span class="built_in">visit</span>(v, generalArgs);</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<p>每个 stage 类内部都持有一个**”下一站”<strong>——AOSP14 的实现方式是</strong>包一个 <code>QueuedInputListener</code>**，它的构造函数接收下一站的引用。以 <code>UnwantedInteractionBlocker::notifyMotion</code> 为例：</p>
+<figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">UnwantedInteractionBlocker::notifyMotion</span><span class="params">(<span class="type">const</span> NotifyMotionArgs&amp; args)</span> </span>{</span><br><span class="line">    ...</span><br><span class="line">    { <span class="comment">// acquire lock</span></span><br><span class="line">        <span class="function">std::scoped_lock <span class="title">lock</span><span class="params">(mLock)</span></span>;</span><br><span class="line">        ...</span><br><span class="line">        <span class="built_in">notifyMotionLocked</span>(loopArgs);   <span class="comment">// 加工：做手掌抑制</span></span><br><span class="line">    }</span><br><span class="line">    mQueuedListener.<span class="built_in">flush</span>();            <span class="comment">// 把缓冲区里加工好的事件 flush 给下一站</span></span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<p>这就是责任链：<strong>收到 → 加工 → 调下一站的 notify</strong>。</p>
+<p>完整流水线顺序与 <code>InputManager</code> 的注释与构造函数实现完全一致——事件经 InputListener 接口流向为：</p>
+<figure class="highlight lua"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">InputReader</span><br><span class="line">  -&gt; UnwantedInteractionBlocker       // 手掌抑制、PreferStylusOverTouch（Reader 线程同步）</span><br><span class="line">  -&gt; InputProcessor                   // IInputProcessor HAL 运动分类（同步 + 独立 HAL 线程）</span><br><span class="line">  -&gt; InputDispatcher                  // 最终派发到目标窗口（独立线程）</span><br></pre></td></tr></tbody></table></figure>
+
+<p>stage 的”下一站”是<strong>构造时传入</strong>的——也就是说<strong>创建一个 stage 之前，必须先有它的下一站</strong>。所以只能<strong>从尾往头建</strong>：</p>
+<figure class="highlight lua"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">要建:    Reader → Blocker → Processor → Dispatcher</span><br><span class="line">必须建:  Dispatcher 先，Processor 第二，Blocker 第三，Reader 最后</span><br></pre></td></tr></tbody></table></figure>
+
+<p>类比<strong>搭火车</strong>：你想接一列火车 <code>A-B-C-D</code>，得先有 <code>D</code>（发动机），再把 <code>C</code> 挂到 <code>D</code> 前面，再把 <code>B</code> 挂到 <code>C</code> 前面，最后把 <code>A</code> 挂到 <code>B</code> 前面——<strong>从尾往头接</strong>。</p>
+<h2 id="4-3-QueuedInputListener：缓冲-flush-机制"><a href="#4-3-QueuedInputListener：缓冲-flush-机制" class="headerlink" title="4.3 QueuedInputListener：缓冲 + flush 机制"></a>4.3 QueuedInputListener：缓冲 + flush 机制</h2><p>AOSP14 的每个中间 stage（Blocker、Processor）内部都包了一个 <code>QueuedInputListener</code>。它的作用是<strong>先把事件缓冲进 <code>mArgsQueue</code>，等 stage 加工完再一次性 flush 给下一站</strong>：</p>
+<figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/native/services/inputflinger/include/InputListener.h</span></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">QueuedInputListener</span> : <span class="keyword">public</span> InputListenerInterface {</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="function"><span class="keyword">explicit</span> <span class="title">QueuedInputListener</span><span class="params">(InputListenerInterface&amp; innerListener)</span></span>;   <span class="comment">// 接收"下一站"</span></span><br><span class="line">    ...</span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">flush</span><span class="params">()</span></span>;</span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">    InputListenerInterface&amp; mInnerListener;                        <span class="comment">// 下一站</span></span><br><span class="line">    std::vector&lt;NotifyArgs&gt; mArgsQueue;                            <span class="comment">// 缓冲区</span></span><br><span class="line">};</span><br></pre></td></tr></tbody></table></figure>
+
+<p>实现：每个 <code>notify*</code> 只是 <code>emplace_back</code> 进队列，顺便加 ATRACE ：</p>
+<figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/native/services/inputflinger/InputListener.cpp</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">QueuedInputListener::notifyMotion</span><span class="params">(<span class="type">const</span> NotifyMotionArgs&amp; args)</span> </span>{ </span><br><span class="line">    <span class="built_in">traceEvent</span>(__func__, args.id);</span><br><span class="line">    mArgsQueue.<span class="built_in">emplace_back</span>(args);</span><br><span class="line">}</span><br><span class="line">...</span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">QueuedInputListener::flush</span><span class="params">()</span> </span>{</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">const</span> NotifyArgs&amp; args : mArgsQueue) {</span><br><span class="line">        mInnerListener.<span class="built_in">notify</span>(args);     <span class="comment">// 逐个调下一站的 notify</span></span><br><span class="line">    }</span><br><span class="line">    mArgsQueue.<span class="built_in">clear</span>();</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<div class="markdown-alert markdown-alert-important">
+<p class="markdown-alert-title"><svg class="octicon octicon-report mr-2" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M0 1.75C0 .784.784 0 1.75 0h12.5C15.216 0 16 .784 16 1.75v9.5A1.75 1.75 0 0 1 14.25 13H8.06l-2.573 2.573A1.458 1.458 0 0 1 3 14.543V13H1.75A1.75 1.75 0 0 1 0 11.25Zm1.75-.25a.25.25 0 0 0-.25.25v9.5c0 .138.112.25.25.25h2a.75.75 0 0 1 .75.75v2.19l2.72-2.72a.749.749 0 0 1 .53-.22h6.5a.25.25 0 0 0 .25-.25v-9.5a.25.25 0 0 0-.25-.25Zm7 2.25v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 9a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"></path></svg>Important</p>
+<p><strong>为什么要”缓冲 + flush”而不是直接调下一站？</strong>  因为一个进来的事件可能被加工成<strong>多个</strong>出去的事件。</p>
+<p>最典型的就是手掌抑制：一个多点触摸的 <code>NotifyMotionArgs</code> 进来，Blocker 检测到其中某个 pointer 是手掌，会把它<strong>拆掉</strong>——先发一个把该 pointer 标成 <code>CANCEL</code> 的事件，再发一个<strong>剔除该 pointer 后</strong>的事件。这种”一进多出”用缓冲队列最自然：加工阶段往队列里塞若干个，最后统一 flush。</p>
+<p>这跟 AOSP16 的 <code>TracedInputListener</code>（纯装饰器，只加 ATRACE）是<strong>完全不同的东西</strong></p>
+<p>AOSP14 的 <code>QueuedInputListener</code> 既是缓冲器，也顺带加了 ATRACE（<code>traceEvent</code>），一物两用。</p>
+</div>
+<h2 id="4-4-线程模型（关键）"><a href="#4-4-线程模型（关键）" class="headerlink" title="4.4 线程模型（关键）"></a>4.4 线程模型（关键）</h2><div class="markdown-alert markdown-alert-important">
+<p class="markdown-alert-title"><svg class="octicon octicon-report mr-2" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M0 1.75C0 .784.784 0 1.75 0h12.5C15.216 0 16 .784 16 1.75v9.5A1.75 1.75 0 0 1 14.25 13H8.06l-2.573 2.573A1.458 1.458 0 0 1 3 14.543V13H1.75A1.75 1.75 0 0 1 0 11.25Zm1.75-.25a.25.25 0 0 0-.25.25v9.5c0 .138.112.25.25.25h2a.75.75 0 0 1 .75.75v2.19l2.72-2.72a.749.749 0 0 1 .53-.22h6.5a.25.25 0 0 0 .25-.25v-9.5a.25.25 0 0 0-.25-.25Zm7 2.25v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 9a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"></path></svg>Important</p>
+<p><strong>主事件流只穿越 2 个线程</strong>：<code>InputReader</code> 线程 和 <code>InputDispatcher</code> 线程。中间所有 stage（Blocker、Processor）的 <code>notify*</code> <strong>同步执行</strong>在 InputReader 线程里。真正的线程切换只发生在一处——事件从 Reader 线程进入 Dispatcher 队列的那一刻。</p>
+</div>
+<p>但 <code>InputProcessor</code> 比较特殊——它<strong>额外起了一条 HAL 线程</strong>，用于异步调 <code>IInputProcessor</code> HAL：</p>
+<figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">MotionClassifier</span> <span class="keyword">final</span> : <span class="keyword">public</span> MotionClassifierInterface {</span><br><span class="line">    ...</span><br><span class="line">    <span class="comment">/** The events that need to be sent to the HAL. */</span></span><br><span class="line">    BlockingQueue&lt;ClassifierEvent&gt; mEvents; </span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * Thread that will communicate with InputProcessor HAL.</span></span><br><span class="line"><span class="comment">     * This should be the only thread that communicates with InputProcessor HAL,</span></span><br><span class="line"><span class="comment">     * because this thread is allowed to block on the HAL calls.</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    std::thread mHalThread;</span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">processEvents</span><span class="params">()</span></span>;</span><br><span class="line">    ...</span><br><span class="line">};</span><br></pre></td></tr></tbody></table></figure>
+
+<p>启动这条线程的代码：</p>
+<figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">mHalThread = std::<span class="built_in">thread</span>(&amp;MotionClassifier::processEvents, <span class="keyword">this</span>); </span><br><span class="line"><span class="built_in">pthread_setname_np</span>(mHalThread.<span class="built_in">native_handle</span>(), <span class="string">"InputProcessor"</span>); </span><br></pre></td></tr></tbody></table></figure>
+
+<p>HAL 线程的主循环从 <code>mEvents</code> 队列取事件，调 HAL 拿分类的 <code>mService-&gt;classify(...)</code>）。</p>
+<p>关键在于 <code>MotionClassifier::classify</code> 是<strong>非阻塞</strong>的——它把事件丢进 <code>mEvents</code> 队列让 HAL 线程慢慢处理，然后<strong>立刻返回上一次缓存的分类结果</strong>。所以：</p>
+<figure class="highlight lua"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">[InputReader 线程] ──同步──&gt; InputProcessor::notifyMotion</span><br><span class="line">                          ├─ mMotionClassifier-&gt;classify(newArgs)   ← 入队，返回旧分类，不阻塞</span><br><span class="line">                          ├─ newArgs.classification = newClassification</span><br><span class="line">                          └─ mQueuedListener.notifyMotion(newArgs) → <span class="built_in">flush</span> → Dispatcher</span><br><span class="line"></span><br><span class="line">[InputProcessor 线程（HAL）] ── 异步 ──&gt; MotionClassifier::processEvents </span><br><span class="line">                                        └─ mService-&gt;classify(...)   ← 真正调 HAL，可能很慢</span><br></pre></td></tr></tbody></table></figure>
+
+<p>也就是说，分类可以比事件流<strong>慢 1~2 个事件</strong>，这是可接受的（手势刚开始那一两帧分不准没关系）。这种”主事件流不阻塞 + 旁路 HAL 线程”的设计，是 AOSP14 InputProcessor 的精髓。</p>
+<p>精确的事件流总结：</p>
+<ul>
+<li>InputReader 线程内的事件流是 <strong>同步接力</strong>（Blocker、Processor 都在 Reader 线程跑）；</li>
+<li><code>InputProcessor</code> 旁路一条 <code>"InputProcessor"</code> HAL 线程，只负责调 HAL、更新分类缓存，<strong>不参与主事件传递</strong>；</li>
+<li>事件进入 InputDispatcher 的 <code>mInboundQueue</code> 时才完成 <strong>线程切换</strong>（通过 <code>mLooper-&gt;wake()</code>）；</li>
+<li>Dispatcher 线程独立地从队列里取事件派发给窗口。</li>
+</ul>
+<h2 id="4-5-设计动机：为什么搞这么复杂的链路"><a href="#4-5-设计动机：为什么搞这么复杂的链路" class="headerlink" title="4.5 设计动机：为什么搞这么复杂的链路"></a>4.5 设计动机：为什么搞这么复杂的链路</h2><p>早期 Android（~6.0 之前）没有这些中间 stage，Reader 直接调 Dispatcher。后来新需求不断冒出来：</p>
+<ul>
+<li>手掌抑制要插在哪里？</li>
+<li>motion 分类（手/笔/手掌）呢？</li>
+</ul>
+<p>每个功能都”想插一腿”，如果都写在一起维护灾难。<strong>责任链让每个功能独立成 stage</strong>，想加就加、想删就删、想调整顺序就调整顺序，互不影响——这就是”流水线”设计的核心价值。</p>
+<p>AOSP14 保留了 <code>Blocker</code> 和 <code>Processor</code> 两个中间 stage；后续版本（AOSP15/16）又往里塞了 <code>InputFilter</code>、<code>PointerChoreographer</code>、<code>InputDeviceMetricsCollector</code> 等更多 stage，但底层的责任链机制完全一样。</p>
+<p>把整个 input 系统想象成一家<strong>蛋糕工厂</strong>，每个 stage 就是流水线上的一道工序：</p>
+<table>
+<thead>
+<tr>
+<th>流水线角色</th>
+<th>类比</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>EventHub</td>
+<td>进货口（从 <code>/dev/input</code> 进货”原料”）</td>
+</tr>
+<tr>
+<td>InputReader</td>
+<td>切配工（把原料 <code>input_event</code> 切成半成品 <code>NotifyArgs</code>）</td>
+</tr>
+<tr>
+<td>UnwantedInteractionBlocker</td>
+<td>质检员（挑出”手掌误触”这种残次品）</td>
+</tr>
+<tr>
+<td>InputProcessor</td>
+<td>分类师（标记这块是给”手”还是”笔”吃的，分类异步进行）</td>
+</tr>
+<tr>
+<td>QueuedInputListener</td>
+<td>工序间的传送带（缓冲 + 一次性放行）</td>
+</tr>
+<tr>
+<td>InputDispatcher</td>
+<td>发货员（打包通过 socketpair 发给客户窗口）</td>
+</tr>
+</tbody></table>
+<p>每个工序独立、链式接力、互不影响——这就是”组装流水线”的完整含义。后续 3.x 节就是把每个工序挨个展开讲。</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/Input/" rel="tag"># Input</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2026/06/24/getevent%E8%A7%A3%E6%9E%90/" rel="next" title="getEvent 解析">
+                <i class="fa fa-chevron-left"></i> getEvent 解析
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2026/08/22/Input%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/" rel="prev" title="Input 启动流程">
+                Input 启动流程 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="/images/head.jpg"
+                alt="" />
+            
+              <p class="site-author-name" itemprop="name"></p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/%7C%7C%20archive">
+              
+                  <span class="site-state-item-count">30</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">11</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">24</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+            <div class="feed-link motion-element">
+              <a href="/atom.xml" rel="alternate">
+                <i class="fa fa-rss"></i>
+                RSS
+              </a>
+            </div>
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/ZYBO-o" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-github"></i>GitHub</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://www.zhihu.com/people/lin-li-yike-cao/activities" target="_blank" title="ZhiHu">
+                      
+                        <i class="fa fa-fw fa-globe"></i>ZhiHu</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+            <div class="links-of-blogroll motion-element links-of-blogroll-block">
+              <div class="links-of-blogroll-title">
+                <i class="fa  fa-fw fa-link"></i>
+                Links
+              </div>
+              <ul class="links-of-blogroll-list">
+                
+                  <li class="links-of-blogroll-item">
+                    <a href="https://blog.schwarzeni.com/" title="Schwarzeni" target="_blank">Schwarzeni</a>
+                  </li>
+                
+                  <li class="links-of-blogroll-item">
+                    <a href="https://www.qcmoke.cn/" title="qcmoke" target="_blank">qcmoke</a>
+                  </li>
+                
+                  <li class="links-of-blogroll-item">
+                    <a href="https://www.zhoujianguo.ltd/" title="ZhouJianGuo" target="_blank">ZhouJianGuo</a>
+                  </li>
+                
+                  <li class="links-of-blogroll-item">
+                    <a href="https://hishiro-xiao.github.io/" title="hishiro-xiao" target="_blank">hishiro-xiao</a>
+                  </li>
+                
+              </ul>
+            </div>
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#1-%E6%A6%82%E8%BF%B0"><span class="nav-text">1. 概述</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#2-%E6%9E%84%E9%80%A0%E6%B5%81%E7%A8%8B%EF%BC%9A%E4%BB%8E-SystemServer-%E5%88%B0-Native-InputManager"><span class="nav-text">2. 构造流程：从 SystemServer 到 Native InputManager</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#2-1-Java-%E5%B1%82-SystemServer-%E5%90%AF%E5%8A%A8-IMS"><span class="nav-text">2.1 Java 层 SystemServer 启动 IMS</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-2-InputManagerService-%E6%9E%84%E9%80%A0%E4%B8%8E-NativeImpl"><span class="nav-text">2.2 InputManagerService 构造与 NativeImpl</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-3-JNI-%E5%85%A5%E5%8F%A3-nativeInit"><span class="nav-text">2.3 JNI 入口 nativeInit</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-4-input-%E6%A8%A1%E5%9D%97%E7%9A%84%E4%B8%A4%E4%B8%AA%E6%B3%A8%E5%86%8C%E6%9C%8D%E5%8A%A1"><span class="nav-text">2.4 input 模块的两个注册服务</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-5-Native-InputManager-%E7%9A%84%E5%88%9B%E5%BB%BA"><span class="nav-text">2.5 Native InputManager 的创建</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#2-5-1-InputManager-%E7%B1%BB%E7%BB%93%E6%9E%84"><span class="nav-text">2.5.1 InputManager 类结构</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-5-2-%E6%9E%84%E9%80%A0%E5%87%BD%E6%95%B0%E5%81%9A%E7%9A%84%E4%BA%8B"><span class="nav-text">2.5.2 构造函数做的事</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#3-%E6%95%B4%E4%BD%93%E6%9E%84%E9%80%A0%E6%B5%81%E7%A8%8B"><span class="nav-text">3. 整体构造流程</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#4-input-%E4%B8%AD%E7%9A%84%E8%AE%BE%E8%AE%A1"><span class="nav-text">4. input 中的设计</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#4-1-%E4%BB%80%E4%B9%88%E6%98%AF%E2%80%9D%E6%B5%81%E6%B0%B4%E7%BA%BF%E2%80%9D"><span class="nav-text">4.1 什么是”流水线”</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-2-%E8%B4%A3%E4%BB%BB%E9%93%BE%E6%8E%A5%E5%8A%9B%E6%9C%BA%E5%88%B6"><span class="nav-text">4.2 责任链接力机制</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-3-QueuedInputListener%EF%BC%9A%E7%BC%93%E5%86%B2-flush-%E6%9C%BA%E5%88%B6"><span class="nav-text">4.3 QueuedInputListener：缓冲 + flush 机制</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-4-%E7%BA%BF%E7%A8%8B%E6%A8%A1%E5%9E%8B%EF%BC%88%E5%85%B3%E9%94%AE%EF%BC%89"><span class="nav-text">4.4 线程模型（关键）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-5-%E8%AE%BE%E8%AE%A1%E5%8A%A8%E6%9C%BA%EF%BC%9A%E4%B8%BA%E4%BB%80%E4%B9%88%E6%90%9E%E8%BF%99%E4%B9%88%E5%A4%8D%E6%9D%82%E7%9A%84%E9%93%BE%E8%B7%AF"><span class="nav-text">4.5 设计动机：为什么搞这么复杂的链路</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Zcorpius</span>
+
+  
+</div>
+
+<!--
+
+
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Muse</a> v5.1.4</div>
+
+
+-->
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+          <span id="scrollpercent"><span>0</span>%</span>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+  
+
+
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@9/dist/mermaid.min.js"></script>
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: 'default'
+    });
+  </script>
+  
+  
+
+  
+
+
+<!-- Nexora 风格代码块增强：顶栏 + 语言标签 + 复制按钮 -->
+<script type="text/javascript" src="/js/src/nexora-code.js"></script>
+<!-- Nexora 风格 TOC scroll-spy（IntersectionObserver，替代 Bootstrap scrollspy） -->
+<script type="text/javascript" src="/js/src/nexora-toc.js"></script>
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"debug":false,"model":{"jsonPath":"https://cdn.jsdelivr.net/gh/evrstr/live2d-widget-models/live2d_evrstr/mashiro_shifuku/model.json"},"display":{"position":"left","width":200,"height":500},"mobile":{"show":true},"encrypt":{"enable":true},"log":false});</script></body>
+</html>
+
+<!-- 页面点击小红心 -->
+<script type="text/javascript" src="/js/src/love.js"></script>

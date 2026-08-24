@@ -1,0 +1,1400 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next muse use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+<script>
+    (function(){
+        if(''){
+            if (prompt('请输入密码') !== ''){
+                alert('密码错误');
+                history.back();
+            }
+        }
+    })();
+</script>
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/head.jpg?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/head.jpg?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/head.jpg?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/head.jpg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="C++," />
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="Zcorpius's Blog" type="application/atom+xml" />
+
+
+
+
+
+
+<meta name="description" content="一.C++中的资源管理1.程序的存储空间布局C程序一直由以下几个部分组成：    正文段。 这是由CPU执行的机器指令部分。通常正文段是可共享的，但通常也只能制度，防止程序由于意外而修改其指令。 初始化数据段。 通常将此段称为数据段,它包含了程序中需明确地赋初值的变量。 未初始化数据段。 通常将此段称为bss段 (名称来源于早期汇编程序一个操作符,意思是“由符号开始的块”( block start">
+<meta property="og:type" content="article">
+<meta property="og:title" content="C++新语法重拾之旅">
+<meta property="og:url" content="https://zcorpius.github.io/2025/09/14/C++%E6%96%B0%E8%AF%AD%E6%B3%95%E9%87%8D%E6%8B%BE%E4%B9%8B%E6%97%85/index.html">
+<meta property="og:site_name" content="Zcorpius&#39;s Blog">
+<meta property="og:description" content="一.C++中的资源管理1.程序的存储空间布局C程序一直由以下几个部分组成：    正文段。 这是由CPU执行的机器指令部分。通常正文段是可共享的，但通常也只能制度，防止程序由于意外而修改其指令。 初始化数据段。 通常将此段称为数据段,它包含了程序中需明确地赋初值的变量。 未初始化数据段。 通常将此段称为bss段 (名称来源于早期汇编程序一个操作符,意思是“由符号开始的块”( block start">
+<meta property="og:locale">
+<meta property="og:image" content="https://zcorpius.github.io/2025/09/14/C++%E6%96%B0%E8%AF%AD%E6%B3%95%E9%87%8D%E6%8B%BE%E4%B9%8B%E6%97%85/7-4.png">
+<meta property="article:published_time" content="2025-09-14T08:23:56.000Z">
+<meta property="article:modified_time" content="2026-08-24T15:49:00.095Z">
+<meta property="article:author" content="Zcorpius">
+<meta property="article:tag" content="C++">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://zcorpius.github.io/2025/09/14/C++%E6%96%B0%E8%AF%AD%E6%B3%95%E9%87%8D%E6%8B%BE%E4%B9%8B%E6%97%85/7-4.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Muse',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":true,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://Zcorpius.github.io/2025/09/14/C++新语法重拾之旅/"/>
+
+
+
+
+
+  <title>C++新语法重拾之旅 | Zcorpius's Blog</title>
+  
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 7.3.0">
+<style>.github-emoji { position: relative; display: inline-block; width: 1.2em; min-height: 1.2em; overflow: hidden; vertical-align: top; color: transparent; }  .github-emoji > span { position: relative; z-index: 10; }  .github-emoji img, .github-emoji .fancybox { margin: 0 !important; padding: 0 !important; border: none !important; outline: none !important; text-decoration: none !important; user-select: none !important; cursor: auto !important; }  .github-emoji img { height: 1.2em !important; width: 1.2em !important; position: absolute !important; left: 50% !important; top: 50% !important; transform: translate(-50%, -50%) !important; user-select: none !important; cursor: auto !important; } .github-emoji-fallback { color: inherit; } .github-emoji-fallback img { opacity: 0 !important; }</style>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Zcorpius's Blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">追寻自我的崎岖路上从不缺勇敢。</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-路径">
+          <a href="/top/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-fire"></i> <br />
+            
+            路径
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://Zcorpius.github.io/2025/09/14/C++%E6%96%B0%E8%AF%AD%E6%B3%95%E9%87%8D%E6%8B%BE%E4%B9%8B%E6%97%85/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/head.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Zcorpius's Blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">C++新语法重拾之旅</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2025-09-14T16:23:56+08:00">
+                2025-09-14
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/C/" itemprop="url" rel="index">
+                    <span itemprop="name">C++</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+            <div class="post-wordcount">
+              
+                
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-file-word-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">字数统计&#58;</span>
+                
+                <span title="字数统计">
+                  4k
+                </span>
+              
+
+              
+                <span class="post-meta-divider">|</span>
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-clock-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">阅读时长 &asymp;</span>
+                
+                <span title="阅读时长">
+                  15
+                </span>
+              
+            </div>
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="一-C-中的资源管理"><a href="#一-C-中的资源管理" class="headerlink" title="一.C++中的资源管理"></a>一.C++中的资源管理</h2><h3 id="1-程序的存储空间布局"><a href="#1-程序的存储空间布局" class="headerlink" title="1.程序的存储空间布局"></a>1.程序的存储空间布局</h3><p>C程序一直由以下几个部分组成：</p>
+<div align="center"><img src="/2025/09/14/C++%E6%96%B0%E8%AF%AD%E6%B3%95%E9%87%8D%E6%8B%BE%E4%B9%8B%E6%97%85/7-4.png" width="300px"></div>
+
+<ul>
+<li><strong>正文段。</strong> 这是由CPU执行的机器指令部分。通常正文段是可共享的，但通常也只能制度，防止程序由于意外而修改其指令。</li>
+<li><strong>初始化数据段。</strong> 通常将此段称为数据段,它包含了程序中需明确地赋初值的变量。</li>
+<li><strong>未初始化数据段。</strong> 通常将此段称为bss段 (名称来源于早期汇编程序一个操作符,意思是“由符号开始的块”( block started by symbol))。在程序开始执行之前， <strong>内核将此段中的数据初始化为0或空指针</strong> 。</li>
+<li><strong>栈。</strong> 自动变量以及每次函数调用时所需保存的信息都存放在此段中。</li>
+<li><strong>堆。</strong> 通常在堆中进行动态存储分配。</li>
+</ul>
+<blockquote>
+<ul>
+<li>a.out 中还有其他类型的段，如符号表的段，包含调试信息的段以及包含动态共享库链接表的段等。这些部分并不装载到进程执行的程序映像中。</li>
+<li>未初始化数据段的内容并不存放在磁盘程序文件中。其原因是,内核在程序开始运行前将它们都设置为0。需要存放在磁盘程序文件中的段只有正文段和初始化数据段</li>
+</ul>
+</blockquote>
+<h3 id="2-堆，栈-与-RAII"><a href="#2-堆，栈-与-RAII" class="headerlink" title="2.堆，栈 与 RAII"></a>2.堆，栈 与 RAII</h3><h3 id="3-智能指针的引入"><a href="#3-智能指针的引入" class="headerlink" title="3.智能指针的引入"></a>3.智能指针的引入</h3><h4 id="1-什么是智能指针"><a href="#1-什么是智能指针" class="headerlink" title="(1).什么是智能指针"></a>(1).什么是智能指针</h4><p>智能指针是一个类，这个类的构造函数中传入一个普通指针，析构函数中释放传入的指针。</p>
+<blockquote>
+<p> 智能指针的类都是栈上的对象，所以当函数（或程序）结束时会自动被释放，</p>
+</blockquote>
+<h4 id="2-最常用的智能指针"><a href="#2-最常用的智能指针" class="headerlink" title="(2).最常用的智能指针"></a>(2).最常用的智能指针</h4><ul>
+<li><p>之前有：<code>std::auto_ptr</code>，不支持复制（拷贝构造函数）和赋值（operator =），但复制或赋值的时候不会提示出错。因为不能被复制，所以不能被放入容器中。</p>
+</li>
+<li><p>C++11中shared_ptr，基于引用计数的智能指针。当内存的引用计数为0的时候这个内存会被释放。</p>
+</li>
+<li><p>C++11引入的 <code>unique_ptr</code>， 也不支持复制和赋值，但比auto_ptr好，直接赋值会编译出错。实在想赋值的话，需要使用：<code>std::move</code>。</p>
+<ul>
+<li><p>例如：</p>
+<figure class="highlight c++"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">std::unique_ptr&lt;<span class="type">int</span>&gt; <span class="title">p1</span><span class="params">(<span class="keyword">new</span> <span class="type">int</span>(<span class="number">5</span>))</span></span>;</span><br><span class="line">std::unique_ptr&lt;<span class="type">int</span>&gt; p2 = p1; <span class="comment">// 编译会出错</span></span><br><span class="line">std::unique_ptr&lt;<span class="type">int</span>&gt; p3 = std::<span class="built_in">move</span>(p1); <span class="comment">// 转移所有权, 现在那块内存归p3所有, p1成为无效的指针.</span></span><br></pre></td></tr></tbody></table></figure></li>
+</ul>
+</li>
+<li><p>C++11中的weak_ptr，弱引用。 引用计数有一个问题就是互相引用形成环，这样两个指针指向的内存都无法释放。需要手动打破循环引用或使用weak_ptr。顾名思义，weak_ptr是一个弱引用，只引用，不计数。如果一块内存被shared_ptr和weak_ptr同时引用，当所有shared_ptr析构了之后，不管还有没有weak_ptr引用该内存，内存也会被释放。所以weak_ptr不保证它指向的内存一定是有效的，在使用之前需要检查weak_ptr是否为空指针。</p>
+</li>
+</ul>
+<h4 id="4-智能指针的线程安全问题"><a href="#4-智能指针的线程安全问题" class="headerlink" title="(4).智能指针的线程安全问题"></a>(4).智能指针的线程安全问题</h4><p>智能指针有2个成员，一个是引用计数是原子的，另外一个原始指针并不是；所以综合来说就不是线程安全的。</p>
+<p>多个线程同时读同一个shared_ptr对象是线程安全的，但是如果是多个线程对同一个shared_ptr对象进行读和写，则需要加锁。</p>
+<h3 id="5-智能指针出现的循环引用问题"><a href="#5-智能指针出现的循环引用问题" class="headerlink" title="(5).智能指针出现的循环引用问题"></a>(5).智能指针出现的循环引用问题</h3><p>循环引用是指使用多个智能指针share_ptr时，出现了指针之间相互指向，从而形成环的情况，有点类似于死锁的情况，这种情况下，智能指针往往不能正常调用对象的析构函数，从而造成内存泄漏。举个例 子:</p>
+<figure class="highlight c++"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;iostream&gt;</span></span></span><br><span class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> std;</span><br><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line"><span class="keyword">class</span> <span class="title class_">Node</span></span><br><span class="line">{</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="built_in">Node</span>(<span class="type">const</span> T&amp; value):_pPre(<span class="literal">NULL</span>), _pNext(<span class="literal">NULL</span>), _value(value){</span><br><span class="line">        cout &lt;&lt; <span class="string">"Node()"</span> &lt;&lt; endl;</span><br><span class="line">    }</span><br><span class="line">		~<span class="built_in">Node</span>() {</span><br><span class="line">        cout &lt;&lt; <span class="string">"~Node()"</span> &lt;&lt; endl;</span><br><span class="line">        cout &lt;&lt; <span class="string">"this:"</span> &lt;&lt; <span class="keyword">this</span> &lt;&lt; endl;</span><br><span class="line">    }</span><br><span class="line">    shared_ptr&lt;Node&lt;T&gt;&gt; _pPre;</span><br><span class="line">    shared_ptr&lt;Node&lt;T&gt;&gt; _pNext;</span><br><span class="line">    T _value;</span><br><span class="line">};</span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">Funtest</span><span class="params">()</span></span>{</span><br><span class="line">    shared_ptr&lt;Node&lt;<span class="type">int</span>&gt;&gt; <span class="built_in">sp1</span>(<span class="keyword">new</span> <span class="built_in">Node</span>&lt;<span class="type">int</span>&gt;(<span class="number">1</span>));</span><br><span class="line">    shared_ptr&lt;Node&lt;<span class="type">int</span>&gt;&gt; <span class="built_in">sp2</span>(<span class="keyword">new</span> <span class="built_in">Node</span>&lt;<span class="type">int</span>&gt;(<span class="number">2</span>));</span><br><span class="line">    cout &lt;&lt; <span class="string">"sp1.use_count:"</span> &lt;&lt; sp<span class="number">1.</span><span class="built_in">use_count</span>() &lt;&lt; endl;</span><br><span class="line">    cout &lt;&lt; <span class="string">"sp2.use_count:"</span> &lt;&lt; sp<span class="number">2.</span><span class="built_in">use_count</span>() &lt;&lt; endl;</span><br><span class="line">		sp1-&gt;_pNext = sp2; <span class="comment">//sp1的引用+1 </span></span><br><span class="line">  	sp2-&gt;_pPre = sp1; <span class="comment">//sp2的引用+1</span></span><br><span class="line">    cout &lt;&lt; <span class="string">"sp1.use_count:"</span> &lt;&lt; sp<span class="number">1.</span><span class="built_in">use_count</span>() &lt;&lt; endl;</span><br><span class="line">    cout &lt;&lt; <span class="string">"sp2.use_count:"</span> &lt;&lt; sp<span class="number">2.</span><span class="built_in">use_count</span>() &lt;&lt; endl;</span><br><span class="line">}</span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">main</span><span class="params">()</span> </span>{</span><br><span class="line">    <span class="built_in">Funtest</span>();</span><br><span class="line">    <span class="built_in">system</span>(<span class="string">"pause"</span>);</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">}</span><br><span class="line"><span class="comment">//输出结果 </span></span><br><span class="line"><span class="comment">//Node()</span></span><br><span class="line"><span class="comment">//Node() </span></span><br><span class="line"><span class="comment">//sp1.use_count:1</span></span><br><span class="line"><span class="comment">//sp2.use_count:1</span></span><br><span class="line"><span class="comment">//sp1.use_count:2</span></span><br><span class="line"><span class="comment">//sp2.use_count:2</span></span><br></pre></td></tr></tbody></table></figure>
+
+<p>从上面shared_ptr的实现中我们知道了只有当引用计数减减之后等于0，析构时才会释放对象，而上述情 况造成了一个僵局，那就是析构对象时先析构sp2,可是由于sp2的空间sp1还在使用中，所以sp2.use_count 减减之后为1，不释放，sp1也是相同的道理，由于sp1的空间sp2还在使用中，所以sp1.use_count减减之 后为1，也不释放。sp1等着sp2先释放，sp2等着sp1先释放,二者互不相让，导致最终都没能释放，内存泄 漏。</p>
+<p>在实际编程过程中，应该尽量避免出现智能指针之前相互指向的情况，如果不可避免，可以使用使用弱指针——weak_ptr，它不增加引用计数，只要出了作用域就会自动析构。</p>
+<p>弱指针用于专门解决shared_ptr循环引用的问题，weak_ptr不会修改引用计数，即其存在与否并不影响对 象的引用计数器。循环引用就是:两个对象互相使用一个shared_ptr成员变量指向对方。弱引用并不对对 象的内存进行管理，在功能上类似于普通指针，然而一个比较大的区别是，弱引用能检测到所管理的对 象是否已经被释放，从而避免访问非法内存。</p>
+<h2 id="二-C-11重难点"><a href="#二-C-11重难点" class="headerlink" title="二.C++ 11重难点"></a>二.C++ 11重难点</h2><h3 id="1-Lambda表达式"><a href="#1-Lambda表达式" class="headerlink" title="1.Lambda表达式"></a>1.Lambda表达式</h3><h4 id="1-lambda定义"><a href="#1-lambda定义" class="headerlink" title="(1).lambda定义"></a>(1).lambda定义</h4><ul>
+<li><p><code>lambda表达式</code>：是一个可调用的代码单元，即一个未命名的<code>内联函数</code>。它有捕获列表、返回类型、形参列表、函数体，但可定义在函数内部（函数不可）</p>
+</li>
+<li><p>lambda表达式形式:</p>
+<figure class="highlight c++"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">[capture list](parameter list) -&gt; <span class="keyword">return</span> type {function body}</span><br></pre></td></tr></tbody></table></figure>
+
+<ul>
+<li>capture list是<code>捕获列表</code>，是lambda所在函数中定义的局部变量的列表</li>
+<li>parameter list、return type、function body与函数一样</li>
+<li>lambda必须用<code>尾置返回</code></li>
+<li>可忽略形参列表和返回类型，但必须有捕获列表和函数体</li>
+<li>若函数体不是单一return语句，则必须指定返回类型（否则为void）</li>
+</ul>
+</li>
+<li><p>可用变量定义的形式定义lambda，用函数调用的方式使用lambda</p>
+<figure class="highlight c++"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">auto</span> f=[]{<span class="keyword">return</span> <span class="number">42</span>;};</span><br><span class="line">cout&lt;&lt;<span class="built_in">f</span>()&lt;&lt;endl; <span class="comment">//用调用算符使用lambda</span></span><br></pre></td></tr></tbody></table></figure></li>
+</ul>
+<h4 id="2-向lambda传递参数"><a href="#2-向lambda传递参数" class="headerlink" title="(2).向lambda传递参数"></a>(2).向lambda传递参数</h4><ul>
+<li><p>调用lambda时用实参初始化形参的方式和函数相同，但<code>lambda不可有默认实参</code></p>
+</li>
+<li><p>lambda将局部变量包含在捕获列表中来访问它们，只有被捕获到的局部变量才可在函数体中被使用。但只有<code>局部非static变量</code>才需要捕获，<code>lambda可直接使用定义在当前函数之外的名字和局部static变量</code></p>
+<figure class="highlight c++"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">[sz](<span class="type">const</span> string &amp;a){</span><br><span class="line">  <span class="keyword">return</span> a.<span class="built_in">size</span>() &gt; sz;</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+</li>
+<li><p><code>for_each</code> 算法：</p>
+<ul>
+<li>作用：对输入范围的每个元素调用给定的可调用对象</li>
+<li>用法：有3个参数，前2个是输入范围，第3个是可调用对象</li>
+</ul>
+</li>
+<li><p>例子：计数并按字典序打印长度&gt;=给定值的字符串</p>
+<figure class="highlight c++"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">elimDups</span><span class="params">(vector&lt;string&gt; &amp;words)</span></span>{</span><br><span class="line">    <span class="built_in">sort</span>(words.<span class="built_in">begin</span>(), words.<span class="built_in">end</span>());</span><br><span class="line">    <span class="keyword">auto</span> end_unique = <span class="built_in">unique</span>(words.<span class="built_in">begin</span>(), words.<span class="built_in">end</span>());</span><br><span class="line">    words.<span class="built_in">erase</span>(end_unique, words.<span class="built_in">end</span>());</span><br><span class="line">}</span><br><span class="line"><span class="comment">//计数并按字典序打印vector&lt;string&gt;中长度&gt;=给定值的sz</span></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">biggies</span><span class="params">(vector&lt;string&gt; &amp;words, vector&lt;string&gt;::size_type sz)</span></span>{</span><br><span class="line">    <span class="comment">//按字典排序并消除重复</span></span><br><span class="line">    <span class="built_in">elimDups</span>(words);</span><br><span class="line">    <span class="comment">//对字符串长度做稳定排序，长度相同的单词维持字典序</span></span><br><span class="line">    <span class="comment">//用lambda做二元谓词比较两元素</span></span><br><span class="line">    <span class="built_in">stable_sort</span>(words.<span class="built_in">begin</span>(),words.<span class="built_in">end</span>(),</span><br><span class="line">                [](<span class="type">const</span> string &amp;a, <span class="type">const</span> string &amp;b){<span class="keyword">return</span> a.<span class="built_in">size</span>()&lt;b.<span class="built_in">size</span>();});</span><br><span class="line">    <span class="comment">//找到第一个长度&gt;=sz的元素</span></span><br><span class="line">    <span class="comment">//用lambda做一元谓词比较元素和变量</span></span><br><span class="line">    <span class="keyword">auto</span> wc=<span class="built_in">find_if</span>(words.<span class="built_in">begin</span>(),words.<span class="built_in">end</span>(), [sz](<span class="type">const</span> string &amp;a){<span class="keyword">return</span> a.<span class="built_in">size</span>()&gt;=sz;});</span><br><span class="line">    <span class="comment">//计算长度&gt;=sz的元素数目</span></span><br><span class="line">    <span class="keyword">auto</span> count=words.<span class="built_in">end</span>()-wc;</span><br><span class="line">    cout&lt;&lt;count&lt;&lt;<span class="string">" "</span>&lt;&lt; ((count&gt;<span class="number">1</span>)?(<span class="string">"words"</span>):(<span class="string">"word"</span>) ) &lt;&lt;<span class="string">" of length "</span>&lt;&lt;sz&lt;&lt;<span class="string">" or longer"</span> &lt;&lt;endl;</span><br><span class="line">    <span class="comment">//打印长度&gt;=sz的元素，每个元素后接一个空格</span></span><br><span class="line">    <span class="comment">//用lambda遍历元素</span></span><br><span class="line">    for_each(wc,words.<span class="built_in">end</span>(),</span><br><span class="line">             [](<span class="type">const</span> string &amp;s){cout&lt;&lt;s&lt;&lt;<span class="string">" "</span>;});</span><br><span class="line">    cout&lt;&lt;endl;</span><br><span class="line">}</span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">main</span><span class="params">()</span></span>{</span><br><span class="line">    vector&lt;string&gt; words {<span class="string">"fox"</span>, <span class="string">"jumps"</span>, <span class="string">"the"</span>, <span class="string">"over"</span>, <span class="string">"turtle"</span>, <span class="string">"quick"</span>, <span class="string">"red"</span>, <span class="string">"red"</span>, <span class="string">"slow"</span>, <span class="string">"the"</span>};</span><br><span class="line">    <span class="built_in">biggies</span>(words,<span class="number">4</span>);</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure></li>
+</ul>
+<h4 id="3-lambda捕获和返回"><a href="#3-lambda捕获和返回" class="headerlink" title="(3).lambda捕获和返回"></a>(3).lambda捕获和返回</h4><ul>
+<li><p><code>lambda实际是匿名类</code>：定义lambda时，编译器生成一个与其对应的未命名的类类型</p>
+</li>
+<li><p>向函数传递lambda时，同时定义了一个新类型和该类型的一个对象，传递的参数就是该对象。用auto定义一个lambda初始化的变量时，该变量也是这种对象。从lambda生成的类都有一个数据成员对应捕获到的变量。lambda的数据成员在创建时被初始化，即<code>被捕获的变量用于初始化lambda匿名对象的成员</code></p>
+</li>
+<li><p>lambda捕获变量的方式可用<code>值捕获</code>和<code>引用捕获</code></p>
+<ul>
+<li><p><code>值捕获</code>存在拷贝，且值捕获的变量是在lambda创建（lambda对象构造）时被拷贝，而不是调用时拷贝，故创建lambda后修改捕获变量不影响lambda中的值。</p>
+</li>
+<li><p>使用<code>引用捕获</code>时必须确保lambda执行时被捕获变量存在。例如，从函数中返回lambda时不可用引用捕获。最佳实践：尽量减少捕获的变量，且避免捕获指针/引用</p>
+</li>
+</ul>
+<figure class="highlight c++"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">fcn1</span><span class="params">()</span></span>{</span><br><span class="line">    <span class="type">size_t</span> v=<span class="number">42</span>;</span><br><span class="line">    <span class="keyword">auto</span> f1=[v]{<span class="keyword">return</span> v;};     <span class="comment">//值捕获，创建lambda（构造lambda对象）</span></span><br><span class="line">    <span class="keyword">auto</span> f2=[&amp;v]{<span class="keyword">return</span> v;};    <span class="comment">//引用捕获，创建lambda（构造lambda对象）</span></span><br><span class="line">    v=<span class="number">0</span>;                        <span class="comment">//改变捕获变量的值</span></span><br><span class="line">    <span class="keyword">auto</span> j1=<span class="built_in">f1</span>();               <span class="comment">//j1是42，因为lambda创建时保存了捕获变量的拷贝</span></span><br><span class="line">    <span class="keyword">auto</span> j2=<span class="built_in">f2</span>();               <span class="comment">//j2是0，因为lambda创建时未拷贝捕获变量，只是建立了引用</span></span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<ul>
+<li><code>隐式捕获</code>：可让编译器根据lambda函数体中的代码来推断要捕获哪些变量。<ul>
+<li>使用隐式捕获，需在捕获列表中写<code>&amp;</code>或<code>=</code>，分别对应引用捕获和值捕获</li>
+<li>可混合使用隐式捕获和显式捕获，只需在捕获列表中写<code>&amp;</code>或<code>=</code>，再写显式捕获的变量，要求：<ul>
+<li>捕获列表第一个元素必须是<code>&amp;</code>或<code>=</code>，指定默认为引用/值捕获</li>
+<li>显式捕获的变量必须使用与隐式捕获不同的方式。即隐式引用捕获，则显式必须为值捕获，反之亦然</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<figure class="highlight c++"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">print_strings</span><span class="params">(vector&lt;strin&gt; &amp;words, ostream &amp;os=cout, <span class="type">char</span> c=<span class="string">' '</span>)</span></span>{</span><br><span class="line">    <span class="comment">//c为显式值捕获，其他变量（os）为隐式引用捕获</span></span><br><span class="line">    for_each(words.<span class="built_in">begin</span>(),words.<span class="built_in">end</span>(),</span><br><span class="line">             [&amp;,c](<span class="type">const</span> string &amp;s){os&lt;&lt;s&lt;&lt;c;});</span><br><span class="line">    <span class="comment">//os为显式引用捕获，其他变量（c）为隐式值捕获，等价于上一行</span></span><br><span class="line">    for_each(words.<span class="built_in">begin</span>(),words.<span class="built_in">end</span>(),</span><br><span class="line">             [=,&amp;os](<span class="type">const</span> string &amp;s){os&lt;&lt;s&lt;&lt;c;});</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure></li>
+</ul>
+<ul>
+<li><p>若lambda函数体包含return之外的任何语句，则编译器推断它返回void，返回void的函数不能返回值，除非手动指定返回类型</p>
+<ul>
+<li><p><code>transform</code>算法：</p>
+<ul>
+<li>作用：对输入范围的每个元素调用可调用对象，将返回值依次写入目标序列</li>
+<li>用法：有4个参数，前2个是输入范围，第3个是目的序列的首迭代器，第4个是可调用对象</li>
+</ul>
+</li>
+<li><p>transform写入的目标序列和输入序列可以相同，即可以向原址写入</p>
+<blockquote>
+<p>transform和for_each的区别：</p>
+<ul>
+<li>transform可进行非原址写，for_each不可（除非在可调用对象内写非原址目标）</li>
+<li>transform通过可调用对象的返回值写入，for_each在可调用对象内部操作</li>
+</ul>
+</blockquote>
+</li>
+<li><p>为lambda指定返回类型时，必须使用<code>尾置返回</code></p>
+</li>
+</ul>
+<figure class="highlight c++"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">vector&lt;<span class="type">int</span>&gt; vi={<span class="number">0</span>,<span class="number">1</span>,<span class="number">2</span>,<span class="number">3</span>,<span class="number">4</span>};</span><br><span class="line"><span class="built_in">transform</span>(vi.<span class="built_in">begin</span>(),vi.<span class="built_in">end</span>(),vi.<span class="built_in">begin</span>(),</span><br><span class="line">          [](<span class="type">int</span> i) {<span class="keyword">if</span>(i&lt;<span class="number">0</span>) ? -i : i;});</span><br><span class="line"><span class="comment">//错误,不能推断lambda的返回类型</span></span><br><span class="line"><span class="built_in">transform</span>(vi.<span class="built_in">begin</span>(),vi.<span class="built_in">end</span>(),vi.<span class="built_in">begin</span>(),</span><br><span class="line">          [](<span class="type">int</span> i) {<span class="keyword">if</span>(i&lt;<span class="number">0</span>) <span class="keyword">return</span> -i; <span class="keyword">else</span> <span class="keyword">return</span> i;}); </span><br><span class="line"><span class="comment">//使用尾置返回</span></span><br><span class="line"><span class="built_in">transform</span>(vi.<span class="built_in">begin</span>(),vi.<span class="built_in">end</span>(),vi.<span class="built_in">begin</span>(),</span><br><span class="line">          [](<span class="type">int</span> i)-&gt;<span class="type">int</span>{<span class="keyword">if</span>(i&lt;<span class="number">0</span>) <span class="keyword">return</span> -i; <span class="keyword">else</span> <span class="keyword">return</span> i;}); <span class="comment">//取绝对值</span></span><br></pre></td></tr></tbody></table></figure></li>
+</ul>
+<h4 id="4-参数绑定"><a href="#4-参数绑定" class="headerlink" title="(4).参数绑定"></a>(4).参数绑定</h4><blockquote>
+<ul>
+<li>对于少数地方使用的简单操作用lambda，而多次调用时应该定义函数。</li>
+<li>但对于有捕获列表的lambda，很难用函数替换。因为不能在函数中定义函数，导致不能在不修改形参的前提下使用局部变量（例如标准库算法中的可调用对象，其形参必须固定）。</li>
+</ul>
+<p>基于上述原因，提出了参数绑定。</p>
+</blockquote>
+<h5 id="标准库bind函数"><a href="#标准库bind函数" class="headerlink" title="标准库bind函数"></a>标准库bind函数</h5><ul>
+<li><p>在<code>functional</code>头文件中定义了<code>bind</code>函数，可看作通用的函数适配器。它接受一个可调用对象，生成新的可调用对象来适应原对象的参数列表（即改变可调用对象的调用接口）</p>
+</li>
+<li><p>调用bind的形式为：</p>
+<figure class="highlight c++"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">auto</span> newCallable = <span class="built_in">bind</span>(callable,arg_list);</span><br></pre></td></tr></tbody></table></figure>
+
+<ul>
+<li>callable是可调用对象，arg_list是逗号分隔的参数列表，对应callable的参数</li>
+<li>调用newCallable时，是在用arg_list的参数调用callable</li>
+<li>arg_list中的参数可包含占位符，即<code>_n</code>，其中<code>n</code>是传入newCallable的第n个参数</li>
+</ul>
+</li>
+</ul>
+<figure class="highlight c++"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">bool</span> <span class="title">check_size</span><span class="params">(<span class="type">const</span> string &amp;s, string::size_type sz)</span></span>{</span><br><span class="line">    <span class="keyword">return</span> s.<span class="built_in">size</span>() &gt;= sz;</span><br><span class="line">}</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">main</span><span class="params">()</span></span>{</span><br><span class="line">    vector&lt;string&gt; words {<span class="string">"fox"</span>, <span class="string">"jumps"</span>, <span class="string">"the"</span>, <span class="string">"over"</span>, <span class="string">"turtle"</span>, <span class="string">"quick"</span>, <span class="string">"red"</span>, <span class="string">"red"</span>, <span class="string">"slow"</span>, <span class="string">"the"</span>};</span><br><span class="line">    <span class="keyword">auto</span> wc = <span class="built_in">find_if</span>(words.<span class="built_in">begin</span>(), words.<span class="built_in">end</span>(), <span class="built_in">bind</span>(check_size, std::placeholders::_1, <span class="number">4</span>));</span><br><span class="line">    cout &lt;&lt; words.<span class="built_in">end</span>() - wc &lt;&lt; endl;</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<h5 id="绑定check-size的sz参数"><a href="#绑定check-size的sz参数" class="headerlink" title="绑定check_size的sz参数"></a>绑定check_size的sz参数</h5><ul>
+<li>使用<code>bind</code>生成一个调用<code>check_size</code>的对象。</li>
+</ul>
+<figure class="highlight c++"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">bool</span> <span class="title">check_size</span><span class="params">(<span class="type">const</span> string &amp;s, string::size_type sz)</span></span>{</span><br><span class="line">    <span class="keyword">return</span> s.<span class="built_in">size</span>() &gt;= sz;</span><br><span class="line">}</span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">main</span><span class="params">()</span></span>{</span><br><span class="line">		<span class="keyword">auto</span> check6 = <span class="built_in">bind</span>(check_size,std::placeholders::_1,<span class="number">6</span>);</span><br><span class="line">		string s = <span class="string">"hello"</span>;</span><br><span class="line">  	<span class="type">bool</span> b1 = <span class="built_in">check6</span>(s);</span><br><span class="line">  	cout &lt;&lt; b1 &lt;&lt; endl;</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<blockquote>
+<p>此bind调用生成一个可调用对象，将 check_size 的第二个参数绑定到 sz 的值。当 find_if 对words中的string调用这个对象时，这些对象会调用 check_size ，将给定的string和sz传递给它。因此 find_if 可以有效的输入序列中每个string调用check_size，实现string大小和size的对比。</p>
+</blockquote>
+<ul>
+<li>名字<code>_n</code>都定义于<code>placeholders</code>命名空间中，该命名空间又定义于<code>std</code>命名空间。同时，placeholders命名空间定义于<code>functional</code>头文件</li>
+<li>使用<code>using namespace namespace_name</code>来说明希望所有来自namespace_name的名字都可在程序中直接使用</li>
+</ul>
+<figure class="highlight c++"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">auto</span> g=<span class="built_in">bind</span>(f,a,b,_2,c,_1); <span class="comment">//对g的定义，abc类似于lambda的捕获列表</span></span><br><span class="line"><span class="built_in">g</span>(X,Y);                   <span class="comment">//调用g</span></span><br><span class="line"><span class="built_in">f</span>(a,b,Y,c,X);             <span class="comment">//等价于调用f</span></span><br></pre></td></tr></tbody></table></figure>
+
+<h5 id="绑定引用参数"><a href="#绑定引用参数" class="headerlink" title="绑定引用参数"></a>绑定引用参数</h5><ul>
+<li>默认下，bind的非占位符参数被<code>拷贝</code>到可调用对象中，类似lambda中的<code>值捕获</code></li>
+<li>用<code>ref</code>函数可实现lambda中的<code>引用捕获</code></li>
+<li><code>ref</code>函数返回一个对象，该对象中包含输入的引用，且可拷贝。若需要包含const引用，则应用<code>cref</code>函数。ref和cref也定义于<code>functional</code>头文件中</li>
+<li>例子：用bind和ref捕获引用</li>
+</ul>
+<figure class="highlight c++"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/* 上下文：os是局部变量，引用输出流；c是局部变量，类型为char */</span></span><br><span class="line"><span class="comment">//lambda实现，引用捕获输出流，值捕获字符</span></span><br><span class="line">for_each(words.<span class="built_in">begin</span>(),words.<span class="built_in">end</span>(),</span><br><span class="line">         [&amp;os,c](cons string &amp;s){os&lt;&lt;s&lt;&lt;c;});</span><br><span class="line"><span class="comment">//函数实现，要被标准库算法使用，需要用bind捕获os和c</span></span><br><span class="line"><span class="function">ostream &amp;<span class="title">print</span><span class="params">(ostream &amp;os, <span class="type">const</span> string &amp;s, <span class="type">char</span> c)</span></span>{</span><br><span class="line">    <span class="keyword">return</span> os&lt;&lt;s&lt;&lt;c;</span><br><span class="line">}</span><br><span class="line"><span class="comment">//错，os不可拷贝，不能用默认方式bind</span></span><br><span class="line">for_each(words.<span class="built_in">begin</span>(),words.<span class="built_in">end</span>(),</span><br><span class="line">         <span class="built_in">bind</span>(print,os,_1,<span class="string">' '</span>));</span><br><span class="line"><span class="comment">//对，用ref返回的对象包含os引用且可拷贝</span></span><br><span class="line">for_each(words.<span class="built_in">begin</span>(),words.<span class="built_in">end</span>(),</span><br><span class="line">         <span class="built_in">bind</span>(print,<span class="built_in">ref</span>(os),_1,<span class="string">' '</span>));</span><br></pre></td></tr></tbody></table></figure>
+
+<h3 id="2-右值与移动构造函数"><a href="#2-右值与移动构造函数" class="headerlink" title="2.右值与移动构造函数"></a>2.右值与移动构造函数</h3><h3 id="3-正则表达式"><a href="#3-正则表达式" class="headerlink" title="3.正则表达式"></a>3.正则表达式</h3>
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/C/" rel="tag"># C++</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2025/08/23/STL%E9%87%8D%E6%8B%BE%E4%B9%8B%E6%97%85/" rel="next" title="STL重拾之旅">
+                <i class="fa fa-chevron-left"></i> STL重拾之旅
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2026/03/20/Android%E4%B8%AD%E7%9A%84IO%E5%A4%8D%E7%94%A8/" rel="prev" title="Android中的IO复用">
+                Android中的IO复用 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="/images/head.jpg"
+                alt="" />
+            
+              <p class="site-author-name" itemprop="name"></p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/%7C%7C%20archive">
+              
+                  <span class="site-state-item-count">30</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">11</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">24</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+            <div class="feed-link motion-element">
+              <a href="/atom.xml" rel="alternate">
+                <i class="fa fa-rss"></i>
+                RSS
+              </a>
+            </div>
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/ZYBO-o" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-github"></i>GitHub</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://www.zhihu.com/people/lin-li-yike-cao/activities" target="_blank" title="ZhiHu">
+                      
+                        <i class="fa fa-fw fa-globe"></i>ZhiHu</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+            <div class="links-of-blogroll motion-element links-of-blogroll-block">
+              <div class="links-of-blogroll-title">
+                <i class="fa  fa-fw fa-link"></i>
+                Links
+              </div>
+              <ul class="links-of-blogroll-list">
+                
+                  <li class="links-of-blogroll-item">
+                    <a href="https://blog.schwarzeni.com/" title="Schwarzeni" target="_blank">Schwarzeni</a>
+                  </li>
+                
+                  <li class="links-of-blogroll-item">
+                    <a href="https://www.qcmoke.cn/" title="qcmoke" target="_blank">qcmoke</a>
+                  </li>
+                
+                  <li class="links-of-blogroll-item">
+                    <a href="https://www.zhoujianguo.ltd/" title="ZhouJianGuo" target="_blank">ZhouJianGuo</a>
+                  </li>
+                
+                  <li class="links-of-blogroll-item">
+                    <a href="https://hishiro-xiao.github.io/" title="hishiro-xiao" target="_blank">hishiro-xiao</a>
+                  </li>
+                
+              </ul>
+            </div>
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%80-C-%E4%B8%AD%E7%9A%84%E8%B5%84%E6%BA%90%E7%AE%A1%E7%90%86"><span class="nav-text">一.C++中的资源管理</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E7%A8%8B%E5%BA%8F%E7%9A%84%E5%AD%98%E5%82%A8%E7%A9%BA%E9%97%B4%E5%B8%83%E5%B1%80"><span class="nav-text">1.程序的存储空间布局</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-%E5%A0%86%EF%BC%8C%E6%A0%88-%E4%B8%8E-RAII"><span class="nav-text">2.堆，栈 与 RAII</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-%E6%99%BA%E8%83%BD%E6%8C%87%E9%92%88%E7%9A%84%E5%BC%95%E5%85%A5"><span class="nav-text">3.智能指针的引入</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#1-%E4%BB%80%E4%B9%88%E6%98%AF%E6%99%BA%E8%83%BD%E6%8C%87%E9%92%88"><span class="nav-text">(1).什么是智能指针</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-%E6%9C%80%E5%B8%B8%E7%94%A8%E7%9A%84%E6%99%BA%E8%83%BD%E6%8C%87%E9%92%88"><span class="nav-text">(2).最常用的智能指针</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-%E6%99%BA%E8%83%BD%E6%8C%87%E9%92%88%E7%9A%84%E7%BA%BF%E7%A8%8B%E5%AE%89%E5%85%A8%E9%97%AE%E9%A2%98"><span class="nav-text">(4).智能指针的线程安全问题</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-%E6%99%BA%E8%83%BD%E6%8C%87%E9%92%88%E5%87%BA%E7%8E%B0%E7%9A%84%E5%BE%AA%E7%8E%AF%E5%BC%95%E7%94%A8%E9%97%AE%E9%A2%98"><span class="nav-text">(5).智能指针出现的循环引用问题</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%8C-C-11%E9%87%8D%E9%9A%BE%E7%82%B9"><span class="nav-text">二.C++ 11重难点</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-Lambda%E8%A1%A8%E8%BE%BE%E5%BC%8F"><span class="nav-text">1.Lambda表达式</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#1-lambda%E5%AE%9A%E4%B9%89"><span class="nav-text">(1).lambda定义</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-%E5%90%91lambda%E4%BC%A0%E9%80%92%E5%8F%82%E6%95%B0"><span class="nav-text">(2).向lambda传递参数</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-lambda%E6%8D%95%E8%8E%B7%E5%92%8C%E8%BF%94%E5%9B%9E"><span class="nav-text">(3).lambda捕获和返回</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-%E5%8F%82%E6%95%B0%E7%BB%91%E5%AE%9A"><span class="nav-text">(4).参数绑定</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#%E6%A0%87%E5%87%86%E5%BA%93bind%E5%87%BD%E6%95%B0"><span class="nav-text">标准库bind函数</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%E7%BB%91%E5%AE%9Acheck-size%E7%9A%84sz%E5%8F%82%E6%95%B0"><span class="nav-text">绑定check_size的sz参数</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%E7%BB%91%E5%AE%9A%E5%BC%95%E7%94%A8%E5%8F%82%E6%95%B0"><span class="nav-text">绑定引用参数</span></a></li></ol></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-%E5%8F%B3%E5%80%BC%E4%B8%8E%E7%A7%BB%E5%8A%A8%E6%9E%84%E9%80%A0%E5%87%BD%E6%95%B0"><span class="nav-text">2.右值与移动构造函数</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-%E6%AD%A3%E5%88%99%E8%A1%A8%E8%BE%BE%E5%BC%8F"><span class="nav-text">3.正则表达式</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Zcorpius</span>
+
+  
+</div>
+
+<!--
+
+
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Muse</a> v5.1.4</div>
+
+
+-->
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+          <span id="scrollpercent"><span>0</span>%</span>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+  
+
+
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@9/dist/mermaid.min.js"></script>
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: 'default'
+    });
+  </script>
+  
+  
+
+  
+
+
+<!-- Nexora 风格代码块增强：顶栏 + 语言标签 + 复制按钮 -->
+<script type="text/javascript" src="/js/src/nexora-code.js"></script>
+<!-- Nexora 风格 TOC scroll-spy（IntersectionObserver，替代 Bootstrap scrollspy） -->
+<script type="text/javascript" src="/js/src/nexora-toc.js"></script>
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"debug":false,"model":{"jsonPath":"https://cdn.jsdelivr.net/gh/evrstr/live2d-widget-models/live2d_evrstr/mashiro_shifuku/model.json"},"display":{"position":"left","width":200,"height":500},"mobile":{"show":true},"encrypt":{"enable":true},"log":false});</script></body>
+</html>
+
+<!-- 页面点击小红心 -->
+<script type="text/javascript" src="/js/src/love.js"></script>
