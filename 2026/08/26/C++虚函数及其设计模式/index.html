@@ -1,0 +1,1725 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next muse use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+<script>
+    (function(){
+        if(''){
+            if (prompt('请输入密码') !== ''){
+                alert('密码错误');
+                history.back();
+            }
+        }
+    })();
+</script>
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/head.jpg?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/head.jpg?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/head.jpg?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/head.jpg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="C++," />
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="Zcorpius's Blog" type="application/atom+xml" />
+
+
+
+
+
+
+<meta name="description" content="第 0 章 引子flush() 为什么能调到 InputDispatcher::notifyMotion，一切从 InputReader 主循环末尾的这一行开始： 1mQueuedListener.flush();  从这行代码出发，事件会一路走到 InputDispatcher::notifyMotion ： 1234mQueuedListener.flush()  └─ UnwantedInt">
+<meta property="og:type" content="article">
+<meta property="og:title" content="C++ 虚函数及其设计模式">
+<meta property="og:url" content="https://zcorpius.github.io/2026/08/26/C++%E8%99%9A%E5%87%BD%E6%95%B0%E5%8F%8A%E5%85%B6%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/index.html">
+<meta property="og:site_name" content="Zcorpius&#39;s Blog">
+<meta property="og:description" content="第 0 章 引子flush() 为什么能调到 InputDispatcher::notifyMotion，一切从 InputReader 主循环末尾的这一行开始： 1mQueuedListener.flush();  从这行代码出发，事件会一路走到 InputDispatcher::notifyMotion ： 1234mQueuedListener.flush()  └─ UnwantedInt">
+<meta property="og:locale">
+<meta property="article:published_time" content="2026-08-26T13:39:41.000Z">
+<meta property="article:modified_time" content="2026-08-26T13:47:07.089Z">
+<meta property="article:author" content="Zcorpius">
+<meta property="article:tag" content="C++">
+<meta name="twitter:card" content="summary">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Muse',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":true,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://Zcorpius.github.io/2026/08/26/C++虚函数及其设计模式/"/>
+
+
+
+
+
+  <title>C++ 虚函数及其设计模式 | Zcorpius's Blog</title>
+  
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 7.3.0">
+<style>.github-emoji { position: relative; display: inline-block; width: 1.2em; min-height: 1.2em; overflow: hidden; vertical-align: top; color: transparent; }  .github-emoji > span { position: relative; z-index: 10; }  .github-emoji img, .github-emoji .fancybox { margin: 0 !important; padding: 0 !important; border: none !important; outline: none !important; text-decoration: none !important; user-select: none !important; cursor: auto !important; }  .github-emoji img { height: 1.2em !important; width: 1.2em !important; position: absolute !important; left: 50% !important; top: 50% !important; transform: translate(-50%, -50%) !important; user-select: none !important; cursor: auto !important; } .github-emoji-fallback { color: inherit; } .github-emoji-fallback img { opacity: 0 !important; }</style>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Zcorpius's Blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">追寻自我的崎岖路上从不缺勇敢。</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-路径">
+          <a href="/top/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-fire"></i> <br />
+            
+            路径
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://Zcorpius.github.io/2026/08/26/C++%E8%99%9A%E5%87%BD%E6%95%B0%E5%8F%8A%E5%85%B6%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/head.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Zcorpius's Blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">C++ 虚函数及其设计模式</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2026-08-26T21:39:41+08:00">
+                2026-08-26
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/C/" itemprop="url" rel="index">
+                    <span itemprop="name">C++</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+            <div class="post-wordcount">
+              
+                
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-file-word-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">字数统计&#58;</span>
+                
+                <span title="字数统计">
+                  10.3k
+                </span>
+              
+
+              
+                <span class="post-meta-divider">|</span>
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-clock-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">阅读时长 &asymp;</span>
+                
+                <span title="阅读时长">
+                  40
+                </span>
+              
+            </div>
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="第-0-章-引子"><a href="#第-0-章-引子" class="headerlink" title="第 0 章 引子"></a>第 0 章 引子</h1><p><code>flush()</code> 为什么能调到 <code>InputDispatcher::notifyMotion</code>，一切从 InputReader 主循环末尾的这一行开始：</p>
+<figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">mQueuedListener.<span class="built_in">flush</span>();</span><br></pre></td></tr></tbody></table></figure>
+
+<p>从这行代码出发，事件会一路走到 <code>InputDispatcher::notifyMotion</code> ：</p>
+<figure class="highlight lua"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">mQueuedListener.<span class="built_in">flush</span>()</span><br><span class="line">  └─ UnwantedInteractionBlocker::notifyMotion   （掌纹过滤）</span><br><span class="line">      └─ InputProcessor::notifyMotion           （HAL 分类）</span><br><span class="line">          └─ InputDispatcher::notifyMotion      （入 mInboundQueue + 写 eventfd）</span><br></pre></td></tr></tbody></table></figure>
+
+<p>问题来了：<strong><code>flush()</code> 的代码里找不到 <code>InputDispatcher</code> 这四个字，它凭什么知道下一站是谁？</strong> 把 <code>flush()</code> 翻开看：</p>
+<figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">QueuedInputListener::flush</span><span class="params">()</span> </span>{</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">const</span> NotifyArgs&amp; args : mArgsQueue) {</span><br><span class="line">        mInnerListener.<span class="built_in">notify</span>(args);        <span class="comment">// ← 就这一行</span></span><br><span class="line">    }</span><br><span class="line">    mArgsQueue.<span class="built_in">clear</span>();</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<p>它只调了 <code>mInnerListener</code> 上的 <code>notify()</code>。而 <code>mInnerListener</code> 的声明是：</p>
+<figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">InputListenerInterface&amp; mInnerListener;    <span class="comment">// 一个"接口的引用"</span></span><br></pre></td></tr></tbody></table></figure>
+
+<p>答案分两半：</p>
+<ul>
+<li><strong>语法层（C++ 机制）</strong>：<code>mInnerListener</code> 的静态类型是接口，但虚函数调用不看静态类型——运行期查对象实际的 vtable，选出真正的实现。这叫<strong>动态绑定</strong>。</li>
+<li><strong>设计层（设计模式）</strong>：vtable 里查到谁，取决于构造期”谁被接进了这根引用”。inputflinger 在 <code>InputManager</code> 构造时把 Dispatcher→Processor→Blocker 层层包裹成链——这是 Decorator/职责链的排布，语言无关。</li>
+</ul>
+<p>一句话：<strong>虚函数机制负责”运行期找到该执行的函数”，设计模式负责”把类排成你想要的形状”</strong>。前者是 C++ 给的零件，后者是你用零件搭的结构。</p>
+<hr>
+<h1 id="第-1-章-C-语法层：虚函数到底做了什么"><a href="#第-1-章-C-语法层：虚函数到底做了什么" class="headerlink" title="第 1 章 C++ 语法层：虚函数到底做了什么"></a>第 1 章 C++ 语法层：虚函数到底做了什么</h1><h2 id="1-1-没有虚函数的世界：静态绑定"><a href="#1-1-没有虚函数的世界：静态绑定" class="headerlink" title="1.1 没有虚函数的世界：静态绑定"></a>1.1 没有虚函数的世界：静态绑定</h2><p>先看默认世界。C++ 的普通成员函数，<strong>调用哪个函数在编译期就定死了</strong>（静态绑定 / static binding / early binding）：</p>
+<figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">Reader</span> {</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">loop</span><span class="params">()</span> </span>{ <span class="built_in">dispatch</span>(); }        <span class="comment">// 编译器直接生成 call Reader::dispatch 的机器码</span></span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">dispatch</span><span class="params">()</span> </span>{ <span class="comment">/* ... */</span> }</span><br><span class="line">};</span><br></pre></td></tr></tbody></table></figure>
+
+<p><code>loop()</code> 里的 <code>dispatch()</code> 在编译成机器码时就被写死为 <code>call Reader::dispatch</code>——一条直接调用，没有第二次选择的机会。</p>
+<p>这在”一个类自己用自己”时毫无问题。但设想 inputflinger 的需求：</p>
+<figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 我想要的写法（伪代码）：</span></span><br><span class="line"><span class="function">InputReader <span class="title">reader</span><span class="params">(<span class="comment">/* 下一站是谁，运行时才确定 */</span>)</span></span>;</span><br><span class="line">reader.<span class="built_in">loopOnce</span>();        <span class="comment">// 事件加工完，要交给"下一站"——可能是 Blocker，也可能是 Dispatcher</span></span><br></pre></td></tr></tbody></table></figure>
+
+<p>“下一站”是个<strong>变量</strong>，不是常量。静态绑定给不了：它只能绑定到编译期已知的函数。要跨过这条线，需要运行期的选择机制——虚函数。</p>
+<h2 id="1-2-virtual：把”选函数”推迟到运行期"><a href="#1-2-virtual：把”选函数”推迟到运行期" class="headerlink" title="1.2 virtual：把”选函数”推迟到运行期"></a>1.2 virtual：把”选函数”推迟到运行期</h2><p>给函数加上 <code>virtual</code>，语义就从”编译期定死”变成”<strong>运行期按对象的实际类型选</strong>“：</p>
+<figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">InputListenerInterface</span> {</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="type">void</span> <span class="title">notifyMotion</span><span class="params">(<span class="type">const</span> NotifyMotionArgs&amp; args)</span></span>;   <span class="comment">// 虚函数</span></span><br><span class="line">};</span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">UnwantedInteractionBlocker</span> : <span class="keyword">public</span> InputListenerInterface {</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">notifyMotion</span><span class="params">(<span class="type">const</span> NotifyMotionArgs&amp; args)</span> <span class="keyword">override</span></span>;  <span class="comment">// 覆写（override）</span></span><br><span class="line">};</span><br></pre></td></tr></tbody></table></figure>
+
+<figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">InputListenerInterface&amp; listener = blockerObj;   <span class="comment">// 接口引用，接住一个 Blocker 对象</span></span><br><span class="line">listener.<span class="built_in">notifyMotion</span>(args);</span><br><span class="line"><span class="comment">// 编译器不生成 "call InputListenerInterface::notifyMotion"，</span></span><br><span class="line"><span class="comment">// 而是生成"查这个对象的函数表，取 notifyMotion 槽位再 call"的代码</span></span><br><span class="line"><span class="comment">// → 实际执行 UnwantedInteractionBlocker::notifyMotion</span></span><br></pre></td></tr></tbody></table></figure>
+
+<p>两条铁律（C++ 多态的触发条件，缺一不可）：</p>
+<ol>
+<li><strong>函数必须是 <code>virtual</code></strong>（或 override 了某个 virtual）；</li>
+<li><strong>必须通过指针或引用调用</strong>。直接拿对象本身调用（<code>obj.notifyMotion()</code>）不触发动态绑定——因为对象本身就是完整类型，没有”隐藏身份”可言（详见 2.3）。</li>
+</ol>
+<p>inputflinger 全链路都靠这两条铁律运转：<code>mInnerListener</code> 是<strong>引用</strong>（满足第 2 条），<code>notifyMotion</code> 是<strong>纯虚函数</strong>（满足第 1 条）。</p>
+<h2 id="1-3-纯虚函数与抽象类：C-的-interface"><a href="#1-3-纯虚函数与抽象类：C-的-interface" class="headerlink" title="1.3 纯虚函数与抽象类：C++ 的 interface"></a>1.3 纯虚函数与抽象类：C++ 的 interface</h2><p>看本仓库的真接口：</p>
+<figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">InputListenerInterface</span> {</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="built_in">InputListenerInterface</span>() { }</span><br><span class="line">    <span class="built_in">InputListenerInterface</span>(<span class="type">const</span> InputListenerInterface&amp;) = <span class="keyword">delete</span>;             <span class="comment">// 禁拷贝</span></span><br><span class="line">    InputListenerInterface&amp; <span class="keyword">operator</span>=(<span class="type">const</span> InputListenerInterface&amp;) = <span class="keyword">delete</span>;  <span class="comment">// 禁赋值</span></span><br><span class="line">    <span class="keyword">virtual</span> ~<span class="built_in">InputListenerInterface</span>() { }                                      <span class="comment">// ★ 虚析构</span></span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="type">void</span> <span class="title">notifyInputDevicesChanged</span><span class="params">(<span class="type">const</span> NotifyInputDevicesChangedArgs&amp; args)</span> </span>= <span class="number">0</span>;</span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="type">void</span> <span class="title">notifyConfigurationChanged</span><span class="params">(<span class="type">const</span> NotifyConfigurationChangedArgs&amp; args)</span> </span>= <span class="number">0</span>;</span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="type">void</span> <span class="title">notifyKey</span><span class="params">(<span class="type">const</span> NotifyKeyArgs&amp; args)</span> </span>= <span class="number">0</span>;</span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="type">void</span> <span class="title">notifyMotion</span><span class="params">(<span class="type">const</span> NotifyMotionArgs&amp; args)</span> </span>= <span class="number">0</span>;                <span class="comment">// ★ 本专栏主角</span></span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="type">void</span> <span class="title">notifySwitch</span><span class="params">(<span class="type">const</span> NotifySwitchArgs&amp; args)</span> </span>= <span class="number">0</span>;</span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="type">void</span> <span class="title">notifySensor</span><span class="params">(<span class="type">const</span> NotifySensorArgs&amp; args)</span> </span>= <span class="number">0</span>;</span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="type">void</span> <span class="title">notifyVibratorState</span><span class="params">(<span class="type">const</span> NotifyVibratorStateArgs&amp; args)</span> </span>= <span class="number">0</span>;</span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="type">void</span> <span class="title">notifyDeviceReset</span><span class="params">(<span class="type">const</span> NotifyDeviceResetArgs&amp; args)</span> </span>= <span class="number">0</span>;</span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="type">void</span> <span class="title">notifyPointerCaptureChanged</span><span class="params">(<span class="type">const</span> NotifyPointerCaptureChangedArgs&amp; args)</span> </span>= <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">notify</span><span class="params">(<span class="type">const</span> NotifyArgs&amp; args)</span></span>;       <span class="comment">// ★ 注意：非虚！下一章讲它</span></span><br><span class="line">};</span><br></pre></td></tr></tbody></table></figure>
+
+<p>逐个拆解这份”教科书级接口”的写法：</p>
+<p><strong><code>= 0</code> 纯虚函数</strong>：<code>= 0</code> 表示”本类不提供实现，只立规矩”。九个 <code>notify*</code> 全是纯虚——接口只声明”你必须会什么”，不说”怎么做”。含纯虚函数的类是<strong>抽象类</strong>，<strong>不能实例化</strong>：</p>
+<figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">InputListenerInterface obj;                    <span class="comment">// ✗ 编译错误：abstract class</span></span><br><span class="line">InputListenerInterface&amp; ref = blockerObj;      <span class="comment">// ✓ 引用/指针可以指向派生类对象</span></span><br></pre></td></tr></tbody></table></figure>
+
+<p><strong>C++ 没有(interface)关键字</strong>。Java/C# 有 <code>interface</code>，C++ 的对应物就是”全是纯虚函数的抽象类”。<code>InputListenerInterface</code> 后缀那个 <code>Interface</code> 就是 AOSP 告诉你”这是个接口”的命名约定（同款：<code>InputReaderPolicyInterface</code>、<code>EventHubInterface</code>）。</p>
+<p><strong><code>virtual ~InputListenerInterface() { }</code> 虚析构</strong>：如果析构函数不是虚的，看这个经典事故：</p>
+<figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">InputListenerInterface* p = <span class="keyword">new</span> <span class="built_in">UnwantedInteractionBlocker</span>(dispatcher);</span><br><span class="line"><span class="keyword">delete</span> p;    <span class="comment">// 析构非虚 → 只调 ~InputListenerInterface，Blocker 自己的成员（mQueuedListener 等）</span></span><br><span class="line">             <span class="comment">// 不被析构 → 内存/资源泄漏</span></span><br></pre></td></tr></tbody></table></figure>
+
+<p>规矩：<strong>只要类里有虚函数、且会被基类指针 delete，析构必须是虚的</strong>。接口类顺手把拷贝构造/赋值也 delete 掉（上面第 36-37 行）——接口是”身份”，不是”值”，不该被拷来拷去。</p>
+<p><strong>非虚的 <code>notify(const NotifyArgs&amp;)</code></strong>（<code>:50</code>）：故意非虚——它是个<strong>不变的分发入口</strong>（内部 <code>std::visit</code>，见第 2 章），所有派生类共用同一套分发逻辑，不允许覆写。这是”非虚接口 + 虚实现”的小技巧：入口固定，出口可变。</p>
+<h2 id="1-4-override：让编译器替你查签名"><a href="#1-4-override：让编译器替你查签名" class="headerlink" title="1.4 override：让编译器替你查签名"></a>1.4 override：让编译器替你查签名</h2><p>看 <code>QueuedInputListener</code> 的声明：</p>
+<figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">QueuedInputListener</span> : <span class="keyword">public</span> InputListenerInterface {</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="function"><span class="keyword">explicit</span> <span class="title">QueuedInputListener</span><span class="params">(InputListenerInterface&amp; innerListener)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="type">void</span> <span class="title">notifyKey</span><span class="params">(<span class="type">const</span> NotifyKeyArgs&amp; args)</span> <span class="keyword">override</span></span>;          <span class="comment">// ← override</span></span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="type">void</span> <span class="title">notifyMotion</span><span class="params">(<span class="type">const</span> NotifyMotionArgs&amp; args)</span> <span class="keyword">override</span></span>;    <span class="comment">// ← override</span></span><br><span class="line">    ...</span><br><span class="line">};</span><br></pre></td></tr></tbody></table></figure>
+
+<p>每个覆写函数末尾的 <code>override</code> 是 C++11 引入的<strong>编译期契约检查</strong>。它告诉编译器：”我声明我正在覆写基类的虚函数，如果你找不到签名匹配的，报错。”</p>
+<p>没有它会踩什么坑？虚函数覆写要求<strong>签名严格一致</strong>，差一点就成了一个全新的函数（ hiding，把基类版本藏起来）：</p>
+<figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">Base</span> { <span class="keyword">public</span>: <span class="function"><span class="keyword">virtual</span> <span class="type">void</span> <span class="title">notifyKey</span><span class="params">(<span class="type">const</span> NotifyKeyArgs&amp; args)</span></span>; };</span><br><span class="line"><span class="keyword">class</span> <span class="title class_">Derived</span> : <span class="keyword">public</span> Base {</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">notifyKey</span><span class="params">(<span class="type">const</span> NotifyKeyArgs&amp; args)</span> <span class="type">const</span></span>;    <span class="comment">// 手滑多写了 const</span></span><br><span class="line">    <span class="comment">// 没有 override：编译通过！但这不是覆写，是隐藏。</span></span><br><span class="line">    <span class="comment">// 通过 Base&amp; 调 notifyKey 永远进 Base 的版本，Bug 静默潜伏。</span></span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">notifyKey</span><span class="params">(<span class="type">const</span> NotifyKeyArgs&amp; args)</span> <span class="type">const</span> <span class="keyword">override</span></span>;  <span class="comment">// ✗ 编译错误，当场暴露</span></span><br><span class="line">};</span><br></pre></td></tr></tbody></table></figure>
+
+<p>AOSP14 的这份代码里 <code>override</code> 用得不彻底，新旧风格混用——但<strong>新写的代码必须全加</strong>，这是零成本买保险。</p>
+<h2 id="1-5-vtable-vptr：编译器替你生成的函数指针表"><a href="#1-5-vtable-vptr：编译器替你生成的函数指针表" class="headerlink" title="1.5 vtable / vptr：编译器替你生成的函数指针表"></a>1.5 vtable / vptr：编译器替你生成的函数指针表</h2><p>虚调用在机器层面怎么实现？C++ 标准没规定，但所有主流编译器（GCC/Clang/MSVC）用的方案一致：<strong>每个多态类一张虚函数表（vtable），每个对象里一个表指针（vptr）</strong>。</p>
+<p>以 <code>InputListenerInterface</code> 家族为例，编译器在幕后生成的东西（示意）：</p>
+<figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// ////// 编译器暗中进行的手工活（伪代码还原，Itanium C++ ABI 风格）//////</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 每个类一张静态表，编译期生成，放在只读数据段</span></span><br><span class="line"><span class="comment">// 排列顺序：基类虚函数在前，派生类新增在后</span></span><br><span class="line"><span class="type">static</span> <span class="type">const</span> vtable_for_UnwantedInteractionBlocker[] = {</span><br><span class="line">        <span class="comment">/* slot 0 */</span>  &amp;UnwantedInteractionBlocker::~UnwantedInteractionBlocker,</span><br><span class="line">        <span class="comment">/* slot 1 */</span>  &amp;UnwantedInteractionBlocker::notifyInputDevicesChanged,</span><br><span class="line">        <span class="comment">/* slot 2 */</span>  &amp;UnwantedInteractionBlocker::notifyConfigurationChanged,</span><br><span class="line">        <span class="comment">/* slot 3 */</span>  &amp;UnwantedInteractionBlocker::notifyKey,</span><br><span class="line">        <span class="comment">/* slot 4 */</span>  &amp;UnwantedInteractionBlocker::notifyMotion,        <span class="comment">// ★ flush() 查的就是这个槽</span></span><br><span class="line">        <span class="comment">/* slot 5 */</span>  &amp;UnwantedInteractionBlocker::notifySwitch,</span><br><span class="line">        ...</span><br><span class="line">};</span><br><span class="line"><span class="comment">// QueuedInputListener、InputProcessor、InputDispatcher 各有自己的表，</span></span><br><span class="line"><span class="comment">// 同一槽位各自填各自的实现——"同槽不同人"</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">UnwantedInteractionBlocker</span> {</span><br><span class="line">    <span class="type">const</span> <span class="type">void</span>** __vptr;                 <span class="comment">// ← 每个对象头部隐藏的指针，构造时指向本类的表</span></span><br><span class="line">    InputListenerInterface&amp; mInnerListener;</span><br><span class="line">    ...                                  <span class="comment">// 其余成员</span></span><br><span class="line">};</span><br></pre></td></tr></tbody></table></figure>
+
+<p>于是一次虚调用 <code>mInnerListener.notifyMotion(args)</code> 的机器码语义是（三步）：</p>
+<figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 伪代码：编译器把虚调用翻译成的样子</span></span><br><span class="line">(&amp;mInnerListener)-&gt;__vptr[<span class="number">4</span>](args);</span><br><span class="line"><span class="comment">// ① 从对象头部取 vptr          —— 一次内存读</span></span><br><span class="line"><span class="comment">// ② 取表中第 4 个槽位的函数地址 —— 一次内存读</span></span><br><span class="line"><span class="comment">// ③ 间接 call 该地址            —— 跳转</span></span><br></pre></td></tr></tbody></table></figure>
+
+<p>对照静态绑定的 <code>call 固定地址</code>：虚调用多了<strong>两次内存间接寻址 + 无法内联</strong>。代价明细：</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>静态绑定（普通函数）</th>
+<th>动态绑定（虚函数）</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>目标确定时机</td>
+<td>编译期</td>
+<td>运行期（查表）</td>
+</tr>
+<tr>
+<td>指令数</td>
+<td>1 条直接 call</td>
+<td>取 vptr + 取槽位 + 间接 call</td>
+</tr>
+<tr>
+<td>内联优化</td>
+<td>可以</td>
+<td>基本不可能（编译器不知道运行期会调谁）</td>
+</tr>
+<tr>
+<td>分支预测</td>
+<td>无需</td>
+<td>依赖 CPU 预测 vtable 缓存命中率</td>
+</tr>
+</tbody></table>
+<p>这就是为什么 <code>NotifyArgs</code> 一族<strong>故意不用虚函数</strong>（第 3.3 节详述）：input 事件是每秒成百上千条的热路径，AOSP 用 <code>std::variant</code> + <code>std::visit</code> 换掉了虚分派，把”每事件一个虚对象”改成”扁平数据 + 一次 switch 分发”。<strong>机制没有好坏，只有合不合场景</strong>——这是贯穿本专栏的态度。</p>
+<p>最后一条关键事实：<strong>vptr 在构造时写入，一生不变</strong>。<code>UnwantedInteractionBlocker</code> 对象出生那一刻，它的 vptr 就指向 Blocker 的表，之后无论被什么样的引用接住（<code>InputListenerInterface&amp;</code>、<code>InputListenerInterface*</code>），查表查到的都是 Blocker 的实现。”对象是什么”在构造时已定，虚调用只是<strong>运行期读取这个事实</strong>的手段。</p>
+<hr>
+<h1 id="第-2-章-运行期视角：一次虚调用的完整解剖"><a href="#第-2-章-运行期视角：一次虚调用的完整解剖" class="headerlink" title="第 2 章 运行期视角：一次虚调用的完整解剖"></a>第 2 章 运行期视角：一次虚调用的完整解剖</h1><p>第 1 章讲了零件。现在把 inputflinger 真实代码放上手术台，逐条指令跟踪”事件从 Reader 出门到 Dispatcher”途中的每一次函数选择。</p>
+<h2 id="2-1-InputListenerInterface-的三行关键代码"><a href="#2-1-InputListenerInterface-的三行关键代码" class="headerlink" title="2.1 InputListenerInterface 的三行关键代码"></a>2.1 <code>InputListenerInterface</code> 的三行关键代码</h2><p>整条链的语法根基只有三行（都在 <code>include/InputListener.h</code>）：</p>
+<figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 规矩（纯虚）——"每个实现者都必须会 notifyMotion"</span></span><br><span class="line"><span class="function"><span class="keyword">virtual</span> <span class="type">void</span> <span class="title">notifyMotion</span><span class="params">(<span class="type">const</span> NotifyMotionArgs&amp; args)</span> </span>= <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 入口（非虚）——统一的分发前门，实现写在基类 .cpp 里</span></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">notify</span><span class="params">(<span class="type">const</span> NotifyArgs&amp; args)</span></span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 接线柱（引用）——QueuedInputListener 持有下一站的接口引用</span></span><br><span class="line">InputListenerInterface&amp; mInnerListener;</span><br></pre></td></tr></tbody></table></figure>
+
+<p> <code>notify</code> 实现：</p>
+<figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">InputListenerInterface::notify</span><span class="params">(<span class="type">const</span> NotifyArgs&amp; generalArgs)</span> </span>{</span><br><span class="line">    Visitor v{</span><br><span class="line">            [&amp;](<span class="type">const</span> NotifyInputDevicesChangedArgs&amp; args) { <span class="built_in">notifyInputDevicesChanged</span>(args); },</span><br><span class="line">            [&amp;](<span class="type">const</span> NotifyConfigurationChangedArgs&amp; args) { <span class="built_in">notifyConfigurationChanged</span>(args); },</span><br><span class="line">            [&amp;](<span class="type">const</span> NotifyKeyArgs&amp; args) { <span class="built_in">notifyKey</span>(args); },</span><br><span class="line">            [&amp;](<span class="type">const</span> NotifyMotionArgs&amp; args) { <span class="built_in">notifyMotion</span>(args); },      <span class="comment">// ←★</span></span><br><span class="line">            [&amp;](<span class="type">const</span> NotifySwitchArgs&amp; args) { <span class="built_in">notifySwitch</span>(args); },</span><br><span class="line">            ...</span><br><span class="line">    };</span><br><span class="line">    std::<span class="built_in">visit</span>(v, generalArgs);</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<p>看仔细这个函数的巧妙之处：<strong>它是非虚的，写死在基类；但它内部调用的 <code>notifyMotion</code> 是虚的</strong>。当 Reader 通过引用调 <code>notify(args)</code> 时：</p>
+<ul>
+<li><code>notify</code> 本身：静态绑定，永远执行基类这一份（入口统一）；</li>
+<li>它内部的 <code>notifyMotion(args)</code>：<strong>虚调用，且 <code>this</code> 还是原来的对象</strong>——查 vtable 落到实际派生类（出口随对象变）。</li>
+</ul>
+<p>“入口固定 + 出口可变”，这个惯用法叫 <strong>NVI（Non-Virtual Interface，非虚接口）</strong>，是 Template Method 模式的现代变体。基类掌握流程骨架（”收到 variant → 分发到对应虚函数”），派生类只填实现，不给它改流程的机会。</p>
+<h2 id="2-2-flush-的逐步解析"><a href="#2-2-flush-的逐步解析" class="headerlink" title="2.2 flush()的逐步解析"></a>2.2 flush()的逐步解析</h2><p>现在完整跟踪 <code>mQueuedListener.flush()</code>里的一次循环。设当前事件是一条 <code>NotifyMotionArgs</code>，且构造期接线为标准链：</p>
+<figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">QueuedInputListener::flush</span><span class="params">()</span> </span>{</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">const</span> NotifyArgs&amp; args : mArgsQueue) {</span><br><span class="line">        mInnerListener.<span class="built_in">notify</span>(args);      <span class="comment">// ★ 跟踪这一行</span></span><br><span class="line">    }</span><br><span class="line">    mArgsQueue.<span class="built_in">clear</span>();</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<p><strong>第 1 次选择：<code>notify</code> —— 静态绑定，无悬念。</strong><br><code>mInnerListener</code> 的静态类型是 <code>InputListenerInterface&amp;</code>，<code>notify</code> 非虚 → 直接 call 基类实现。不管 <code>mInnerListener</code> 接的是 Blocker 还是 Dispatcher，这一步永远进同一份代码。</p>
+<p><strong>第 2 次选择：<code>std::visit</code> —— 编译期生成的 switch，按 variant 活动类型。</strong><br><code>NotifyArgs</code> 是个 variant：</p>
+<figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">using</span> NotifyArgs = std::variant&lt;NotifyInputDevicesChangedArgs, NotifyConfigurationChangedArgs,</span><br><span class="line">                                NotifyKeyArgs, NotifyMotionArgs, <span class="comment">/* ...共 9 种 */</span>&gt;;</span><br></pre></td></tr></tbody></table></figure>
+
+<p><code>std::visit(v, generalArgs)</code> 被编译器展开成等价于 <code>switch (generalArgs.index())</code> 的跳转——查 variant 当前持有第几种类型，跳到对应的 lambda。<strong>这是数据驱动的选择</strong>：事件内容决定走哪支，与对象类型无关。本例事件是 <code>NotifyMotionArgs</code> → 选中带 ★ 的那行 lambda。</p>
+<p><strong>第 3 次选择：lambda 里的 <code>notifyMotion(args)</code> —— 虚调用，查 vtable。</strong><br>此刻 <code>this</code> 指向 <code>mInnerListener</code> 绑定的真实对象。对象是 <code>UnwantedInteractionBlocker</code> → vptr 指向 Blocker 的表 → 第 4 槽是 <code>UnwantedInteractionBlocker::notifyMotion</code> → 执行。</p>
+<figure class="highlight lua"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">mInnerListener.notify(args)</span><br><span class="line">   │</span><br><span class="line">   ├─ ① notify            静态绑定（非虚）──► 基类实现，入口统一</span><br><span class="line">   │      │</span><br><span class="line">   │      └─ ② std::visit 编译期 switch ──► 按 variant 内容选中 motion 分支</span><br><span class="line">   │             │</span><br><span class="line">   │             └─ ③ notifyMotion  虚调用 ──► 查对象 vtable ──► Blocker 的实现</span><br><span class="line">   │</span><br><span class="line">   └─ 三次选择各司其职：入口看编译期类型，分支看数据，实现看运行期对象</span><br></pre></td></tr></tbody></table></figure>
+
+<p><strong>然后是链式反应</strong>：<code>UnwantedInteractionBlocker::notifyMotion</code> 处理完（掌纹过滤），调它<strong>自己的</strong> <code>mQueuedListener.flush()</code> → 它的 <code>mInnerListener</code> 绑的是 <code>InputProcessor</code> → 同样三步 → <code>InputProcessor::notifyMotion</code>→ 再 flush → <code>mInnerListener</code> 绑的是 <code>InputDispatcher</code> → <code>InputDispatcher::notifyMotion</code>。</p>
+<p>三次选择 × 三站转发，没有任何一站”知道”全局路线。每站只知道：<em>我手里的引用接着谁，我就调谁</em>。路线图分散在构造期接好的三根引用里——这就是第 0 章问题的完整答案。</p>
+<h2 id="2-3-什么时候不走-vtable（重要反例）"><a href="#2-3-什么时候不走-vtable（重要反例）" class="headerlink" title="2.3 什么时候不走 vtable（重要反例）"></a>2.3 什么时候不走 vtable（重要反例）</h2><p>理解机制的最好方式是看它<strong>不生效</strong>的时刻。四个反例，前两个是坑，后两个在 input 代码里有真实用例：</p>
+<p><strong>反例 1：直接用对象调用（不经过指针/引用）。</strong></p>
+<figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">QueuedInputListener <span class="title">listener</span><span class="params">(dispatcher)</span></span>;</span><br><span class="line">listener.<span class="built_in">notifyMotion</span>(args);    <span class="comment">// 静态绑定！编译器明确知道类型，可能直接内联</span></span><br></pre></td></tr></tbody></table></figure>
+
+<p>对象本身类型完全已知，没有”隐藏身份”，编译器直接静态绑定（多态触发条件第 2 条不满足）。这种写法在 inputflinger 里几乎不出现——多态结构里你拿到的永远是引用。</p>
+<p><strong>反例 2：构造/析构函数里调虚函数——降级为”当前层”实现。</strong><br>对象构造时先跑基类构造函数，<strong>此刻 vptr 还指向基类的表</strong>（派生类部分尚未出生）：</p>
+<figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">Base</span> {</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="built_in">Base</span>() { <span class="built_in">notifyMotion</span>(args); }        <span class="comment">// ✗ 坏味道：此时虚调用永远进 Base::notifyMotion</span></span><br><span class="line">                                           <span class="comment">//    若 Base 里它是纯虚 → 直接未定义行为</span></span><br><span class="line">};</span><br></pre></td></tr></tbody></table></figure>
+
+<p>同理析构时派生类部分先死，vptr 回退到基类表。规矩：<strong>构造/析构函数里绝不调用（可被派生类覆写的）虚函数</strong>。</p>
+<p><strong>反例 3：域解析符显式调用——绕过 vtable，input 代码里的真实用法。</strong><br><code>MultiTouchInputMapper::process</code>（<code>reader/mapper/MultiTouchInputMapper.cpp:47</code>）：</p>
+<figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">std::list&lt;NotifyArgs&gt; <span class="title">MultiTouchInputMapper::process</span><span class="params">(<span class="type">const</span> RawEvent* rawEvent)</span> </span>{</span><br><span class="line">    std::list&lt;NotifyArgs&gt; out = TouchInputMapper::<span class="built_in">process</span>(rawEvent);   <span class="comment">// ★ 类名:: 显式限定</span></span><br><span class="line">    mMultiTouchMotionAccumulator.<span class="built_in">process</span>(rawEvent);</span><br><span class="line">    <span class="keyword">return</span> out;</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<p><code>TouchInputMapper::process</code> 这个写法（<code>类名::函数</code>）<strong>明确指定执行父类版本，静态绑定</strong>。这是子类覆写虚函数后想”先跑父类逻辑再补自己的”标准姿势——虚函数给了你”替换”的能力，域解析给了你”复用”的能力，两者配合才是完整的继承工具箱。（同款用法遍布 mapper 家族：<code>MultiTouchInputMapper::reset</code> 里调 <code>TouchInputMapper::reset(when)</code>。）</p>
+<p><strong>反例 4：非虚函数，永远静态绑定。</strong><br>比如 <code>QueuedInputListener::flush()</code> 本身不是虚函数——没人会”覆写 flush”，它是 QueuedInputListener 的私有能力，不需要多态。<strong>不是所有成员函数都该是虚的</strong>：只把”确实要被不同实现者替换”的函数立为虚，是接口设计的克制。</p>
+<hr>
+<h1 id="第-3-章-设计模式层：机制之上搭结构"><a href="#第-3-章-设计模式层：机制之上搭结构" class="headerlink" title="第 3 章 设计模式层：机制之上搭结构"></a>第 3 章 设计模式层：机制之上搭结构</h1><h2 id="3-1-四层分工：语法机制-多态能力-设计模式-架构"><a href="#3-1-四层分工：语法机制-多态能力-设计模式-架构" class="headerlink" title="3.1 四层分工：语法机制 / 多态能力 / 设计模式 / 架构"></a>3.1 四层分工：语法机制 / 多态能力 / 设计模式 / 架构</h2><p>前两章拆完了零件，现在把镜头拉远。inputflinger 里”虚函数与设计模式”的关系，可以精确地切成四层：</p>
+<table>
+<thead>
+<tr>
+<th>层</th>
+<th>是什么</th>
+<th>inputflinger 中的对应</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>语法机制</strong></td>
+<td>C++ 语言规定的写法</td>
+<td><code>virtual</code>、<code>= 0</code>、<code>override</code>、<code>vtable/vptr</code>（第 1 章）</td>
+</tr>
+<tr>
+<td><strong>多态能力</strong></td>
+<td>语法机制买到的运行期行为</td>
+<td>通过接口引用调用 → 按对象实际类型执行（第 2 章）</td>
+</tr>
+<tr>
+<td><strong>设计模式</strong></td>
+<td><strong>语言无关</strong>的结构约定：谁持引用、谁实现、怎么串</td>
+<td>本章的五个模式</td>
+</tr>
+<tr>
+<td><strong>架构</strong></td>
+<td>模式组合成的系统骨架</td>
+<td>Reader → Blocker → Processor → Dispatcher 流水线</td>
+</tr>
+</tbody></table>
+<p>分层的判别方法（第 0 章的 acid test）：<strong>把类图画在纸上——设计模式看得见；把 <code>virtual</code> 关键字删掉——模式还在，只是运行期转不动了</strong>。模式活在”持有接口引用 + 实现同一接口”这个<strong>结构关系</strong>里，虚函数只是让结构动起来的零件。</p>
+<p>一个澄清：GoF 的 23 个模式里没有一个叫”虚函数模式”。<strong>设计模式的前提恰恰是多态</strong>——GoF 两人写书时（1994）假设的语言就是 C++ 和 Smalltalk，开篇即讲”针对接口编程，不要针对实现编程”。可以说：多态是模式的燃料，模式是烧燃料的发动机排列方式。</p>
+<h2 id="3-2-构造期接线：Decorator-与职责链"><a href="#3-2-构造期接线：Decorator-与职责链" class="headerlink" title="3.2 构造期接线：Decorator 与职责链"></a>3.2 构造期接线：Decorator 与职责链</h2><h3 id="接线现场"><a href="#接线现场" class="headerlink" title="接线现场"></a>接线现场</h3><p>四行决定整条数据流水线的拓扑：</p>
+<figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">mDispatcher = <span class="built_in">createInputDispatcher</span>(dispatcherPolicy);                        <span class="comment">// ① 先造终点</span></span><br><span class="line">mProcessor  = std::<span class="built_in">make_unique</span>&lt;InputProcessor&gt;(*mDispatcher);                 <span class="comment">// ② Processor 包住 Dispatcher</span></span><br><span class="line">mBlocker    = std::<span class="built_in">make_unique</span>&lt;UnwantedInteractionBlocker&gt;(*mProcessor);      <span class="comment">// ③ Blocker 包住 Processor</span></span><br><span class="line">mReader     = <span class="built_in">createInputReader</span>(readerPolicy, *mBlocker);                     <span class="comment">// ④ Reader 的 listener 是 Blocker</span></span><br></pre></td></tr></tbody></table></figure>
+
+<p>从里向外包裹，最终每个对象手里的引用：</p>
+<figure class="highlight lua"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">                   InputManager (唯一知情者，画完全图后闭嘴)</span><br><span class="line">                         │</span><br><span class="line">       ┌─────────────────┼──────────────────┐</span><br><span class="line">       ▼                 ▼                  ▼</span><br><span class="line">  mReader          mBlocker            mProcessor        mDispatcher</span><br><span class="line">       │                 │                  │                  │</span><br><span class="line">mQueuedListener    mQueuedListener     mQueuedListener        │</span><br><span class="line">  .mInnerListener    .mInnerListener     .mInnerListener      │</span><br><span class="line">       │                 │                  │                  │</span><br><span class="line">       └──── 引用 ───────┘                  │                  ▲</span><br><span class="line">            └────────── 引用 ───────────────┘                  │</span><br><span class="line">                         └────────── 引用 ────────────────────┘</span><br></pre></td></tr></tbody></table></figure>
+
+<p>注意一个精妙的结构事实：<strong>每个中间站自己就是 listener（继承接口），同时手里还握着一个 listener（组合引用）</strong>：</p>
+<figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">UnwantedInteractionBlocker</span> : <span class="keyword">public</span> InputListenerInterface {   <span class="comment">// 是一个 listener（is-a）</span></span><br><span class="line">    ...</span><br><span class="line">    QueuedInputListener mQueuedListener;   <span class="comment">// 持有一个缓冲器（has-a），</span></span><br><span class="line">};                                          <span class="comment">// 其内部 mInnerListener 接下一站</span></span><br></pre></td></tr></tbody></table></figure>
+
+<p>“is-a 接口 + has-a 接口”，一进一出——这就是它能站在流水线中间的全部资格。</p>
+<h3 id="这是什么模式？"><a href="#这是什么模式？" class="headerlink" title="这是什么模式？"></a>这是什么模式？</h3><p><strong>从构造形态看，是 Decorator（装饰器）</strong>：同一个接口的层层包裹、从里向外建造、每层持有内层的引用。GoF 的 Decorator 意图原文是”动态地给一个对象添加一些额外的职责”——Blocker 给 Dispatcher 添加了”过滤掌纹”的职责，Processor 添加了”分类”的职责，接口（<code>InputListenerInterface</code>）不变，调用方（Reader）无感知。</p>
+<p><strong>从数据流向看，是 Pipes and Filters（管道-过滤器，POSA 卷 4）</strong>：事件像流体流过一系列过滤器，每个过滤器可以<strong>改写</strong>（加 classification 标签）、<strong>丢弃</strong>（掌纹判定为手掌 → 不往下游送）、<strong>拆分</strong>（一进多出）数据。纯 Decorator 是”透明增强”不该改数据语义，而 input 的中间站明确在改数据——所以 AOSP 文档自称 <strong>input pipeline</strong>，取的是管道语义。</p>
+<p><strong>从”谁能终止处理”看，带一点 Chain of Responsibility（职责链）</strong>：GoF 的 CoR 里每个 handler 可以决定”我处理完就到此为止”。<code>InputDispatcher::notifyMotion</code> 就是终点消费者；而 policy 截胡（<code>interceptMotionBeforeQueueing</code> 判定事件不该给用户）时事件也在 Dispatcher 手里终止，不再向前。</p>
+<p>三个名字都对，各取一个侧面。<strong>真实系统里的模式几乎总是这种杂交体</strong>——教科书给你纯种，工程给你混血。贴哪个标签不重要，重要的是结构带来的性质：</p>
+<ol>
+<li><strong>增删站零成本</strong>：想旁路 Blocker？第 ④ 行改成 <code>*mDispatcher</code>，三行构造改一行，<code>flush()</code> 及所有下游代码一个字不动。</li>
+<li><strong>各站互不知情</strong>：Blocker 不知道后面是 Processor 还是 Dispatcher；Processor 不知道前面是谁。站与站之间只认 <code>InputListenerInterface</code>，不认具体类——<strong>依赖接口，不依赖实现</strong>（GoF 第一原则）。</li>
+<li><strong>顺序即构造顺序</strong>：想调整过滤次序，改构造顺序即可，不改任何站的代码。</li>
+</ol>
+<h3 id="为什么必须”从里向外”造"><a href="#为什么必须”从里向外”造" class="headerlink" title="为什么必须”从里向外”造"></a>为什么必须”从里向外”造</h3><p>包裹式构造有个天然约束：<strong>造外层之前，内层必须已存在</strong>（引用要接一个活对象）。所以 ①②③④ 的顺序不能颠倒——这不是风格问题，是 C++ 引用语义强制的（引用不可空、不可重绑， <code>InputListenerInterface&amp; mInnerListener</code> 只能在构造时接一次，接完终身不变）。</p>
+<p>反过来这也成了<strong>文档</strong>：读 <code>InputManager</code> 构造函数的顺序，就是数据流的方向。构造序 = 流向序，一份代码两份信息。</p>
+<h2 id="3-3-Command-Visitor：NotifyArgs-的两副面孔"><a href="#3-3-Command-Visitor：NotifyArgs-的两副面孔" class="headerlink" title="3.3 Command + Visitor：NotifyArgs 的两副面孔"></a>3.3 Command + Visitor：NotifyArgs 的两副面孔</h2><h3 id="Command-模式：把”请求”做成数据"><a href="#Command-模式：把”请求”做成数据" class="headerlink" title="Command 模式：把”请求”做成数据"></a>Command 模式：把”请求”做成数据</h3><p>GoF 的 Command（命令）模式：<strong>把一个请求封装成一个对象</strong>，使你可以存储它、传递它、排队它、延迟执行它。看 <code>NotifyMotionArgs</code> 的素颜：</p>
+<figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">struct</span> <span class="title class_">NotifyMotionArgs</span> {</span><br><span class="line">    <span class="type">int32_t</span> id;                       <span class="comment">// 事件唯一 id（LatencyTracker 全程追踪用）</span></span><br><span class="line">    <span class="type">nsecs_t</span> eventTime;                <span class="comment">// 内核时间戳</span></span><br><span class="line">    <span class="type">int32_t</span> deviceId;                 <span class="comment">// 谁产生的事件</span></span><br><span class="line">    <span class="type">uint32_t</span> source;                  <span class="comment">// 触摸屏/键盘/鼠标...</span></span><br><span class="line">    <span class="type">int32_t</span> action;                   <span class="comment">// DOWN/MOVE/UP/POINTER_DOWN...</span></span><br><span class="line">    <span class="type">uint32_t</span> pointerCount;            <span class="comment">// 几根手指</span></span><br><span class="line">    PointerProperties pointerProperties[MAX_POINTERS];   <span class="comment">// 每根手指的属性</span></span><br><span class="line">    PointerCoords pointerCoords[MAX_POINTERS];           <span class="comment">// 每根手指的坐标</span></span><br><span class="line">    ...</span><br><span class="line">};</span><br></pre></td></tr></tbody></table></figure>
+
+<p>纯数据，零函数——“<strong>某设备某时刻发生了一次什么动作</strong>“这个请求的完整快照。正因为它只是数据，才能：</p>
+<ul>
+<li>被 <code>std::list&lt;NotifyArgs&gt;</code> 攒成一整批（<code>processEventsLocked</code> 的 out）；</li>
+<li>被塞进 <code>QueuedInputListener::mArgsQueue</code> 延迟放行（锁纪律，见 3.4）；</li>
+<li>被 splice 剪接在四层函数间零拷贝流转；</li>
+<li>全程带着 <code>id</code> 被延迟追踪（<code>LatencyTracker</code> 算端到端延迟）。</li>
+</ul>
+<p><strong>Command 的本质就一句话：把”要做的事”从”栈上的调用”变成”堆/队列里的数据”。</strong> 函数调用过去了就没了；命令对象可以等、可以看、可以数。</p>
+<h3 id="两副面孔：经典虚函数版-vs-variant-版"><a href="#两副面孔：经典虚函数版-vs-variant-版" class="headerlink" title="两副面孔：经典虚函数版 vs variant 版"></a>两副面孔：经典虚函数版 vs variant 版</h3><p>教科书 Command 长这样（虚函数版）：</p>
+<figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">struct</span> <span class="title class_">NotifyArgs</span> {                        <span class="comment">// 抽象命令</span></span><br><span class="line">    <span class="keyword">virtual</span> ~<span class="built_in">NotifyArgs</span>() = <span class="keyword">default</span>;</span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="type">void</span> <span class="title">execute</span><span class="params">(InputListenerInterface&amp; listener)</span> <span class="type">const</span> </span>= <span class="number">0</span>;   <span class="comment">// ★ 经典写法：虚 execute</span></span><br><span class="line">};</span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">NotifyMotionArgs</span> : NotifyArgs {</span><br><span class="line">    ...</span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">execute</span><span class="params">(InputListenerInterface&amp; listener)</span> <span class="type">const</span> <span class="keyword">override</span> </span>{</span><br><span class="line">        listener.<span class="built_in">notifyMotion</span>(*<span class="keyword">this</span>);      <span class="comment">// 多态分发</span></span><br><span class="line">    }</span><br><span class="line">};</span><br><span class="line"><span class="comment">// 使用：for (auto&amp; cmd : queue) cmd-&gt;execute(dispatcherChain);</span></span><br></pre></td></tr></tbody></table></figure>
+
+<p>AOSP14 实际用的是另一副面孔（<code>include/NotifyArgs.h:234</code>）：</p>
+<figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">using</span> NotifyArgs = std::variant&lt;NotifyInputDevicesChangedArgs, NotifyConfigurationChangedArgs,</span><br><span class="line">                                NotifyKeyArgs, NotifyMotionArgs, NotifySwitchArgs,</span><br><span class="line">                                NotifySensorArgs, NotifyVibratorStateArgs, NotifyDeviceResetArgs,</span><br><span class="line">                                NotifyPointerCaptureChangedArgs&gt;;</span><br><span class="line"><span class="comment">// 九个纯数据 struct，无继承、无虚函数、无 vptr</span></span><br></pre></td></tr></tbody></table></figure>
+
+<p>分发靠 2.2 节解剖过的 <code>std::visit</code>。<strong>同一个模式，两套语法实现</strong>——这正是”模式独立于语法”的现场标本。为什么 inputflinger 选 variant？</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>虚函数版 Command</th>
+<th>variant 版（AOSP14 实际）</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>每个事件的开销</td>
+<td>堆分配 + 对象头 vptr</td>
+<td>variant 本体直嵌容器（可整体搬移，无堆分配）</td>
+</tr>
+<tr>
+<td>分发成本</td>
+<td>vtable 间接跳转</td>
+<td><code>switch(index)</code> 直接跳转（编译器可优化成跳表）</td>
+</tr>
+<tr>
+<td>批量存储</td>
+<td><code>vector&lt;unique_ptr&lt;NotifyArgs&gt;&gt;</code>，指针散落堆上缓存不友好</td>
+<td><code>list&lt;NotifyArgs&gt;</code>/<code>vector&lt;NotifyArgs&gt;</code>，数据连续</td>
+</tr>
+<tr>
+<td>值语义</td>
+<td>需手工 clone 才能拷贝</td>
+<td>天然可拷贝（还带 <code>+=</code> splice）</td>
+</tr>
+<tr>
+<td>类型封闭性</td>
+<td>开放：随时加新派生类</td>
+<td>封闭：加新类型要改 variant 定义 + 补全所有 visit</td>
+</tr>
+</tbody></table>
+<p>最后一行是取舍的关键：<strong>variant 是”封闭集 + 高频分发”场景的最优解</strong>。输入事件的种类（9 种）由系统定义、极少变化，而每秒要分发成百上千次——牺牲开放性换热路径性能，完全划算。反过来，listener 实现（Blocker/Processor/Dispatcher）是”开放集”（AOSP15+ 真的加了新站），所以那边用虚函数。<strong>同一张图上两副面孔并存，各自用在适合自己的轴上</strong>——这是比”哪个好”重要得多的观察。</p>
+<h3 id="Visitor：藏在-std-visit-里的双分派"><a href="#Visitor：藏在-std-visit-里的双分派" class="headerlink" title="Visitor：藏在 std::visit 里的双分派"></a>Visitor：藏在 std::visit 里的双分派</h3><p><code>InputListener.cpp:42</code> 那几行常被当成炫技：</p>
+<figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span>... V&gt;</span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">Visitor</span> : V... {};                        <span class="comment">// 继承一堆 lambda 的"重叠 lambda"技巧</span></span><br><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span>... V&gt;</span><br><span class="line"><span class="built_in">Visitor</span>(V...) -&gt; Visitor&lt;V...&gt;;                  <span class="comment">// 推导指引（C++17）</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">InputListenerInterface::notify</span><span class="params">(<span class="type">const</span> NotifyArgs&amp; generalArgs)</span> </span>{</span><br><span class="line">    Visitor v{</span><br><span class="line">            [&amp;](<span class="type">const</span> NotifyKeyArgs&amp; args) { <span class="built_in">notifyKey</span>(args); },</span><br><span class="line">            [&amp;](<span class="type">const</span> NotifyMotionArgs&amp; args) { <span class="built_in">notifyMotion</span>(args); },   <span class="comment">// 每个 lambda = 一个 visit 重载</span></span><br><span class="line">            ...</span><br><span class="line">    };</span><br><span class="line">    std::<span class="built_in">visit</span>(v, generalArgs);</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<p>它其实是 <strong>Visitor（访问者）模式的函数式写法</strong>。经典 Visitor 解决的问题是<strong>双分派（double dispatch）</strong>：普通虚函数只有一个自由度（<code>this</code> 的动态类型），但这里的分派需要两个——</p>
+<figure class="highlight lua"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">要执行的函数 = f(事件种类, 接收者种类)</span><br><span class="line">                 ↑ variant 里是哪种 NotifyArgs</span><br><span class="line">                                ↑ mInnerListener 接的是 Blocker / Processor / Dispatcher？</span><br></pre></td></tr></tbody></table></figure>
+
+<p>经典实现用两次虚调用接力（<code>accept(visitor)</code> 虚一次 + <code>visit(element)</code> 虚一次）；这里的实现是<strong>一次编译期 switch（visit 按 variant 类型选 lambda）+ 一次运行期查表（lambda 里调虚函数 notifyMotion）</strong>。2.2 节的”三次选择”图里，第 2、3 步合起来就是完整的双分派。</p>
+<p><strong>Command 负责”事件成为数据”，Visitor 负责”数据找到处理者”</strong>——两个模式咬合在 <code>notify()</code> 这一个函数里，inputflinger 事件流水线的语法地基至此完整。</p>
+<h2 id="3-4-缓冲式-Decorator：QueuedInputListener-与锁纪律"><a href="#3-4-缓冲式-Decorator：QueuedInputListener-与锁纪律" class="headerlink" title="3.4 缓冲式 Decorator：QueuedInputListener 与锁纪律"></a>3.4 缓冲式 Decorator：<code>QueuedInputListener</code> 与锁纪律</h2><h3 id="它在-GoF-23-个模式里找不到名字"><a href="#它在-GoF-23-个模式里找不到名字" class="headerlink" title="它在 GoF 23 个模式里找不到名字"></a>它在 GoF 23 个模式里找不到名字</h3><p><code>QueuedInputListener</code>（<code>include/InputListener.h:57</code>）的结构：</p>
+<figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">QueuedInputListener</span> : <span class="keyword">public</span> InputListenerInterface {       <span class="comment">// 是一个 listener（与下一站同接口）</span></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="function"><span class="keyword">explicit</span> <span class="title">QueuedInputListener</span><span class="params">(InputListenerInterface&amp; innerListener)</span></span>;</span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">notifyMotion</span><span class="params">(<span class="type">const</span> NotifyMotionArgs&amp; args)</span> <span class="keyword">override</span></span>;     <span class="comment">// 覆写：只入队，不转发！</span></span><br><span class="line">    ...</span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">flush</span><span class="params">()</span></span>;                                                 <span class="comment">// 唯一的放行出口</span></span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">    InputListenerInterface&amp; mInnerListener;                       <span class="comment">// 持有下一站</span></span><br><span class="line">    std::vector&lt;NotifyArgs&gt; mArgsQueue;                           <span class="comment">// 缓冲</span></span><br><span class="line">};</span><br></pre></td></tr></tbody></table></figure>
+
+<p>对照 Decorator 的定义：”实现与被包装对象相同的接口，持有其引用，把调用转发给它”——前两条全中，第三条被<strong>故意改掉</strong>了：</p>
+<figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// InputListener.cpp:89 —— 整个"装饰"就这一行</span></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">QueuedInputListener::notifyMotion</span><span class="params">(<span class="type">const</span> NotifyMotionArgs&amp; args)</span> </span>{</span><br><span class="line">    <span class="built_in">traceEvent</span>(__func__, args.id);</span><br><span class="line">    mArgsQueue.<span class="built_in">emplace_back</span>(args);        <span class="comment">// ★ 不调 mInnerListener，只是攒着</span></span><br><span class="line">}</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">QueuedInputListener::flush</span><span class="params">()</span> </span>{       <span class="comment">// :119 —— 唯一转发点</span></span><br><span class="line">    <span class="keyword">for</span> (<span class="type">const</span> NotifyArgs&amp; args : mArgsQueue) {</span><br><span class="line">        mInnerListener.<span class="built_in">notify</span>(args);      <span class="comment">// 此刻才真正出门（第 2 章解剖过的三步）</span></span><br><span class="line">    }</span><br><span class="line">    mArgsQueue.<span class="built_in">clear</span>();</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<p><strong>它改变的不是”转发给谁”，而是”何时转发”</strong>。装饰的是时间维度——所以叫它<strong>缓冲式 Decorator</strong>（也有人视作 Command 队列/Batch 模式的变体）。GoF 书里没有它的条目，因为它的驱动力不是”加职责”，而是一个非常具体的工程约束：<strong>锁</strong>。</p>
+<h3 id="为什么必须有这个缓冲：死锁阴影"><a href="#为什么必须有这个缓冲：死锁阴影" class="headerlink" title="为什么必须有这个缓冲：死锁阴影"></a>为什么必须有这个缓冲：死锁阴影</h3><p>看 InputReader 里事件诞生的两个时刻（<code>reader/InputReader.cpp</code>）：</p>
+<figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// :518 —— 时刻 A：refreshConfigurationLocked 内部，持有 mLock</span></span><br><span class="line">mQueuedListener.<span class="built_in">notifyConfigurationChanged</span>({mContext.<span class="built_in">getNextId</span>(), when});</span><br><span class="line"></span><br><span class="line"><span class="comment">// :550 —— 时刻 B：同样持锁</span></span><br><span class="line">mQueuedListener.<span class="built_in">notifyPointerCaptureChanged</span>(...);</span><br></pre></td></tr></tbody></table></figure>
+
+<p>如果 <code>notify*</code> 是直接转发（没有缓冲），持锁的 Reader 会一路同步调进 Blocker → Processor → <code>Dispatcher::notifyMotion</code> → policy → IMS → WMS——而 WMS/IMS 的一部分接口（<code>getScanCodeState</code>、<code>getInputDevices</code>…）会<strong>反过来调用 InputReader</strong>（<code>InputReader.cpp:233-239</code> 的原注释写明了这个死锁场景）。此刻若还持着 mLock，就是自锁；别的线程持上游锁等 mLock，就是互等。</p>
+<p>缓冲把这个死结剪开成两条铁律：</p>
+<figure class="highlight lua"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">铁律 <span class="number">1</span>（锁内）：只入队 —— mQueuedListener.notifyXxx(args)   O(<span class="number">1</span>)，绝不跨模块调用</span><br><span class="line">铁律 <span class="number">2</span>（锁外）：才放行 —— mQueuedListener.<span class="built_in">flush</span>()            loopOnce 临界区结束后统一执行</span><br></pre></td></tr></tbody></table></figure>
+
+<p>这就是《input系统启动》反复强调的”<strong>锁内生产、锁外推送</strong>“。<code>QueuedInputListener</code> 是个<strong>信箱</strong>：锁内任何人都能往里投递（投递本身安全无副作用），但只有 <code>flush()</code> 这一个出口，且出口被严格安排在锁外。</p>
+<h3 id="模式逐站重演"><a href="#模式逐站重演" class="headerlink" title="模式逐站重演"></a>模式逐站重演</h3><p>上一章说 Blocker/Processor 每站各持一个自己的 <code>QueuedInputListener</code>，这不是巧合而是<strong>同一约束的逐站投影</strong>：</p>
+<figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// UnwantedInteractionBlocker.cpp:342 —— 同款结构第 N 次出现</span></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">UnwantedInteractionBlocker::notifyMotion</span><span class="params">(<span class="type">const</span> NotifyMotionArgs&amp; args)</span> </span>{</span><br><span class="line">    { <span class="function">std::scoped_lock <span class="title">lock</span><span class="params">(mLock)</span></span>;            <span class="comment">// 锁内：加工 + 入队</span></span><br><span class="line">        ...</span><br><span class="line">        <span class="built_in">enqueueOutboundMotionLocked</span>(...);      <span class="comment">// → mQueuedListener.notifyMotion：只入队</span></span><br><span class="line">    }                                          <span class="comment">// 解锁</span></span><br><span class="line">    mQueuedListener.<span class="built_in">flush</span>();                   <span class="comment">// 锁外：放行给下一站</span></span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<figure class="highlight lua"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Reader   ：锁内攒局部 list ──解锁──► notifyAll 入队 ──► <span class="built_in">flush</span> ─┐</span><br><span class="line">Blocker  ：锁内过滤+入队   ──解锁──► <span class="built_in">flush</span> ──────────────────►│ 同款<span class="string">"一收一放"</span></span><br><span class="line">Processor：锁内分类+入队   ──解锁──► <span class="built_in">flush</span> ──────────────────┘ 逐站重演</span><br></pre></td></tr></tbody></table></figure>
+
+<p><strong>识别出一个模式后，你会突然发现它无处不在</strong>——这就是认模式的价值：读一站等于读了三站。</p>
+<h2 id="3-5-Active-Object：mInboundQueue-eventfd-Dispatcher-线程"><a href="#3-5-Active-Object：mInboundQueue-eventfd-Dispatcher-线程" class="headerlink" title="3.5 Active Object：mInboundQueue + eventfd + Dispatcher 线程"></a>3.5 Active Object：<code>mInboundQueue</code> + eventfd + Dispatcher 线程</h2><h3 id="同步链的终点，异步世界的起点"><a href="#同步链的终点，异步世界的起点" class="headerlink" title="同步链的终点，异步世界的起点"></a>同步链的终点，异步世界的起点</h3><p>第 2 章的调用链到 <code>InputDispatcher::notifyMotion</code>（<code>dispatcher/InputDispatcher.cpp:4291</code>）为止。仔细看它与其他站的不同——<strong>它不再往任何 <code>mInnerListener</code> 转发</strong>：</p>
+<figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">InputDispatcher::notifyMotion</span><span class="params">(<span class="type">const</span> NotifyMotionArgs&amp; args)</span> </span>{</span><br><span class="line">    ...                                                    <span class="comment">// ① 校验</span></span><br><span class="line">    mPolicy.<span class="built_in">interceptMotionBeforeQueueing</span>(...);            <span class="comment">// ② policy 截胡（锁屏/息屏）</span></span><br><span class="line"></span><br><span class="line">    { <span class="comment">// acquire mLock（★ Dispatcher 自己的锁，与 Reader 的锁无关）</span></span><br><span class="line">        ...</span><br><span class="line">        <span class="keyword">auto</span> newEntry = std::<span class="built_in">make_unique</span>&lt;MotionEntry&gt;(...);          <span class="comment">// ③ 请求打包成对象</span></span><br><span class="line">        needWake = <span class="built_in">enqueueInboundEventLocked</span>(std::<span class="built_in">move</span>(newEntry));   <span class="comment">// ④ 压入激活队列</span></span><br><span class="line">    } <span class="comment">// release lock</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (needWake) {</span><br><span class="line">        mLooper-&gt;<span class="built_in">wake</span>();                                   <span class="comment">// ⑤ 写 eventfd，叫醒服务线程 ★交接</span></span><br><span class="line">    }</span><br><span class="line">}   <span class="comment">// ← ⑥ 立即返回！调用方（Reader 线程）从此与这个事件再无关系</span></span><br></pre></td></tr></tbody></table></figure>
+
+<figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// InputDispatcher.cpp:1144 —— needWake 的讲究</span></span><br><span class="line"><span class="type">bool</span> needWake = mInboundQueue.<span class="built_in">empty</span>();        <span class="comment">// 入队前队列空 = 服务线程可能在睡 = 才值得叫</span></span><br><span class="line">mInboundQueue.<span class="built_in">push_back</span>(std::<span class="built_in">move</span>(newEntry));</span><br><span class="line"></span><br><span class="line"><span class="comment">// system/core/libutils/Looper.cpp:414 —— wake 的真身，一次系统调用</span></span><br><span class="line"><span class="type">uint64_t</span> inc = <span class="number">1</span>;</span><br><span class="line"><span class="built_in">write</span>(mWakeEventFd.<span class="built_in">get</span>(), &amp;inc, <span class="built_in">sizeof</span>(<span class="type">uint64_t</span>));   <span class="comment">// eventfd + epoll</span></span><br></pre></td></tr></tbody></table></figure>
+
+<h3 id="对照-POSA2-的-Active-Object-六件套"><a href="#对照-POSA2-的-Active-Object-六件套" class="headerlink" title="对照 POSA2 的 Active Object 六件套"></a>对照 POSA2 的 Active Object 六件套</h3><p>Active Object（主动对象，《Pattern-Oriented Software Architecture Vol.2》）的意图：<strong>把方法调用与方法执行解耦到两个线程</strong>，调用方永不阻塞。标准件与 inputflinger 实物的对照：</p>
+<table>
+<thead>
+<tr>
+<th>Active Object 标准件</th>
+<th>职责</th>
+<th>inputflinger 实物</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Proxy（代理）</strong></td>
+<td>暴露给调用方的接口</td>
+<td><code>InputDispatcher::notifyMotion</code> 这个入口本身</td>
+</tr>
+<tr>
+<td><strong>Method Request（方法请求）</strong></td>
+<td>把”一次调用+参数”固化成对象</td>
+<td><code>MotionEntry</code>（args 的全部字段搬进 Entry）</td>
+</tr>
+<tr>
+<td><strong>Activation Queue（激活队列）</strong></td>
+<td>存放待执行请求</td>
+<td><code>mInboundQueue</code>（<code>std::deque</code>）</td>
+</tr>
+<tr>
+<td><strong>Scheduler（调度器）</strong></td>
+<td>决定何时取哪个请求</td>
+<td><code>dispatchOnce</code> 的取队逻辑（+ ANR 超时排序 <code>mAnrTracker</code>）</td>
+</tr>
+<tr>
+<td><strong>Servant（仆役）</strong></td>
+<td>真正干活的实现</td>
+<td>Dispatcher 线程上的 <code>dispatchOnceInnerLocked → dispatchMotion → publishInputEvent</code></td>
+</tr>
+<tr>
+<td><strong>Future（期货）</strong></td>
+<td>异步取结果的凭据</td>
+<td><strong>没有</strong>——输入事件 fire-and-forget，无人等返回值</td>
+</tr>
+</tbody></table>
+<p>启动侧的对应（<code>InputDispatcher.cpp:753</code>）：</p>
+<figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">status_t</span> <span class="title">InputDispatcher::start</span><span class="params">()</span> </span>{</span><br><span class="line">    mThread = std::<span class="built_in">make_unique</span>&lt;InputThread&gt;(</span><br><span class="line">            <span class="string">"InputDispatcher"</span>, [<span class="keyword">this</span>]() { <span class="built_in">dispatchOnce</span>(); }, [<span class="keyword">this</span>]() { mLooper-&gt;<span class="built_in">wake</span>(); });</span><br><span class="line">    <span class="comment">//                        ↑ Servant 跑在这个专属线程上      ↑ 停止时的叫醒手段</span></span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<h3 id="这个模式买到了什么"><a href="#这个模式买到了什么" class="headerlink" title="这个模式买到了什么"></a>这个模式买到了什么</h3><figure class="highlight lua"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">Reader 线程（同步链，有界耗时）              Dispatcher 线程（异步执行，耗时无界）</span><br><span class="line">═════════════════════════════              ═══════════════════════════════════</span><br><span class="line">notifyMotion(args)                          Looper epoll 被 eventfd 写醒</span><br><span class="line"> ├─ MotionEntry 构造         ──请求对象──►   mInboundQueue（激活队列）</span><br><span class="line"> ├─ <span class="built_in">write</span>(eventfd, <span class="number">1</span>)        ★线程交接      dispatchOnce（Scheduler+Servant）</span><br><span class="line"> └─ <span class="keyword">return</span> ★立即返回                        ├─ 找焦点窗口 / 触摸目标</span><br><span class="line">                                            ├─ InputChannel::sendMessage(socket) → App</span><br><span class="line">                                            └─ 等 ACK / 管超时 / 可能触发 ANR</span><br></pre></td></tr></tbody></table></figure>
+
+<ol>
+<li><strong>调用方永不被服务方的慢拖住</strong>。<code>notifyMotion</code> 的工作量严格有界（校验+入队+一次 write 系统调用）；此后”找窗口、发 socket、等 App 回 ACK、ANR 判定”这些<strong>耗时不可控</strong>的活全在另一个线程。App 卡死一万年，Reader 线程照常睡它的 <code>epoll_wait</code>——整个系统的输入采集不会因为一个烂应用停摆。</li>
+<li><strong>天然串行化</strong>。请求进队列、单线程按序消费，Dispatcher 内部大部分状态不需要加锁竞争（只在入队/取队两个瞬间碰 <code>mLock</code>）。</li>
+<li><strong>请求排队带来调度自由</strong>。Scheduler 可以按策略插队/丢弃：app switch 事件加速（<code>enqueueInboundEventLocked</code> 里对 <code>isAppSwitchKeyEvent</code> 的特殊处理）、过期事件清理——同步调用做不到这些，因为同步调用没有”排队的未来”。</li>
+</ol>
+<p><strong>eventfd 那一写，是本专栏两条线的交汇点</strong>：它同时是 Active Object 的线程交接、Reactor（Looper 的 epoll 事件循环）的触发源、也是”虚函数同步链”与”异步世界”的国境线。</p>
+<hr>
+<h1 id="第-4-章-模式独立于语法：四种语言里的同一根链条"><a href="#第-4-章-模式独立于语法：四种语言里的同一根链条" class="headerlink" title="第 4 章 模式独立于语法：四种语言里的同一根链条"></a>第 4 章 模式独立于语法：四种语言里的同一根链条</h1><p>要证明”设计模式 ≠ C++ 语法”，最硬的办法是把 3.2 节那根链条（接口引用层层相接的 pipeline）用四种语言重写。结构一模一样，语法工具完全不同：</p>
+<h2 id="4-1-C-（本尊，对照基准）"><a href="#4-1-C-（本尊，对照基准）" class="headerlink" title="4.1 C++（本尊，对照基准）"></a>4.1 C++（本尊，对照基准）</h2><figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">InputListenerInterface</span> {</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="type">void</span> <span class="title">notifyMotion</span><span class="params">(<span class="type">const</span> NotifyMotionArgs&amp; args)</span> </span>= <span class="number">0</span>;   <span class="comment">// 必须显式 virtual</span></span><br><span class="line">    <span class="keyword">virtual</span> ~<span class="built_in">InputListenerInterface</span>() = <span class="keyword">default</span>;</span><br><span class="line">};</span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">UnwantedInteractionBlocker</span> : <span class="keyword">public</span> InputListenerInterface {</span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">notifyMotion</span><span class="params">(<span class="type">const</span> NotifyMotionArgs&amp; args)</span> <span class="keyword">override</span></span>;      <span class="comment">// 必须显式 override</span></span><br><span class="line">    InputListenerInterface&amp; mNext;                                 <span class="comment">// 引用：不可空、不可重绑</span></span><br><span class="line">};</span><br><span class="line"></span><br><span class="line"><span class="comment">// 调用：mNext.notifyMotion(args)  → 查 vptr → vtable → 间接 call</span></span><br></pre></td></tr></tbody></table></figure>
+
+<p>特点：<strong>选择性加入</strong>——你必须逐个函数声明 <code>virtual</code>，不加就退回静态绑定。给了程序员控制权（1.5 节的性能取舍），也给了踩坑的机会（忘写 virtual 的静默 bug）。</p>
+<h2 id="4-2-Java：所有方法默认虚"><a href="#4-2-Java：所有方法默认虚" class="headerlink" title="4.2 Java：所有方法默认虚"></a>4.2 Java：所有方法默认虚</h2><figure class="highlight java"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">interface</span> <span class="title class_">InputListenerInterface</span> {</span><br><span class="line">    <span class="keyword">void</span> <span class="title function_">notifyMotion</span><span class="params">(NotifyMotionArgs args)</span>;       <span class="comment">// 没有 virtual —— 默认就是动态绑定</span></span><br><span class="line">}</span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">UnwantedInteractionBlocker</span> <span class="keyword">implements</span> <span class="title class_">InputListenerInterface</span> {</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> InputListenerInterface next;      <span class="comment">// 接口类型字段</span></span><br><span class="line">    <span class="meta">@Override</span>                                       <span class="comment">// 同款契约检查，叫 @Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">notifyMotion</span><span class="params">(NotifyMotionArgs args)</span> { ... }</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<p>Java 里 <code>virtual</code> 这个概念<strong>消失了</strong>——除 <code>static</code>/<code>final</code>/<code>private</code> 外所有方法默认动态绑定，且每个类都自动”有 vtable”。语法负担更小，性能控制权更少（JVM 靠内联缓存等方法补救）。<strong>GoF 23 个模式后来几乎原样搬进 Java 书里，一张类图都没重画</strong>——模式跟着结构走，不跟着关键字走。</p>
+<h2 id="4-3-C：没有-class、没有继承、没有-virtual-——-手工搭-vtable"><a href="#4-3-C：没有-class、没有继承、没有-virtual-——-手工搭-vtable" class="headerlink" title="4.3 C：没有 class、没有继承、没有 virtual —— 手工搭 vtable"></a>4.3 C：没有 class、没有继承、没有 virtual —— 手工搭 vtable</h2><p>最有说服力的一站。Linux 内核满地都是这套手法（<code>file_operations</code>、<code>proto_ops</code>、驱动的 <code>*_operations</code>）：</p>
+<figure class="highlight c"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/* "接口"：一个函数指针结构体 */</span></span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">input_listener</span> {</span></span><br><span class="line">    <span class="type">void</span> (*notify_motion)(<span class="keyword">struct</span> input_listener *self,</span><br><span class="line">                          <span class="type">const</span> <span class="keyword">struct</span> notify_motion_args *args);</span><br><span class="line">    <span class="type">void</span> (*notify_key)(<span class="keyword">struct</span> input_listener *self,</span><br><span class="line">                       <span class="type">const</span> <span class="keyword">struct</span> notify_key_args *args);</span><br><span class="line">};</span><br><span class="line"></span><br><span class="line"><span class="comment">/* "派生类"：结构体头部嵌着"接口"（相当于手动埋 vptr） */</span></span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">blocker</span> {</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">input_listener</span> <span class="title">iface</span>;</span>                    <span class="comment">/* ★ 必须放第一个成员 */</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">input_listener</span> *<span class="title">next</span>;</span>                    <span class="comment">/* 指向下一站 */</span></span><br><span class="line">    <span class="comment">/* 自己的私有成员... */</span></span><br><span class="line">};</span><br><span class="line"></span><br><span class="line"><span class="comment">/* "覆写"：填函数指针 */</span></span><br><span class="line"><span class="type">static</span> <span class="type">void</span> <span class="title function_">blocker_notify_motion</span><span class="params">(<span class="keyword">struct</span> input_listener *self,</span></span><br><span class="line"><span class="params">                                  <span class="type">const</span> <span class="keyword">struct</span> notify_motion_args *args)</span> {</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">blocker</span> *<span class="title">b</span> =</span> (<span class="keyword">struct</span> blocker *)self;     <span class="comment">/* container_of 式回转 */</span></span><br><span class="line">    <span class="comment">/* 过滤掌纹... */</span></span><br><span class="line">    b-&gt;next-&gt;notify_motion(b-&gt;next, args);          <span class="comment">/* ★ 手动"虚调用" */</span></span><br><span class="line">}</span><br><span class="line"></span><br><span class="line"><span class="type">void</span> <span class="title function_">blocker_init</span><span class="params">(<span class="keyword">struct</span> blocker *b, <span class="keyword">struct</span> input_listener *next)</span> {</span><br><span class="line">    b-&gt;iface.notify_motion = blocker_notify_motion;</span><br><span class="line">    b-&gt;next = next;                                 <span class="comment">/* ★ 构造期接线，同款 */</span></span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<p>语法上一无所有——没有 <code>class</code>、没有继承、没有 <code>virtual</code>——但 <code>b-&gt;next-&gt;notify_motion(b-&gt;next, args)</code> 与 C++ 的 <code>mNext.notifyMotion(args)</code> <strong>在机器码层面是同一条指令序列</strong>（取指针、查表、间接 call）。C 程序员手工做了 C++ 编译器自动做的事：手填函数表（= 编译器生成 vtable）、头嵌接口（= 编译器埋 vptr）、显式传 self（= 编译器传 this）。</p>
+<p><strong>模式的最小公分母到此现形：所谓多态，就是”数据里存着函数指针，调用时查它”。</strong> 继承、interface 关键字、virtual 关键字都只是这件事的语法糖衣。</p>
+<h2 id="4-4-Go-Rust：连”继承”都不要了"><a href="#4-4-Go-Rust：连”继承”都不要了" class="headerlink" title="4.4 Go / Rust：连”继承”都不要了"></a>4.4 Go / Rust：连”继承”都不要了</h2><figure class="highlight go"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Go：接口是隐式满足的（duck typing 编译期化）</span></span><br><span class="line"><span class="keyword">type</span> InputListener <span class="keyword">interface</span> {</span><br><span class="line">    NotifyMotion(args NotifyMotionArgs)</span><br><span class="line">}</span><br><span class="line"><span class="keyword">type</span> Blocker <span class="keyword">struct</span> { next InputListener }          <span class="comment">// 不需要声明 "implements"</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(b *Blocker)</span></span> NotifyMotion(args NotifyMotionArgs) {  <span class="comment">// 方法集恰好匹配 → 自动实现接口</span></span><br><span class="line">    b.next.NotifyMotion(args)</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<figure class="highlight rust"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Rust：trait object（dyn Trait）= 带静态检查的 vtable</span></span><br><span class="line"><span class="keyword">trait</span> <span class="title class_">InputListener</span> {</span><br><span class="line">    <span class="keyword">fn</span> <span class="title function_">notify_motion</span>(&amp;<span class="keyword">mut</span> <span class="keyword">self</span>, args: &amp;NotifyMotionArgs);</span><br><span class="line">}</span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">Blocker</span> { next: <span class="type">Box</span>&lt;<span class="keyword">dyn</span> InputListener&gt; }     <span class="comment">// trait 对象 = 数据指针 + vtable 指针，双指针胖引用</span></span><br><span class="line"><span class="keyword">impl</span> <span class="title class_">InputListener</span> <span class="keyword">for</span> <span class="title class_">Blocker</span> {</span><br><span class="line">    <span class="keyword">fn</span> <span class="title function_">notify_motion</span>(&amp;<span class="keyword">mut</span> <span class="keyword">self</span>, args: &amp;NotifyMotionArgs) { <span class="keyword">self</span>.next.<span class="title function_ invoke__">notify_motion</span>(args); }</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<p>Go 干脆取消了继承——接口自动满足；Rust 的 <code>dyn Trait</code> 则把”vtable”显式化为胖指针的一部分。两种语言里 3.2 节的 pipeline 类图依然成立，只是”is-a”被”实现了签名”取代。</p>
+<h2 id="4-5-本章结论"><a href="#4-5-本章结论" class="headerlink" title="4.5 本章结论"></a>4.5 本章结论</h2><table>
+<thead>
+<tr>
+<th>语言</th>
+<th>动态绑定的语法</th>
+<th>程序员做什么</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>C++</td>
+<td><code>virtual</code> + vtable</td>
+<td>声明哪些函数参与多态</td>
+</tr>
+<tr>
+<td>Java</td>
+<td>默认虚</td>
+<td>什么都不用做（想关闭反要 <code>final</code>）</td>
+</tr>
+<tr>
+<td>C</td>
+<td>手填函数指针表</td>
+<td>自己当编译器</td>
+</tr>
+<tr>
+<td>Go</td>
+<td>接口隐式满足</td>
+<td>只管实现方法</td>
+</tr>
+<tr>
+<td>Rust</td>
+<td><code>dyn Trait</code> 胖指针</td>
+<td>选择静态分发还是动态分发</td>
+</tr>
+</tbody></table>
+<p>四张语法皮，一张结构骨。<strong>模式活在类图里（谁持引用、谁实现、怎么串），语言只决定”运行期怎么找到那个函数”</strong>。所以学模式的正确姿势是拿掉语法想结构——这就是为什么第 0 章的 acid test 是”删掉 virtual，模式还在”。</p>
+<hr>
+<h1 id="第-5-章-总装：从构造期接线到运行期解析的全景"><a href="#第-5-章-总装：从构造期接线到运行期解析的全景" class="headerlink" title="第 5 章 总装：从构造期接线到运行期解析的全景"></a>第 5 章 总装：从构造期接线到运行期解析的全景</h1><p>把前四章的零件全部装回同一条时间线上。一次输入事件的完整一生，横跨<strong>构造期埋下的结构</strong>与<strong>运行期兑现的机制</strong>：</p>
+<h2 id="5-1-构造期：把结构焊死（只发生一次）"><a href="#5-1-构造期：把结构焊死（只发生一次）" class="headerlink" title="5.1 构造期：把结构焊死（只发生一次）"></a>5.1 构造期：把结构焊死（只发生一次）</h2><figure class="highlight lua"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">SystemServer → nativeInit → NativeInputManager → new InputManager（InputManager.cpp:<span class="number">62</span><span class="number">-65</span>）</span><br><span class="line"></span><br><span class="line">  ① mDispatcher = createInputDispatcher(...)           造终点（Servant 的宿主）</span><br><span class="line">  ② mProcessor  = InputProcessor(*mDispatcher)          引用①  ┐</span><br><span class="line">  ③ mBlocker    = UnwantedInteractionBlocker(*mProcessor) 引用② ├── 三根接口引用，</span><br><span class="line">  ④ mReader     = createInputReader(policy, *mBlocker)   引用③  ┘   终身不可改</span><br><span class="line"></span><br><span class="line">  同时：每个对象的 vptr 写入各自类的 vtable（vptr 一生不变，见 <span class="number">1.5</span>）</span><br></pre></td></tr></tbody></table></figure>
+
+<p>此刻还没有任何事件流动，但两样东西已定死：</p>
+<ul>
+<li><strong>拓扑</strong>（Decorator/职责链）：数据将经过谁、按什么顺序——由三根引用决定；</li>
+<li><strong>身份</strong>（vtable）：每个对象”是谁”——<code>Blocker</code> 对象永远查到 Blocker 的表。</li>
+</ul>
+<h2 id="5-2-运行期：机制逐级兑现（每秒无数次）"><a href="#5-2-运行期：机制逐级兑现（每秒无数次）" class="headerlink" title="5.2 运行期：机制逐级兑现（每秒无数次）"></a>5.2 运行期：机制逐级兑现（每秒无数次）</h2><p>一次触摸从内核到 App 的全链路，标注每一跳用的”零件”：</p>
+<figure class="highlight lua"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line">内核 /dev/<span class="built_in">input</span>/eventX</span><br><span class="line">  │ <span class="built_in">read</span>() + epoll（Reactor：EventHub 的等待机制）</span><br><span class="line">  ▼</span><br><span class="line">RawEvent[]（EventHub::getEvents）</span><br><span class="line">  │</span><br><span class="line">  ▼ 锁内（Reader 的 mLock）</span><br><span class="line">processEventsLocked ──── 四层 out 回流（Command：请求成为数据，list splice 零拷贝流转）</span><br><span class="line">  │ mapper 攒缸-扳机（键盘直出 / 触摸 SYN_REPORT 触发 sync）</span><br><span class="line">  ▼</span><br><span class="line">notifyArgs（局部 std::list&lt;NotifyArgs&gt;）</span><br><span class="line">  │ 解锁后 notifyAll()</span><br><span class="line">  ▼</span><br><span class="line">Reader.mQueuedListener ──── 缓冲式 Decorator：只入队（锁内可安全投递的信箱）</span><br><span class="line">  │ <span class="built_in">flush</span>()（锁外，InputReader.cpp:<span class="number">244</span>）</span><br><span class="line">  ▼</span><br><span class="line">mInnerListener.notify(args) ──── 三次选择（<span class="number">2.2</span> 节）</span><br><span class="line">  │  ① notify：非虚，静态绑定，入口统一（NVI/Template Method）</span><br><span class="line">  │  ② std::visit：variant switch，数据定分支（Visitor：双分派的前一半）</span><br><span class="line">  │  ③ notifyMotion：虚调用，查 vptr/vtable（动态绑定）</span><br><span class="line">  ▼</span><br><span class="line">Blocker::notifyMotion ──── 同款<span class="string">"锁内入队、锁外 flush"</span>（模式逐站重演，掌纹过滤可丢弃事件）</span><br><span class="line">  │ 自己的 mQueuedListener.<span class="built_in">flush</span>()</span><br><span class="line">  ▼</span><br><span class="line">Processor::notifyMotion ──── HAL 分类（耗时活已外移到独立线程）</span><br><span class="line">  │ 自己的 mQueuedListener.<span class="built_in">flush</span>()</span><br><span class="line">  ▼</span><br><span class="line">Dispatcher::notifyMotion ──── Active Object 的 Proxy：只做有界工作</span><br><span class="line">  │ MotionEntry 构造（Method Request）</span><br><span class="line">  │ enqueueInboundEventLocked → mInboundQueue（Activation Queue）</span><br><span class="line">  │ <span class="built_in">write</span>(eventfd, <span class="number">1</span>)  ★ 国境线：线程交接</span><br><span class="line">  ▼ 返回（Reader 线程回去睡 epoll_wait）</span><br><span class="line">Dispatcher 线程被 Looper 唤醒（Reactor）</span><br><span class="line">  │ dispatchOnce → dispatchOnceInnerLocked（Scheduler）</span><br><span class="line">  │ 找焦点窗口 → publishInputEvent（Servant）</span><br><span class="line">  ▼</span><br><span class="line">InputChannel::sendMessage(socketpair) → App 进程 → ViewRootImpl → View 树</span><br><span class="line">  （之后：等 ACK → finished 信号 → 派发下一个 / 超时 → ANR）</span><br></pre></td></tr></tbody></table></figure>
+
+<h2 id="5-3-模式清单结算"><a href="#5-3-模式清单结算" class="headerlink" title="5.3 模式清单结算"></a>5.3 模式清单结算</h2><table>
+<thead>
+<tr>
+<th>模式</th>
+<th>在哪一章出场</th>
+<th>inputflinger 现场</th>
+<th>语法零件</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Template Method / NVI</td>
+<td>2.1</td>
+<td><code>notify</code>（非虚入口）→ 虚 <code>notify*</code></td>
+<td>非虚函数调虚函数</td>
+</tr>
+<tr>
+<td>Decorator / 职责链 / 管道</td>
+<td>3.2</td>
+<td><code>InputManager.cpp:62-65</code> 构造链</td>
+<td>接口引用层层相接</td>
+</tr>
+<tr>
+<td>Command</td>
+<td>3.3 前半</td>
+<td><code>NotifyArgs</code> 一族纯数据 struct</td>
+<td>variant（替代虚 execute）</td>
+</tr>
+<tr>
+<td>Visitor（双分派）</td>
+<td>3.3 后半</td>
+<td><code>std::visit</code> + 重叠 lambda</td>
+<td>variant + 虚调用接力</td>
+</tr>
+<tr>
+<td>缓冲式 Decorator</td>
+<td>3.4</td>
+<td><code>QueuedInputListener</code>（锁纪律）</td>
+<td>同接口 + 入队不转发</td>
+</tr>
+<tr>
+<td>Active Object</td>
+<td>3.5</td>
+<td><code>mInboundQueue</code> + eventfd + Dispatcher 线程</td>
+<td>请求对象 + 队列 + eventfd</td>
+</tr>
+<tr>
+<td>Reactor</td>
+<td>3.5/5.2</td>
+<td>EventHub 与 Looper 的 epoll 循环</td>
+<td>epoll + eventfd + 回调</td>
+</tr>
+</tbody></table>
+<p>七个模式不是各自为政的装饰，而是<strong>互相咬合的传动机构</strong>：Command 让事件能进队列 → 缓冲 Decorator 决定何时出队 → 职责链决定经过谁 → Visitor/虚函数决定落到哪个实现 → Active Object 决定在哪个线程执行。抽掉任何一个，链条都转不动。</p>
+<hr>
+<h1 id="第-6-章-思想实验与自测"><a href="#第-6-章-思想实验与自测" class="headerlink" title="第 6 章 思想实验与自测"></a>第 6 章 思想实验与自测</h1><p>先自己答，再展开对照。每题都能在正文找到出处。</p>
+<h2 id="Q1（机制）"><a href="#Q1（机制）" class="headerlink" title="Q1（机制）"></a>Q1（机制）</h2><p>删掉 <code>InputListenerInterface::notifyMotion</code> 声明里的 <code>virtual</code> 关键字（只删这一个），整条流水线会发生什么？</p>
+<details><summary>答案</summary>
+
+<p><code>QueuedInputListener</code>、<code>UnwantedInteractionBlocker</code> 等的 <code>notifyMotion</code> override 立刻编译失败（<code>override</code> 标记找不到可覆写的虚函数——1.4 节的保险丝起作用）。即使顺手把所有 <code>override</code> 也删掉让它编过：所有 <code>notifyMotion</code> 调用退化为静态绑定，<code>mInnerListener.notifyMotion(args)</code> 会试图调用<strong>纯虚的基类实现</strong>（没有函数体）→ 链接错误或运行期未定义行为。一句话：链条断了，但会<strong>在编译/链接期大声报错</strong>，而不是静默出错——这正是 <code>override</code> 存在的意义。</p>
+</details>
+
+<h2 id="Q2（结构）"><a href="#Q2（结构）" class="headerlink" title="Q2（结构）"></a>Q2（结构）</h2><p>不修改 <code>flush()</code> 和任何下游代码，只改 <code>InputManager</code> 构造函数，让事件<strong>跳过 Blocker 和 Processor</strong> 直达 Dispatcher。怎么改？这证明了什么？</p>
+<details><summary>答案</summary>
+
+<figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">mReader = <span class="built_in">createInputReader</span>(readerPolicy, *mDispatcher);   <span class="comment">// 第 ④ 行直接接 Dispatcher</span></span><br></pre></td></tr></tbody></table></figure>
+
+<p>证明：<strong>路线不存在 <code>flush()</code> 里，存在构造期接好的引用里</strong>（3.2 节性质 1）。<code>flush()</code> 只做多态调用，路径由引用的绑定决定——装饰器模式”增删层零成本”的来源。</p>
+</details>
+
+<h2 id="Q3（运行期）"><a href="#Q3（运行期）" class="headerlink" title="Q3（运行期）"></a>Q3（运行期）</h2><p><code>mInnerListener.notify(args)</code> 这次调用里，一共发生了几次”选择”？各自依据什么？</p>
+<details><summary>答案</summary>
+
+<p>三次（2.2 节）：① <code>notify</code> 本身——静态绑定，依据<strong>编译期类型</strong>（非虚）；② <code>std::visit</code>——switch 分发，依据<strong>数据内容</strong>（variant 持有哪种 NotifyArgs）；③ <code>notifyMotion</code>——动态绑定，依据<strong>运行期对象类型</strong>（查 vptr/vtable）。入口看编译期、分支看数据、实现看对象。</p>
+</details>
+
+<h2 id="Q4（设计）"><a href="#Q4（设计）" class="headerlink" title="Q4（设计）"></a>Q4（设计）</h2><p><code>NotifyArgs</code> 用 <code>std::variant</code> + <code>std::visit</code>，而 listener 链用虚函数。同样是”多态分发”，为什么这里用两种不同的机制？</p>
+<details><summary>答案</summary>
+
+<p>两个轴的类型变化方向相反（3.3 节的取舍表）：事件种类是<strong>封闭集</strong>（9 种，系统定义，极少变）但分发<strong>极高频</strong>（每秒成百上千次）→ variant + switch 最优（无堆分配、无 vptr、跳转可优化）；listener 实现是<strong>开放集</strong>（AOSP15+ 真的加了新站）但”切换”只发生在构造期一次 → 虚函数最优。<strong>机制没有好坏，只有匹配不匹配变化的方向</strong>。</p>
+</details>
+
+<h2 id="Q5（并发）"><a href="#Q5（并发）" class="headerlink" title="Q5（并发）"></a>Q5（并发）</h2><p><code>InputDispatcher::notifyMotion</code> 里 <code>needWake = mInboundQueue.empty()</code>——为什么要判断”入队前队列是否为空”才写 eventfd，而不是每次都写？</p>
+<details><summary>答案</summary>
+
+<p>队列非空说明 Dispatcher 线程已被之前的唤醒、迟早会来消费（或正在消费），再写 eventfd 是重复叫门（3.5 节）。eventfd 的计数语义下多余的 write 只会被下次 <code>read</code> 一次性清掉，不致错但浪费一次系统调用。这是”叫醒一个已经在干活的人没有意义”的工程化表达——也顺便解释了为什么 eventfd 比条件变量更适合这里：不怕丢失的”至少一次”唤醒。</p>
+</details>
+
+<h2 id="Q6（跨语言）"><a href="#Q6（跨语言）" class="headerlink" title="Q6（跨语言）"></a>Q6（跨语言）</h2><p>用 C 语言（struct + 函数指针，4.3 节）重写这条链时，哪件事 C++ 编译器替你做了而 C 程序员必须自己做？至少说出三件。</p>
+<details><summary>答案</summary>
+
+<p>① 生成 vtable（C 要手写函数指针表并逐个填）；② 在对象里埋 vptr（C 要把”接口”结构体放成员第一位并手工初始化）；③ 调用点查表（C 要手写 <code>next-&gt;notify_motion(next, args)</code>，连 <code>this</code> 都要自己传）；④ 类型检查（C 的函数指针签名对不上只有警告，C++ 的 <code>override</code> 直接报错）；⑤ 析构链（C 要手工定义并逐层调用 destroy）。核心是：<strong>多态 = 数据里存函数指针 + 调用时查它</strong>，OOP 语言只是把这套手工活自动化并加了静态检查。</p>
+</details>
+
+<h2 id="Q7（综合）"><a href="#Q7（综合）" class="headerlink" title="Q7（综合）"></a>Q7（综合）</h2><p>为什么说”<code>write(eventfd)</code> 是本专栏两条线的交汇点”？</p>
+<details><summary>答案</summary>
+
+<p>往回看，它之前的整条链（flush → visit → 三站虚调用）全部是<strong>虚函数机制 + 同步模式</strong>的世界，跑在 Reader 线程；往前看，它是 <strong>Active Object 的线程交接</strong>（请求已入队，执行权移交 Dispatcher 线程）和 <strong>Reactor 的触发源</strong>（epoll 被唤醒）。一写之前调用栈直连、一写之后两个线程各过各的——机制与模式在此完成一次”权力交接”。</p>
+</details>
+
+<hr>
+<h1 id="尾声"><a href="#尾声" class="headerlink" title="尾声"></a>尾声</h1><p>回到第 0 章的那个问题：”<code>flush()</code> 凭什么知道下一站是 <code>InputDispatcher</code>？”</p>
+<p>现在可以给出完整的回答了：<strong>它不知道，也不需要知道。构造期，<code>InputManager</code> 用三根接口引用把四个对象焊成链（设计模式负责形状）；运行期，每次虚调用查 vtable 找到实际实现（C++ 机制负责绑定）；每一站重复”入队-放行”的缓冲纪律（锁纪律负责安全）；到 Dispatcher 手里，请求入队、eventfd 一写，执行权跨过线程边界（Active Object 负责解耦）。</strong></p>
+<p>分层是为了各司其职：<strong>语法给你零件，模式给你结构，约束给你纪律</strong>。读任何一段系统代码，把这三层分开问——“这里在用什么机制？搭的什么结构？守的什么约束？”——复杂度就会像洋葱一样一层层退掉。</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/C/" rel="tag"># C++</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2026/08/22/Input%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/" rel="next" title="Input 启动流程">
+                <i class="fa fa-chevron-left"></i> Input 启动流程
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="/images/head.jpg"
+                alt="" />
+            
+              <p class="site-author-name" itemprop="name"></p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/%7C%7C%20archive">
+              
+                  <span class="site-state-item-count">32</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">12</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">24</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+            <div class="feed-link motion-element">
+              <a href="/atom.xml" rel="alternate">
+                <i class="fa fa-rss"></i>
+                RSS
+              </a>
+            </div>
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/ZYBO-o" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-github"></i>GitHub</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://www.zhihu.com/people/lin-li-yike-cao/activities" target="_blank" title="ZhiHu">
+                      
+                        <i class="fa fa-fw fa-globe"></i>ZhiHu</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+            <div class="links-of-blogroll motion-element links-of-blogroll-block">
+              <div class="links-of-blogroll-title">
+                <i class="fa  fa-fw fa-link"></i>
+                Links
+              </div>
+              <ul class="links-of-blogroll-list">
+                
+                  <li class="links-of-blogroll-item">
+                    <a href="https://blog.schwarzeni.com/" title="Schwarzeni" target="_blank">Schwarzeni</a>
+                  </li>
+                
+                  <li class="links-of-blogroll-item">
+                    <a href="https://www.qcmoke.cn/" title="qcmoke" target="_blank">qcmoke</a>
+                  </li>
+                
+                  <li class="links-of-blogroll-item">
+                    <a href="https://www.zhoujianguo.ltd/" title="ZhouJianGuo" target="_blank">ZhouJianGuo</a>
+                  </li>
+                
+                  <li class="links-of-blogroll-item">
+                    <a href="https://hishiro-xiao.github.io/" title="hishiro-xiao" target="_blank">hishiro-xiao</a>
+                  </li>
+                
+              </ul>
+            </div>
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E7%AC%AC-0-%E7%AB%A0-%E5%BC%95%E5%AD%90"><span class="nav-text">第 0 章 引子</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E7%AC%AC-1-%E7%AB%A0-C-%E8%AF%AD%E6%B3%95%E5%B1%82%EF%BC%9A%E8%99%9A%E5%87%BD%E6%95%B0%E5%88%B0%E5%BA%95%E5%81%9A%E4%BA%86%E4%BB%80%E4%B9%88"><span class="nav-text">第 1 章 C++ 语法层：虚函数到底做了什么</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-1-%E6%B2%A1%E6%9C%89%E8%99%9A%E5%87%BD%E6%95%B0%E7%9A%84%E4%B8%96%E7%95%8C%EF%BC%9A%E9%9D%99%E6%80%81%E7%BB%91%E5%AE%9A"><span class="nav-text">1.1 没有虚函数的世界：静态绑定</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#1-2-virtual%EF%BC%9A%E6%8A%8A%E2%80%9D%E9%80%89%E5%87%BD%E6%95%B0%E2%80%9D%E6%8E%A8%E8%BF%9F%E5%88%B0%E8%BF%90%E8%A1%8C%E6%9C%9F"><span class="nav-text">1.2 virtual：把”选函数”推迟到运行期</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#1-3-%E7%BA%AF%E8%99%9A%E5%87%BD%E6%95%B0%E4%B8%8E%E6%8A%BD%E8%B1%A1%E7%B1%BB%EF%BC%9AC-%E7%9A%84-interface"><span class="nav-text">1.3 纯虚函数与抽象类：C++ 的 interface</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#1-4-override%EF%BC%9A%E8%AE%A9%E7%BC%96%E8%AF%91%E5%99%A8%E6%9B%BF%E4%BD%A0%E6%9F%A5%E7%AD%BE%E5%90%8D"><span class="nav-text">1.4 override：让编译器替你查签名</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#1-5-vtable-vptr%EF%BC%9A%E7%BC%96%E8%AF%91%E5%99%A8%E6%9B%BF%E4%BD%A0%E7%94%9F%E6%88%90%E7%9A%84%E5%87%BD%E6%95%B0%E6%8C%87%E9%92%88%E8%A1%A8"><span class="nav-text">1.5 vtable &#x2F; vptr：编译器替你生成的函数指针表</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E7%AC%AC-2-%E7%AB%A0-%E8%BF%90%E8%A1%8C%E6%9C%9F%E8%A7%86%E8%A7%92%EF%BC%9A%E4%B8%80%E6%AC%A1%E8%99%9A%E8%B0%83%E7%94%A8%E7%9A%84%E5%AE%8C%E6%95%B4%E8%A7%A3%E5%89%96"><span class="nav-text">第 2 章 运行期视角：一次虚调用的完整解剖</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#2-1-InputListenerInterface-%E7%9A%84%E4%B8%89%E8%A1%8C%E5%85%B3%E9%94%AE%E4%BB%A3%E7%A0%81"><span class="nav-text">2.1 InputListenerInterface 的三行关键代码</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-2-flush-%E7%9A%84%E9%80%90%E6%AD%A5%E8%A7%A3%E6%9E%90"><span class="nav-text">2.2 flush()的逐步解析</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-3-%E4%BB%80%E4%B9%88%E6%97%B6%E5%80%99%E4%B8%8D%E8%B5%B0-vtable%EF%BC%88%E9%87%8D%E8%A6%81%E5%8F%8D%E4%BE%8B%EF%BC%89"><span class="nav-text">2.3 什么时候不走 vtable（重要反例）</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E7%AC%AC-3-%E7%AB%A0-%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F%E5%B1%82%EF%BC%9A%E6%9C%BA%E5%88%B6%E4%B9%8B%E4%B8%8A%E6%90%AD%E7%BB%93%E6%9E%84"><span class="nav-text">第 3 章 设计模式层：机制之上搭结构</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#3-1-%E5%9B%9B%E5%B1%82%E5%88%86%E5%B7%A5%EF%BC%9A%E8%AF%AD%E6%B3%95%E6%9C%BA%E5%88%B6-%E5%A4%9A%E6%80%81%E8%83%BD%E5%8A%9B-%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F-%E6%9E%B6%E6%9E%84"><span class="nav-text">3.1 四层分工：语法机制 &#x2F; 多态能力 &#x2F; 设计模式 &#x2F; 架构</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-2-%E6%9E%84%E9%80%A0%E6%9C%9F%E6%8E%A5%E7%BA%BF%EF%BC%9ADecorator-%E4%B8%8E%E8%81%8C%E8%B4%A3%E9%93%BE"><span class="nav-text">3.2 构造期接线：Decorator 与职责链</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%8E%A5%E7%BA%BF%E7%8E%B0%E5%9C%BA"><span class="nav-text">接线现场</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%BF%99%E6%98%AF%E4%BB%80%E4%B9%88%E6%A8%A1%E5%BC%8F%EF%BC%9F"><span class="nav-text">这是什么模式？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E5%BF%85%E9%A1%BB%E2%80%9D%E4%BB%8E%E9%87%8C%E5%90%91%E5%A4%96%E2%80%9D%E9%80%A0"><span class="nav-text">为什么必须”从里向外”造</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-3-Command-Visitor%EF%BC%9ANotifyArgs-%E7%9A%84%E4%B8%A4%E5%89%AF%E9%9D%A2%E5%AD%94"><span class="nav-text">3.3 Command + Visitor：NotifyArgs 的两副面孔</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Command-%E6%A8%A1%E5%BC%8F%EF%BC%9A%E6%8A%8A%E2%80%9D%E8%AF%B7%E6%B1%82%E2%80%9D%E5%81%9A%E6%88%90%E6%95%B0%E6%8D%AE"><span class="nav-text">Command 模式：把”请求”做成数据</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%A4%E5%89%AF%E9%9D%A2%E5%AD%94%EF%BC%9A%E7%BB%8F%E5%85%B8%E8%99%9A%E5%87%BD%E6%95%B0%E7%89%88-vs-variant-%E7%89%88"><span class="nav-text">两副面孔：经典虚函数版 vs variant 版</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Visitor%EF%BC%9A%E8%97%8F%E5%9C%A8-std-visit-%E9%87%8C%E7%9A%84%E5%8F%8C%E5%88%86%E6%B4%BE"><span class="nav-text">Visitor：藏在 std::visit 里的双分派</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-4-%E7%BC%93%E5%86%B2%E5%BC%8F-Decorator%EF%BC%9AQueuedInputListener-%E4%B8%8E%E9%94%81%E7%BA%AA%E5%BE%8B"><span class="nav-text">3.4 缓冲式 Decorator：QueuedInputListener 与锁纪律</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AE%83%E5%9C%A8-GoF-23-%E4%B8%AA%E6%A8%A1%E5%BC%8F%E9%87%8C%E6%89%BE%E4%B8%8D%E5%88%B0%E5%90%8D%E5%AD%97"><span class="nav-text">它在 GoF 23 个模式里找不到名字</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E5%BF%85%E9%A1%BB%E6%9C%89%E8%BF%99%E4%B8%AA%E7%BC%93%E5%86%B2%EF%BC%9A%E6%AD%BB%E9%94%81%E9%98%B4%E5%BD%B1"><span class="nav-text">为什么必须有这个缓冲：死锁阴影</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%A8%A1%E5%BC%8F%E9%80%90%E7%AB%99%E9%87%8D%E6%BC%94"><span class="nav-text">模式逐站重演</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-5-Active-Object%EF%BC%9AmInboundQueue-eventfd-Dispatcher-%E7%BA%BF%E7%A8%8B"><span class="nav-text">3.5 Active Object：mInboundQueue + eventfd + Dispatcher 线程</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%90%8C%E6%AD%A5%E9%93%BE%E7%9A%84%E7%BB%88%E7%82%B9%EF%BC%8C%E5%BC%82%E6%AD%A5%E4%B8%96%E7%95%8C%E7%9A%84%E8%B5%B7%E7%82%B9"><span class="nav-text">同步链的终点，异步世界的起点</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AF%B9%E7%85%A7-POSA2-%E7%9A%84-Active-Object-%E5%85%AD%E4%BB%B6%E5%A5%97"><span class="nav-text">对照 POSA2 的 Active Object 六件套</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%BF%99%E4%B8%AA%E6%A8%A1%E5%BC%8F%E4%B9%B0%E5%88%B0%E4%BA%86%E4%BB%80%E4%B9%88"><span class="nav-text">这个模式买到了什么</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E7%AC%AC-4-%E7%AB%A0-%E6%A8%A1%E5%BC%8F%E7%8B%AC%E7%AB%8B%E4%BA%8E%E8%AF%AD%E6%B3%95%EF%BC%9A%E5%9B%9B%E7%A7%8D%E8%AF%AD%E8%A8%80%E9%87%8C%E7%9A%84%E5%90%8C%E4%B8%80%E6%A0%B9%E9%93%BE%E6%9D%A1"><span class="nav-text">第 4 章 模式独立于语法：四种语言里的同一根链条</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#4-1-C-%EF%BC%88%E6%9C%AC%E5%B0%8A%EF%BC%8C%E5%AF%B9%E7%85%A7%E5%9F%BA%E5%87%86%EF%BC%89"><span class="nav-text">4.1 C++（本尊，对照基准）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-2-Java%EF%BC%9A%E6%89%80%E6%9C%89%E6%96%B9%E6%B3%95%E9%BB%98%E8%AE%A4%E8%99%9A"><span class="nav-text">4.2 Java：所有方法默认虚</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-3-C%EF%BC%9A%E6%B2%A1%E6%9C%89-class%E3%80%81%E6%B2%A1%E6%9C%89%E7%BB%A7%E6%89%BF%E3%80%81%E6%B2%A1%E6%9C%89-virtual-%E2%80%94%E2%80%94-%E6%89%8B%E5%B7%A5%E6%90%AD-vtable"><span class="nav-text">4.3 C：没有 class、没有继承、没有 virtual —— 手工搭 vtable</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-4-Go-Rust%EF%BC%9A%E8%BF%9E%E2%80%9D%E7%BB%A7%E6%89%BF%E2%80%9D%E9%83%BD%E4%B8%8D%E8%A6%81%E4%BA%86"><span class="nav-text">4.4 Go &#x2F; Rust：连”继承”都不要了</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-5-%E6%9C%AC%E7%AB%A0%E7%BB%93%E8%AE%BA"><span class="nav-text">4.5 本章结论</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E7%AC%AC-5-%E7%AB%A0-%E6%80%BB%E8%A3%85%EF%BC%9A%E4%BB%8E%E6%9E%84%E9%80%A0%E6%9C%9F%E6%8E%A5%E7%BA%BF%E5%88%B0%E8%BF%90%E8%A1%8C%E6%9C%9F%E8%A7%A3%E6%9E%90%E7%9A%84%E5%85%A8%E6%99%AF"><span class="nav-text">第 5 章 总装：从构造期接线到运行期解析的全景</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#5-1-%E6%9E%84%E9%80%A0%E6%9C%9F%EF%BC%9A%E6%8A%8A%E7%BB%93%E6%9E%84%E7%84%8A%E6%AD%BB%EF%BC%88%E5%8F%AA%E5%8F%91%E7%94%9F%E4%B8%80%E6%AC%A1%EF%BC%89"><span class="nav-text">5.1 构造期：把结构焊死（只发生一次）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-2-%E8%BF%90%E8%A1%8C%E6%9C%9F%EF%BC%9A%E6%9C%BA%E5%88%B6%E9%80%90%E7%BA%A7%E5%85%91%E7%8E%B0%EF%BC%88%E6%AF%8F%E7%A7%92%E6%97%A0%E6%95%B0%E6%AC%A1%EF%BC%89"><span class="nav-text">5.2 运行期：机制逐级兑现（每秒无数次）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-3-%E6%A8%A1%E5%BC%8F%E6%B8%85%E5%8D%95%E7%BB%93%E7%AE%97"><span class="nav-text">5.3 模式清单结算</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E7%AC%AC-6-%E7%AB%A0-%E6%80%9D%E6%83%B3%E5%AE%9E%E9%AA%8C%E4%B8%8E%E8%87%AA%E6%B5%8B"><span class="nav-text">第 6 章 思想实验与自测</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Q1%EF%BC%88%E6%9C%BA%E5%88%B6%EF%BC%89"><span class="nav-text">Q1（机制）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Q2%EF%BC%88%E7%BB%93%E6%9E%84%EF%BC%89"><span class="nav-text">Q2（结构）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Q3%EF%BC%88%E8%BF%90%E8%A1%8C%E6%9C%9F%EF%BC%89"><span class="nav-text">Q3（运行期）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Q4%EF%BC%88%E8%AE%BE%E8%AE%A1%EF%BC%89"><span class="nav-text">Q4（设计）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Q5%EF%BC%88%E5%B9%B6%E5%8F%91%EF%BC%89"><span class="nav-text">Q5（并发）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Q6%EF%BC%88%E8%B7%A8%E8%AF%AD%E8%A8%80%EF%BC%89"><span class="nav-text">Q6（跨语言）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Q7%EF%BC%88%E7%BB%BC%E5%90%88%EF%BC%89"><span class="nav-text">Q7（综合）</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%B0%BE%E5%A3%B0"><span class="nav-text">尾声</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Zcorpius</span>
+
+  
+</div>
+
+<!--
+
+
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Muse</a> v5.1.4</div>
+
+
+-->
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+          <span id="scrollpercent"><span>0</span>%</span>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+  
+
+
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@9/dist/mermaid.min.js"></script>
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: 'default'
+    });
+  </script>
+  
+  
+
+  
+
+
+<!-- Nexora 风格代码块增强：顶栏 + 语言标签 + 复制按钮 -->
+<script type="text/javascript" src="/js/src/nexora-code.js"></script>
+<!-- Nexora 风格 TOC scroll-spy（IntersectionObserver，替代 Bootstrap scrollspy） -->
+<script type="text/javascript" src="/js/src/nexora-toc.js"></script>
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"debug":false,"model":{"jsonPath":"https://cdn.jsdelivr.net/gh/evrstr/live2d-widget-models/live2d_evrstr/mashiro_shifuku/model.json"},"display":{"position":"left","width":200,"height":500},"mobile":{"show":true},"encrypt":{"enable":true},"log":false});</script></body>
+</html>
+
+<!-- 页面点击小红心 -->
+<script type="text/javascript" src="/js/src/love.js"></script>
