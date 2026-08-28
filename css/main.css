@@ -1855,7 +1855,7 @@ pre {
   width: 4px;
   height: 4px;
   border-radius: 50%;
-  background: #e5c132;
+  background: #cc0930;
 }
 .links-of-blogroll {
   font-size: 13px;
@@ -2852,6 +2852,9 @@ embed {
 .main-inner .posts-expand .post-title {
   font-weight: 700;
   font-size: 20px;
+}
+.main-inner .posts-expand .post-title .post-sticky-flag {
+  color: #ff2a2a;
 }
 .main-inner .posts-expand .post-meta {
   margin: 10px 0 20px;
