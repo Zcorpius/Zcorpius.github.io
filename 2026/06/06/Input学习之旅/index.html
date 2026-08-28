@@ -99,16 +99,23 @@
 
 
 
+<meta name="description" content="1. Input 系统框架类图1.1 输入系统的位置当用户触摸屏幕或按键时,硬件驱动将事件写入 &#x2F;dev&#x2F;input&#x2F;eventX 设备节点。输入系统取出原生内核事件,经层层封装成为 KeyEvent &#x2F; MotionEvent,最终交付给目标窗口(ViewRootImpl → View 树)消费: 123456Linux Kernel ──► &#x2F;dev&#x2F;input&#x2F;eventX ──► Even">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Android Input 学习之旅">
 <meta property="og:url" content="https://zcorpius.github.io/2026/06/06/Input%E5%AD%A6%E4%B9%A0%E4%B9%8B%E6%97%85/index.html">
 <meta property="og:site_name" content="Zcorpius&#39;s Blog">
+<meta property="og:description" content="1. Input 系统框架类图1.1 输入系统的位置当用户触摸屏幕或按键时,硬件驱动将事件写入 &#x2F;dev&#x2F;input&#x2F;eventX 设备节点。输入系统取出原生内核事件,经层层封装成为 KeyEvent &#x2F; MotionEvent,最终交付给目标窗口(ViewRootImpl → View 树)消费: 123456Linux Kernel ──► &#x2F;dev&#x2F;input&#x2F;eventX ──► Even">
 <meta property="og:locale">
+<meta property="og:image" content="https://zcorpius.github.io/2026/06/06/Input%E5%AD%A6%E4%B9%A0%E4%B9%8B%E6%97%85/input_data_flow.drawio.png">
+<meta property="og:image" content="https://zcorpius.github.io/2026/06/06/Input%E5%AD%A6%E4%B9%A0%E4%B9%8B%E6%97%85/input_framework.png">
+<meta property="og:image" content="https://zcorpius.github.io/2026/06/06/Input%E5%AD%A6%E4%B9%A0%E4%B9%8B%E6%97%85/input_classes_java_jni.png">
+<meta property="og:image" content="https://zcorpius.github.io/2026/06/06/Input%E5%AD%A6%E4%B9%A0%E4%B9%8B%E6%97%85/input_classes_native.png">
 <meta property="article:published_time" content="2026-06-06T15:43:21.000Z">
-<meta property="article:modified_time" content="2026-08-22T14:34:03.442Z">
+<meta property="article:modified_time" content="2026-08-28T14:17:18.022Z">
 <meta property="article:author" content="Zcorpius">
 <meta property="article:tag" content="Input">
 <meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://zcorpius.github.io/2026/06/06/Input%E5%AD%A6%E4%B9%A0%E4%B9%8B%E6%97%85/input_data_flow.drawio.png">
 
 
 
@@ -421,7 +428,7 @@
                   <span class="post-meta-item-text">字数统计&#58;</span>
                 
                 <span title="字数统计">
-                  0
+                  754
                 </span>
               
 
@@ -437,7 +444,7 @@
                   <span class="post-meta-item-text">阅读时长 &asymp;</span>
                 
                 <span title="阅读时长">
-                  1
+                  3
                 </span>
               
             </div>
@@ -458,7 +465,49 @@
       
 
       
-        
+        <h1 id="1-Input-系统框架类图"><a href="#1-Input-系统框架类图" class="headerlink" title="1. Input 系统框架类图"></a>1. Input 系统框架类图</h1><h2 id="1-1-输入系统的位置"><a href="#1-1-输入系统的位置" class="headerlink" title="1.1 输入系统的位置"></a>1.1 输入系统的位置</h2><p>当用户触摸屏幕或按键时,硬件驱动将事件写入 <code>/dev/input/eventX</code> 设备节点。输入系统取出原生内核事件,<br>经层层封装成为 <code>KeyEvent</code> / <code>MotionEvent</code>,最终交付给目标窗口(ViewRootImpl → View 树)消费:</p>
+<figure class="highlight lua"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">Linux Kernel ──► /dev/<span class="built_in">input</span>/eventX ──► EventHub(epoll/inotify)</span><br><span class="line">             ──► InputReader(RawEvent → NotifyArgs)</span><br><span class="line">             ──► InputListener 流水线(UnwantedInteractionBlocker → InputProcessor)</span><br><span class="line">             ──► InputDispatcher</span><br><span class="line">             ──► InputChannel(socketpair)</span><br><span class="line">             ──► 目标窗口(ViewRootImpl → View 树)</span><br></pre></td></tr></tbody></table></figure>
+
+<img src="/2026/06/06/Input%E5%AD%A6%E4%B9%A0%E4%B9%8B%E6%97%85/input_data_flow.drawio.png" alt="AOSP14 Input 整体框架类图" style="zoom:80%;">
+
+
+
+<h2 id="1-2-AOSP14-源码分布"><a href="#1-2-AOSP14-源码分布" class="headerlink" title="1.2 AOSP14 源码分布"></a>1.2 AOSP14 源码分布</h2><figure class="highlight lua"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line">frameworks/native/services/inputflinger/           ← libinputflinger.so(核心,已模块化拆分)</span><br><span class="line">  ├─ InputManager.cpp/h                            ← 流水线总装 + BnInputFlinger Binder 服务</span><br><span class="line">  ├─ include/                                      ← InputThread / InputListener / InputReaderBase 等公共头</span><br><span class="line">  ├─ reader/                                       ← InputReader 子模块</span><br><span class="line">  │   ├─ EventHub.cpp                              ← 设备节点扫描与 epoll 读取</span><br><span class="line">  │   ├─ InputReader.cpp                           ← 读取线程主体</span><br><span class="line">  │   ├─ InputDevice.cpp                           ← 逻辑设备(InputDevice + InputDeviceContext)</span><br><span class="line">  │   ├─ controller/                               ← PeripheralController(键盘灯/振动器等外设控制)</span><br><span class="line">  │   └─ mapper/                                   ← 各类 InputMapper + accumulator/ + gestures/</span><br><span class="line">  ├─ dispatcher/                                   ← InputDispatcher 子模块(独立目录,AOSP14 已拆出)</span><br><span class="line">  │   ├─ InputDispatcher.cpp                       ← 派发线程主体</span><br><span class="line">  │   ├─ Connection / Entry / InputState / FocusResolver / AnrTracker …</span><br><span class="line">  │   └─ include/                                  ← InputDispatcherInterface / Policy 接口</span><br><span class="line">  ├─ UnwantedInteractionBlocker.cpp/h              ← 防误触阶段(掌纹抑制 + 笔优先)</span><br><span class="line">  ├─ InputProcessor.cpp/h                          ← 分类阶段(IInputProcessor HAL)</span><br><span class="line">  ├─ PreferStylusOverTouchBlocker.cpp              ← 手写笔按下时抑制触摸</span><br><span class="line">  └─ host/                                         ← inputflinger 可执行文件入口(main.cpp)</span><br><span class="line"></span><br><span class="line">frameworks/native/include/<span class="built_in">input</span>/                   ← 对外头文件(InputTransport.h 等)</span><br><span class="line">frameworks/native/libs/<span class="built_in">input</span>/                      ← libinput.so(Input/Keyboard/VelocityTracker 等)</span><br><span class="line">frameworks/native/libs/gui/                        ← WindowInfoHandle / InputApplicationHandle</span><br><span class="line"></span><br><span class="line">frameworks/base/services/core/</span><br><span class="line">  ├─ java/com/android/server/<span class="built_in">input</span>/</span><br><span class="line">  │    ├─ InputManagerService.java                 ← Java 层服务(system_server)</span><br><span class="line">  │    └─ NativeInputManagerService.java           ← native 方法接口(AOSP14 新增封装)</span><br><span class="line">  └─ jni/com_android_server_input_InputManagerService.cpp  ← JNI 桥接层</span><br></pre></td></tr></tbody></table></figure>
+
+<hr>
+<h1 id="2-整体框架类图"><a href="#2-整体框架类图" class="headerlink" title="2. 整体框架类图"></a>2. 整体框架类图</h1><img src="/2026/06/06/Input%E5%AD%A6%E4%B9%A0%E4%B9%8B%E6%97%85/input_framework.png" alt="AOSP14 Input 整体框架类图" style="zoom:100%;">
+
+<ul>
+<li><strong>InputManagerService</strong> 位于 Java 层 <code>InputManagerService.java</code>,成员 <code>mNative</code>(NativeImpl)内部 <code>mPtr</code> 指向 Native 层 <code>NativeInputManager</code> 对象;</li>
+<li><strong>NativeInputManager</strong> 位于 JNI 层,同时实现三个 Policy 接口(Reader/Dispatcher/PointerController), <code>mInputManager</code> 持有 <code>InputManager</code>;<code>mLooper</code> 是 <strong>“android.display” 线程</strong>的 Looper(PointerController 等 MessageHandler 用);</li>
+<li><strong>InputManager</strong> 是流水线总装:按 <strong>Dispatcher → Processor → Blocker → Reader</strong> 的顺序构造,前一级(先构造的下游)作为后一级构造函数的 <code>listener</code> 参数传入,形成单向链表式流水线;</li>
+<li>数据流 <code>InputReader → UnwantedInteractionBlocker → InputProcessor → InputDispatcher</code>,<strong>单向、不共享内部状态</strong>——这是 AOSP10+ 相对 6.0 最大的架构变化(源自 ChromeOS input pipeline 的设计)。</li>
+</ul>
+<h2 id="2-1-重要类关系-Java-JNI-层"><a href="#2-1-重要类关系-Java-JNI-层" class="headerlink" title="2.1 重要类关系:Java / JNI 层"></a>2.1 重要类关系:Java / JNI 层</h2><img src="/2026/06/06/Input%E5%AD%A6%E4%B9%A0%E4%B9%8B%E6%97%85/input_classes_java_jni.png" alt="AOSP14 Input Java/JNI 层类图" style="zoom:100%;">
+
+<ul>
+<li><strong>InputManagerService</strong>(橙)持有 <code>mNative</code>(声明类型为接口 <code>NativeInputManagerService</code>),由内部类 <strong>NativeImpl</strong> 实现,<code>NativeImpl.mPtr</code> 保存 Native 层 <code>NativeInputManager</code> 对象指针(经 injector 注入,便于测试时替换实现);</li>
+<li><strong>NativeInputManager</strong>(绿)位于 JNI 层,<code>mServiceObj</code> 回指 Java 层 IMS(JNI 上调入口),<code>mLooper</code> 是 <strong>“android.display” 线程</strong>的 Looper;</li>
+<li>NativeInputManager 一身兼三职:实现 <strong>InputReaderPolicyInterface / InputDispatcherPolicyInterface / PointerControllerPolicyInterface</strong>;其构造函数中 <code>new InputManager(this, *this)</code> 并 <code>addService("inputflinger")</code> 注册 Binder 服务;</li>
+<li><code>mInputManager</code>(<code>sp&lt;InputManagerInterface&gt;</code>)组合 Native 层总装对象。</li>
+</ul>
+<h2 id="2-2-重要类关系-Native-层"><a href="#2-2-重要类关系-Native-层" class="headerlink" title="2.2 重要类关系:Native 层"></a>2.2 重要类关系:Native 层</h2><img src="/2026/06/06/Input%E5%AD%A6%E4%B9%A0%E4%B9%8B%E6%97%85/input_classes_native.png" alt="AOSP14 Input Native 层类图" style="zoom:100%;">
+
+<ul>
+<li><strong>InputManager</strong> 双重身份:<ul>
+<li>实现 <code>InputManagerInterface</code>(总装接口)</li>
+<li><code>BnInputFlinger</code>(Binder 服务端)</li>
+</ul>
+</li>
+<li>四个成员均为接口智能指针(<code>unique_ptr&lt;…Interface&gt;</code>),构造序 <strong>Dispatcher→Processor→Blocker→Reader</strong>(下游先行,前一级作为后一级构造参数);</li>
+<li>接口体系:<code>UnwantedInteractionBlockerInterface</code> / <code>InputProcessorInterface</code> / <code>InputDispatcherInterface</code> 均继承 <code>InputListenerInterface</code>;<strong><code>InputReaderInterface</code> 不继承</strong>——它不是被通知方,事件经 <code>mQueuedListener</code> 送往下一级;</li>
+<li>Reader/Blocker/Processor 三级各持一个 <strong>QueuedInputListener</strong>(其 <code>mInnerListener</code> 即下一级),<code>flush()</code> 攒批转发;<ul>
+<li>InputReader 持 <code>mEventHub</code>(<code>shared_ptr&lt;EventHubInterface&gt;</code>,由 <code>createInputReader()</code> 工厂创建)与 <code>mPolicy</code>(指向 NativeInputManager);</li>
+<li>InputDispatcher 持 <code>mPolicy</code>(引用)、<code>mLooper</code>、<code>mInboundQueue</code>/<code>mConnections</code> 等;</li>
+</ul>
+</li>
+</ul>
+
       
     </div>
     
@@ -552,8 +601,17 @@
       
 
       
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
 
-      <section class="site-overview-wrap sidebar-panel sidebar-panel-active">
+      <section class="site-overview-wrap sidebar-panel">
         <div class="site-overview">
           <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
             
@@ -666,6 +724,22 @@
         </div>
       </section>
 
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#1-Input-%E7%B3%BB%E7%BB%9F%E6%A1%86%E6%9E%B6%E7%B1%BB%E5%9B%BE"><span class="nav-text">1. Input 系统框架类图</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-1-%E8%BE%93%E5%85%A5%E7%B3%BB%E7%BB%9F%E7%9A%84%E4%BD%8D%E7%BD%AE"><span class="nav-text">1.1 输入系统的位置</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#1-2-AOSP14-%E6%BA%90%E7%A0%81%E5%88%86%E5%B8%83"><span class="nav-text">1.2 AOSP14 源码分布</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#2-%E6%95%B4%E4%BD%93%E6%A1%86%E6%9E%B6%E7%B1%BB%E5%9B%BE"><span class="nav-text">2. 整体框架类图</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#2-1-%E9%87%8D%E8%A6%81%E7%B1%BB%E5%85%B3%E7%B3%BB-Java-JNI-%E5%B1%82"><span class="nav-text">2.1 重要类关系:Java &#x2F; JNI 层</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-2-%E9%87%8D%E8%A6%81%E7%B1%BB%E5%85%B3%E7%B3%BB-Native-%E5%B1%82"><span class="nav-text">2.2 重要类关系:Native 层</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
       
 
       
