@@ -106,11 +106,13 @@
 <meta property="og:site_name" content="Zcorpius&#39;s Blog">
 <meta property="og:description" content="1. 概述当用户触摸屏幕或者按键操作，首次触发的是硬件驱动，驱动收到事件后，将该相应事件写入到 &#x2F;dev&#x2F;input 下的输入设备节点，这便产生了最原生态的内核事件。 接着，输入系统通过 EventHub 取出原生态事件，由 InputReader 解析为 NotifyArgs，再经 InputListener 流水线（UnwantedInteractionBlocker → InputProce">
 <meta property="og:locale">
+<meta property="og:image" content="https://zcorpius.github.io/2026/08/13/Input%E6%9E%84%E9%80%A0%E6%B5%81%E7%A8%8B/%E5%90%AF%E5%8A%A8%E6%BC%AB%E7%94%BB%E5%9B%BE.png">
 <meta property="article:published_time" content="2026-08-13T11:45:24.000Z">
-<meta property="article:modified_time" content="2026-08-26T14:08:32.754Z">
+<meta property="article:modified_time" content="2026-08-28T14:23:02.040Z">
 <meta property="article:author" content="Zcorpius">
 <meta property="article:tag" content="Input">
 <meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://zcorpius.github.io/2026/08/13/Input%E6%9E%84%E9%80%A0%E6%B5%81%E7%A8%8B/%E5%90%AF%E5%8A%A8%E6%BC%AB%E7%94%BB%E5%9B%BE.png">
 
 
 
@@ -423,7 +425,7 @@
                   <span class="post-meta-item-text">字数统计&#58;</span>
                 
                 <span title="字数统计">
-                  9.1k
+                  9k
                 </span>
               
 
@@ -439,7 +441,7 @@
                   <span class="post-meta-item-text">阅读时长 &asymp;</span>
                 
                 <span title="阅读时长">
-                  39
+                  38
                 </span>
               
             </div>
@@ -976,7 +978,7 @@
 <p>全文的 <code>LOG_ALWAYS_FATAL_IF</code> 不是风格问题：input 是系统关键路径，任何一步基础设施失败都意味着”输入子系统不可用”，与其带病运行到用户发现”屏幕没反应”，不如在启动阶段就 abort 让问题立刻暴露。</p>
 </div>
 <h1 id="3-整体构造流程"><a href="#3-整体构造流程" class="headerlink" title="3. 整体构造流程"></a>3. 整体构造流程</h1><p>把 input 构造过程，用一张ASCII图与时序图串起来——看清“从 SystemServer 一路 <code>new</code> 到 native InputManager”的完整调用链和返回链：</p>
-<figure class="highlight lua"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">┌─────────────────────────────────────────────────────────────────────────────┐</span><br><span class="line">│ SystemServer.startOtherServices                                             │</span><br><span class="line">│   ├─ inputManager = new InputManagerService(context)                        │</span><br><span class="line">│   │     └─ mNative = new NativeImpl(...) → nativeInit                       │</span><br><span class="line">│   │           └─ JNI ──► NativeInputManager (单例, call_once)                │</span><br><span class="line">│   │                 ├─ new InputManager(this, *this)  (<span class="number">2</span> policies)          │</span><br><span class="line">│   │                 │     ├─ new EventHub (塞进 Reader)                      │</span><br><span class="line">│   │                 │     ├─ new InputReader               ─┐               │</span><br><span class="line">│   │                 │     ├─ new UnwantedInteractionBlocker │               │</span><br><span class="line">│   │                 │     ├─ new InputProcessor             ├ <span class="number">4</span> stage 反向串 │</span><br><span class="line">│   │                 │     └─ new InputDispatcher           ─┘               │</span><br><span class="line">│   │                 └─ addService(<span class="string">"inputflinger"</span>, im)                       │</span><br><span class="line">│   ├─ wm = WindowManagerService.main(context, inputManager, ...)             │</span><br><span class="line">│   ├─ ServiceManager.addService(WINDOW_SERVICE, wm)                          │</span><br><span class="line">│   ├─ ServiceManager.addService(INPUT_SERVICE, inputManager)                 │</span><br><span class="line">│   ├─ inputManager.setWindowManagerCallbacks(...)                            │</span><br><span class="line">│   └─ inputManager.start()                                                   │</span><br><span class="line">│      └ mDispatcher-&gt;start()                                                 │</span><br><span class="line">│      └ mReader-&gt;start()                                                     │</span><br><span class="line">└─────────────────────────────────────────────────────────────────────────────┘</span><br></pre></td></tr></tbody></table></figure>
+<img src="/2026/08/13/Input%E6%9E%84%E9%80%A0%E6%B5%81%E7%A8%8B/启动漫画图.png" alt="Input构造流程图" width="650px">
 
 <p>时序图</p>
 <pre class="mermaid">sequenceDiagram
