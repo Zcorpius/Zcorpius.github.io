@@ -106,13 +106,19 @@
 <meta property="og:site_name" content="Zcorpius&#39;s Blog">
 <meta property="og:description" content="1. 概述当用户触摸屏幕或者按键操作，首次触发的是硬件驱动，驱动收到事件后，将该相应事件写入到 &#x2F;dev&#x2F;input 下的输入设备节点，这便产生了最原生态的内核事件。 接着，输入系统通过 EventHub 取出原生态事件，由 InputReader 解析为 NotifyArgs，再经 InputListener 流水线（UnwantedInteractionBlocker → InputProce">
 <meta property="og:locale">
+<meta property="og:image" content="https://zcorpius.github.io/2026/08/13/Input%E6%9E%84%E9%80%A0%E6%B5%81%E7%A8%8B/%E6%95%B4%E4%BD%93%E9%93%BE%E8%B7%AF.png">
+<meta property="og:image" content="https://zcorpius.github.io/2026/08/13/Input%E6%9E%84%E9%80%A0%E6%B5%81%E7%A8%8B/InputManager%E6%9E%84%E9%80%A0.png">
+<meta property="og:image" content="https://zcorpius.github.io/2026/08/13/Input%E6%9E%84%E9%80%A0%E6%B5%81%E7%A8%8B/08/13/Input%E6%9E%84%E9%80%A0%E6%B5%81%E7%A8%8B/input%E6%A8%A1%E5%9D%97servicemanager%E6%B3%A8%E5%86%8C.png">
+<meta property="og:image" content="https://zcorpius.github.io/2026/08/13/Input%E6%9E%84%E9%80%A0%E6%B5%81%E7%A8%8B/InputManager%E7%B1%BB%E7%BB%93%E6%9E%84.png">
+<meta property="og:image" content="https://zcorpius.github.io/2026/08/13/Input%E6%9E%84%E9%80%A0%E6%B5%81%E7%A8%8B/self-pipe%E8%A7%A6%E5%8F%91%E5%9C%BA%E6%99%AF.png">
+<meta property="og:image" content="https://zcorpius.github.io/2026/08/13/Input%E6%9E%84%E9%80%A0%E6%B5%81%E7%A8%8B/input%20Epoll%E6%B3%A8%E5%86%8C.png">
 <meta property="og:image" content="https://zcorpius.github.io/2026/08/13/Input%E6%9E%84%E9%80%A0%E6%B5%81%E7%A8%8B/%E5%90%AF%E5%8A%A8%E6%BC%AB%E7%94%BB%E5%9B%BE.png">
 <meta property="article:published_time" content="2026-08-13T11:45:24.000Z">
-<meta property="article:modified_time" content="2026-08-28T15:08:54.323Z">
+<meta property="article:modified_time" content="2026-08-29T09:28:53.023Z">
 <meta property="article:author" content="Zcorpius">
 <meta property="article:tag" content="Input">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://zcorpius.github.io/2026/08/13/Input%E6%9E%84%E9%80%A0%E6%B5%81%E7%A8%8B/%E5%90%AF%E5%8A%A8%E6%BC%AB%E7%94%BB%E5%9B%BE.png">
+<meta name="twitter:image" content="https://zcorpius.github.io/2026/08/13/Input%E6%9E%84%E9%80%A0%E6%B5%81%E7%A8%8B/%E6%95%B4%E4%BD%93%E9%93%BE%E8%B7%AF.png">
 
 
 
@@ -425,7 +431,7 @@
                   <span class="post-meta-item-text">字数统计&#58;</span>
                 
                 <span title="字数统计">
-                  9k
+                  8.3k
                 </span>
               
 
@@ -441,7 +447,7 @@
                   <span class="post-meta-item-text">阅读时长 &asymp;</span>
                 
                 <span title="阅读时长">
-                  38
+                  35
                 </span>
               
             </div>
@@ -465,7 +471,7 @@
         <h1 id="1-概述"><a href="#1-概述" class="headerlink" title="1. 概述"></a>1. 概述</h1><p>当用户触摸屏幕或者按键操作，首次触发的是硬件驱动，驱动收到事件后，将该相应事件写入到 <code>/dev/input</code> 下的输入设备节点，这便产生了最原生态的内核事件。</p>
 <p>接着，输入系统通过 EventHub 取出原生态事件，由 InputReader 解析为 NotifyArgs，再经 InputListener 流水线（<code>UnwantedInteractionBlocker → InputProcessor</code>）层层封装，最终在 InputDispatcher 内组装成 KeyEvent 或 MotionEvent；</p>
 <p>最后通过 InputChannel（socketpair）交付给相应的目标窗口（Window）来消费该输入事件。可见，输入系统在整个过程起到承上启下的衔接作用。整体链路：</p>
-<figure class="highlight lua"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">硬件驱动  ──►  /dev/<span class="built_in">input</span>/eventX 设备节点  ──►  EventHub (epoll/inotify)</span><br><span class="line">         ──►  InputReader (RawEvent → NotifyArgs)</span><br><span class="line">         ──►  InputListener 流水线 (UnwantedInteractionBlocker → InputProcessor)</span><br><span class="line">         ──►  InputDispatcher</span><br><span class="line">         ──►  InputChannel (socketpair)</span><br><span class="line">         ──►  目标窗口 (ViewRootImpl)</span><br></pre></td></tr></tbody></table></figure>
+<img src="/2026/08/13/Input%E6%9E%84%E9%80%A0%E6%B5%81%E7%A8%8B/整体链路.png" style="zoom:80%;">
 
 <p>Input 模块的主要组成：</p>
 <ul>
@@ -573,7 +579,7 @@
 <li>形参2 是裸引用 <code>&amp;</code>，引用必须绑定<strong>对象（左值）</strong>，不能绑指针 → 必须解引用用 <code>*this</code>。</li>
 </ul>
 <p>两边互换都传不进去（<code>*this</code> 喂不了 sp 构造，<code>this</code> 绑不了引用形参）。</p>
-<figure class="highlight lua"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">                    NativeInputManager 对象(this 指向它)</span><br><span class="line">           ┌────────────────────────────────────────────────────┐</span><br><span class="line">           │  : public virtual InputReaderPolicyInterface       │</span><br><span class="line">           │  : public virtual InputDispatcherPolicyInterface   │</span><br><span class="line">           │  : public virtual PointerControllerPolicyInterface │</span><br><span class="line">           └────────────────────────────────────────────────────┘</span><br><span class="line">                 this(指针,包进 sp)              *this(裸引用)</span><br><span class="line">                    │                              │</span><br><span class="line">                    ▼                              ▼</span><br><span class="line">  形参<span class="number">1</span>: const sp&lt;InputReaderPolicyInterface&gt;&amp;   形参<span class="number">2</span>: InputDispatcherPolicyInterface&amp;</span><br><span class="line">                    │                              │</span><br><span class="line">                    ▼                              ▼</span><br><span class="line">InputReader 存为 sp&lt;...&gt; mPolicy(强引用)    InputDispatcher 存为 ...&amp; mPolicy(裸引用,不计数)</span><br></pre></td></tr></tbody></table></figure>
+<img src="/2026/08/13/Input%E6%9E%84%E9%80%A0%E6%B5%81%E7%A8%8B/InputManager构造.png" width="900px">
 
 <p><strong>一个引用计数上的微妙差异：</strong> Reader 策略被 <code>sp</code> 持有（强引用、计数 +1），Dispatcher 策略只是裸引用（不计数）。这之所以安全，是因为 NativeInputManager 是<strong>进程级单例</strong>（<code>nativeInit</code> 里 <code>std::call_once</code> 保证，注释明说 “should not be destroyed for the lifetime of the process”）——它永生，裸引用永不悬空。</p>
 <p>在往下展开前，先展开聊一下 input 和 inputfinger 这两个 Binder 服务。</p>
@@ -586,8 +592,7 @@
 <figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/base/services/core/jni/com_android_server_input_InputManagerService.cpp</span></span><br><span class="line"><span class="comment">// NativeInputManager 构造函数</span></span><br><span class="line">InputManager* im = <span class="keyword">new</span> <span class="built_in">InputManager</span>(<span class="keyword">this</span>, *<span class="keyword">this</span>);</span><br><span class="line">mInputManager = im;</span><br><span class="line"><span class="built_in">defaultServiceManager</span>()-&gt;<span class="built_in">addService</span>(<span class="built_in">String16</span>(<span class="string">"inputflinger"</span>), im);</span><br></pre></td></tr></tbody></table></figure>
 
 <p>注册的 <code>im</code> 是 native <code>InputManager</code> 对象，继承自 <code>BnInputFlinger</code> → <code>BBinder</code>，本身就是一个 IBinder。<strong>上面两条路径汇入同一个 servicemanager：</strong></p>
-<figure class="highlight lua"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">Java:    ServiceManager.addService(<span class="string">"input"</span>, IMS)         ─┐</span><br><span class="line">           → JNI → libbinder                              │</span><br><span class="line">              -&gt; defaultServiceManager()                  ├─→ 同一个 servicemanager 进程</span><br><span class="line">                 -&gt;addService(...)                        │     的同一张 svclist 表</span><br><span class="line">                                                          │</span><br><span class="line">Native:  defaultServiceManager()-&gt;addService(             │</span><br><span class="line">            String16(<span class="string">"inputflinger"</span>), im)                ─┘</span><br></pre></td></tr></tbody></table></figure>
-
+<p><img src="/2026/08/13/Input%E6%9E%84%E9%80%A0%E6%B5%81%E7%A8%8B/08/13/Input%E6%9E%84%E9%80%A0%E6%B5%81%E7%A8%8B/input%E6%A8%A1%E5%9D%97servicemanager%E6%B3%A8%E5%86%8C.png"></p>
 <p>Java 和 native 共用同一个 servicemanager 进程，只是 Java 的 <code>ServiceManager</code> 类是 libbinder 的 JNI 封装，底层和 native 代码调的是同一个 <code>defaultServiceManager()</code>。对比如下：</p>
 <table>
 <thead>
@@ -684,7 +689,7 @@
 <p>首先看头函数，<code>InputManager</code> 是双重继承：功能接口 + Binder 服务骨架的结构</p>
 <figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">InputManager</span> : <span class="keyword">public</span> InputManagerInterface, <span class="keyword">public</span> BnInputFlinger {</span><br><span class="line">    ...</span><br><span class="line">};</span><br></pre></td></tr></tbody></table></figure>
 
-<figure class="highlight lua"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">      RefBase (引用计数基类)</span><br><span class="line">            ▲</span><br><span class="line">            │</span><br><span class="line">InputManagerInterface    BnInputFlinger</span><br><span class="line"> (纯虚功能接口)          (Binder native 端骨架,</span><br><span class="line">     ▲                   暴露 IInputFlinger AIDL)</span><br><span class="line">     │                          │</span><br><span class="line">     └─────────┬────────────────┘</span><br><span class="line">               │</span><br><span class="line">          class InputManager</span><br></pre></td></tr></tbody></table></figure>
+<img src="/2026/08/13/Input%E6%9E%84%E9%80%A0%E6%B5%81%E7%A8%8B/InputManager类结构.png" style="zoom:80%;">
 
 <ul>
 <li><strong><code>InputManagerInterface</code></strong>：纯虚功能接口（<code>start、stop、getReader、getProcessor、getDispatcher等</code>），让测试可以 mock；</li>
@@ -928,7 +933,7 @@
 </tr>
 </tbody></table>
 <p>问题：reader 此刻睡在 <code>epoll_wait()</code> 里，<strong>根本不会去看这些变量</strong>。解法就是把一个 pipe 的读端也注册进 epoll——其他线程往写端写 1 字节，读端立即变可读，<code>epoll_wait()</code> 随即返回。这就是经典的 <strong>self-pipe trick</strong>：用一条”假的 IO 事件”模拟出线程中断。</p>
-<figure class="highlight lua"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">其他线程                                   reader 线程</span><br><span class="line">──────────                                ──────────</span><br><span class="line">改共享变量（如 mConfigurationChangesToRefresh）</span><br><span class="line">        │</span><br><span class="line"><span class="built_in">write</span>(写端, <span class="string">"W"</span>, <span class="number">1</span>) ──────┐</span><br><span class="line">                          │  读端变可读（因为注册进了 epoll）</span><br><span class="line">                          ▼</span><br><span class="line">                   epoll_wait() 立即返回</span><br><span class="line">                          │</span><br><span class="line">                   getEvents() 排空管道后提前 <span class="keyword">return</span></span><br><span class="line">                          │</span><br><span class="line">                   loopOnce() 回到顶部 ──► 读到那个共享变量，干真正的活</span><br></pre></td></tr></tbody></table></figure>
+<img src="/2026/08/13/Input%E6%9E%84%E9%80%A0%E6%B5%81%E7%A8%8B/self-pipe触发场景.png" style="zoom:80%;">
 
 <p>三个实现细节（都围绕”<code>'W'</code> 只是令牌不是信息”这一点）：</p>
 <ol>
@@ -970,7 +975,7 @@
 </tr>
 </tbody></table>
 <p>epoll 的三个唤醒源，此刻只就位了两个：</p>
-<figure class="highlight lua"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">                      mEpollFd（epoll 实例）</span><br><span class="line">                            ▲</span><br><span class="line">      ┌─────────────────────┼──────────────────────┐</span><br><span class="line">      │                     │                      │</span><br><span class="line"> mINotifyFd           mWakeReadPipeFd         设备节点 fd</span><br><span class="line">【构造时注册 ✔】       【构造时注册 ✔】        【扫描后才加入 ✘】</span><br><span class="line">      │                     │                      │</span><br><span class="line">      ▼                     ▼                      ▼</span><br><span class="line"> 设备插删事件        其他线程调 wake()        用户触摸/按键</span><br><span class="line"> （来自内核）        写入 <span class="string">'W'</span>                 （来自内核驱动）</span><br></pre></td></tr></tbody></table></figure>
+<img src="/2026/08/13/Input%E6%9E%84%E9%80%A0%E6%B5%81%E7%A8%8B/input Epoll注册.png" style="zoom:80%;">
 
 <p>等 <code>start()</code> 之后 reader 线程跑起来，<code>scanDevicesLocked()</code> 打开所有 <code>/dev/input/eventX</code> 并逐个注册进 epoll，第三路唤醒源才上线——从此 reader 线程就靠这一次 <code>epoll_wait()</code> 同时守着三件事过日子。</p>
 <div class="markdown-alert markdown-alert-note">
@@ -978,7 +983,7 @@
 <p>全文的 <code>LOG_ALWAYS_FATAL_IF</code> 不是风格问题：input 是系统关键路径，任何一步基础设施失败都意味着”输入子系统不可用”，与其带病运行到用户发现”屏幕没反应”，不如在启动阶段就 abort 让问题立刻暴露。</p>
 </div>
 <h1 id="3-整体构造流程"><a href="#3-整体构造流程" class="headerlink" title="3. 整体构造流程"></a>3. 整体构造流程</h1><p>把 input 构造过程，用一张ASCII图与时序图串起来——看清“从 SystemServer 一路 <code>new</code> 到 native InputManager”的完整调用链和返回链：</p>
-<img src="/2026/08/13/Input%E6%9E%84%E9%80%A0%E6%B5%81%E7%A8%8B/启动漫画图.png" alt="Input构造流程图" width="650px">
+<img src="/2026/08/13/Input%E6%9E%84%E9%80%A0%E6%B5%81%E7%A8%8B/启动漫画图.png" alt="Input构造流程图" width="800px">
 
 <p>时序图</p>
 <pre class="mermaid">sequenceDiagram
@@ -1073,30 +1078,8 @@
 <li><strong>互等</strong>：另一条线程可能正持着上游的锁（Dispatcher/WMS 侧）、同时在等 <code>mLock</code>——两边互等，经典 ABBA 死锁。</li>
 </ol>
 <p>所以规矩是：<strong>临界区内只做纯内存操作</strong>（<code>emplace_back</code> 入队），<strong>一切跨模块调用推迟到锁外</strong>（统一 flush）。QueuedInputListener 的存在本身就是这条规矩的落地——没有缓冲，就没有”先攒后发”的选择权。</p>
-<p>AOSP14 里这套机制的日常运转样本：<code>refreshConfigurationLocked()</code> 在 <code>loopOnce</code> 的临界区内执行，它里面的 <code>notifyAll(device-&gt;configure(...))</code>（<code>:540</code>）和 <code>mQueuedListener.notifyPointerCaptureChanged(...)</code>（<code>:550</code>）都在锁内<strong>只入队</strong>，攒着的货统一等到锁外的 <code>:244</code> 才发出去。</p>
-<h2 id="4-4-线程模型（关键）"><a href="#4-4-线程模型（关键）" class="headerlink" title="4.4 线程模型（关键）"></a>4.4 线程模型（关键）</h2><div class="markdown-alert markdown-alert-important">
-<p class="markdown-alert-title"><svg class="octicon octicon-report mr-2" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M0 1.75C0 .784.784 0 1.75 0h12.5C15.216 0 16 .784 16 1.75v9.5A1.75 1.75 0 0 1 14.25 13H8.06l-2.573 2.573A1.458 1.458 0 0 1 3 14.543V13H1.75A1.75 1.75 0 0 1 0 11.25Zm1.75-.25a.25.25 0 0 0-.25.25v9.5c0 .138.112.25.25.25h2a.75.75 0 0 1 .75.75v2.19l2.72-2.72a.749.749 0 0 1 .53-.22h6.5a.25.25 0 0 0 .25-.25v-9.5a.25.25 0 0 0-.25-.25Zm7 2.25v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 9a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"></path></svg>Important</p>
-<p><strong>主事件流只穿越 2 个线程</strong>：<code>InputReader</code> 线程 和 <code>InputDispatcher</code> 线程。中间所有 stage（Blocker、Processor）的 <code>notify*</code> <strong>同步执行</strong>在 InputReader 线程里。真正的线程切换只发生在一处——事件从 Reader 线程进入 Dispatcher 队列的那一刻。</p>
-</div>
-<p>但 <code>InputProcessor</code> 比较特殊——它<strong>额外起了一条 HAL 线程</strong>，用于异步调 <code>IInputProcessor</code> HAL：</p>
-<figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">MotionClassifier</span> <span class="keyword">final</span> : <span class="keyword">public</span> MotionClassifierInterface {</span><br><span class="line">    ...</span><br><span class="line">    <span class="comment">/** The events that need to be sent to the HAL. */</span></span><br><span class="line">    BlockingQueue&lt;ClassifierEvent&gt; mEvents; </span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * Thread that will communicate with InputProcessor HAL.</span></span><br><span class="line"><span class="comment">     * This should be the only thread that communicates with InputProcessor HAL,</span></span><br><span class="line"><span class="comment">     * because this thread is allowed to block on the HAL calls.</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    std::thread mHalThread;</span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">processEvents</span><span class="params">()</span></span>;</span><br><span class="line">    ...</span><br><span class="line">};</span><br></pre></td></tr></tbody></table></figure>
-
-<p>启动这条线程的代码：</p>
-<figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">mHalThread = std::<span class="built_in">thread</span>(&amp;MotionClassifier::processEvents, <span class="keyword">this</span>); </span><br><span class="line"><span class="built_in">pthread_setname_np</span>(mHalThread.<span class="built_in">native_handle</span>(), <span class="string">"InputProcessor"</span>); </span><br></pre></td></tr></tbody></table></figure>
-
-<p>HAL 线程的主循环从 <code>mEvents</code> 队列取事件，调 HAL 拿分类的 <code>mService-&gt;classify(...)</code>）。</p>
-<p>关键在于 <code>MotionClassifier::classify</code> 是<strong>非阻塞</strong>的——它把事件丢进 <code>mEvents</code> 队列让 HAL 线程慢慢处理，然后<strong>立刻返回上一次缓存的分类结果</strong>。所以：</p>
-<figure class="highlight lua"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">[InputReader 线程] ──同步──&gt; InputProcessor::notifyMotion</span><br><span class="line">                          ├─ mMotionClassifier-&gt;classify(newArgs)   ← 入队，返回旧分类，不阻塞</span><br><span class="line">                          ├─ newArgs.classification = newClassification</span><br><span class="line">                          └─ mQueuedListener.notifyMotion(newArgs) → <span class="built_in">flush</span> → Dispatcher</span><br><span class="line"></span><br><span class="line">[InputProcessor 线程（HAL）] ── 异步 ──&gt; MotionClassifier::processEvents </span><br><span class="line">                                        └─ mService-&gt;classify(...)   ← 真正调 HAL，可能很慢</span><br></pre></td></tr></tbody></table></figure>
-
-<p>也就是说，分类可以比事件流<strong>慢 1~2 个事件</strong>，这是可接受的（手势刚开始那一两帧分不准没关系）。这种”主事件流不阻塞 + 旁路 HAL 线程”的设计，是 AOSP14 InputProcessor 的精髓。</p>
-<p>精确的事件流总结：</p>
-<ul>
-<li>InputReader 线程内的事件流是 <strong>同步接力</strong>（Blocker、Processor 都在 Reader 线程跑）；</li>
-<li><code>InputProcessor</code> 旁路一条 <code>"InputProcessor"</code> HAL 线程，只负责调 HAL、更新分类缓存，<strong>不参与主事件传递</strong>；</li>
-<li>事件进入 InputDispatcher 的 <code>mInboundQueue</code> 时才完成 <strong>线程切换</strong>（通过 <code>mLooper-&gt;wake()</code>）；</li>
-<li>Dispatcher 线程独立地从队列里取事件派发给窗口。</li>
-</ul>
-<h2 id="4-5-设计动机：为什么搞这么复杂的链路"><a href="#4-5-设计动机：为什么搞这么复杂的链路" class="headerlink" title="4.5 设计动机：为什么搞这么复杂的链路"></a>4.5 设计动机：为什么搞这么复杂的链路</h2><p>早期 Android（~6.0 之前）没有这些中间 stage，Reader 直接调 Dispatcher。后来新需求不断冒出来：</p>
+<p>AOSP14 里这套机制的日常运转样本：<code>refreshConfigurationLocked()</code> 在 <code>loopOnce</code> 的临界区内执行，它里面的 <code>notifyAll(device-&gt;configure(...))</code> 和 <code>mQueuedListener.notifyPointerCaptureChanged(...)</code>都在锁内<strong>只入队</strong>，攒着的货统一等到锁外的 才发出去。</p>
+<h2 id="4-4-设计动机：为什么搞这么复杂的链路"><a href="#4-4-设计动机：为什么搞这么复杂的链路" class="headerlink" title="4.4 设计动机：为什么搞这么复杂的链路"></a>4.4 设计动机：为什么搞这么复杂的链路</h2><p>早期 Android（~6.0 之前）没有这些中间 stage，Reader 直接调 Dispatcher。后来新需求不断冒出来：</p>
 <ul>
 <li>手掌抑制要插在哪里？</li>
 <li>motion 分类（手/笔/手掌）呢？</li>
@@ -1177,8 +1160,8 @@
 
           <div class="post-nav-prev post-nav-item">
             
-              <a href="/2026/08/22/Input%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/" rel="prev" title="Input 启动流程">
-                Input 启动流程 <i class="fa fa-chevron-right"></i>
+              <a href="/2026/08/26/C++%E8%99%9A%E5%87%BD%E6%95%B0%E5%8F%8A%E5%85%B6%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" rel="prev" title="C++ 虚函数及其设计模式">
+                C++ 虚函数及其设计模式 <i class="fa fa-chevron-right"></i>
               </a>
             
           </div>
@@ -1260,7 +1243,7 @@
               
                 <a href="/archives/%7C%7C%20archive">
               
-                  <span class="site-state-item-count">34</span>
+                  <span class="site-state-item-count">35</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
@@ -1364,7 +1347,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#1-%E6%A6%82%E8%BF%B0"><span class="nav-text">1. 概述</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#2-%E6%9E%84%E9%80%A0%E6%B5%81%E7%A8%8B%EF%BC%9A%E4%BB%8E-SystemServer-%E5%88%B0-Native-InputManager"><span class="nav-text">2. 构造流程：从 SystemServer 到 Native InputManager</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#2-1-Java-%E5%B1%82-SystemServer-%E5%90%AF%E5%8A%A8-IMS"><span class="nav-text">2.1 Java 层 SystemServer 启动 IMS</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-2-InputManagerService-%E6%9E%84%E9%80%A0%E4%B8%8E-NativeImpl"><span class="nav-text">2.2 InputManagerService 构造与 NativeImpl</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-3-JNI-%E5%85%A5%E5%8F%A3-nativeInit"><span class="nav-text">2.3 JNI 入口 nativeInit</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-4-input-%E6%A8%A1%E5%9D%97%E7%9A%84%E4%B8%A4%E4%B8%AA%E6%B3%A8%E5%86%8C%E6%9C%8D%E5%8A%A1"><span class="nav-text">2.4 input 模块的两个注册服务</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-5-Native-InputManager-%E7%9A%84%E5%88%9B%E5%BB%BA"><span class="nav-text">2.5 Native InputManager 的创建</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#2-5-1-InputManager-%E7%B1%BB%E7%BB%93%E6%9E%84"><span class="nav-text">2.5.1 InputManager 类结构</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-5-2-%E6%9E%84%E9%80%A0%E5%87%BD%E6%95%B0%E5%81%9A%E7%9A%84%E4%BA%8B"><span class="nav-text">2.5.2 构造函数做的事</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-5-3-EventHub-%E6%9E%84%E9%80%A0%E6%B5%81%E7%A8%8B"><span class="nav-text">2.5.3 EventHub 构造流程</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E2%91%A0-%E5%89%8D%E7%BD%AE%E6%A3%80%E6%9F%A5%EF%BC%9ACAP-BLOCK-SUSPEND"><span class="nav-text">① 前置检查：CAP_BLOCK_SUSPEND</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E2%91%A1-%E5%88%9B%E5%BB%BA-epoll-%E5%AE%9E%E4%BE%8B"><span class="nav-text">② 创建 epoll 实例</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E2%91%A2-inotify-%E4%B8%8E%E7%9B%AE%E5%BD%95-watch"><span class="nav-text">③ inotify 与目录 watch</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E2%91%A3%E2%91%A4-%E4%B8%A4%E4%B8%AA-fd-%E6%B3%A8%E5%86%8C%E8%BF%9B-epoll"><span class="nav-text">④⑤ 两个 fd 注册进 epoll</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E2%91%A4-wake-pipe%EF%BC%9Aself-pipe-trick"><span class="nav-text">⑤ wake pipe：self-pipe trick</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%9E%84%E9%80%A0%E7%BB%93%E6%9D%9F%E6%97%B6%E7%9A%84%E7%8A%B6%E6%80%81"><span class="nav-text">构造结束时的状态</span></a></li></ol></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#3-%E6%95%B4%E4%BD%93%E6%9E%84%E9%80%A0%E6%B5%81%E7%A8%8B"><span class="nav-text">3. 整体构造流程</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#4-input-%E4%B8%AD%E7%9A%84%E8%AE%BE%E8%AE%A1"><span class="nav-text">4. input 中的设计</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#4-1-%E4%BB%80%E4%B9%88%E6%98%AF%E2%80%9D%E6%B5%81%E6%B0%B4%E7%BA%BF%E2%80%9D"><span class="nav-text">4.1 什么是”流水线”</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-2-%E8%B4%A3%E4%BB%BB%E9%93%BE%E6%8E%A5%E5%8A%9B%E6%9C%BA%E5%88%B6"><span class="nav-text">4.2 责任链接力机制</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-3-QueuedInputListener%EF%BC%9A%E7%BC%93%E5%86%B2-flush-%E6%9C%BA%E5%88%B6"><span class="nav-text">4.3 QueuedInputListener：缓冲 + flush 机制</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#4-3-1-%E4%B8%BA%E4%BB%80%E4%B9%88%E2%80%9D%E9%94%81%E5%86%85%E5%8F%AA%E5%85%A5%E9%98%9F%E3%80%81%E9%94%81%E5%A4%96%E6%89%8D-flush%E2%80%9D"><span class="nav-text">4.3.1 为什么”锁内只入队、锁外才 flush”</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-4-%E7%BA%BF%E7%A8%8B%E6%A8%A1%E5%9E%8B%EF%BC%88%E5%85%B3%E9%94%AE%EF%BC%89"><span class="nav-text">4.4 线程模型（关键）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-5-%E8%AE%BE%E8%AE%A1%E5%8A%A8%E6%9C%BA%EF%BC%9A%E4%B8%BA%E4%BB%80%E4%B9%88%E6%90%9E%E8%BF%99%E4%B9%88%E5%A4%8D%E6%9D%82%E7%9A%84%E9%93%BE%E8%B7%AF"><span class="nav-text">4.5 设计动机：为什么搞这么复杂的链路</span></a></li></ol></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#1-%E6%A6%82%E8%BF%B0"><span class="nav-text">1. 概述</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#2-%E6%9E%84%E9%80%A0%E6%B5%81%E7%A8%8B%EF%BC%9A%E4%BB%8E-SystemServer-%E5%88%B0-Native-InputManager"><span class="nav-text">2. 构造流程：从 SystemServer 到 Native InputManager</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#2-1-Java-%E5%B1%82-SystemServer-%E5%90%AF%E5%8A%A8-IMS"><span class="nav-text">2.1 Java 层 SystemServer 启动 IMS</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-2-InputManagerService-%E6%9E%84%E9%80%A0%E4%B8%8E-NativeImpl"><span class="nav-text">2.2 InputManagerService 构造与 NativeImpl</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-3-JNI-%E5%85%A5%E5%8F%A3-nativeInit"><span class="nav-text">2.3 JNI 入口 nativeInit</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-4-input-%E6%A8%A1%E5%9D%97%E7%9A%84%E4%B8%A4%E4%B8%AA%E6%B3%A8%E5%86%8C%E6%9C%8D%E5%8A%A1"><span class="nav-text">2.4 input 模块的两个注册服务</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-5-Native-InputManager-%E7%9A%84%E5%88%9B%E5%BB%BA"><span class="nav-text">2.5 Native InputManager 的创建</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#2-5-1-InputManager-%E7%B1%BB%E7%BB%93%E6%9E%84"><span class="nav-text">2.5.1 InputManager 类结构</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-5-2-%E6%9E%84%E9%80%A0%E5%87%BD%E6%95%B0%E5%81%9A%E7%9A%84%E4%BA%8B"><span class="nav-text">2.5.2 构造函数做的事</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-5-3-EventHub-%E6%9E%84%E9%80%A0%E6%B5%81%E7%A8%8B"><span class="nav-text">2.5.3 EventHub 构造流程</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E2%91%A0-%E5%89%8D%E7%BD%AE%E6%A3%80%E6%9F%A5%EF%BC%9ACAP-BLOCK-SUSPEND"><span class="nav-text">① 前置检查：CAP_BLOCK_SUSPEND</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E2%91%A1-%E5%88%9B%E5%BB%BA-epoll-%E5%AE%9E%E4%BE%8B"><span class="nav-text">② 创建 epoll 实例</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E2%91%A2-inotify-%E4%B8%8E%E7%9B%AE%E5%BD%95-watch"><span class="nav-text">③ inotify 与目录 watch</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E2%91%A3%E2%91%A4-%E4%B8%A4%E4%B8%AA-fd-%E6%B3%A8%E5%86%8C%E8%BF%9B-epoll"><span class="nav-text">④⑤ 两个 fd 注册进 epoll</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E2%91%A4-wake-pipe%EF%BC%9Aself-pipe-trick"><span class="nav-text">⑤ wake pipe：self-pipe trick</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%9E%84%E9%80%A0%E7%BB%93%E6%9D%9F%E6%97%B6%E7%9A%84%E7%8A%B6%E6%80%81"><span class="nav-text">构造结束时的状态</span></a></li></ol></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#3-%E6%95%B4%E4%BD%93%E6%9E%84%E9%80%A0%E6%B5%81%E7%A8%8B"><span class="nav-text">3. 整体构造流程</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#4-input-%E4%B8%AD%E7%9A%84%E8%AE%BE%E8%AE%A1"><span class="nav-text">4. input 中的设计</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#4-1-%E4%BB%80%E4%B9%88%E6%98%AF%E2%80%9D%E6%B5%81%E6%B0%B4%E7%BA%BF%E2%80%9D"><span class="nav-text">4.1 什么是”流水线”</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-2-%E8%B4%A3%E4%BB%BB%E9%93%BE%E6%8E%A5%E5%8A%9B%E6%9C%BA%E5%88%B6"><span class="nav-text">4.2 责任链接力机制</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-3-QueuedInputListener%EF%BC%9A%E7%BC%93%E5%86%B2-flush-%E6%9C%BA%E5%88%B6"><span class="nav-text">4.3 QueuedInputListener：缓冲 + flush 机制</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#4-3-1-%E4%B8%BA%E4%BB%80%E4%B9%88%E2%80%9D%E9%94%81%E5%86%85%E5%8F%AA%E5%85%A5%E9%98%9F%E3%80%81%E9%94%81%E5%A4%96%E6%89%8D-flush%E2%80%9D"><span class="nav-text">4.3.1 为什么”锁内只入队、锁外才 flush”</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-4-%E8%AE%BE%E8%AE%A1%E5%8A%A8%E6%9C%BA%EF%BC%9A%E4%B8%BA%E4%BB%80%E4%B9%88%E6%90%9E%E8%BF%99%E4%B9%88%E5%A4%8D%E6%9D%82%E7%9A%84%E9%93%BE%E8%B7%AF"><span class="nav-text">4.4 设计动机：为什么搞这么复杂的链路</span></a></li></ol></li></ol></div>
             
 
           </div>

@@ -1,0 +1,271 @@
+<h1 id="inputflinger-学习笔记配图规范-graphviz"><a href="#inputflinger-学习笔记配图规范-graphviz" class="headerlink" title="inputflinger 学习笔记配图规范(graphviz)"></a>inputflinger 学习笔记配图规范(graphviz)</h1><blockquote>
+<p>以 <code>input_classes_java_jni.dot</code> 为基准样例。新增&#x2F;修改任何图,先读本规范。</p>
+</blockquote>
+<h2 id="1-通用约定"><a href="#1-通用约定" class="headerlink" title="1. 通用约定"></a>1. 通用约定</h2><pre><code class="language-bash"># 渲染命令(dpi=140,与现有图一致)
+dot -Tpng -Gdpi=140 &lt;name&gt;.dot -o &lt;name&gt;.png
+
+# 查布局坐标(对齐/位置核查必备)
+dot -Tplain &lt;name&gt;.dot | awk &#39;$1==&quot;node&quot;{print $2, &quot;x=&quot;$3, &quot;y=&quot;$4, &quot;w=&quot;$5}&#39;
+</code></pre>
+<ul>
+<li><strong>不要</strong> graph 大标题(<code>label</code>&#x2F;<code>labelloc</code>&#x2F;<code>fontsize=20</code> 都不写),图的说明放 md 正文;</li>
+<li>图例放<strong>右上角</strong>,与首节点同排(做法见 §5.4);</li>
+<li><strong><code>splines=ortho</code> 正交折线</strong>——所有边横平竖直、直角转弯(Visio&#x2F;UML 工具效果)。<br>代价:<strong>不能带边标签</strong>(ortho 下标签会破坏路由),成员名一律放框内成员行表达;<br>箭头(onormal&#x2F;diamond&#x2F;vee)在 ortho 下渲染正常(已放大核查);</li>
+<li>字体三处都要设:<code>graph</code> &#x2F; <code>node</code> &#x2F; <code>edge</code> 均为 <code>fontname=&quot;Noto Sans CJK SC&quot;</code>;</li>
+<li>成员字号 11;</li>
+<li>一张图只讲一个层次&#x2F;主题,渲染后宽高比控制在 <strong>≤1.5</strong>(太宽说明该拆图了);</li>
+<li><strong>内容以当前 AOSP14 源码为准</strong>:类名&#x2F;成员&#x2F;继承关系先 grep 源码头文件核实再落笔,<br>不写”与 6.0 差异&#x2F;AOSP14 新增”之类的版本对比标注;</li>
+<li><strong>能由框内成员行表达的关系不画边</strong>(如各级的 mQueuedListener&#x2F;mThread&#x2F;mPolicy 持有),<br>边只画:实现、接口继承、组合、必要的关联——边越少越整齐。</li>
+<li><strong>类关系完整正确优先于布局美观</strong>:先按源码把该画的边定死(持有&#x3D;◆,裸指针&#x2F;引用<br>&#x3D;vee,实现&#x3D;虚线空心三角),再做布局;布局修复只允许动 invis 排序边,绝不允许<br>删语义边换对齐(reader 图教训,用户明确批评过)。</li>
+</ul>
+<h2 id="2-配色表-层-→-色系-与全景图-input-framework-dot-一致"><a href="#2-配色表-层-→-色系-与全景图-input-framework-dot-一致" class="headerlink" title="2. 配色表(层 → 色系,与全景图 input_framework.dot 一致)"></a>2. 配色表(层 → 色系,与全景图 input_framework.dot 一致)</h2><table>
+<thead>
+<tr>
+<th>模块</th>
+<th>边框色</th>
+<th>表头底色</th>
+<th>成员行底色</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Java 层</td>
+<td><code>#D79B00</code></td>
+<td><code>#FFE6CC</code></td>
+<td><code>#FFFDF8</code></td>
+</tr>
+<tr>
+<td>JNI 层 &#x2F; Policy 接口</td>
+<td><code>#82B366</code></td>
+<td><code>#D5E8D4</code></td>
+<td><code>#FDFFFD</code></td>
+</tr>
+<tr>
+<td>总装(InputManager 体系)</td>
+<td><code>#D6B656</code></td>
+<td><code>#FFF2CC</code></td>
+<td><code>#FFFDF3</code></td>
+</tr>
+<tr>
+<td>Reader 体系</td>
+<td><code>#6C8EBF</code></td>
+<td><code>#DAE8FC</code></td>
+<td><code>#FBFDFF</code></td>
+</tr>
+<tr>
+<td>Blocker &#x2F; Processor</td>
+<td><code>#9673A6</code></td>
+<td><code>#E1D5E7</code></td>
+<td><code>#FBF9FC</code></td>
+</tr>
+<tr>
+<td>Dispatcher</td>
+<td><code>#B85450</code></td>
+<td><code>#F8CECC</code></td>
+<td><code>#FFF9F8</code></td>
+</tr>
+<tr>
+<td>辅助类(EventHub&#x2F;InputThread 等)</td>
+<td><code>#666666</code></td>
+<td><code>#F5F5F5</code></td>
+<td><code>#FCFCFC</code></td>
+</tr>
+<tr>
+<td>监听接口体系(ILI)</td>
+<td><code>#4D6EBF</code></td>
+<td><code>#F4F7FD</code></td>
+<td><code>#FBFDFF</code></td>
+</tr>
+<tr>
+<td>图例</td>
+<td><code>#999999</code></td>
+<td><code>#F5F5F5</code></td>
+<td>—</td>
+</tr>
+</tbody></table>
+<p>接口浅色变体:表头底色改用该色系更浅一档(如绿系 <code>#F2FAF1</code>、黄系 <code>#FFF9E6</code>),<br>边框 <code>STYLE=&quot;ROUNDED,DASHED&quot;</code>。</p>
+<h2 id="3-节点模板"><a href="#3-节点模板" class="headerlink" title="3. 节点模板"></a>3. 节点模板</h2><p>类(实线圆角边框)与接口(虚线圆角边框 + «interface»),<code>shape=plaintext</code> + HTML 表格:</p>
+<pre><code>XXX [label=&lt;
+    &lt;TABLE BORDER=&quot;1&quot; CELLBORDER=&quot;0&quot; CELLSPACING=&quot;0&quot; CELLPADDING=&quot;0&quot; COLOR=&quot;#边框色&quot; STYLE=&quot;ROUNDED&quot;&gt;
+      &lt;TR&gt;&lt;TD HEIGHT=&quot;4&quot; BGCOLOR=&quot;#表头色&quot;&gt;&lt;/TD&gt;&lt;/TR&gt;                        ← 顶部垫条(表头色)
+      &lt;TR&gt;&lt;TD BGCOLOR=&quot;#表头色&quot;&gt;&lt;B&gt;类名&lt;/B&gt;&lt;/TD&gt;&lt;/TR&gt;                        // 类
+      &lt;TR&gt;&lt;TD BGCOLOR=&quot;#表头浅色&quot;&gt;«interface»&lt;BR/&gt;&lt;B&gt;接口名&lt;/B&gt;&lt;/TD&gt;&lt;/TR&gt;    // 接口
+      &lt;TR&gt;&lt;TD HEIGHT=&quot;2&quot; BGCOLOR=&quot;#表头色&quot;&gt;&lt;/TD&gt;&lt;/TR&gt;                        ← 表头下间隔条
+      &lt;TR&gt;&lt;TD ALIGN=&quot;LEFT&quot; BGCOLOR=&quot;#行色&quot;&gt; - 成员 : 类型&lt;/TD&gt;&lt;/TR&gt;          ← 文字前加一空格
+      &lt;TR&gt;&lt;TD ALIGN=&quot;LEFT&quot; BGCOLOR=&quot;#行色&quot;&gt; + 方法()&lt;/TD&gt;&lt;/TR&gt;
+      &lt;TR&gt;&lt;TD HEIGHT=&quot;4&quot; BGCOLOR=&quot;#行色&quot;&gt;&lt;/TD&gt;&lt;/TR&gt;                          ← 底部垫条(行色)
+    &lt;/TABLE&gt;&gt;];
+</code></pre>
+<p><strong>框样式要点(实测踩坑,勿改回)</strong>:</p>
+<ul>
+<li><p>必须 <code>CELLPADDING=&quot;0&quot;</code> + 上下同色垫条 + 成员行文字前加一空格——若用 <code>CELLPADDING=&quot;3&quot;</code>,<br>TD 底色只画到单元格边界,与边框之间会留一圈白缝(表头色带比边框窄);</p>
+</li>
+<li><p><strong>FIXEDSIZE 等宽必须配首行 TD <code>WIDTH=&quot;表宽-2&quot;</code></strong>:FIXEDSIZE 只固定外框尺寸,TD 的<br>BGCOLOR 仍按内容自然宽度绘制且左对齐,右侧留”(声明宽−自然宽)”的白竖条(实测<br>native 图各框 22~49pt,140dpi 下肉眼明显)。加上 WIDTH 后单列列宽撑满,全部底色<br>行两侧各留 1pt 线宽,与不设 FIXEDSIZE 的框观感一致;</p>
+</li>
+<li><p>圆角(ROUNDED)保留:顶满的色带方角会略微溢出圆弧(140dpi 下约 3px,肉眼几乎不可见),<br>这是”圆角+填满”的固有取舍,已确认接受;若改直角则完全贴合但失去圆角观感;</p>
+</li>
+<li><p><code>TABLE BGCOLOR</code> 的填充会跟随圆角(可用于整框单色场景),但 TD 的 BGCOLOR 永远是直角矩形。</p>
+</li>
+<li><p>每框成员 <strong>3~5 行</strong>为宜;类型中的 <code>&lt;</code>&#x2F;<code>&gt;</code> 写成 <code>&amp;lt;</code>&#x2F;<code>&amp;gt;</code>,<code>&amp;</code> 写成 <code>&amp;amp;</code>;</p>
+</li>
+<li><p>过长的类名可用 <code>&lt;BR/&gt;</code> 断行(如 <code>UnwantedInteraction-&lt;BR/&gt;Blocker</code>);</p>
+</li>
+<li><p>纯文字说明行(如”(实现者 NativeInputManager,见图 X)”)允许,但不做版本对比;</p>
+</li>
+<li><p><strong>同一列的框必须等宽对齐</strong>:给 <code>&lt;TABLE&gt;</code> 加 <code>FIXEDSIZE=&quot;TRUE&quot; WIDTH=&quot;N&quot;</code>(单位 pt),<br>N 取该列最大自然宽度(<code>dot -Tplain</code> 的 w×72)再加少量余量,并给首行垫条 TD 加<br><code>WIDTH=&quot;N-2&quot;</code>(原因见框样式要点)。不设等宽时,列内框<br>宽度不一,中心&#x2F;边缘都参差;设等宽后中心对齐即边缘对齐,错位产生的 L 形折线<br>也会自然变回纯横&#x2F;纯竖线。渲染时的 “fixed table size with unspecified height”<br>警告无害,忽略即可。</p>
+</li>
+</ul>
+<h2 id="4-边语义-UML-三种-可选关联"><a href="#4-边语义-UML-三种-可选关联" class="headerlink" title="4. 边语义(UML,三种 + 可选关联)"></a>4. 边语义(UML,三种 + 可选关联)</h2><table>
+<thead>
+<tr>
+<th>语义</th>
+<th>写法</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>实现接口</td>
+<td><code>[style=dashed, arrowhead=onormal, constraint=false]</code></td>
+</tr>
+<tr>
+<td>接口继承接口</td>
+<td><code>[arrowhead=onormal, constraint=false]</code></td>
+</tr>
+<tr>
+<td>组合(持有)</td>
+<td><code>[arrowtail=diamond, dir=both, arrowhead=none, constraint=false]</code>(菱形在持有方)</td>
+</tr>
+<tr>
+<td>关联&#x2F;引用(少用)</td>
+<td><code>[arrowhead=vee, constraint=false]</code></td>
+</tr>
+</tbody></table>
+<p><strong>一律不写边标签</strong>(ortho 不支持);哪条边对应哪个成员,靠目标框或持有框的成员行说明。</p>
+<h2 id="5-布局控制-踩坑记录-最重要的一节"><a href="#5-布局控制-踩坑记录-最重要的一节" class="headerlink" title="5. 布局控制(踩坑记录,最重要的一节)"></a>5. 布局控制(踩坑记录,最重要的一节)</h2><h3 id="5-1-UML-语义边必须-constraint-false"><a href="#5-1-UML-语义边必须-constraint-false" class="headerlink" title="5.1 UML 语义边必须 constraint=false"></a>5.1 UML 语义边必须 <code>constraint=false</code></h3><p>UML 箭头方向是”子 → 父”,与 dot 默认排序方向(边起点在上、终点在下)<strong>相反</strong>。<br>不给语义边关掉 constraint,接口会被排到实现类下方、再被 <code>rank=same</code> 拉平,<br>整张图被压成横向长条(实测 5993×1317 的教训)。</p>
+<h3 id="5-2-纵向次序用-invis-边显式串联"><a href="#5-2-纵向次序用-invis-边显式串联" class="headerlink" title="5.2 纵向次序用 invis 边显式串联"></a>5.2 纵向次序用 invis 边显式串联</h3><p>语义边全部失能后,排序交给一条隐形链,方向自上而下:</p>
+<pre><code>IMS -&gt; NIS [style=invis];
+NIS -&gt; NI  [style=invis];
+NI  -&gt; NIM [style=invis];
+</code></pre>
+<p><strong>多列布局必须再加同排平边固定列序</strong>:dot 的 x 排序只按交叉数,不认”列”的概念,<br>不加平边的话同一排的节点会被甩到任意横向位置(实测”实现类”被推到 18in 开外)。<br>native 图的做法——每排用 invis 平边串出”接口|实现|辅助”的顺序:</p>
+<pre><code>{rank=same; RIF; READER; EHI;}
+RIF    -&gt; READER [style=invis];
+READER -&gt; EHI    [style=invis];
+</code></pre>
+<p><strong>平边只用相邻节点间的短平边,禁止跨列长平边</strong>(reader 图实测教训):跨过中间列的<br>平边(如 <code>EH -&gt; CI</code>)在 ortho 下会被路由成”起点顶边 → 翻进行间走廊 → 横穿 → 落到<br>终点顶边”,挂在起点<strong>顶边</strong>上,与该框原有的竖直边共享侧边分通道,把毫不相干的<br>邻边贴合点挤偏 ±38pt。语义边齐全时各列本就有树边竖向锚定,平边只留锚定列首尾的<br>最少量(如 <code>EHI -&gt; ID</code>、<code>IDC -&gt; CI</code>),跨列长平边直接不写。</p>
+<p><strong>排布拓扑由关系集决定</strong>:一个类的多个直接持有(EHI&#x2F;ID&#x2F;CI 之于 InputReader)各占<br>一列、放同一排,列内纵向成链——列链全部居中,跨列引用边自然走列间空隙。<br>不要沿用历史排法硬修(reader 图教训:CI 挂 row3 时 IR 三扇出+跨列斜边全乱,<br>重排为”三持有同排三列”后五条列链 10 端点全部 0.0pt)。</p>
+<p><strong>拐点分段法</strong>(宽框向远列持有边的落点归中):直连边的落点被 ortho 路由贴到目标框<br>顶边最左端时,插入一个隐形 point 拐点 <code>W</code>(加入目标同排的 rank&#x3D;same),把边拆成<br><code>持有方 ◆→ W</code>(竖直下落到该排高度)+ <code>W → 目标 [constraint=false]</code>(横向短平边,<br>入目标左侧中部)。两个 constraint 语义必须如上配置,否则 W 会被链式降秩挤进独立<br>半排,拆分失效(reader 图 IR◆CI 实测)。</p>
+<h3 id="5-3-同排"><a href="#5-3-同排" class="headerlink" title="5.3 同排"></a>5.3 同排</h3><pre><code>{rank=same; RP; PCP; NIM; DP;}
+</code></pre>
+<h3 id="5-4-图例固定右上角-三步"><a href="#5-4-图例固定右上角-三步" class="headerlink" title="5.4 图例固定右上角(三步)"></a>5.4 图例固定右上角(三步)</h3><pre><code>// ① 隐形占位节点(固定宽度)
+SP [style=invis, shape=box, fixedsize=true, width=5.77, label=&quot;&quot;];
+// ② 平边串联:首节点 → 占位 → 图例
+IMS -&gt; SP     [style=invis];
+SP  -&gt; LEGEND [style=invis];
+// ③ 同排
+{rank=same; IMS; SP; LEGEND;}
+</code></pre>
+<ul>
+<li>同排平边决定左右顺序,占位宽度决定图例被推多远;</li>
+<li><strong>对齐微调</strong>:渲染后 <code>dot -Tplain</code> 查图例与目标列最右节点的右缘坐标<br>(<code>x + w/2</code>),差多少就把 SP 的 <code>width</code> 减多少,误差收到 ±0.05in 内;</li>
+<li>注意:<code>constraint=false</code> 的跨排隐形边<strong>不参与</strong> x 坐标分配,拉不动图例,<br>只能用占位节点法。</li>
+</ul>
+<h3 id="5-5-cluster-慎用"><a href="#5-5-cluster-慎用" class="headerlink" title="5.5 cluster 慎用"></a>5.5 cluster 慎用</h3><p>排序边跨 cluster 边界时,dot 会把外层 cluster 画成包住内层的嵌套大框(实测<br>Java 层框包住整个 JNI 层)。原则:</p>
+<ul>
+<li><strong>单层流程图</strong>(排序方向与层叠方向一致,如 input_framework.dot):可用 cluster;</li>
+<li><strong>类图</strong>(排序边纵横交错):<strong>不用 cluster</strong>,层次感全靠配色;</li>
+<li>若确需分组(如 native 图的”四级流水线”框),保证该 cluster 内部的 invis<br>排序链自洽、不与外部 cluster 节点同排。</li>
+</ul>
+<h3 id="5-6-隐形链边不得与语义边同通道双份-箭头被挤离框中点"><a href="#5-6-隐形链边不得与语义边同通道双份-箭头被挤离框中点" class="headerlink" title="5.6 隐形链边不得与语义边同通道双份(箭头被挤离框中点)"></a>5.6 隐形链边不得与语义边同通道双份(箭头被挤离框中点)</h3><p><strong>现象</strong>:框某侧只挂一条箭头,却不在该侧中点,偏 11~39pt(native 图实测:<br>IM 顶 +30.5、TH 顶 +27.7、DIF 右 −39)。而 BIF→ILI、EH→EHI 这类”无孪生”边精确居中。</p>
+<p><strong>原因</strong>:<code>splines=ortho</code> 的正交路由器会给<strong>同一对节点之间的每条边</strong>分配独立通道,<br><code>style=invis</code> 的排序链边也被照样分通道(只是不画)——隐形边占了中间通道,<br>可见箭头被挤到旁边的通道。</p>
+<p><strong>修法</strong>:排序链与语义边两端重合时<strong>合并为一条</strong>,两种情形:</p>
+<table>
+<thead>
+<tr>
+<th>情形</th>
+<th>做法</th>
+<th>例(native 图)</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>语义边方向 &#x3D; 链方向</td>
+<td>删 invis 边,语义边去掉 <code>constraint=false</code> 接替约束</td>
+<td><code>IM -&gt; RIF</code>、<code>QL -&gt; ILI</code>、<code>READER -&gt; EHI</code>、<code>DISPATCHER -&gt; TH</code></td>
+</tr>
+<tr>
+<td>语义边方向与链相反</td>
+<td>改写为<strong>链方向</strong> + <code>dir=back</code> + <code>arrowtail=…</code>(箭头几何位置与正向写法完全一致)</td>
+<td><code>IMI -&gt; IM [style=dashed, dir=back, arrowtail=onormal]</code>、<code>RIF -&gt; READER</code>、<code>ILI -&gt; PIF</code> 等</td>
+</tr>
+</tbody></table>
+<ul>
+<li>合并后约束边集合与原隐形链<strong>逐对等价</strong>,实测所有节点中心位移 &lt;1pt,布局不变;</li>
+<li>8 个被挤偏的贴合点归 0。残余 ±11~39pt(BLOCKER&#x2F;PROCESSOR 左侧、IM 扇出绕行边)<br>来自其它边绕行竖段穿插同一走廊,属 ortho 固有行为;</li>
+<li><strong>罗盘端口(<code>tailport</code>&#x2F;<code>headport</code>)在 ortho 下被路由器忽略,实测无任何效果</strong>,不要用它修对齐;</li>
+<li>核查办法:<code>dot -Tsvg</code> 后解析每条边 path 端点坐标,与所属框该侧中点比对(本节数据即由此测得)。</li>
+</ul>
+<h2 id="6-落笔前核查清单"><a href="#6-落笔前核查清单" class="headerlink" title="6. 落笔前核查清单"></a>6. 落笔前核查清单</h2><ol>
+<li>所有类&#x2F;接口的存在性、继承关系 → grep 对应头文件确认(记 <code>文件:行号</code> 备查);</li>
+<li>成员名&#x2F;类型与源码一致(可精简,不可编造);</li>
+<li>渲染 → PIL 查尺寸,宽高比 ≤1.5;</li>
+<li><code>dot -Tplain</code> 查图例&#x2F;关键节点坐标;</li>
+<li><strong>箭头必须裁剪放大逐一核查</strong>——整图缩略时小箭头(空心三角&#x2F;菱形)不可辨识,<br>不可凭 dot 源码语义推断”应该没问题”。做法:按 <code>dot -Tplain</code> 的英寸坐标<br>(y 轴自底向上,需翻转到像素坐标)裁剪边密集区域并 2 倍放大另存,逐张目检<br>箭头样式与指向(空心三角→被实现&#x2F;被继承方,实心菱形→持有方,vee→被指向方);</li>
+<li>肉眼看整图:中文无豆腐块、边标签无压字、无横穿全图的长边。</li>
+</ol>
+<h2 id="7-现有图清单"><a href="#7-现有图清单" class="headerlink" title="7. 现有图清单"></a>7. 现有图清单</h2><table>
+<thead>
+<tr>
+<th>文件</th>
+<th>内容</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>input_framework.dot/png</code></td>
+<td>全景架构图(数据流)</td>
+<td>用了 cluster(流程图,允许)</td>
+</tr>
+<tr>
+<td><code>input_boot_sequence.dot/png</code></td>
+<td>启动篇第 4 章:启动调用链</td>
+<td>ASCII 树的 dot 版;<strong>蛇形分层</strong>流程图(5 横排,层间短竖边,排 2&#x2F;排 5 向左回折用 §5.6 的 dir&#x3D;back 反画),无 cluster(Java 层多处出现会嵌套),层带靠 «层» 标记 + 配色</td>
+</tr>
+<tr>
+<td><code>input_classes_java_jni.dot/png</code></td>
+<td>Java&#x2F;JNI 层类图</td>
+<td><strong>基准样例</strong>,本规范据此整理;正文 2.1 与第 3 章共用</td>
+</tr>
+<tr>
+<td><code>input_classes_native.dot/png</code></td>
+<td>Native 层类图</td>
+<td>四列配对布局(接口列+实现列横排),平边固定列序的样例</td>
+</tr>
+<tr>
+<td><code>input_listener_interface.dot/png</code></td>
+<td>第 4 章:InputListener 接口体系</td>
+<td>IL 蓝紫配色首用;variant 数据节点双列排法</td>
+</tr>
+<tr>
+<td><code>input_reader_classes.dot/png</code></td>
+<td>第 5 章:Reader 核心类</td>
+<td>三列布局,EventHub 用辅助灰</td>
+</tr>
+<tr>
+<td><code>input_mapper_hierarchy.dot/png</code></td>
+<td>5.1 节:Mapper 继承体系</td>
+<td>多子类继承边 constraint&#x3D;false + invis 列链,不绕行</td>
+</tr>
+<tr>
+<td><code>input_dispatcher_classes.dot/png</code></td>
+<td>6.1 节:派发器核心</td>
+<td>第 6 章拆图之上半</td>
+</tr>
+<tr>
+<td><code>input_dispatcher_entry_channel.dot/png</code></td>
+<td>6.2 节:EventEntry&#x2F;通道</td>
+<td><strong>踩坑样例</strong>:子类两列纵深时继承边外绕(bbox 撑到 14in+);改 3×3 网格 + 通道块底部横排后收敛;端口&#x2F;dir&#x3D;back&#x2F;constraint&#x3D;true&#x2F;父类居中诸法均试过无效或更差</td>
+</tr>
+<tr>
+<td><code>input_binder_view.dot/png</code></td>
+<td>第 9 章:Binder 视角</td>
+<td>AIDL→Bn&#x2F;Bp→InputManager 链</td>
+</tr>
+</tbody></table>
