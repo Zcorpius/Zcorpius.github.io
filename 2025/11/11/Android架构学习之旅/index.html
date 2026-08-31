@@ -99,13 +99,15 @@
 
 
 
+<meta name="description" content="Important 这是一篇 Android 系统的全景导读，不试图替代每个子系统的源码分析。行文借鉴了 Gityuan 的 Android 架构开篇 所采用的“启动链路 + 进程视角 + 通信机制”学习方式；文中的结论、图和组织均重新梳理，并以现代 AOSP 的 Treble &#x2F; Mainline &#x2F; 稳定 AIDL 架构为准。具体代码、进程名和启动项会随 Android 版本与设备产品配置变">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Android 架构学习之旅">
 <meta property="og:url" content="https://zcorpius.github.io/2025/11/11/Android%E6%9E%B6%E6%9E%84%E5%AD%A6%E4%B9%A0%E4%B9%8B%E6%97%85/index.html">
 <meta property="og:site_name" content="Zcorpius&#39;s Blog">
+<meta property="og:description" content="Important 这是一篇 Android 系统的全景导读，不试图替代每个子系统的源码分析。行文借鉴了 Gityuan 的 Android 架构开篇 所采用的“启动链路 + 进程视角 + 通信机制”学习方式；文中的结论、图和组织均重新梳理，并以现代 AOSP 的 Treble &#x2F; Mainline &#x2F; 稳定 AIDL 架构为准。具体代码、进程名和启动项会随 Android 版本与设备产品配置变">
 <meta property="og:locale">
 <meta property="article:published_time" content="2025-11-11T15:35:12.000Z">
-<meta property="article:modified_time" content="2026-08-28T15:15:08.399Z">
+<meta property="article:modified_time" content="2026-08-29T16:00:00.000Z">
 <meta property="article:author" content="Zcorpius">
 <meta property="article:tag" content="Android">
 <meta name="twitter:card" content="summary">
@@ -412,7 +414,7 @@
                   <span class="post-meta-item-text">字数统计&#58;</span>
                 
                 <span title="字数统计">
-                  0
+                  4.7k
                 </span>
               
 
@@ -428,7 +430,7 @@
                   <span class="post-meta-item-text">阅读时长 &asymp;</span>
                 
                 <span title="阅读时长">
-                  1
+                  18
                 </span>
               
             </div>
@@ -449,7 +451,320 @@
       
 
       
-        
+        <div class="markdown-alert markdown-alert-important">
+<p class="markdown-alert-title"><svg class="octicon octicon-report mr-2" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M0 1.75C0 .784.784 0 1.75 0h12.5C15.216 0 16 .784 16 1.75v9.5A1.75 1.75 0 0 1 14.25 13H8.06l-2.573 2.573A1.458 1.458 0 0 1 3 14.543V13H1.75A1.75 1.75 0 0 1 0 11.25Zm1.75-.25a.25.25 0 0 0-.25.25v9.5c0 .138.112.25.25.25h2a.75.75 0 0 1 .75.75v2.19l2.72-2.72a.749.749 0 0 1 .53-.22h6.5a.25.25 0 0 0 .25-.25v-9.5a.25.25 0 0 0-.25-.25Zm7 2.25v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 9a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"></path></svg>Important</p>
+<p>这是一篇 Android 系统的全景导读，不试图替代每个子系统的源码分析。行文借鉴了 <a target="_blank" rel="noopener" href="https://gityuan.com/android/">Gityuan 的 Android 架构开篇</a> 所采用的“<strong>启动链路 + 进程视角 + 通信机制</strong>”学习方式；文中的结论、图和组织均重新梳理，并以现代 AOSP 的 Treble / Mainline / 稳定 AIDL 架构为准。具体代码、进程名和启动项会随 Android 版本与设备产品配置变化，阅读源码时必须以目标分支为准。</p>
+</div>
+<h1 id="1-先建立正确的全景图"><a href="#1-先建立正确的全景图" class="headerlink" title="1. 先建立正确的全景图"></a>1. 先建立正确的全景图</h1><p>Android 不是一组按目录叠放的库，而是一套由 Linux 内核调度、由多个进程共同运行、通过稳定接口协作的系统。</p>
+<p>传统的“五层架构”仍然有用：Kernel、HAL、Native/ART、Framework、App。但如果只用这张静态图来学习，很容易回答不了三个真正关键的问题：</p>
+<ol>
+<li><strong>谁在什么时刻被创建？</strong></li>
+<li><strong>这段代码运行在哪个进程、哪个分区、什么权限域中？</strong></li>
+<li><strong>它跨越进程或语言边界时，用什么协议、由谁做权限校验？</strong></li>
+</ol>
+<p>因此本文采用两张互补的地图：</p>
+<ul>
+<li><strong>静态地图</strong>回答“代码和接口在哪一层”；</li>
+<li><strong>动态地图</strong>回答“开机和一次功能请求时，进程怎样协作”。</li>
+</ul>
+<p>官方 AOSP 对现代软件栈的划分包含 App、Android Framework、系统服务、ART、HAL、Native 守护进程/库与 Kernel；这比早期只强调 Java Framework 与 Native 的视角多了分区、模块化和硬件接口稳定性的约束。<a target="_blank" rel="noopener" href="https://source.android.com/docs/core/architecture">AOSP Architecture overview</a></p>
+<h2 id="1-1-分层不是调用栈"><a href="#1-1-分层不是调用栈" class="headerlink" title="1.1 分层不是调用栈"></a>1.1 分层不是调用栈</h2><p>下图中的层表示职责边界，而不是“上层只能调用相邻一层”。例如应用经 Binder 调用 <code>system_server</code>，而 <code>system_server</code> 可以通过稳定 AIDL 调用 Vendor 分区中的 HAL；真正的数据面还可能采用共享内存、DMA 或 socket。</p>
+<pre class="mermaid">flowchart TB
+    App[App / 特权 App\nAndroid API、System API] --&gt; FW[Android Framework\nandroid.*、JNI 桥接]
+    FW --&gt; SS[系统服务进程群\nsystem_server / SurfaceFlinger / audioserver ...]
+    FW --&gt; ART[ART Runtime\nDEX、JIT/AOT、GC]
+    SS --&gt; N[Native 库与守护进程\nlibbinder、liblog、init、logd ...]
+    SS --&gt; HAL[稳定 HAL 接口\n优先 Stable AIDL]
+    HAL --&gt; Vendor[Vendor / ODM 实现\n厂商硬件服务]
+    N --&gt; Kernel[Linux Kernel\n调度、内存、驱动、Binder Driver]
+    Vendor --&gt; Kernel</pre>
+
+<table>
+<thead>
+<tr>
+<th>区域</th>
+<th>典型内容</th>
+<th>最该记住的职责</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>App</td>
+<td>第三方 App、系统 App、特权 App</td>
+<td>面向 SDK/API 编程；每个应用默认拥有独立 UID 和进程边界</td>
+</tr>
+<tr>
+<td>Framework</td>
+<td><code>android.app</code>、<code>android.view</code>、<code>android.media</code> 等 API 实现</td>
+<td>将应用请求转换为系统服务调用；一部分代码运行在 App 进程内</td>
+</tr>
+<tr>
+<td>System services</td>
+<td><code>system_server</code> 与 SurfaceFlinger、媒体、网络等原生服务</td>
+<td>管理全局状态、策略和资源仲裁；通常通过 Binder 对外暴露能力</td>
+</tr>
+<tr>
+<td>ART / Native</td>
+<td>ART、JNI、<code>libbinder</code>、<code>libutils</code>、<code>init</code>、<code>logd</code></td>
+<td>承接 Java/Native 执行与系统守护能力，直接使用 Linux 能力</td>
+</tr>
+<tr>
+<td>HAL / Vendor</td>
+<td>Audio、Camera、Sensors、Power 等硬件实现</td>
+<td>把稳定的系统接口落到具体 SoC 与设备硬件，隔离平台与厂商实现</td>
+</tr>
+<tr>
+<td>Kernel</td>
+<td>调度、内存、文件系统、Binder 驱动、设备驱动</td>
+<td>提供进程隔离与硬件访问的最终基础</td>
+</tr>
+</tbody></table>
+<div class="markdown-alert markdown-alert-tip">
+<p class="markdown-alert-title"><svg class="octicon octicon-light-bulb mr-2" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M8 1.5c-2.363 0-4 1.69-4 3.75 0 .984.424 1.625.984 2.304l.214.253c.223.264.47.556.673.848.284.411.537.896.621 1.49a.75.75 0 0 1-1.484.211c-.04-.282-.163-.547-.37-.847a8.456 8.456 0 0 0-.542-.68c-.084-.1-.173-.205-.268-.32C3.201 7.75 2.5 6.766 2.5 5.25 2.5 2.31 4.863 0 8 0s5.5 2.31 5.5 5.25c0 1.516-.701 2.5-1.328 3.259-.095.115-.184.22-.268.319-.207.245-.383.453-.541.681-.208.3-.33.565-.37.847a.751.751 0 0 1-1.485-.212c.084-.593.337-1.078.621-1.489.203-.292.45-.584.673-.848.075-.088.147-.173.213-.253.561-.679.985-1.32.985-2.304 0-2.06-1.637-3.75-4-3.75ZM5.75 12h4.5a.75.75 0 0 1 0 1.5h-4.5a.75.75 0 0 1 0-1.5ZM6 15.25a.75.75 0 0 1 .75-.75h2.5a.75.75 0 0 1 0 1.5h-2.5a.75.75 0 0 1-.75-.75Z"></path></svg>Tip</p>
+<p>遇到一个类或一个进程时，先回答“<strong>它属于哪个分区、哪个进程、对谁提供服务</strong>”，再追踪函数调用。这样不会把 Java 包名、代码目录和运行时进程混为一谈。</p>
+</div>
+<h2 id="1-2-现代-Android-相对旧图新增了什么"><a href="#1-2-现代-Android-相对旧图新增了什么" class="headerlink" title="1.2 现代 Android 相对旧图新增了什么"></a>1.2 现代 Android 相对旧图新增了什么</h2><p>早期文章常把 HAL 描述为 Framework 通过 <code>hw_module_t</code> 动态加载的一组 <code>.so</code>。这个模型对理解历史代码有帮助，但已不足以描述现代设备：</p>
+<ul>
+<li>Android 8 起，Treble 为 HAL 引入可独立演进的标准化接口和分区边界；</li>
+<li>Android 11 起可使用稳定 AIDL 描述 HAL；</li>
+<li>HIDL 仍可在存量设备上看到，但官方已将它标为弃用，新的 HAL 应优先使用 AIDL；</li>
+<li>Mainline/APEX 让部分系统模块能够独立于整包系统映像演进，其服务也可携带自己的 init 配置。</li>
+</ul>
+<p>也就是说，今天分析 Camera、Audio、Sensors 等问题时，不仅要看 <code>frameworks/</code>，还要看接口定义、VINTF 声明、<code>vendor</code> 实现与 SELinux 策略。<a target="_blank" rel="noopener" href="https://source.android.com/docs/core/architecture/hal">HAL overview</a> 与 <a target="_blank" rel="noopener" href="https://source.android.com/docs/core/architecture/aidl/aidl-hals">AIDL for HALs</a> 是更可靠的入口。</p>
+<h1 id="2-用启动链路把静态层连起来"><a href="#2-用启动链路把静态层连起来" class="headerlink" title="2. 用启动链路把静态层连起来"></a>2. 用启动链路把静态层连起来</h1><p>开机过程不是单线程脚本，而是一条不断扩展的进程树。下面的图省略了设备专有守护进程，保留理解 Framework 所需的主干。</p>
+<pre class="mermaid">flowchart TB
+    ROM[Boot ROM] --&gt; BL[Boot Loader]
+    BL --&gt; K[Linux Kernel]
+    K --&gt; INIT1[first-stage init\n挂载必要分区、准备 SELinux]
+    INIT1 --&gt; INIT2[second-stage init\n解析 rc、属性与 service]
+    INIT2 --&gt; SM[servicemanager\nBinder 名字服务]
+    INIT2 --&gt; Native[Native 系统服务\nSurfaceFlinger / audioserver / logd ...]
+    INIT2 --&gt; Z[zygote / zygote64]
+    Z --&gt; ART[启动 ART、预加载类和资源]
+    ART --&gt; SS[fork system_server]
+    SS --&gt; Services[Bootstrap / Core / Other Services\nAMS、WMS、PMS、IMS ...]
+    Services --&gt; Launch[AMS 请求 Zygote 创建应用进程]
+    Z --&gt; App[App 进程\nActivityThread.main]
+    App &lt;--&gt;|Binder| Services<!------></pre>
+
+<h2 id="2-1-Boot-ROM、Boot-Loader-与-Kernel：把“系统”带到用户空间门口"><a href="#2-1-Boot-ROM、Boot-Loader-与-Kernel：把“系统”带到用户空间门口" class="headerlink" title="2.1 Boot ROM、Boot Loader 与 Kernel：把“系统”带到用户空间门口"></a>2.1 Boot ROM、Boot Loader 与 Kernel：把“系统”带到用户空间门口</h2><ol>
+<li>芯片固化的 Boot ROM 运行最初代码，并验证/加载下一阶段；</li>
+<li>Boot Loader 初始化足以启动内核的硬件环境，并加载 Kernel、ramdisk 等启动镜像内容；</li>
+<li>Kernel 建立调度、内存管理、中断、驱动与 Binder 驱动，随后创建用户空间的第一个进程：<code>init</code>（PID 1）。</li>
+</ol>
+<p>这一阶段属于设备启动链路，具体分区、验证链和厂商实现差异很大。学习 Framework 时不必陷入 Boot Loader 细节，但应记住：<strong>Java 世界的一切，都是 Kernel 和 init 创建的用户空间进程。</strong></p>
+<h2 id="2-2-init：不是一个-init-rc，而是一套服务编排器"><a href="#2-2-init：不是一个-init-rc，而是一套服务编排器" class="headerlink" title="2.2 init：不是一个 init.rc，而是一套服务编排器"></a>2.2 init：不是一个 <code>init.rc</code>，而是一套服务编排器</h2><p><code>init</code> 是用户空间的 1 号进程，也是系统服务的直接或间接祖先。现代 Android 把服务定义分散在对应分区的 <code>etc/init/*.rc</code> 中，而不是维护一个巨大的单体 <code>init.rc</code>：</p>
+<ul>
+<li><code>/system/etc/init/</code>：核心系统服务；</li>
+<li><code>/vendor/etc/init/</code>：SoC 厂商服务；</li>
+<li><code>/odm/etc/init/</code>：设备厂商服务；</li>
+<li><code>/apex/*/etc/*rc</code>：随 Mainline/APEX 模块携带的服务定义。</li>
+</ul>
+<p>init 负责解析 action、service、property trigger 与 import；再根据 <code>class</code>、依赖、属性和重启策略拉起进程。不要把“某服务由 init 启动”误解成“它和其他服务没有依赖”：例如 <code>servicemanager</code> 必须尽早可用，Zygote 之后才可以孵化 <code>system_server</code>，而许多服务还会等待系统属性或分区就绪。<a target="_blank" rel="noopener" href="https://android.googlesource.com/platform/system/core/+/android16-release/init/">Android Init Language</a></p>
+<figure class="highlight bash"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 在设备上观察，而不是猜测服务状态</span></span><br><span class="line">adb shell getprop sys.boot_completed</span><br><span class="line">adb shell ps -A -o USER,PID,PPID,NAME,ARGS</span><br><span class="line">adb shell <span class="built_in">cat</span> /proc/1/cmdline</span><br><span class="line">adb shell getprop | grep -E <span class="string">'init\.svc|zygote'</span></span><br></pre></td></tr></tbody></table></figure>
+
+<h2 id="2-3-ServiceManager：Binder-世界的名字服务"><a href="#2-3-ServiceManager：Binder-世界的名字服务" class="headerlink" title="2.3 ServiceManager：Binder 世界的名字服务"></a>2.3 ServiceManager：Binder 世界的名字服务</h2><p>Binder 驱动只能识别对象和句柄，业务代码却需要用诸如 <code>activity</code>、<code>window</code>、<code>package</code> 这样的名字找到服务。<code>servicemanager</code> 解决的正是“名字 → Binder 服务”的注册与查询问题。</p>
+<p>典型时序是：服务端将 Binder 实体注册到名字服务，客户端查询后拿到代理对象，之后双方的业务事务经 Binder 驱动直接完成；名字服务不参与每一笔业务数据转发。</p>
+<pre class="mermaid">sequenceDiagram
+    participant Server as 系统服务 / Native 服务
+    participant SM as servicemanager
+    participant Client as 客户端进程
+    participant Driver as Binder Driver
+
+    Server-&gt;&gt;Driver: 创建 Binder 实体
+    Server-&gt;&gt;SM: addService(name, binder)
+    Client-&gt;&gt;SM: getService(name)
+    SM--&gt;&gt;Client: 返回 Binder 引用/代理
+    Client-&gt;&gt;Driver: transact()
+    Driver-&gt;&gt;Server: 分发事务
+    Server--&gt;&gt;Client: reply / oneway 回调</pre>
+
+<p>完整的启动、注册、查询与驱动路径可继续阅读：</p>
+<ul>
+<li><a href="/2026/04/09/Binder%E5%90%AF%E5%8A%A8/">Binder 启动</a>：从 Zygote 与 Binder 线程池切入；</li>
+<li><a href="/2026/04/12/Binder-Servicemanager%E5%90%AF%E5%8A%A8/">servicemanager 启动</a>：init 配置、上下文管理者与事件循环；</li>
+<li><a href="/2026/04/16/Binder-Servicemanager%E8%8E%B7%E5%8F%96/">servicemanager 获取</a>：应用/Framework 如何取得代理；</li>
+<li><a href="/2026/05/03/Binder-setService%E6%B3%A8%E5%86%8C%E6%9C%8D%E5%8A%A1/">setService 注册服务</a> 与 <a href="/2026/05/07/Binder-getService%E8%8E%B7%E5%8F%96%E6%9C%8D%E5%8A%A1/">getService 获取服务</a>：从 API 到 Native 的完整链路。</li>
+</ul>
+<div class="markdown-alert markdown-alert-note">
+<p class="markdown-alert-title"><svg class="octicon octicon-info mr-2" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"></path></svg>Note</p>
+<p>历史资料中经常同时出现 <code>servicemanager</code>、<code>hwservicemanager</code> 和 <code>vndservicemanager</code>。阅读时要先确认接口是旧 HIDL 还是 AIDL、服务位于 system 还是 vendor 侧，再决定应追踪哪个名字服务；不要把它们粗暴地当作完全等价的三个进程。新 HAL 的首选路径是稳定 AIDL，而不是继续以 HIDL 为起点。</p>
+</div>
+<h2 id="2-4-Zygote：预加载一次，再-fork-多次"><a href="#2-4-Zygote：预加载一次，再-fork-多次" class="headerlink" title="2.4 Zygote：预加载一次，再 fork 多次"></a>2.4 Zygote：预加载一次，再 fork 多次</h2><p>init 启动 Zygote 后，Zygote 通过 <code>app_process</code> 进入 ART 与 <code>ZygoteInit</code>：</p>
+<ol>
+<li>创建 ART 运行环境；</li>
+<li>注册 Unix Domain Socket，等待创建进程的请求；</li>
+<li>预加载常用类、资源、库与 dex cache；</li>
+<li>先 fork 出 <code>system_server</code>；</li>
+<li>之后继续接受 AMS 等发来的创建应用进程请求。</li>
+</ol>
+<p>fork 的价值在于 Copy-on-Write：子进程初始共享 Zygote 已准备好的内存页，只有写入时才复制，从而降低冷启动的准备成本。它不是“所有 Android 进程的父亲”这种绝对结论——Native 守护进程通常由 init 直接启动，某些命令行工具也可直接通过 <code>app_process</code> 运行；但常规 Java App 与 <code>system_server</code> 的确由 Zygote 孵化。</p>
+<p>从源码角度，重点观察三个动作：<code>preload()</code>、<code>startSystemServer()</code> 和 Zygote socket 的 select loop；后者接到请求后才真正 fork 新应用。<a target="_blank" rel="noopener" href="https://android.googlesource.com/platform/frameworks/base/+/android16-release/core/java/com/android/internal/os/ZygoteInit.java">ZygoteInit</a></p>
+<h2 id="2-5-system-server：Java-Framework-的服务容器，而非“整个-Framework”"><a href="#2-5-system-server：Java-Framework-的服务容器，而非“整个-Framework”" class="headerlink" title="2.5 system_server：Java Framework 的服务容器，而非“整个 Framework”"></a>2.5 system_server：Java Framework 的服务容器，而非“整个 Framework”</h2><p><code>system_server</code> 是 Zygote 的首个关键子进程。它运行 <code>com.android.server.SystemServer</code>，按启动阶段装载 Bootstrap、Core 和 Other Services，例如：</p>
+<ul>
+<li><strong>AMS/ATMS</strong>：组件、任务与进程生命周期；</li>
+<li><strong>WMS</strong>：窗口、焦点、层级与显示协作；</li>
+<li><strong>PMS</strong>：包扫描、组件解析、权限与安装状态；</li>
+<li><strong>IMS</strong>：输入系统的 Java 侧管理入口；</li>
+<li><strong>PowerManagerService、DisplayManagerService、BatteryService</strong> 等全局策略服务。</li>
+</ul>
+<p>很多 API 表面上是普通 Java 方法，实质是 App 进程中的 Framework 客户端通过 Binder 进入 <code>system_server</code>。但图形、音频等能力并不都“塞在 system_server 内”：SurfaceFlinger、audioserver、cameraserver 等具有 Native 服务进程和自己的线程模型。分析问题时应先用 <code>ps</code>、<code>dumpsys</code> 和 trace 确认边界。</p>
+<h2 id="2-6-应用进程：AMS-触发，Zygote-创建，ActivityThread-落地"><a href="#2-6-应用进程：AMS-触发，Zygote-创建，ActivityThread-落地" class="headerlink" title="2.6 应用进程：AMS 触发，Zygote 创建，ActivityThread 落地"></a>2.6 应用进程：AMS 触发，Zygote 创建，ActivityThread 落地</h2><p>一次启动 Activity 并不是“Launcher 直接 new Activity”：</p>
+<figure class="highlight text"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">Launcher / 调用方</span><br><span class="line">  → Binder 调用 system_server 中的 AMS / ATMS</span><br><span class="line">  → 若目标进程不存在，AMS 请求 Zygote socket 创建进程</span><br><span class="line">  → Zygote fork 子进程</span><br><span class="line">  → 子进程进入 ActivityThread.main()</span><br><span class="line">  → Application / ContentProvider / Activity 等按事务被创建与回调</span><br></pre></td></tr></tbody></table></figure>
+
+<p>因此定位“启动慢”时至少要分清四段：调用方与系统服务的 Binder 调度、Zygote fork/专用化、应用进程的类加载与 Provider 初始化、首帧由 WMS/SurfaceFlinger 合成展示。只查看 Activity 生命周期日志通常不够。</p>
+<h1 id="3-通信机制：先分清跨进程与跨线程"><a href="#3-通信机制：先分清跨进程与跨线程" class="headerlink" title="3. 通信机制：先分清跨进程与跨线程"></a>3. 通信机制：先分清跨进程与跨线程</h1><p>Android 的模块之所以可以拆成许多进程，是因为它有清晰的通信边界。最常见的误解是把 Handler 也视为 IPC，或者以为 Binder 是唯一的跨进程方案。</p>
+<table>
+<thead>
+<tr>
+<th>机制</th>
+<th>边界</th>
+<th>Android 中的典型位置</th>
+<th>关键认识</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Binder / AIDL</td>
+<td>跨进程</td>
+<td>App ↔ system_server；Framework ↔ Native 服务；系统 ↔ HAL</td>
+<td>带身份信息、对象引用和权限校验，是系统服务的主干</td>
+</tr>
+<tr>
+<td>Unix Domain Socket</td>
+<td>跨进程</td>
+<td>Zygote 进程孵化协议、部分守护进程控制面</td>
+<td>协议直观，适合连接/命令模型；不等于 Binder 的替代品</td>
+</tr>
+<tr>
+<td>共享内存 / FMQ</td>
+<td>跨进程数据面</td>
+<td>音频、图形、部分 HAL 的高吞吐路径</td>
+<td>常用 Binder 建立控制关系，再用共享缓冲承载大数据</td>
+</tr>
+<tr>
+<td>Handler / Looper</td>
+<td>同进程、跨线程</td>
+<td>App 主线程、system_server 服务线程</td>
+<td>是消息调度模型，不是跨进程机制；底层等待通常会落到 native Looper/epoll</td>
+</tr>
+<tr>
+<td>信号、pipe、eventfd、epoll</td>
+<td>内核事件与线程协作</td>
+<td>init、servicemanager、EventHub、Looper</td>
+<td>是更底层的 Linux 工具，不应和 Binder 的对象模型混淆</td>
+</tr>
+</tbody></table>
+<h2 id="3-1-Binder：控制面与身份边界"><a href="#3-1-Binder：控制面与身份边界" class="headerlink" title="3.1 Binder：控制面与身份边界"></a>3.1 Binder：控制面与身份边界</h2><p>一笔同步 Binder 调用中，客户端线程向驱动提交事务；驱动把事务交给目标进程的 Binder 线程；服务端处理并返回 reply。内核记录调用方 UID/PID，服务端可据此做权限检查，必要时通过 <code>clearCallingIdentity()</code> 切换为服务自身身份执行内部操作。</p>
+<p>Binder 很适合控制面与小对象传递，但不应拿它连续搬运大块媒体数据。AudioTrack、图形 Buffer 等场景会用 Binder 建链、用共享内存/BufferQueue 等路径传输数据。</p>
+<h2 id="3-2-Socket：Zygote-的控制通道"><a href="#3-2-Socket：Zygote-的控制通道" class="headerlink" title="3.2 Socket：Zygote 的控制通道"></a>3.2 Socket：Zygote 的控制通道</h2><p>Zygote 的 socket 并不是“应用之间任意通信”的公共通道。它承载受控的进程创建协议：AMS 等系统侧组件请求 Zygote 按参数 fork/专用化子进程。Zygote 通过 select loop 等待连接与命令，因此分析应用进程创建时必须同时看 AMS 与 Zygote，而非只在某一侧找 <code>fork()</code>。</p>
+<h2 id="3-3-Handler：线程把任务交回所属-Looper"><a href="#3-3-Handler：线程把任务交回所属-Looper" class="headerlink" title="3.3 Handler：线程把任务交回所属 Looper"></a>3.3 Handler：线程把任务交回所属 Looper</h2><p>Handler 的 MessageQueue 属于一个进程地址空间；线程之间共享 Handler 对象和堆内存，因此能把工作投递给拥有该 Looper 的线程。最典型的是后台线程投递消息给 UI 线程。跨进程时，双方并不共享这份内存，必须先通过 Binder、socket 等 IPC 抵达目标进程，再由其内部 Handler 切换线程。</p>
+<p><code>Handler → MessageQueue → native Looper → epoll</code> 是理解“Java 消息循环如何等到 fd 事件”的一条纵向线；相关底座见 <a href="/2026/03/20/Android%E4%B8%AD%E7%9A%84IO%E5%A4%8D%E7%94%A8/">Android 中的 I/O 复用</a>。</p>
+<h1 id="4-以一个真实请求穿过全栈"><a href="#4-以一个真实请求穿过全栈" class="headerlink" title="4. 以一个真实请求穿过全栈"></a>4. 以一个真实请求穿过全栈</h1><p>下面用“用户触摸屏幕后，窗口收到事件”把架构从静态词汇变成运行时协作。细节会随版本变化，但进程边界和职责分工稳定：</p>
+<pre class="mermaid">sequenceDiagram
+    participant Driver as 触摸驱动
+    participant EH as EventHub / InputReader
+    participant ID as InputDispatcher
+    participant WMS as WMS / IMS
+    participant App as 目标 App 进程
+    participant UI as App 主线程
+
+    Driver-&gt;&gt;EH: /dev/input 事件
+    EH-&gt;&gt;ID: 规范化后的 RawEvent / Notify
+    ID-&gt;&gt;WMS: 查询焦点、窗口与策略
+    WMS--&gt;&gt;ID: 目标窗口 / 拦截结果
+    ID-&gt;&gt;App: Binder 输入通道事务
+    App-&gt;&gt;UI: 入队到应用 Looper
+    UI--&gt;&gt;App: View 分发与界面更新</pre>
+
+<p>这个案例同时揭示了四件事：</p>
+<ol>
+<li>硬件事件从 Kernel 的字符设备进入用户空间；</li>
+<li>InputReader 与 InputDispatcher 是 native 输入流水线，不等于 App 的 <code>onTouchEvent</code>；</li>
+<li>WMS 参与焦点、窗口与策略判断；</li>
+<li>最后一次跨进程后，事件仍要回到目标 App 的主线程完成 View 分发。</li>
+</ol>
+<p>对应的深入阅读顺序是：<a href="/2026/06/06/Input%E5%AD%A6%E4%B9%A0%E4%B9%8B%E6%97%85/">Input 系统框架</a> → <a href="/2026/08/13/Input%E6%9E%84%E9%80%A0%E6%B5%81%E7%A8%8B/">Input 构造流程</a> → <a href="/2026/08/29/Input%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/">Input 启动流程</a>。</p>
+<h1 id="5-阅读源码时的现代边界"><a href="#5-阅读源码时的现代边界" class="headerlink" title="5. 阅读源码时的现代边界"></a>5. 阅读源码时的现代边界</h1><h2 id="5-1-system、vendor、odm-与-APEX"><a href="#5-1-system、vendor、odm-与-APEX" class="headerlink" title="5.1 system、vendor、odm 与 APEX"></a>5.1 system、vendor、odm 与 APEX</h2><p>目录路径不只是工程组织：它往往意味着发布与兼容性边界。</p>
+<ul>
+<li><strong>system / system_ext / product</strong>：平台与产品侧组件；</li>
+<li><strong>vendor / odm</strong>：SoC 与设备厂商实现，须遵守兼容性约束；</li>
+<li><strong>APEX</strong>：可模块化更新的系统组件，可能提供库、服务与 init rc。</li>
+</ul>
+<p>所以同样是一个 C++ 服务，不能只看“它链接了 <code>libbinder</code>”。还要问它在哪个分区：跨分区的稳定接口使用 AIDL 时，vendor 侧通常应使用 NDK/Rust/Java 后端，而不是依赖不稳定的 C++ <code>libbinder</code> ABI。<a target="_blank" rel="noopener" href="https://source.android.com/docs/core/architecture/aidl/aidl-hals#build-against-the-aidl-runtime">Stable AIDL 的构建约束</a></p>
+<h2 id="5-2-权限不只发生在-API-层"><a href="#5-2-权限不只发生在-API-层" class="headerlink" title="5.2 权限不只发生在 API 层"></a>5.2 权限不只发生在 API 层</h2><p>一个调用能否成功，通常经过多层约束：</p>
+<figure class="highlight text"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">SDK / @SystemApi 可见性</span><br><span class="line">    → framework 权限检查（permission / AppOp / UID）</span><br><span class="line">    → Binder 调用方身份</span><br><span class="line">    → SELinux 域与 service_contexts</span><br><span class="line">    → HAL 接口与 VINTF 声明</span><br><span class="line">    → 内核驱动访问控制</span><br></pre></td></tr></tbody></table></figure>
+
+<p>因此“反射拿到隐藏 API”不意味着一定能访问硬件服务；同样，能拿到 Binder 也不代表服务端会授权。调试权限问题时，<code>dumpsys</code>、<code>logcat</code>、<code>avc: denied</code> 日志与服务端的 <code>enforceCallingPermission</code> 往往要结合观察。</p>
+<h2 id="5-3-代码目录、进程名、服务名是三套坐标"><a href="#5-3-代码目录、进程名、服务名是三套坐标" class="headerlink" title="5.3 代码目录、进程名、服务名是三套坐标"></a>5.3 代码目录、进程名、服务名是三套坐标</h2><p>以音频为例，<code>frameworks/av</code> 的代码不必然全在一个名为 <code>mediaserver</code> 的进程中；应用 API、<code>system_server</code> 的 AudioService、audioserver、Audio HAL 和内核驱动分别处于不同坐标。不要根据一个目录名猜运行位置。</p>
+<p>音频的数据流与控制流已经单独梳理在 <a href="/2026/06/02/Audio%E5%AD%A6%E4%B9%A0%E4%B9%8B%E6%97%85/">Android Audio 学习之旅</a> 和 <a href="/2026/06/04/AudioTrack%E5%89%96%E6%9E%90/">AudioTrack 剖析</a> 中。</p>
+<h1 id="6-面向这个博客的学习路线"><a href="#6-面向这个博客的学习路线" class="headerlink" title="6. 面向这个博客的学习路线"></a>6. 面向这个博客的学习路线</h1><p>这篇文章承担“导航页”的职责；每一篇专题只解决一条可验证的链路。</p>
+<table>
+<thead>
+<tr>
+<th>阶段</th>
+<th>要解决的问题</th>
+<th>建议文章 / 代码入口</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>0. Linux 基础</td>
+<td>进程、线程、fd、epoll、内存与系统调用如何工作？</td>
+<td><a href="/2026/03/20/Android%E4%B8%AD%E7%9A%84IO%E5%A4%8D%E7%94%A8/">I/O 复用</a>、C/C++ 系列</td>
+</tr>
+<tr>
+<td>1. 系统启动</td>
+<td>init 如何编排服务，Zygote 如何创建 Java 进程？</td>
+<td>本文；<code>system/core/init</code>、<code>app_process</code>、<code>ZygoteInit</code></td>
+</tr>
+<tr>
+<td>2. Binder 基础设施</td>
+<td>服务如何注册、查询、传输与死亡通知？</td>
+<td>Binder 启动、ServiceManager、Driver 系列</td>
+</tr>
+<tr>
+<td>3. system_server</td>
+<td>一项系统能力如何从 API 到系统服务？</td>
+<td>AMS/WMS/PMS、SystemServer 启动顺序</td>
+</tr>
+<tr>
+<td>4. 典型子系统</td>
+<td>输入、音频、图形各自的线程、数据流和策略在哪？</td>
+<td>Input、Audio、SurfaceFlinger 专题</td>
+</tr>
+<tr>
+<td>5. 硬件边界</td>
+<td>Framework 如何跨 system/vendor 到 HAL 与驱动？</td>
+<td>AIDL HAL、VINTF、SELinux、具体 HAL</td>
+</tr>
+<tr>
+<td>6. 排障验证</td>
+<td>如何证明“我画出的链路”真实运行？</td>
+<td><code>ps</code>、<code>dumpsys</code>、<code>logcat</code>、Perfetto、源码与 Binder 调试</td>
+</tr>
+</tbody></table>
+<div class="markdown-alert markdown-alert-tip">
+<p class="markdown-alert-title"><svg class="octicon octicon-light-bulb mr-2" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M8 1.5c-2.363 0-4 1.69-4 3.75 0 .984.424 1.625.984 2.304l.214.253c.223.264.47.556.673.848.284.411.537.896.621 1.49a.75.75 0 0 1-1.484.211c-.04-.282-.163-.547-.37-.847a8.456 8.456 0 0 0-.542-.68c-.084-.1-.173-.205-.268-.32C3.201 7.75 2.5 6.766 2.5 5.25 2.5 2.31 4.863 0 8 0s5.5 2.31 5.5 5.25c0 1.516-.701 2.5-1.328 3.259-.095.115-.184.22-.268.319-.207.245-.383.453-.541.681-.208.3-.33.565-.37.847a.751.751 0 0 1-1.485-.212c.084-.593.337-1.078.621-1.489.203-.292.45-.584.673-.848.075-.088.147-.173.213-.253.561-.679.985-1.32.985-2.304 0-2.06-1.637-3.75-4-3.75ZM5.75 12h4.5a.75.75 0 0 1 0 1.5h-4.5a.75.75 0 0 1 0-1.5ZM6 15.25a.75.75 0 0 1 .75-.75h2.5a.75.75 0 0 1 0 1.5h-2.5a.75.75 0 0 1-.75-.75Z"></path></svg>Tip</p>
+<p>每次读一个新模块，建议产出四项笔记：<strong>入口、所属进程、跨进程边界、关键线程/队列</strong>。如果还能给出一条 <code>dumpsys</code>、日志或 trace 证据，这张架构图就从“记忆”变成了“可验证的模型”。</p>
+</div>
+<h1 id="7-常用观测命令"><a href="#7-常用观测命令" class="headerlink" title="7. 常用观测命令"></a>7. 常用观测命令</h1><figure class="highlight bash"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 进程树与启动状态</span></span><br><span class="line">adb shell ps -A -o USER,PID,PPID,NAME,ARGS</span><br><span class="line">adb shell getprop sys.boot_completed</span><br><span class="line">adb shell getprop | grep -E <span class="string">'init\.svc|zygote|sys\.boot'</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 系统服务注册与状态（输出依设备/版本不同）</span></span><br><span class="line">adb shell service list</span><br><span class="line">adb shell dumpsys activity</span><br><span class="line">adb shell dumpsys window</span><br><span class="line">adb shell dumpsys input</span><br><span class="line"></span><br><span class="line"><span class="comment"># 关联 Binder / SELinux / 启动日志</span></span><br><span class="line">adb logcat -b all -v threadtime</span><br><span class="line">adb shell dmesg | grep -i -E <span class="string">'binder|avc'</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 抓一段系统级时序；实际可用的 category 以设备为准</span></span><br><span class="line">adb shell perfetto --txt -c - -o /data/misc/perfetto-traces/boot.pftrace</span><br></pre></td></tr></tbody></table></figure>
+
+<p>最后一条 Perfetto 命令只展示入口，不建议直接在生产设备上盲目执行：先明确要观察的时间窗口、数据源和输出路径，再用版本匹配的配置抓取。</p>
+<h1 id="8-总结"><a href="#8-总结" class="headerlink" title="8. 总结"></a>8. 总结</h1><p>理解 Android 架构的目标不是背出五层图或几十个服务名，而是形成下面这套可迁移的判断框架：</p>
+<ol>
+<li><strong>静态上</strong>：它属于 App、Framework、系统服务、Native、HAL 还是 Kernel？</li>
+<li><strong>动态上</strong>：它由 init、Zygote、system_server，还是某个服务按需创建？</li>
+<li><strong>边界上</strong>：它跨的是线程、进程、语言、分区还是硬件边界？</li>
+<li><strong>验证上</strong>：能否用源码、进程状态、日志、Binder 服务和 trace 证明链路？</li>
+</ol>
+<p>带着这四个问题去读 Binder、Input、Audio 或任一系统服务，看到的就不再是孤立函数，而是一条在真实设备上运行的系统协作链路。</p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ul>
+<li><a target="_blank" rel="noopener" href="https://gityuan.com/android/">Gityuan：Android 操作系统架构开篇</a></li>
+<li><a target="_blank" rel="noopener" href="https://source.android.com/docs/core/architecture">AOSP：Architecture overview</a></li>
+<li><a target="_blank" rel="noopener" href="https://source.android.com/docs/core/architecture/hal">AOSP：Hardware abstraction layer overview</a></li>
+<li><a target="_blank" rel="noopener" href="https://source.android.com/docs/core/architecture/aidl/aidl-hals">AOSP：AIDL for HALs</a></li>
+<li><a target="_blank" rel="noopener" href="https://android.googlesource.com/platform/system/core/+/android16-release/init/">AOSP：Android Init Language</a></li>
+<li><a target="_blank" rel="noopener" href="https://android.googlesource.com/platform/frameworks/base/+/android16-release/core/java/com/android/internal/os/ZygoteInit.java">AOSP：ZygoteInit</a></li>
+</ul>
+
       
     </div>
     
@@ -543,8 +858,17 @@
       
 
       
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
 
-      <section class="site-overview-wrap sidebar-panel sidebar-panel-active">
+      <section class="site-overview-wrap sidebar-panel">
         <div class="site-overview">
           <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
             
@@ -657,6 +981,22 @@
         </div>
       </section>
 
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#1-%E5%85%88%E5%BB%BA%E7%AB%8B%E6%AD%A3%E7%A1%AE%E7%9A%84%E5%85%A8%E6%99%AF%E5%9B%BE"><span class="nav-text">1. 先建立正确的全景图</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-1-%E5%88%86%E5%B1%82%E4%B8%8D%E6%98%AF%E8%B0%83%E7%94%A8%E6%A0%88"><span class="nav-text">1.1 分层不是调用栈</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#1-2-%E7%8E%B0%E4%BB%A3-Android-%E7%9B%B8%E5%AF%B9%E6%97%A7%E5%9B%BE%E6%96%B0%E5%A2%9E%E4%BA%86%E4%BB%80%E4%B9%88"><span class="nav-text">1.2 现代 Android 相对旧图新增了什么</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#2-%E7%94%A8%E5%90%AF%E5%8A%A8%E9%93%BE%E8%B7%AF%E6%8A%8A%E9%9D%99%E6%80%81%E5%B1%82%E8%BF%9E%E8%B5%B7%E6%9D%A5"><span class="nav-text">2. 用启动链路把静态层连起来</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#2-1-Boot-ROM%E3%80%81Boot-Loader-%E4%B8%8E-Kernel%EF%BC%9A%E6%8A%8A%E2%80%9C%E7%B3%BB%E7%BB%9F%E2%80%9D%E5%B8%A6%E5%88%B0%E7%94%A8%E6%88%B7%E7%A9%BA%E9%97%B4%E9%97%A8%E5%8F%A3"><span class="nav-text">2.1 Boot ROM、Boot Loader 与 Kernel：把“系统”带到用户空间门口</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-2-init%EF%BC%9A%E4%B8%8D%E6%98%AF%E4%B8%80%E4%B8%AA-init-rc%EF%BC%8C%E8%80%8C%E6%98%AF%E4%B8%80%E5%A5%97%E6%9C%8D%E5%8A%A1%E7%BC%96%E6%8E%92%E5%99%A8"><span class="nav-text">2.2 init：不是一个 init.rc，而是一套服务编排器</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-3-ServiceManager%EF%BC%9ABinder-%E4%B8%96%E7%95%8C%E7%9A%84%E5%90%8D%E5%AD%97%E6%9C%8D%E5%8A%A1"><span class="nav-text">2.3 ServiceManager：Binder 世界的名字服务</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-4-Zygote%EF%BC%9A%E9%A2%84%E5%8A%A0%E8%BD%BD%E4%B8%80%E6%AC%A1%EF%BC%8C%E5%86%8D-fork-%E5%A4%9A%E6%AC%A1"><span class="nav-text">2.4 Zygote：预加载一次，再 fork 多次</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-5-system-server%EF%BC%9AJava-Framework-%E7%9A%84%E6%9C%8D%E5%8A%A1%E5%AE%B9%E5%99%A8%EF%BC%8C%E8%80%8C%E9%9D%9E%E2%80%9C%E6%95%B4%E4%B8%AA-Framework%E2%80%9D"><span class="nav-text">2.5 system_server：Java Framework 的服务容器，而非“整个 Framework”</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-6-%E5%BA%94%E7%94%A8%E8%BF%9B%E7%A8%8B%EF%BC%9AAMS-%E8%A7%A6%E5%8F%91%EF%BC%8CZygote-%E5%88%9B%E5%BB%BA%EF%BC%8CActivityThread-%E8%90%BD%E5%9C%B0"><span class="nav-text">2.6 应用进程：AMS 触发，Zygote 创建，ActivityThread 落地</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#3-%E9%80%9A%E4%BF%A1%E6%9C%BA%E5%88%B6%EF%BC%9A%E5%85%88%E5%88%86%E6%B8%85%E8%B7%A8%E8%BF%9B%E7%A8%8B%E4%B8%8E%E8%B7%A8%E7%BA%BF%E7%A8%8B"><span class="nav-text">3. 通信机制：先分清跨进程与跨线程</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#3-1-Binder%EF%BC%9A%E6%8E%A7%E5%88%B6%E9%9D%A2%E4%B8%8E%E8%BA%AB%E4%BB%BD%E8%BE%B9%E7%95%8C"><span class="nav-text">3.1 Binder：控制面与身份边界</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-2-Socket%EF%BC%9AZygote-%E7%9A%84%E6%8E%A7%E5%88%B6%E9%80%9A%E9%81%93"><span class="nav-text">3.2 Socket：Zygote 的控制通道</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-3-Handler%EF%BC%9A%E7%BA%BF%E7%A8%8B%E6%8A%8A%E4%BB%BB%E5%8A%A1%E4%BA%A4%E5%9B%9E%E6%89%80%E5%B1%9E-Looper"><span class="nav-text">3.3 Handler：线程把任务交回所属 Looper</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#4-%E4%BB%A5%E4%B8%80%E4%B8%AA%E7%9C%9F%E5%AE%9E%E8%AF%B7%E6%B1%82%E7%A9%BF%E8%BF%87%E5%85%A8%E6%A0%88"><span class="nav-text">4. 以一个真实请求穿过全栈</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#5-%E9%98%85%E8%AF%BB%E6%BA%90%E7%A0%81%E6%97%B6%E7%9A%84%E7%8E%B0%E4%BB%A3%E8%BE%B9%E7%95%8C"><span class="nav-text">5. 阅读源码时的现代边界</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#5-1-system%E3%80%81vendor%E3%80%81odm-%E4%B8%8E-APEX"><span class="nav-text">5.1 system、vendor、odm 与 APEX</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-2-%E6%9D%83%E9%99%90%E4%B8%8D%E5%8F%AA%E5%8F%91%E7%94%9F%E5%9C%A8-API-%E5%B1%82"><span class="nav-text">5.2 权限不只发生在 API 层</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-3-%E4%BB%A3%E7%A0%81%E7%9B%AE%E5%BD%95%E3%80%81%E8%BF%9B%E7%A8%8B%E5%90%8D%E3%80%81%E6%9C%8D%E5%8A%A1%E5%90%8D%E6%98%AF%E4%B8%89%E5%A5%97%E5%9D%90%E6%A0%87"><span class="nav-text">5.3 代码目录、进程名、服务名是三套坐标</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#6-%E9%9D%A2%E5%90%91%E8%BF%99%E4%B8%AA%E5%8D%9A%E5%AE%A2%E7%9A%84%E5%AD%A6%E4%B9%A0%E8%B7%AF%E7%BA%BF"><span class="nav-text">6. 面向这个博客的学习路线</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#7-%E5%B8%B8%E7%94%A8%E8%A7%82%E6%B5%8B%E5%91%BD%E4%BB%A4"><span class="nav-text">7. 常用观测命令</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#8-%E6%80%BB%E7%BB%93"><span class="nav-text">8. 总结</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83"><span class="nav-text">参考</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
       
 
       
