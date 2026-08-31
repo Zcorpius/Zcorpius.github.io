@@ -102,32 +102,32 @@
 <meta name="description" content="1. 概述构造阶段结束时，input 系统处于“装配好但没通电”的状态：  流水线的 stage（Reader → UnwantedInteractionBlocker → InputProcessor → InputDispatcher）都已 new 出来并串好； EventHub 的 epoll &#x2F; inotify fd 已经 open，但没有任何线程在 epoll_wait，所以读不到任何事">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Input 启动流程">
-<meta property="og:url" content="https://zcorpius.github.io/2026/08/29/Input%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/index.html">
+<meta property="og:url" content="https://zcorpius.github.io/2026/08/15/Input%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/index.html">
 <meta property="og:site_name" content="Zcorpius&#39;s Blog">
 <meta property="og:description" content="1. 概述构造阶段结束时，input 系统处于“装配好但没通电”的状态：  流水线的 stage（Reader → UnwantedInteractionBlocker → InputProcessor → InputDispatcher）都已 new 出来并串好； EventHub 的 epoll &#x2F; inotify fd 已经 open，但没有任何线程在 epoll_wait，所以读不到任何事">
 <meta property="og:locale">
-<meta property="og:image" content="https://zcorpius.github.io/2026/08/29/Input%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B2.png">
-<meta property="og:image" content="https://zcorpius.github.io/2026/08/29/Input%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/start%E9%93%BE%E8%B7%AF.png">
-<meta property="og:image" content="https://zcorpius.github.io/2026/08/29/Input%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/dispatchOnce%E6%B5%81%E7%A8%8B.png">
-<meta property="og:image" content="https://zcorpius.github.io/2026/08/29/Input%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/loopOnce%E6%B5%81%E7%A8%8B.png">
-<meta property="og:image" content="https://zcorpius.github.io/2026/08/29/Input%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/start%E6%B5%81%E7%A8%8B.png">
-<meta property="og:image" content="https://zcorpius.github.io/2026/08/29/Input%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/%E5%90%AF%E5%8A%A8%E6%80%BB%E8%A7%88.png">
-<meta property="og:image" content="https://zcorpius.github.io/2026/08/29/Input%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/%E5%86%B7%E5%90%AF%E5%8A%A8%E9%A6%96%E6%89%B9%E8%AE%BE%E5%A4%87%E6%B3%A8%E5%86%8C%E6%97%B6%E5%BA%8F.png">
-<meta property="og:image" content="https://zcorpius.github.io/2026/08/29/Input%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/Android%20Input%EF%BC%9A%E4%B8%80%E6%AC%A1%E8%A7%A6%E6%91%B8%E7%9A%84%E9%97%AF%E5%85%B3%E4%B9%8B%E6%97%85.png">
-<meta property="og:image" content="https://zcorpius.github.io/2026/08/29/Input%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/input_event%E5%88%B0RawEvent.png">
-<meta property="og:image" content="https://zcorpius.github.io/2026/08/29/Input%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/RawEvent%E5%88%B0NotifyArgs.png">
-<meta property="og:image" content="https://zcorpius.github.io/2026/08/29/Input%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/%E4%BA%A7%E7%89%A9%E5%9B%9E%E6%B5%81.png">
-<meta property="og:image" content="https://zcorpius.github.io/2026/08/29/Input%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/mapper%E4%B8%A4%E7%A7%8D%E4%BA%A7%E6%B3%95.png">
-<meta property="og:image" content="https://zcorpius.github.io/2026/08/29/Input%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/flush%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93.png">
-<meta property="og:image" content="https://zcorpius.github.io/2026/08/29/Input%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/flush%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93.png">
-<meta property="og:image" content="https://zcorpius.github.io/2026/08/29/Input%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/%E6%B4%BE%E5%8F%91%E6%B5%81%E7%A8%8B.png">
-<meta property="og:image" content="https://zcorpius.github.io/2026/08/29/Input%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/%E5%AE%8C%E6%95%B4touch%E6%97%B6%E5%BA%8F.png">
-<meta property="article:published_time" content="2026-08-29T08:39:32.000Z">
-<meta property="article:modified_time" content="2026-08-29T09:36:54.046Z">
+<meta property="og:image" content="https://zcorpius.github.io/2026/08/15/Input%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B2.png">
+<meta property="og:image" content="https://zcorpius.github.io/2026/08/15/Input%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/start%E9%93%BE%E8%B7%AF.png">
+<meta property="og:image" content="https://zcorpius.github.io/2026/08/15/Input%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/dispatchOnce%E6%B5%81%E7%A8%8B.png">
+<meta property="og:image" content="https://zcorpius.github.io/2026/08/15/Input%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/loopOnce%E6%B5%81%E7%A8%8B.png">
+<meta property="og:image" content="https://zcorpius.github.io/2026/08/15/Input%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/start%E6%B5%81%E7%A8%8B.png">
+<meta property="og:image" content="https://zcorpius.github.io/2026/08/15/Input%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/%E5%90%AF%E5%8A%A8%E6%80%BB%E8%A7%88.png">
+<meta property="og:image" content="https://zcorpius.github.io/2026/08/15/Input%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/%E5%86%B7%E5%90%AF%E5%8A%A8%E9%A6%96%E6%89%B9%E8%AE%BE%E5%A4%87%E6%B3%A8%E5%86%8C%E6%97%B6%E5%BA%8F.png">
+<meta property="og:image" content="https://zcorpius.github.io/2026/08/15/Input%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/Android%20Input%EF%BC%9A%E4%B8%80%E6%AC%A1%E8%A7%A6%E6%91%B8%E7%9A%84%E9%97%AF%E5%85%B3%E4%B9%8B%E6%97%85.png">
+<meta property="og:image" content="https://zcorpius.github.io/2026/08/15/Input%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/input_event%E5%88%B0RawEvent.png">
+<meta property="og:image" content="https://zcorpius.github.io/2026/08/15/Input%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/RawEvent%E5%88%B0NotifyArgs.png">
+<meta property="og:image" content="https://zcorpius.github.io/2026/08/15/Input%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/%E4%BA%A7%E7%89%A9%E5%9B%9E%E6%B5%81.png">
+<meta property="og:image" content="https://zcorpius.github.io/2026/08/15/Input%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/mapper%E4%B8%A4%E7%A7%8D%E4%BA%A7%E6%B3%95.png">
+<meta property="og:image" content="https://zcorpius.github.io/2026/08/15/Input%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/flush%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93.png">
+<meta property="og:image" content="https://zcorpius.github.io/2026/08/15/Input%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/flush%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93.png">
+<meta property="og:image" content="https://zcorpius.github.io/2026/08/15/Input%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/%E6%B4%BE%E5%8F%91%E6%B5%81%E7%A8%8B.png">
+<meta property="og:image" content="https://zcorpius.github.io/2026/08/15/Input%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/%E5%AE%8C%E6%95%B4touch%E6%97%B6%E5%BA%8F.png">
+<meta property="article:published_time" content="2026-08-15T08:23:24.000Z">
+<meta property="article:modified_time" content="2026-08-31T14:50:02.978Z">
 <meta property="article:author" content="Zcorpius">
 <meta property="article:tag" content="Input">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://zcorpius.github.io/2026/08/29/Input%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B2.png">
+<meta name="twitter:image" content="https://zcorpius.github.io/2026/08/15/Input%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B2.png">
 
 
 
@@ -157,7 +157,7 @@
 
 
 
-  <link rel="canonical" href="https://Zcorpius.github.io/2026/08/29/Input启动流程/"/>
+  <link rel="canonical" href="https://Zcorpius.github.io/2026/08/15/Input启动流程/"/>
 
 
 
@@ -346,7 +346,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="https://Zcorpius.github.io/2026/08/29/Input%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/">
+    <link itemprop="mainEntityOfPage" href="https://Zcorpius.github.io/2026/08/15/Input%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="">
@@ -375,8 +375,8 @@
               
                 <span class="post-meta-item-text">发表于</span>
               
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2026-08-29T16:39:32+08:00">
-                2026-08-29
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2026-08-15T16:23:24+08:00">
+                2026-08-15
               </time>
             
 
@@ -485,7 +485,7 @@
 </ul>
 <p><code>start()</code> 要做的，就是把这条流水线<strong>通电</strong>：拉起两条工作线程（<code>InputReader</code> / <code>InputDispatcher</code>），事件才开始流动。</p>
 <p>整体运行时链路（通电后）：</p>
-<img src="/2026/08/29/Input%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/启动流程2.png" style="zoom:80%;">
+<img src="/2026/08/15/Input%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/启动流程2.png" style="zoom:80%;">
 
 <hr>
 <h1 id="2-启动入口：inputManager-start"><a href="#2-启动入口：inputManager-start" class="headerlink" title="2. 启动入口：inputManager.start()"></a>2. 启动入口：inputManager.start()</h1><h2 id="2-1-SystemServer-的触发点"><a href="#2-1-SystemServer-的触发点" class="headerlink" title="2.1 SystemServer 的触发点"></a>2.1 SystemServer 的触发点</h2><p>构造结束后，SystemServer 在 <code>startOtherServices</code> 里紧接着做两件事：</p>
@@ -496,7 +496,7 @@
 <li><strong><code>inputManager.start()</code></strong>：★ 真正的“通电”，下面展开。</li>
 </ul>
 <h2 id="2-2-start-的完整调用链"><a href="#2-2-start-的完整调用链" class="headerlink" title="2.2 start() 的完整调用链"></a>2.2 start() 的完整调用链</h2><p>一条直线打穿 Java → JNI → Native：</p>
-<img src="/2026/08/29/Input%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/start链路.png" width="600px">
+<img src="/2026/08/15/Input%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/start链路.png" width="600px">
 
 <p>每一层都很薄，基本是转发：</p>
 <figure class="highlight java"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/base/services/core/java/com/android/server/input/InputManagerService.java</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">start</span><span class="params">()</span> {</span><br><span class="line">    Slog.i(TAG, <span class="string">"Starting input manager"</span>);</span><br><span class="line">    mNative.start();                          <span class="comment">// → 走 JNI 到 native</span></span><br><span class="line">    Watchdog.getInstance().addMonitor(<span class="built_in">this</span>);  <span class="comment">// 把自己挂进 Watchdog（卡死/ANR 监控）</span></span><br><span class="line">}</span><br><span class="line"><span class="comment">// frameworks/base/services/core/jni/com_android_server_input_InputManagerService.cpp</span></span><br><span class="line"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">nativeStart</span><span class="params">(JNIEnv* env, jobject nativeImplObj)</span> {</span><br><span class="line">    NativeInputManager* im = getNativeInputManager(env, nativeImplObj);</span><br><span class="line">    <span class="type">status_t</span> <span class="variable">result</span> <span class="operator">=</span> im-&gt;getInputManager()-&gt;start();   <span class="comment">// 作用在构造时 new 出来的那个 InputManager</span></span><br><span class="line">    <span class="keyword">if</span> (result) {</span><br><span class="line">        jniThrowRuntimeException(env, <span class="string">"Input manager could not be started."</span>);</span><br><span class="line">    }</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
@@ -520,10 +520,10 @@
 <li><strong>“InputReader” 线程</strong> → 不停调 <code>loopOnce()</code> → <code>EventHub.getEvents()</code> → <code>epoll_wait</code> 阻塞等事件 → 读 <code>/dev/input</code>；</li>
 </ul>
 <p><strong>“InputDispatcher” 线程 → 持续 <code>dispatchOnce()</code></strong></p>
-<img src="/2026/08/29/Input%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/dispatchOnce流程.png" style="zoom:80%;">
+<img src="/2026/08/15/Input%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/dispatchOnce流程.png" style="zoom:80%;">
 
 <p><strong>“InputReader” 线程 → 持续 <code>loopOnce()</code></strong></p>
-<img src="/2026/08/29/Input%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/loopOnce流程.png" style="zoom:80%;">
+<img src="/2026/08/15/Input%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/loopOnce流程.png" style="zoom:80%;">
 
 <div class="markdown-alert markdown-alert-note">
 <p class="markdown-alert-title"><svg class="octicon octicon-info mr-2" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"></path></svg>Note</p>
@@ -568,7 +568,7 @@
 </tbody></table>
 <p>也就是说，<strong><code>start()</code> 是 input 系统从“静”到“动”的分水岭</strong>。从此刻起，EventHub 开始 poll 设备节点，一旦用户触摸 / 按键，事件就会顺着第 3 章的链路流向应用窗口。</p>
 <p>一张启动时序图，把 §2 这条 <code>start()</code> 调用链（从 SystemServer 打穿到两条线程诞生）按时间轴展开：</p>
-<img src="/2026/08/29/Input%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/start流程.png" style="zoom:100%;">
+<img src="/2026/08/15/Input%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/start流程.png" style="zoom:100%;">
 
 
 
@@ -576,7 +576,7 @@
 <h1 id="2-启动后添加设备流程"><a href="#2-启动后添加设备流程" class="headerlink" title="2. 启动后添加设备流程"></a>2. 启动后添加设备流程</h1><blockquote>
 <p>本节全部按本仓库源码梳理（函数名 + 行号可直接跳转）。核心结论先行：<strong>添加一个设备 = 过两道门</strong>——EventHub 侧把”节点”变成 <code>Device</code>（打开 fd、识别能力、加载配置、入 epoll），InputReader 侧把 <code>Device</code> 变成 <code>InputDevice + 一组 InputMapper</code>（加工能力上线）。冷启动首批设备和运行期热插拔<strong>走完全相同的路径</strong>，只是入口不同（懒扫描 vs inotify）。</p>
 </blockquote>
-<h2 id="2-1-总览：两道门-三个通知"><a href="#2-1-总览：两道门-三个通知" class="headerlink" title="2.1 总览：两道门 + 三个通知"></a>2.1 总览：两道门 + 三个通知</h2><img src="/2026/08/29/Input%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/启动总览.png" style="zoom:80%;">
+<h2 id="2-1-总览：两道门-三个通知"><a href="#2-1-总览：两道门-三个通知" class="headerlink" title="2.1 总览：两道门 + 三个通知"></a>2.1 总览：两道门 + 三个通知</h2><img src="/2026/08/15/Input%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/启动总览.png" style="zoom:80%;">
 
 <table>
 <thead>
@@ -725,7 +725,7 @@
 
 <p>收到 DEVICE_ADDED 信号后,把 EventHub 层的设备”收编”成 InputReader 层的 InputDevice(带 mapper),登记两张表,并触发对外通知。</p>
 <p>做完这些，设备才算”可用”：inputReader 随后回到下一轮 getEvents 的 <code>epoll_wait</code> 上阻塞，而这台设备的 fd 早在门 1 就进了 epoll，所以它已经处于”等事件、且事件来了有人接”的状态。</p>
-<h2 id="2-6-冷启动首批设备注册时序"><a href="#2-6-冷启动首批设备注册时序" class="headerlink" title="2.6 冷启动首批设备注册时序"></a>2.6 冷启动首批设备注册时序</h2><img src="/2026/08/29/Input%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/冷启动首批设备注册时序.png" style="zoom:120%;">
+<h2 id="2-6-冷启动首批设备注册时序"><a href="#2-6-冷启动首批设备注册时序" class="headerlink" title="2.6 冷启动首批设备注册时序"></a>2.6 冷启动首批设备注册时序</h2><img src="/2026/08/15/Input%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/冷启动首批设备注册时序.png" style="zoom:120%;">
 
 <p>要点：</p>
 <ul>
@@ -745,7 +745,7 @@
 </li>
 </ul>
 <h1 id="3-运行时：事件从设备节点到窗口"><a href="#3-运行时：事件从设备节点到窗口" class="headerlink" title="3. 运行时：事件从设备节点到窗口"></a>3. 运行时：事件从设备节点到窗口</h1><h2 id="3-1-总览：一次触摸的三段旅程"><a href="#3-1-总览：一次触摸的三段旅程" class="headerlink" title="3.1 总览：一次触摸的三段旅程"></a>3.1 总览：一次触摸的三段旅程</h2><p>设备注册完之后，系统进入”运行时”——用户一碰屏幕，一条事件就沿着这条路流到窗口：</p>
-<img src="/2026/08/29/Input%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/Android Input：一次触摸的闯关之旅.png" style="zoom:120%;">
+<img src="/2026/08/15/Input%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/Android Input：一次触摸的闯关之旅.png" style="zoom:120%;">
 
 <p>贯穿全流程的是 <strong>3 条线程</strong>，主事件流只穿越其中 2 条：</p>
 <table>
@@ -778,7 +778,7 @@
 </tbody></table>
 <p><strong>整个流程只有一次线程切换</strong>：事件在 Reader 线程一路同步流到 <code>InputDispatcher.notifyMotion</code>（入队 + <code>wake()</code>），之后才切到 Dispatcher 线程真正派发。下面按这条路线逐段展开。</p>
 <h2 id="3-2-内核-input-event-到-RawEvent"><a href="#3-2-内核-input-event-到-RawEvent" class="headerlink" title="3.2 内核 input_event 到 RawEvent"></a>3.2 内核 input_event 到 RawEvent</h2><p>EventHub 对上游唯一的取数口是 <code>getEvents(timeoutMillis)</code>，一个 <code>for(;;)</code> 循环每轮四步：</p>
-<img src="/2026/08/29/Input%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/input_event到RawEvent.png" style="zoom:120%;">
+<img src="/2026/08/15/Input%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/input_event到RawEvent.png" style="zoom:120%;">
 
 <p>关键点：</p>
 <ul>
@@ -802,7 +802,7 @@
 </ul>
 <h3 id="3-2-2-一次触摸不是”一个事件”，是”一串事件”"><a href="#3-2-2-一次触摸不是”一个事件”，是”一串事件”" class="headerlink" title="3.2.2 一次触摸不是”一个事件”，是”一串事件”"></a>3.2.2 一次触摸不是”一个事件”，是”一串事件”</h3><p>触摸的原始数据是一组以 <code>EV_SYN</code> 收尾的 <code>input_event</code>（EV_ABS 坐标、EV_KEY BTN_TOUCH、EV_SYN 帧尾）。<code>getEvents</code> 把它们整批读出返回，<code>processEventsLocked</code> 再把”同一设备的这一串”整包交给 mapper，才能拼出一次 DOWN/MOVE 的完整语义。</p>
 <h2 id="3-3-RawEvent-到-NotifyArgs"><a href="#3-3-RawEvent-到-NotifyArgs" class="headerlink" title="3.3 RawEvent 到 NotifyArgs"></a>3.3 RawEvent 到 NotifyArgs</h2><p>“InputReader” 线程反复跑 <code>loopOnce()</code>，一轮 = <strong>睡 → 干 → 推</strong>。这是典型的<strong>单线程事件循环（Event Loop）</strong> 即 <strong>监听</strong>（epoll_wait 睡）和 <strong>工作</strong>（解析/推送）在<strong>同一个线程</strong>里交替，没有独立的工作线程：</p>
-<img src="/2026/08/29/Input%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/RawEvent到NotifyArgs.png" style="zoom:120%;">
+<img src="/2026/08/15/Input%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/RawEvent到NotifyArgs.png" style="zoom:120%;">
 
 <p>好处是单线程天然保证事件顺序、少加锁；代价是<strong>处理必须快、不能阻塞</strong> 。所以”可能慢/会阻塞”的活（HAL 分类、派发）都被扔到别的线程或异步做。</p>
 <figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">InputReader::loopOnce</span><span class="params">()</span> </span>{</span><br><span class="line">    ...</span><br><span class="line">    <span class="comment">// 从 EventHub 拉事件    </span></span><br><span class="line">    std::vector&lt;RawEvent&gt; events = mEventHub-&gt;<span class="built_in">getEvents</span>(timeoutMillis);   </span><br><span class="line"></span><br><span class="line">    { <span class="comment">// acquire lock</span></span><br><span class="line">        std::scoped_lock _l(mLock);</span><br><span class="line">        mReaderIsAliveCondition.<span class="built_in">notify_all</span>();</span><br><span class="line">        <span class="keyword">if</span> (!events.<span class="built_in">empty</span>()) {</span><br><span class="line">            <span class="comment">// 解析成 NotifyArgs（局部 list 锁内累加）</span></span><br><span class="line">            notifyArgs += <span class="built_in">processEventsLocked</span>(events.<span class="built_in">data</span>(), events.<span class="built_in">size</span>());  </span><br><span class="line">        }</span><br><span class="line">        ...  <span class="comment">// 超时处理、设备列表变化检测（generation 比对，见 §2.5）</span></span><br><span class="line">    } <span class="comment">// release lock</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (inputDevicesChanged) {</span><br><span class="line">        mPolicy-&gt;<span class="built_in">notifyInputDevicesChanged</span>(inputDevices);  <span class="comment">// 设备增删直连 policy，不走流水线</span></span><br><span class="line">    }</span><br><span class="line">    ...  <span class="comment">// 手写笔手势开始的 policy 通知</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">// ★ 把整批 NotifyArgs 逐条塞进 Reader 自己的 QueuedInputListener 缓冲    </span></span><br><span class="line">    <span class="built_in">notifyAll</span>(std::<span class="built_in">move</span>(notifyArgs));   </span><br><span class="line">    <span class="comment">// Flush queued events out to the listener.</span></span><br><span class="line">    <span class="comment">// 必须在锁外推送：listener 可能回调 InputReader（如 getScanCodeState），</span></span><br><span class="line">    <span class="comment">// 或阻塞在等 Reader 锁的别的线程上，持锁推送会死锁</span></span><br><span class="line">    mQueuedListener.<span class="built_in">flush</span>();           <span class="comment">// ★ 一次性推给下一站（Blocker）</span></span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
@@ -824,7 +824,7 @@
 
 <p>原注释解释了为什么必须逐条交错而不能按 mapper 分块处理：<strong>不同 mapper 的副作用要保序</strong>——摇杆移动和手柄按键由不同 mapper 负责，必须按内核上报顺序派发，分块会颠倒先后。</p>
 <p>四层 out 的回流全景：</p>
-<img src="/2026/08/29/Input%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/产物回流.png" style="zoom:120%;">
+<img src="/2026/08/15/Input%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/产物回流.png" style="zoom:120%;">
 
 <h3 id="3-3-3-mapper-的两种产法"><a href="#3-3-3-mapper-的两种产法" class="headerlink" title="3.3.3 mapper 的两种产法"></a>3.3.3 mapper 的两种产法</h3><p><strong>键盘：来一条出一条。</strong> <code>KeyboardInputMapper::process</code> 里每条 <code>EV_KEY</code> 当场翻译完就交货：</p>
 <figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// KeyboardInputMapper.cpp:188（节选）</span></span><br><span class="line"><span class="keyword">case</span> EV_KEY:</span><br><span class="line">    <span class="keyword">if</span> (<span class="built_in">isSupportedScanCode</span>(scanCode)) {</span><br><span class="line">        out += <span class="built_in">processKey</span>(rawEvent-&gt;when, rawEvent-&gt;readTime, rawEvent-&gt;value != <span class="number">0</span>, scanCode, ...);</span><br><span class="line">        <span class="comment">// processKey 内部（:282）：scanCode 先经 KL 键布局文件 mapKey 成 keyCode，然后</span></span><br><span class="line">        <span class="comment">// out.emplace_back(NotifyKeyArgs(getContext()-&gt;getNextId(), when, readTime, getDeviceId(),</span></span><br><span class="line">        <span class="comment">// source, policyFlags, action, flags, keyCode, ...));</span></span><br><span class="line">    }</span><br></pre></td></tr></tbody></table></figure>
@@ -833,11 +833,11 @@
 <figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">std::list&lt;NotifyArgs&gt; <span class="title">MultiTouchInputMapper::process</span><span class="params">(<span class="type">const</span> RawEvent* rawEvent)</span> </span>{</span><br><span class="line">    std::list&lt;NotifyArgs&gt; out = TouchInputMapper::<span class="built_in">process</span>(rawEvent);  <span class="comment">// 父类：按钮/滚轮三缸喂料</span></span><br><span class="line">    mMultiTouchMotionAccumulator.<span class="built_in">process</span>(rawEvent);                   <span class="comment">// 子类：EV_ABS 的 slot 数据进缸</span></span><br><span class="line">    <span class="keyword">return</span> out;                                                       <span class="comment">// 几乎总是空 list</span></span><br><span class="line">}</span><br><span class="line"></span><br><span class="line"><span class="comment">// TouchInputMapper.cpp —— 唯一扳机</span></span><br><span class="line"><span class="function">std::list&lt;NotifyArgs&gt; <span class="title">TouchInputMapper::process</span><span class="params">(<span class="type">const</span> RawEvent* rawEvent)</span> </span>{</span><br><span class="line">    mCursorButtonAccumulator.<span class="built_in">process</span>(rawEvent);       <span class="comment">// 光标键 BTN_LEFT/RIGHT...</span></span><br><span class="line">    mCursorScrollAccumulator.<span class="built_in">process</span>(rawEvent);       <span class="comment">// 滚轮增量 REL_WHEEL...</span></span><br><span class="line">    mTouchButtonAccumulator.<span class="built_in">process</span>(rawEvent);        <span class="comment">// BTN_TOUCH/BTN_TOOL_*</span></span><br><span class="line">    std::list&lt;NotifyArgs&gt; out;</span><br><span class="line">    <span class="keyword">if</span> (rawEvent-&gt;type == EV_SYN &amp;&amp; rawEvent-&gt;code == SYN_REPORT) {   <span class="comment">// ★ 帧结束符</span></span><br><span class="line">        out += <span class="built_in">sync</span>(rawEvent-&gt;when, rawEvent-&gt;readTime);</span><br><span class="line">    }</span><br><span class="line">    <span class="keyword">return</span> out;    <span class="comment">// N 条报文进缸 → 空 list；1 条 SYN → NotifyMotionArgs（DOWN/MOVE/...）</span></span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
 
 <p><code>sync()</code> 之下还有一条烹饪流水线，层层往下、层层往 out 里塞货：</p>
-<img src="/2026/08/29/Input%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/mapper两种产法.png" style="zoom:120%;">
+<img src="/2026/08/15/Input%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/mapper两种产法.png" style="zoom:120%;">
 
 <p>数量直觉：单击一次屏幕 ≈ 10<del>20 条 RawEvent 依次进缸（<code>mapper.process</code> 全部空手而归），最后 1 条 <code>SYN_REPORT</code> 一次性爆出 1</del>N 条 <code>NotifyMotionArgs</code>——这正是 §3.2.2 “一次触摸是一串事件”的串终点。</p>
 <h3 id="3-3-4-数据怎么走到-Dispatcher"><a href="#3-3-4-数据怎么走到-Dispatcher" class="headerlink" title="3.3.4 数据怎么走到 Dispatcher"></a>3.3.4 数据怎么走到 Dispatcher</h3><p><code>mQueuedListener.flush()</code> 没有任何 IPC、没有线程切换——<code>mInnerListener.notify(args)</code> 就是虚函数调用，构造期的层层包裹此刻兑现为调用链，<strong>全程跑在 InputReader 线程上</strong>：</p>
-<img src="/2026/08/29/Input%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/flush数据传输.png" style="zoom:120%;">
+<img src="/2026/08/15/Input%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/flush数据传输.png" style="zoom:120%;">
 
 <p>三个要点：</p>
 <ol>
@@ -847,7 +847,7 @@
 </ol>
 <p><code>loopOnce()</code> 一轮 = <strong>取事件 → 解析 → 推送</strong>，三步走，比 Dispatcher 简单得多（无命令队列 / ANR / 空闲判定）：</p>
 <p>解析（<code>processEventsLocked</code>）和推送（<code>mQueuedListener.flush</code>）都在拿到事件的这一轮内同步完成；中间 stage（Blocker / Processor）寄生在 Reader 线程上，无自己的线程</p>
-<p><img src="/2026/08/29/Input%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/flush数据传输.png" style="zoom:120%;">。</p>
+<p><img src="/2026/08/15/Input%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/flush数据传输.png" style="zoom:120%;">。</p>
 <h2 id="3-4-中间流水线：Blocker-Processor"><a href="#3-4-中间流水线：Blocker-Processor" class="headerlink" title="3.4 中间流水线：Blocker / Processor"></a>3.4 中间流水线：Blocker / Processor</h2><p>每个 stage 都继承自 <code>InputListenerInterface</code>，提供 <code>notifyKey/notifyMotion/notifySwitch/...</code>。<code>InputListenerInterface::notify</code> 用 <code>std::visit</code> 把变体 <code>NotifyArgs</code> 分发到具体函数。</p>
 <p>InputManager）中间只有 <strong>2 个 stage</strong>：</p>
 <table>
@@ -901,7 +901,7 @@
 
 <p>应用进程读出后（<code>InputChannel::receiveMessage</code>）由 native 层 <code>InputConsumer</code> 拼装成 <code>MotionEvent</code> / <code>KeyEvent</code>，回吐到 Java 层 ViewRootImpl，最终交给窗口的 DecorView / View 树消费。</p>
 <h3 id="3-5-4-派发-ACK-闭环"><a href="#3-5-4-派发-ACK-闭环" class="headerlink" title="3.5.4 派发-ACK 闭环"></a>3.5.4 派发-ACK 闭环</h3><p><strong>事件发出去 ≠ 派发完</strong>，Dispatcher 要等应用回执才派发下一个：</p>
-<img src="/2026/08/29/Input%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/派发流程.png" style="zoom:120%;">
+<img src="/2026/08/15/Input%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/派发流程.png" style="zoom:120%;">
 
 <ul>
 <li>应用处理完通过 <code>InputConsumer::sendFinishedSignal</code> 回执；Dispatcher 收到后把对应事件从该连接的 <code>waitQueue</code> 移除（<code>doDispatchCycleFinishedCommand</code>）。</li>
@@ -910,7 +910,7 @@
 </ul>
 <hr>
 <h1 id="4-完整启动与运行"><a href="#4-完整启动与运行" class="headerlink" title="4. 完整启动与运行"></a>4. 完整启动与运行</h1><p><strong>一次触摸 motion 事件</strong>从设备节点到应用进程的过程按时间轴展开，重点是 3 个线程之间的切换：</p>
-<img src="/2026/08/29/Input%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/完整touch时序.png" style="zoom:120%;">
+<img src="/2026/08/15/Input%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/完整touch时序.png" style="zoom:120%;">
 
 <p>读图要点：</p>
 <ul>
@@ -948,8 +948,8 @@
         <div class="post-nav">
           <div class="post-nav-next post-nav-item">
             
-              <a href="/2026/08/26/C++%E8%99%9A%E5%87%BD%E6%95%B0%E5%8F%8A%E5%85%B6%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" rel="next" title="C++ 虚函数及其设计模式">
-                <i class="fa fa-chevron-left"></i> C++ 虚函数及其设计模式
+              <a href="/2026/08/13/Input%E6%9E%84%E9%80%A0%E6%B5%81%E7%A8%8B/" rel="next" title="Input 构造流程">
+                <i class="fa fa-chevron-left"></i> Input 构造流程
               </a>
             
           </div>
@@ -957,6 +957,10 @@
           <span class="post-nav-divider"></span>
 
           <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2026/08/26/C++%E8%99%9A%E5%87%BD%E6%95%B0%E5%8F%8A%E5%85%B6%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" rel="prev" title="C++ 虚函数及其设计模式">
+                C++ 虚函数及其设计模式 <i class="fa fa-chevron-right"></i>
+              </a>
             
           </div>
         </div>
@@ -1037,7 +1041,7 @@
               
                 <a href="/archives/%7C%7C%20archive">
               
-                  <span class="site-state-item-count">34</span>
+                  <span class="site-state-item-count">35</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
@@ -1048,7 +1052,7 @@
               
               <div class="site-state-item site-state-categories">
                 <a href="/categories/index.html">
-                  <span class="site-state-item-count">14</span>
+                  <span class="site-state-item-count">15</span>
                   <span class="site-state-item-name">分类</span>
                 </a>
               </div>
@@ -1059,7 +1063,7 @@
               
               <div class="site-state-item site-state-tags">
                 <a href="/tags/index.html">
-                  <span class="site-state-item-count">27</span>
+                  <span class="site-state-item-count">28</span>
                   <span class="site-state-item-name">标签</span>
                 </a>
               </div>
