@@ -1,0 +1,1416 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next muse use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+<script>
+    (function(){
+        if(''){
+            if (prompt('请输入密码') !== ''){
+                alert('密码错误');
+                history.back();
+            }
+        }
+    })();
+</script>
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/head.jpg?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/head.jpg?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/head.jpg?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/head.jpg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="Java," />
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="Zcorpius's Blog" type="application/atom+xml" />
+
+
+
+
+
+
+<meta name="description" content="1. Java 泛型—WindowContainer 的 E剖析 WMS 源码时，第一眼多半会卡在这行声明上： 12345&#x2F;&#x2F; frameworks&#x2F;base&#x2F;services&#x2F;core&#x2F;java&#x2F;com&#x2F;android&#x2F;server&#x2F;wm&#x2F;WindowContainer.javaclass WindowContainer&lt;E extends WindowContainer&gt; exte">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Android中Java的高级使用技巧">
+<meta property="og:url" content="https://zcorpius.github.io/2026/08/27/Android%E4%B8%ADJava%E7%9A%84%E9%AB%98%E7%BA%A7%E4%BD%BF%E7%94%A8%E6%8A%80%E5%B7%A7/index.html">
+<meta property="og:site_name" content="Zcorpius&#39;s Blog">
+<meta property="og:description" content="1. Java 泛型—WindowContainer 的 E剖析 WMS 源码时，第一眼多半会卡在这行声明上： 12345&#x2F;&#x2F; frameworks&#x2F;base&#x2F;services&#x2F;core&#x2F;java&#x2F;com&#x2F;android&#x2F;server&#x2F;wm&#x2F;WindowContainer.javaclass WindowContainer&lt;E extends WindowContainer&gt; exte">
+<meta property="og:locale">
+<meta property="article:published_time" content="2026-08-27T03:50:46.000Z">
+<meta property="article:modified_time" content="2026-09-01T15:21:48.050Z">
+<meta property="article:author" content="Zcorpius">
+<meta property="article:tag" content="Java">
+<meta name="twitter:card" content="summary">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Muse',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":true,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://Zcorpius.github.io/2026/08/27/Android中Java的高级使用技巧/"/>
+
+
+
+
+
+  <title>Android中Java的高级使用技巧 | Zcorpius's Blog</title>
+  
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 7.3.0">
+<style>.github-emoji { position: relative; display: inline-block; width: 1.2em; min-height: 1.2em; overflow: hidden; vertical-align: top; color: transparent; }  .github-emoji > span { position: relative; z-index: 10; }  .github-emoji img, .github-emoji .fancybox { margin: 0 !important; padding: 0 !important; border: none !important; outline: none !important; text-decoration: none !important; user-select: none !important; cursor: auto !important; }  .github-emoji img { height: 1.2em !important; width: 1.2em !important; position: absolute !important; left: 50% !important; top: 50% !important; transform: translate(-50%, -50%) !important; user-select: none !important; cursor: auto !important; } .github-emoji-fallback { color: inherit; } .github-emoji-fallback img { opacity: 0 !important; }</style>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Zcorpius's Blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">追寻自我的崎岖路上从不缺勇敢。</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-路径">
+          <a href="/top/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-fire"></i> <br />
+            
+            路径
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://Zcorpius.github.io/2026/08/27/Android%E4%B8%ADJava%E7%9A%84%E9%AB%98%E7%BA%A7%E4%BD%BF%E7%94%A8%E6%8A%80%E5%B7%A7/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/head.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Zcorpius's Blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Android中Java的高级使用技巧</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2026-08-27T11:50:46+08:00">
+                2026-08-27
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Java/" itemprop="url" rel="index">
+                    <span itemprop="name">Java</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+            <div class="post-wordcount">
+              
+                
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-file-word-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">字数统计&#58;</span>
+                
+                <span title="字数统计">
+                  2.3k
+                </span>
+              
+
+              
+                <span class="post-meta-divider">|</span>
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-clock-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">阅读时长 &asymp;</span>
+                
+                <span title="阅读时长">
+                  9
+                </span>
+              
+            </div>
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="1-Java-泛型—WindowContainer-的-E"><a href="#1-Java-泛型—WindowContainer-的-E" class="headerlink" title="1. Java 泛型—WindowContainer 的 E"></a>1. Java 泛型—WindowContainer 的 E</h1><p>剖析 WMS 源码时，第一眼多半会卡在这行声明上：</p>
+<figure class="highlight java"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/base/services/core/java/com/android/server/wm/WindowContainer.java</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">WindowContainer</span>&lt;E <span class="keyword">extends</span> <span class="title class_">WindowContainer</span>&gt; <span class="keyword">extends</span> <span class="title class_">ConfigurationContainer</span>&lt;E&gt;</span><br><span class="line">        <span class="keyword">implements</span> <span class="title class_">Comparable</span>&lt;WindowContainer&gt;, Animatable, SurfaceFreezer.Freezable,</span><br><span class="line">        InsetsControlTarget {</span><br></pre></td></tr></tbody></table></figure>
+
+<p>尖括号套尖括号，看起来很高深。其实<strong>读懂它只需要三个基础泛型概念</strong>——泛型类与类型参数、有界类型参数、类型实参替换。本文用 WMS 的真实代码把这三个概念讲透；读完再回头看上面那行，会发现它没有任何”多余的字符”。</p>
+<h2 id="1-1-泛型类与类型参数"><a href="#1-1-泛型类与类型参数" class="headerlink" title="1.1 泛型类与类型参数"></a>1.1 泛型类与类型参数</h2><h3 id="1-1-1-从-ArrayList-说起"><a href="#1-1-1-从-ArrayList-说起" class="headerlink" title="1.1.1 从 ArrayList 说起"></a>1.1.1 从 ArrayList 说起</h3><figure class="highlight java"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// JDK 示例</span></span><br><span class="line"></span><br><span class="line">ArrayList&lt;String&gt; list = <span class="keyword">new</span> <span class="title class_">ArrayList</span>&lt;&gt;();</span><br><span class="line">list.add(<span class="string">"hello"</span>);          <span class="comment">// 只能装 String</span></span><br><span class="line"><span class="type">String</span> <span class="variable">s</span> <span class="operator">=</span> list.get(<span class="number">0</span>);     <span class="comment">// 取出来直接就是 String，不用强转</span></span><br></pre></td></tr></tbody></table></figure>
+
+<p><code>ArrayList</code> 之所以能装 String 也能装 Integer，是因为它<strong>定义时没写死装什么</strong>。看它的骨架（简化）：</p>
+<figure class="highlight java"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// JDK 示例（简化）</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">ArrayList</span>&lt;E&gt; {</span><br><span class="line">    <span class="keyword">public</span> <span class="type">boolean</span> <span class="title function_">add</span><span class="params">(E e)</span> { ... }</span><br><span class="line">    <span class="keyword">public</span> E <span class="title function_">get</span><span class="params">(<span class="type">int</span> index)</span> { ... }</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<p><code>E</code> 就是<strong>类型参数（type parameter）</strong>：一个占位符，含义是”某种将来才确定的类型”。</p>
+<ul>
+<li>写 <code>ArrayList&lt;String&gt;</code> 时，E = String：<code>add(E)</code> 变成 <code>add(String)</code>，<code>get()</code> 返回 String；</li>
+<li>写 <code>ArrayList&lt;WindowState&gt;</code> 时，E = WindowState，同一个类，立刻换成另一种用途。</li>
+</ul>
+<p><strong>带类型参数的类就叫泛型类（generic class）。</strong> 定义时留空（E），使用时填空（String / WindowState），一份代码适配所有类型——这就是泛型的全部出发点。</p>
+<h3 id="1-1-2-WindowContainer-的-E"><a href="#1-1-2-WindowContainer-的-E" class="headerlink" title="1.1.2 WindowContainer 的 E"></a>1.1.2 WindowContainer 的 E</h3><p>WindowContainer 是同样的手法，只不过它的 E 不是”装什么元素”，而是”装什么孩子”：</p>
+<figure class="highlight java"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/base/services/core/java/com/android/server/wm/WindowContainer.java</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">WindowContainer</span>&lt;E <span class="keyword">extends</span> <span class="title class_">WindowContainer</span>&gt; <span class="keyword">extends</span> <span class="title class_">ConfigurationContainer</span>&lt;E&gt; {</span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">    <span class="keyword">protected</span> <span class="keyword">final</span> ArrayList&lt;E&gt; mChildren = <span class="keyword">new</span> <span class="title class_">ArrayList</span>&lt;E&gt;();</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<ul>
+<li><code>ArrayList&lt;String&gt;</code> 声明”装字符串”；</li>
+<li><code>WindowContainer&lt;E&gt;</code> + <code>ArrayList&lt;E&gt; mChildren</code> 声明”孩子是 E 这种容器”——E 是谁？本类不决定，等子类来填（概念三）。</li>
+</ul>
+<div class="markdown-alert markdown-alert-note">
+<p class="markdown-alert-title"><svg class="octicon octicon-info mr-2" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"></path></svg>Note</p>
+<p>类型参数名只是个代号，叫 E、T、ChildType 都行。JDK 惯例：E = Element（元素）、T = Type（类型）、K/V = Key/Value。AOSP 的 WindowContainer 家族统一用 E，语义是”孩子（Element of mChildren）”。</p>
+</div>
+<h2 id="1-2-给-E-画一条”资格线”"><a href="#1-2-给-E-画一条”资格线”" class="headerlink" title="1.2. 给 E 画一条”资格线”"></a>1.2. 给 E 画一条”资格线”</h2><h3 id="1-2-1-语法与语义"><a href="#1-2-1-语法与语义" class="headerlink" title="1.2.1 语法与语义"></a>1.2.1 语法与语义</h3><p><code>&lt;E extends WindowContainer&gt;</code> 读作：<strong>E 必须是 WindowContainer 或其子类</strong>。<code>extends</code> 在这里画出一条资格线，线外的类型不许填进来。</p>
+<p>一个常见的直觉误解要先排除：泛型的 <code>extends</code> 与类继承的 <code>extends</code> 是<strong>同一个单词、两种语义</strong>——</p>
+<table>
+<thead>
+<tr>
+<th>场景</th>
+<th><code>extends</code> 的含义</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>class Task extends TaskFragment</code></td>
+<td>真的继承父类</td>
+</tr>
+<tr>
+<td><code>&lt;E extends WindowContainer&gt;</code></td>
+<td>类型约束：”E 是 WindowContainer 的子类型即可”，既不发生继承，也不要求 E 真的写过 <code>extends WindowContainer</code> 字样（间接子类也行）</td>
+</tr>
+</tbody></table>
+<p>另外泛型的 extends 比继承的用法更宽：上界是接口时也写 extends（不写 implements），还支持 <code>&amp;</code> 多上界（<code>&lt;E extends A &amp; B&gt;</code>，WMS 未用到，见过不慌）。</p>
+<h3 id="1-2-2-为什么需要上界"><a href="#1-2-2-为什么需要上界" class="headerlink" title="1.2.2 为什么需要上界"></a>1.2.2 为什么需要上界</h3><p>不上界的 E，编译器对它一无所知，只能按 Object 对待：</p>
+<figure class="highlight java"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 自造示例，不属于 AOSP</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">Box1</span>&lt;E&gt; {                    <span class="comment">// 无界：E 可以是任何类型</span></span><br><span class="line">    <span class="keyword">void</span> <span class="title function_">handle</span><span class="params">(E e)</span> {</span><br><span class="line">        e.hashCode();              <span class="comment">// ✗ 只能调 Object 的方法</span></span><br><span class="line">        e.scheduleAnimation();     <span class="comment">// ✗ 编译错误：E 身上没有这个方法</span></span><br><span class="line">    }</span><br><span class="line">}</span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">Box2</span>&lt;E <span class="keyword">extends</span> <span class="title class_">WindowContainer</span>&gt; {   <span class="comment">// 有界：E 至少是个 WindowContainer</span></span><br><span class="line">    <span class="keyword">void</span> <span class="title function_">handle</span><span class="params">(E e)</span> {</span><br><span class="line">        e.scheduleAnimation();     <span class="comment">// ✓ 编译通过：WindowContainer 的方法随便调</span></span><br><span class="line">    }</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<p><strong>上界 = 承诺</strong>。写 <code>E extends WindowContainer</code> 就向编译器承诺”E 至少是一个 WindowContainer”，于是类内部可以把 E 当 WindowContainer 用。WindowContainer 源码里到处是这样的调用——遍历 mChildren 时直接对孩子调容器方法：</p>
+<figure class="highlight java"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/base/services/core/java/com/android/server/wm/WindowContainer.java</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> mChildren.size() - <span class="number">1</span>; i &gt;= <span class="number">0</span>; --i) {</span><br><span class="line">    mChildren.get(i).updateAboveInsetsState(aboveInsetsState, mergedLocalInsetsSources,</span><br><span class="line">            displayInfo);</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<p><code>mChildren.get(i)</code> 的静态类型是 E，而 <code>updateAboveInsetsState()</code> 是 WindowContainer 的方法——这行能编译，靠的正是上界那条承诺。</p>
+<h3 id="1-2-3-WindowContainer-为什么不带"><a href="#1-2-3-WindowContainer-为什么不带" class="headerlink" title="1.2.3 WindowContainer 为什么不带 <>"></a>1.2.3 WindowContainer 为什么不带 &lt;&gt;</h3><p>细心的话会注意到：上界写的是<strong>裸类型</strong> <code>WindowContainer</code>，而不是 <code>WindowContainer&lt;E&gt;</code> 或 <code>WindowContainer&lt;?&gt;</code>。这属于进阶话题（自限定泛型 / F-bounded），对读代码的影响只有一句话：</p>
+<div class="markdown-alert markdown-alert-important">
+<p class="markdown-alert-title"><svg class="octicon octicon-report mr-2" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M0 1.75C0 .784.784 0 1.75 0h12.5C15.216 0 16 .784 16 1.75v9.5A1.75 1.75 0 0 1 14.25 13H8.06l-2.573 2.573A1.458 1.458 0 0 1 3 14.543V13H1.75A1.75 1.75 0 0 1 0 11.25Zm1.75-.25a.25.25 0 0 0-.25.25v9.5c0 .138.112.25.25.25h2a.75.75 0 0 1 .75.75v2.19l2.72-2.72a.749.749 0 0 1 .53-.22h6.5a.25.25 0 0 0 .25-.25v-9.5a.25.25 0 0 0-.25-.25Zm7 2.25v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 9a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"></path></svg>Important</p>
+<p><code>E extends WindowContainer</code> 只表达”孩子必须是这族容器”，<strong>刻意不说</strong>“孩子是哪种容器”。如果写成 <code>E extends WindowContainer&lt;E&gt;</code>（像 <code>Enum&lt;E extends Enum&lt;E&gt;&gt;</code> 那样），语义就变成”孩子必须是一个’装它自己’的容器”——窗口树不满足这个假设（TaskFragment 的孩子既可能是 ActivityRecord 也可能是 Task，没有唯一的”它自己”可填）。详见《窗口层级剖析》2.1 的对比框。</p>
+</div>
+<h2 id="1-3-类型实参替换"><a href="#1-3-类型实参替换" class="headerlink" title="1.3. 类型实参替换"></a>1.3. 类型实参替换</h2><h3 id="1-3-1-填空发生在哪里"><a href="#1-3-1-填空发生在哪里" class="headerlink" title="1.3.1 填空发生在哪里"></a>1.3.1 填空发生在哪里</h3><p>类型参数定义时留空，使用时必须填上具体类型，这个具体类型叫<strong>类型实参（type argument）</strong>，填的动作就是<strong>替换</strong>。填空有两个场合：</p>
+<p><strong>场合一：声明变量 / 创建对象时填</strong>（最常见）</p>
+<figure class="highlight java"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// JDK 示例</span></span><br><span class="line"></span><br><span class="line">ArrayList&lt;String&gt; list;              <span class="comment">// E := String</span></span><br></pre></td></tr></tbody></table></figure>
+
+<p><strong>场合二：继承时填</strong>（WMS 的核心用法）</p>
+<figure class="highlight java"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/base/services/core/java/com/android/server/wm/WindowToken.java</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">WindowToken</span> <span class="keyword">extends</span> <span class="title class_">WindowContainer</span>&lt;WindowState&gt; {</span><br></pre></td></tr></tbody></table></figure>
+
+<p>WindowToken 继承时把 E 填成了 WindowState。心智模型：<strong>把父类源码里所有 E 出现的位置复制一份、统一替换</strong>——</p>
+<figure class="highlight java"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 替换前（WindowContainer 里，E 是占位符）</span></span><br><span class="line"><span class="keyword">protected</span> <span class="keyword">final</span> ArrayList&lt;E&gt; mChildren = <span class="keyword">new</span> <span class="title class_">ArrayList</span>&lt;E&gt;();</span><br><span class="line"></span><br><span class="line"><span class="comment">// 替换后（WindowToken 继承到的，E := WindowState）</span></span><br><span class="line"><span class="keyword">protected</span> <span class="keyword">final</span> ArrayList&lt;WindowState&gt; mChildren = <span class="keyword">new</span> <span class="title class_">ArrayList</span>&lt;WindowState&gt;();</span><br></pre></td></tr></tbody></table></figure>
+
+<p>从此 WindowToken 的 mChildren 只装得下 WindowState，类型系统替你把关。</p>
+<h3 id="1-3-2-替换的收益"><a href="#1-3-2-替换的收益" class="headerlink" title="1.3.2 替换的收益"></a>1.3.2 替换的收益</h3><figure class="highlight java"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/base/services/core/java/com/android/server/wm/WindowToken.java</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> mChildren.size() - <span class="number">1</span>; i &gt;= <span class="number">0</span>; --i) {</span><br><span class="line">    <span class="keyword">final</span> <span class="type">WindowState</span> <span class="variable">win</span> <span class="operator">=</span> mChildren.get(i);   <span class="comment">// 直接就是 WindowState，没有强转</span></span><br></pre></td></tr></tbody></table></figure>
+
+<p>如果当年 AOSP 把 mChildren 声明成 <code>ArrayList&lt;WindowContainer&gt;</code>，这行就得写 <code>(WindowState) mChildren.get(i)</code>，并且装错类型编译器不会报错、只在运行时崩溃。<strong>泛型把”孩子装错了”这类错误从运行期提前到了编译期。</strong></p>
+<div class="markdown-alert markdown-alert-note">
+<p class="markdown-alert-title"><svg class="octicon octicon-info mr-2" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"></path></svg>Note</p>
+<p>严格说，”替换”发生在<strong>编译期类型检查</strong>层面；运行时并不存在 <code>ArrayList&lt;WindowState&gt;</code> 这个类（虚拟机里只有擦除后的 ArrayList）——这就是”类型擦除”。它不影响读代码的心智模型，标为进阶，知道即可。</p>
+</div>
+<h2 id="1-4-再看声明"><a href="#1-4-再看声明" class="headerlink" title="1.4. 再看声明"></a>1.4. 再看声明</h2><p>三个概念就位，回到开头那行：</p>
+<figure class="highlight java"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/base/services/core/java/com/android/server/wm/WindowContainer.java</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">WindowContainer</span>&lt;E <span class="keyword">extends</span> <span class="title class_">WindowContainer</span>&gt; <span class="keyword">extends</span> <span class="title class_">ConfigurationContainer</span>&lt;E&gt;</span><br><span class="line">        <span class="keyword">implements</span> <span class="title class_">Comparable</span>&lt;WindowContainer&gt;, Animatable, SurfaceFreezer.Freezable,</span><br><span class="line">        InsetsControlTarget {</span><br></pre></td></tr></tbody></table></figure>
+
+<table>
+<thead>
+<tr>
+<th>声明片段</th>
+<th>用到的概念</th>
+<th>翻译</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>class WindowContainer&lt;E ...&gt;</code></td>
+<td>概念一：泛型类</td>
+<td>定义一个带类型参数 E 的类</td>
+</tr>
+<tr>
+<td><code>E extends WindowContainer</code></td>
+<td>概念二：有界类型参数</td>
+<td>E 必须是 WindowContainer 的子类——孩子必须是这族容器</td>
+</tr>
+<tr>
+<td><code>mChildren = new ArrayList&lt;E&gt;()</code>（类内）</td>
+<td>概念一</td>
+<td>孩子列表的元素类型就是这个 E</td>
+</tr>
+<tr>
+<td><code>extends ConfigurationContainer&lt;E&gt;</code></td>
+<td>概念三：实参替换</td>
+<td>继承配置容器，并把 E <strong>原样</strong>传给它（父类继续把 E 当孩子的类型用）</td>
+</tr>
+<tr>
+<td><code>class WindowToken extends WindowContainer&lt;WindowState&gt;</code></td>
+<td>概念三：实参替换</td>
+<td>子类填空：E := WindowState，mChildren 随之只装 WindowState</td>
+</tr>
+</tbody></table>
+<p>其中第四行值得多看一眼：ConfigurationContainer 自己也声明了 <code>&lt;E extends ConfigurationContainer&gt;</code>，WindowContainer 把 E 原封不动上抛。于是整条继承链共享同一个约定——<strong>E 永远表示”孩子的类型”</strong>，这也是 <code>DisplayArea&lt;T extends WindowContainer&gt; extends WindowContainer&lt;T&gt;</code> 那种”透传”写法的原理。</p>
+<h2 id="1-5-WMS其他声明"><a href="#1-5-WMS其他声明" class="headerlink" title="1.5. WMS其他声明"></a>1.5. WMS其他声明</h2><p>举例 WMS 中的使用：</p>
+<figure class="highlight java"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// ① RootWindowContainer.java</span></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">RootWindowContainer</span> <span class="keyword">extends</span> <span class="title class_">WindowContainer</span>&lt;DisplayContent&gt;</span><br><span class="line"></span><br><span class="line"><span class="comment">// ② WindowState.java</span></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">WindowState</span> <span class="keyword">extends</span> <span class="title class_">WindowContainer</span>&lt;WindowState&gt;</span><br><span class="line"></span><br><span class="line"><span class="comment">// ③ TaskFragment.java</span></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">TaskFragment</span> <span class="keyword">extends</span> <span class="title class_">WindowContainer</span>&lt;WindowContainer&gt;</span><br><span class="line"></span><br><span class="line"><span class="comment">// ④ DisplayArea.java</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">DisplayArea</span>&lt;T <span class="keyword">extends</span> <span class="title class_">WindowContainer</span>&gt; <span class="keyword">extends</span> <span class="title class_">WindowContainer</span>&lt;T&gt;</span><br></pre></td></tr></tbody></table></figure>
+
+<table>
+<thead>
+<tr>
+<th>题</th>
+<th>E 填的是</th>
+<th>mChildren 实际是</th>
+<th>为什么</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>①</td>
+<td>DisplayContent</td>
+<td><code>ArrayList&lt;DisplayContent&gt;</code></td>
+<td>树根下挂的是各块逻辑屏</td>
+</tr>
+<tr>
+<td>②</td>
+<td>WindowState（自己）</td>
+<td><code>ArrayList&lt;WindowState&gt;</code></td>
+<td>窗口还能挂子窗口（Dialog 等），孩子恰好还是 WindowState——注意这是”巧合”而非规则</td>
+</tr>
+<tr>
+<td>③</td>
+<td>WindowContainer（裸）</td>
+<td><code>ArrayList&lt;WindowContainer&gt;</code></td>
+<td>孩子既可能是 ActivityRecord 也可能是嵌套 Task，种类不唯一，只能填公共父类</td>
+</tr>
+<tr>
+<td>④</td>
+<td>没填，透传给自己的子类</td>
+<td>由子类决定</td>
+<td>DisplayArea 只定结构不定孩子；它自己又声明了 <code>&lt;T extends WindowContainer&gt;</code>（同一个概念二），把 T 传给 WindowContainer（概念三）。子类如 <code>TaskDisplayArea</code> 再落定</td>
+</tr>
+</tbody></table>
+<h2 id="1-6-小结"><a href="#1-6-小结" class="headerlink" title="1.6. 小结"></a>1.6. 小结</h2><p><strong>三个基础概念，一句话各表：</strong></p>
+<ol>
+<li><strong>泛型类与类型参数</strong>：E 是占位符，定义时留空、使用时填空；</li>
+<li><strong>有界类型参数</strong>：<code>extends</code> 画资格线，承诺”E 至少是什么”，换来类内部能按上界调用方法；</li>
+<li><strong>类型实参替换</strong>：继承/使用时把 E 换成具体类型，父类里所有 E 的位置随之确定，取孩子免强转。</li>
+</ol>
+<p><strong>进阶概念一览</strong>（读 WMS 不必需，防被带偏用）：</p>
+<table>
+<thead>
+<tr>
+<th>进阶概念</th>
+<th>一句话</th>
+<th>与本文关系</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>裸类型（raw type）作上界</td>
+<td>上界写 <code>WindowContainer</code> 而非 <code>WindowContainer&lt;E&gt;</code></td>
+<td>3.3 节已提</td>
+</tr>
+<tr>
+<td>自限定泛型 / CRTP</td>
+<td><code>Enum&lt;E extends Enum&lt;E&gt;&gt;</code>，E = “我自己”</td>
+<td>WindowContainer <strong>不是</strong>它</td>
+</tr>
+<tr>
+<td>F-bounded 多态</td>
+<td>上界里引用自身的参数化形式</td>
+<td>自限定的学名，同上</td>
+</tr>
+<tr>
+<td>类型擦除</td>
+<td>运行时不存在 <code>ArrayList&lt;WindowState&gt;</code></td>
+<td>4.2 节注</td>
+</tr>
+</tbody></table>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/Java/" rel="tag"># Java</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2026/08/26/C++%E8%99%9A%E5%87%BD%E6%95%B0%E5%8F%8A%E5%85%B6%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" rel="next" title="C++ 虚函数及其设计模式">
+                <i class="fa fa-chevron-left"></i> C++ 虚函数及其设计模式
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2026/08/31/WMS%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E4%BB%8B%E7%BB%8D/" rel="prev" title="WMS/AMS 窗口层级介绍">
+                WMS/AMS 窗口层级介绍 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="/images/head.jpg"
+                alt="" />
+            
+              <p class="site-author-name" itemprop="name"></p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/%7C%7C%20archive">
+              
+                  <span class="site-state-item-count">37</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">15</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">28</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+            <div class="feed-link motion-element">
+              <a href="/atom.xml" rel="alternate">
+                <i class="fa fa-rss"></i>
+                RSS
+              </a>
+            </div>
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/Zcorpius" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-github"></i>GitHub</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://www.zhihu.com/people/lin-li-yike-cao/activities" target="_blank" title="ZhiHu">
+                      
+                        <i class="fa fa-fw fa-globe"></i>ZhiHu</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+            <div class="links-of-blogroll motion-element links-of-blogroll-block">
+              <div class="links-of-blogroll-title">
+                <i class="fa  fa-fw fa-link"></i>
+                Links
+              </div>
+              <ul class="links-of-blogroll-list">
+                
+                  <li class="links-of-blogroll-item">
+                    <a href="https://blog.schwarzeni.com/" title="Schwarzeni" target="_blank">Schwarzeni</a>
+                  </li>
+                
+                  <li class="links-of-blogroll-item">
+                    <a href="https://www.qcmoke.cn/" title="qcmoke" target="_blank">qcmoke</a>
+                  </li>
+                
+                  <li class="links-of-blogroll-item">
+                    <a href="https://www.zhoujianguo.ltd/" title="ZhouJianGuo" target="_blank">ZhouJianGuo</a>
+                  </li>
+                
+                  <li class="links-of-blogroll-item">
+                    <a href="https://hishiro-xiao.github.io/" title="hishiro-xiao" target="_blank">hishiro-xiao</a>
+                  </li>
+                
+              </ul>
+            </div>
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#1-Java-%E6%B3%9B%E5%9E%8B%E2%80%94WindowContainer-%E7%9A%84-E"><span class="nav-text">1. Java 泛型—WindowContainer 的 E</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-1-%E6%B3%9B%E5%9E%8B%E7%B1%BB%E4%B8%8E%E7%B1%BB%E5%9E%8B%E5%8F%82%E6%95%B0"><span class="nav-text">1.1 泛型类与类型参数</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-1-1-%E4%BB%8E-ArrayList-%E8%AF%B4%E8%B5%B7"><span class="nav-text">1.1.1 从 ArrayList 说起</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-1-2-WindowContainer-%E7%9A%84-E"><span class="nav-text">1.1.2 WindowContainer 的 E</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#1-2-%E7%BB%99-E-%E7%94%BB%E4%B8%80%E6%9D%A1%E2%80%9D%E8%B5%84%E6%A0%BC%E7%BA%BF%E2%80%9D"><span class="nav-text">1.2. 给 E 画一条”资格线”</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-2-1-%E8%AF%AD%E6%B3%95%E4%B8%8E%E8%AF%AD%E4%B9%89"><span class="nav-text">1.2.1 语法与语义</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-2-2-%E4%B8%BA%E4%BB%80%E4%B9%88%E9%9C%80%E8%A6%81%E4%B8%8A%E7%95%8C"><span class="nav-text">1.2.2 为什么需要上界</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-2-3-WindowContainer-%E4%B8%BA%E4%BB%80%E4%B9%88%E4%B8%8D%E5%B8%A6"><span class="nav-text">1.2.3 WindowContainer 为什么不带 &lt;&gt;</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#1-3-%E7%B1%BB%E5%9E%8B%E5%AE%9E%E5%8F%82%E6%9B%BF%E6%8D%A2"><span class="nav-text">1.3. 类型实参替换</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-3-1-%E5%A1%AB%E7%A9%BA%E5%8F%91%E7%94%9F%E5%9C%A8%E5%93%AA%E9%87%8C"><span class="nav-text">1.3.1 填空发生在哪里</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-3-2-%E6%9B%BF%E6%8D%A2%E7%9A%84%E6%94%B6%E7%9B%8A"><span class="nav-text">1.3.2 替换的收益</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#1-4-%E5%86%8D%E7%9C%8B%E5%A3%B0%E6%98%8E"><span class="nav-text">1.4. 再看声明</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#1-5-WMS%E5%85%B6%E4%BB%96%E5%A3%B0%E6%98%8E"><span class="nav-text">1.5. WMS其他声明</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#1-6-%E5%B0%8F%E7%BB%93"><span class="nav-text">1.6. 小结</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Zcorpius</span>
+
+  
+</div>
+
+<!--
+
+
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Muse</a> v5.1.4</div>
+
+
+-->
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+          <span id="scrollpercent"><span>0</span>%</span>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+  
+
+
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@9/dist/mermaid.min.js"></script>
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: 'default'
+    });
+  </script>
+  
+  
+
+  
+
+
+<!-- Nexora 风格代码块增强：顶栏 + 语言标签 + 复制按钮 -->
+<script type="text/javascript" src="/js/src/nexora-code.js"></script>
+<!-- Nexora 风格 TOC scroll-spy（IntersectionObserver，替代 Bootstrap scrollspy） -->
+<script type="text/javascript" src="/js/src/nexora-toc.js"></script>
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"debug":false,"model":{"jsonPath":"https://cdn.jsdelivr.net/gh/evrstr/live2d-widget-models/live2d_evrstr/mashiro_shifuku/model.json"},"display":{"position":"left","width":200,"height":500},"mobile":{"show":true},"encrypt":{"enable":true},"log":false});</script></body>
+</html>
+
+<!-- 页面点击小红心 -->
+<script type="text/javascript" src="/js/src/love.js"></script>
