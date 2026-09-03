@@ -113,7 +113,7 @@
 <meta property="og:image" content="https://zcorpius.github.io/2026/08/31/WMS%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E4%BB%8B%E7%BB%8D/%E6%A0%91%E5%BD%A2%E5%9B%BE%E5%B1%82%E7%BB%93%E6%9E%84.png">
 <meta property="og:image" content="https://zcorpius.github.io/2026/08/31/WMS%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E4%BB%8B%E7%BB%8D/%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E5%B0%8F%E7%BB%93.png">
 <meta property="article:published_time" content="2026-08-31T14:40:24.000Z">
-<meta property="article:modified_time" content="2026-09-03T08:00:07.988Z">
+<meta property="article:modified_time" content="2026-09-03T08:21:06.263Z">
 <meta property="article:author" content="Zcorpius">
 <meta property="article:tag" content="WMS">
 <meta name="twitter:card" content="summary">
@@ -430,7 +430,7 @@
                   <span class="post-meta-item-text">字数统计&#58;</span>
                 
                 <span title="字数统计">
-                  11.7k
+                  12.2k
                 </span>
               
 
@@ -446,7 +446,7 @@
                   <span class="post-meta-item-text">阅读时长 &asymp;</span>
                 
                 <span title="阅读时长">
-                  54
+                  56
                 </span>
               
             </div>
@@ -474,13 +474,37 @@
 <li><strong>Surface 层级</strong>（渲染合成）按树的结构分配 layer；</li>
 <li>AMS 侧的 Activity/Task 组织（<code>Task</code>、<code>ActivityRecord</code>）也挂在这棵树上。</li>
 </ul>
-<p>本文主要回答五个问题：</p>
+<p>本文主要回答五个问题（每题可以先自己口头回答一遍，再展开对照摘要——也是第 7 章自测的预热）：</p>
 <ol>
-<li><code>WindowContainer</code> 到底提供了什么公共能力？（第 2 章）</li>
-<li>树上都有哪些节点，各自职责是什么？（第 3 章）</li>
-<li>0–36 共 37 个”层”是怎么来的，每种窗口落在哪一层？（第 4 章）</li>
-<li>这棵树落到一块真实的屏幕上，具体是什么样子？（第 5 章）</li>
-<li>怎么用 dumpsys 在真机上把这棵树读出来、逐层验证？（第 6 章）</li>
+<li><p><code>WindowContainer</code> 到底提供了什么公共能力？（第 2 章）</p>
+ <details><summary>答案展开</summary>
+
+<p> 它是所有树节点的基类，把”当一个节点”所需的全部能力统一收编：父子关系与 Z 序维护（<code>mChildren</code> 列表头底尾顶）、Configuration 沿树分发（继承 <code>ConfigurationContainer</code>）、Surface 动画与冻结、layer 递归分配（<code>assignChildLayers</code>），外加”孩子的类型由子类填 <code>E</code>“的泛型容器机制。<br>一句话：凡能挂上树的东西都是它的子类，节点该有的它全包。</p>
+ </details>
+</li>
+<li><p>树上都有哪些节点，各自职责是什么？（第 3 章）</p>
+ <details><summary>答案展开</summary>
+
+<p> 全局唯一树根 <code>RootWindowContainer</code> 管所有屏；屏侧是 <code>DisplayContent</code>（一块屏）加 DA 家族（<code>DisplayArea/RootDisplayArea/TaskDisplayArea/DisplayArea.Tokens/ImeContainer</code>，即 Feature 分组的层架子）；应用侧一条链：<code>Task</code>（任务栈，extends TaskFragment）→<code>ActivityRecord</code>（一个 Activity，extends WindowToken）→<code>WindowState</code>（真正的窗口）。<br>Task 和 ActivityRecord 这两个继承点就是 AMS 嫁接进 WM 树的桥。</p>
+ </details>
+</li>
+<li><p>0–36 共 37 个”层”是怎么来的，每种窗口落在哪一层？（第 4 章）</p>
+ <details><summary>答案展开</summary>
+
+<p> 每个窗口有 type（应用 1–99、系统 2000+），<code>WindowManagerPolicy.getWindowLayerFromTypeLw()</code> 把 type 映射成 0–36 的 policy layer：应用统一第 2 层，壁纸 1、输入法 13、状态栏 15、导航栏 24、圆角装饰 36 置顶。注意层是”区间”不是精确值（一个叶子可占连续多层），且同一 type 可因权限/flag 落不同层（<code>TYPE_SYSTEM_ALERT</code> 无权限 9、有权限 12，装饰窗带 flag 直接顶到 36）。</p>
+ </details>
+</li>
+<li><p>这棵树落到一块真实的屏幕上，具体是什么样子？（第 5 章）</p>
+ <details><summary>答案展开</summary>
+
+<p> 一个日常场景（打开 App、弹 Dialog、键盘弹起）里同屏 6 个窗口，各是树上一片 <code>WindowState</code> 叶子：壁纸挂 <code>Leaf:0:1</code>，应用链走 <code>TaskDisplayArea → Task → ActivityRecord</code>，键盘进 <code>ImeContainer</code>，状态栏/导航栏各进 15/24 层的 Leaf 格子。两条读树规律：同一个盒子里兄弟顺序定谁盖谁（Dialog 排主窗口后）；盒子挂在哪层、整盒就压在哪些层上。</p>
+ </details>
+</li>
+<li><p>怎么用 dumpsys 在真机上把这棵树读出来、逐层验证？（第 6 章）</p>
+ <details><summary>答案展开</summary>
+
+<p> <code>adb shell dumpsys activity containers</code> 输出整棵树，节点格式 <code>#下标 名字:层区间 type=… mode=… bounds=[…]</code>，下标大的在上。读法：从 <code>Leaf:36:36</code> 往下扫到 <code>Leaf:0:1</code>，0–36 每层都有节点认领、无空洞无重叠；手机与车机真机对比可见骨架完全一致、差异全在叶子装的窗口；配合第 7 章”先预测、再 dump”的实验法逐层验证。</p>
+ </details></li>
 </ol>
 <hr>
 <h1 id="2-WindowContainer：窗口树的基类"><a href="#2-WindowContainer：窗口树的基类" class="headerlink" title="2. WindowContainer：窗口树的基类"></a>2. WindowContainer：窗口树的基类</h1><h2 id="2-1-类定义与设计意图"><a href="#2-1-类定义与设计意图" class="headerlink" title="2.1 类定义与设计意图"></a>2.1 类定义与设计意图</h2><p><strong>WindowContainer 是窗口树上所有节点的公共基类</strong> ：</p>
