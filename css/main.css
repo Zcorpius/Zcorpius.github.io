@@ -1244,7 +1244,9 @@ pre .javascript .function {
 }
 .post-sticky-flag {
   display: inline-block;
+  margin-left: 8px;
   font-size: 16px;
+  vertical-align: middle;
   -ms-transform: rotate(30deg);
   -webkit-transform: rotate(30deg);
   -moz-transform: rotate(30deg);
@@ -1855,7 +1857,7 @@ pre {
   width: 4px;
   height: 4px;
   border-radius: 50%;
-  background: #ffcd62;
+  background: #9517f2;
 }
 .links-of-blogroll {
   font-size: 13px;
@@ -2850,11 +2852,14 @@ embed {
   }
 }
 .main-inner .posts-expand .post-title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-weight: 700;
   font-size: 20px;
 }
 .main-inner .posts-expand .post-title .post-sticky-flag {
-  color: #ff2a2a;
+  color: #1f4e79;
 }
 .main-inner .posts-expand .post-meta {
   margin: 10px 0 20px;

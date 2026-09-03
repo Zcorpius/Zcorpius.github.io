@@ -470,13 +470,13 @@
 <p>官方 AOSP 对现代软件栈的划分包含 App、Android Framework、系统服务、ART、HAL、Native 守护进程/库与 Kernel；这比早期只强调 Java Framework 与 Native 的视角多了分区、模块化和硬件接口稳定性的约束。<a target="_blank" rel="noopener" href="https://source.android.com/docs/core/architecture">AOSP Architecture overview</a></p>
 <h2 id="1-1-分层不是调用栈"><a href="#1-1-分层不是调用栈" class="headerlink" title="1.1 分层不是调用栈"></a>1.1 分层不是调用栈</h2><p>下图中的层表示职责边界，而不是“上层只能调用相邻一层”。例如应用经 Binder 调用 <code>system_server</code>，而 <code>system_server</code> 可以通过稳定 AIDL 调用 Vendor 分区中的 HAL；真正的数据面还可能采用共享内存、DMA 或 socket。</p>
 <pre class="mermaid">flowchart TB
-    App[App / 特权 App\nAndroid API、System API] --&gt; FW[Android Framework\nandroid.*、JNI 桥接]
-    FW --&gt; SS[系统服务进程群\nsystem_server / SurfaceFlinger / audioserver ...]
-    FW --&gt; ART[ART Runtime\nDEX、JIT/AOT、GC]
-    SS --&gt; N[Native 库与守护进程\nlibbinder、liblog、init、logd ...]
-    SS --&gt; HAL[稳定 HAL 接口\n优先 Stable AIDL]
-    HAL --&gt; Vendor[Vendor / ODM 实现\n厂商硬件服务]
-    N --&gt; Kernel[Linux Kernel\n调度、内存、驱动、Binder Driver]
+    App["App / 特权 App&lt;br/&gt;Android API、System API"] --&gt; FW["Android Framework&lt;br/&gt;android.*、JNI 桥接"]
+    FW --&gt; SS["系统服务进程群&lt;br/&gt;system_server / SurfaceFlinger / audioserver ..."]
+    FW --&gt; ART["ART Runtime&lt;br/&gt;DEX、JIT/AOT、GC"]
+    SS --&gt; N["Native 库与守护进程&lt;br/&gt;libbinder、liblog、init、logd ..."]
+    SS --&gt; HAL["稳定 HAL 接口&lt;br/&gt;优先 Stable AIDL"]
+    HAL --&gt; Vendor["Vendor / ODM 实现&lt;br/&gt;厂商硬件服务"]
+    N --&gt; Kernel["Linux Kernel&lt;br/&gt;调度、内存、驱动、Binder Driver"]
     Vendor --&gt; Kernel</pre>
 
 <table>
@@ -534,16 +534,16 @@
 <pre class="mermaid">flowchart TB
     ROM[Boot ROM] --&gt; BL[Boot Loader]
     BL --&gt; K[Linux Kernel]
-    K --&gt; INIT1[first-stage init\n挂载必要分区、准备 SELinux]
-    INIT1 --&gt; INIT2[second-stage init\n解析 rc、属性与 service]
-    INIT2 --&gt; SM[servicemanager\nBinder 名字服务]
-    INIT2 --&gt; Native[Native 系统服务\nSurfaceFlinger / audioserver / logd ...]
+    K --&gt; INIT1["first-stage init&lt;br/&gt;挂载必要分区、准备 SELinux"]
+    INIT1 --&gt; INIT2["second-stage init&lt;br/&gt;解析 rc、属性与 service"]
+    INIT2 --&gt; SM["servicemanager&lt;br/&gt;Binder 名字服务"]
+    INIT2 --&gt; Native["Native 系统服务&lt;br/&gt;SurfaceFlinger / audioserver / logd ..."]
     INIT2 --&gt; Z[zygote / zygote64]
-    Z --&gt; ART[启动 ART、预加载类和资源]
+    Z --&gt; ART["启动 ART、预加载类和资源"]
     ART --&gt; SS[fork system_server]
-    SS --&gt; Services[Bootstrap / Core / Other Services\nAMS、WMS、PMS、IMS ...]
-    Services --&gt; Launch[AMS 请求 Zygote 创建应用进程]
-    Z --&gt; App[App 进程\nActivityThread.main]
+    SS --&gt; Services["Bootstrap / Core / Other Services&lt;br/&gt;AMS、WMS、PMS、IMS ..."]
+    Services --&gt; Launch["AMS 请求 Zygote 创建应用进程"]
+    Z --&gt; App["App 进程&lt;br/&gt;ActivityThread.main"]
     App &lt;--&gt;|Binder| Services<!------></pre>
 
 <h2 id="2-1-Boot-ROM、Boot-Loader-与-Kernel：把“系统”带到用户空间门口"><a href="#2-1-Boot-ROM、Boot-Loader-与-Kernel：把“系统”带到用户空间门口" class="headerlink" title="2.1 Boot ROM、Boot Loader 与 Kernel：把“系统”带到用户空间门口"></a>2.1 Boot ROM、Boot Loader 与 Kernel：把“系统”带到用户空间门口</h2><ol>
