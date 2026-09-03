@@ -113,7 +113,7 @@
 <meta property="og:image" content="https://zcorpius.github.io/2026/08/31/WMS%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E4%BB%8B%E7%BB%8D/%E6%A0%91%E5%BD%A2%E5%9B%BE%E5%B1%82%E7%BB%93%E6%9E%84.png">
 <meta property="og:image" content="https://zcorpius.github.io/2026/08/31/WMS%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E4%BB%8B%E7%BB%8D/%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E5%B0%8F%E7%BB%93.png">
 <meta property="article:published_time" content="2026-08-31T14:40:24.000Z">
-<meta property="article:modified_time" content="2026-09-03T07:43:08.885Z">
+<meta property="article:modified_time" content="2026-09-03T08:00:07.988Z">
 <meta property="article:author" content="Zcorpius">
 <meta property="article:tag" content="WMS">
 <meta name="twitter:card" content="summary">
@@ -430,7 +430,7 @@
                   <span class="post-meta-item-text">字数统计&#58;</span>
                 
                 <span title="字数统计">
-                  10.1k
+                  11.7k
                 </span>
               
 
@@ -446,7 +446,7 @@
                   <span class="post-meta-item-text">阅读时长 &asymp;</span>
                 
                 <span title="阅读时长">
-                  48
+                  54
                 </span>
               
             </div>
@@ -1215,7 +1215,158 @@
 <h2 id="6-6-动手验证建议"><a href="#6-6-动手验证建议" class="headerlink" title="6.6 动手验证建议"></a>6.6 动手验证建议</h2><figure class="highlight bash"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 1. 看整棵树 + 每个 Task 的窗口</span></span><br><span class="line">adb shell dumpsys activity containers | less</span><br><span class="line"></span><br><span class="line"><span class="comment"># 2. 只看某个屏</span></span><br><span class="line">adb shell dumpsys activity containers | grep -A 200 <span class="string">'Display 0'</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 3. 打开一个输入法/悬浮窗/Toast 后再 dump 一次，diff 两棵树，</span></span><br><span class="line"><span class="comment">#    观察新 WindowToken 落进的 Leaf 层号，与第 4.2 节表格互相印证</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 4. 看单个窗口的最终 layer 分配</span></span><br><span class="line">adb shell dumpsys window windows | grep -E <span class="string">'Window #|mBaseLayer|mLayer'</span></span><br></pre></td></tr></tbody></table></figure>
 
 <hr>
-<h1 id="7-小结与延伸路线"><a href="#7-小结与延伸路线" class="headerlink" title="7. 小结与延伸路线"></a>7. 小结与延伸路线</h1><p><strong>一张图记住全文：</strong></p>
+<h1 id="7-自测与检验"><a href="#7-自测与检验" class="headerlink" title="7. 自测与检验"></a>7. 自测与检验</h1><p>读完 ≠ 掌握。本章分三层检验：<strong>基础自测</strong>（能不能不翻前文秒答）、<strong>动手检验</strong>（能不能先预测再验证）、<strong>缺口清单</strong>（离”熟练掌握”还差什么）。自测请先独立作答，再展开参考答案对照——答不出的题号，就是该回看的章节。</p>
+<h2 id="7-1-基础自测：十五题速答"><a href="#7-1-基础自测：十五题速答" class="headerlink" title="7.1 基础自测：十五题速答"></a>7.1 基础自测：十五题速答</h2><h3 id="类与泛型"><a href="#类与泛型" class="headerlink" title="类与泛型"></a>类与泛型</h3><ol>
+<li><p><code>mChildren</code> 列表的头尾各是哪一层？这被称为整棵树最重要的什么？</p>
+ <details><summary>答案展开</summary>
+
+<p> 头在下层、尾在上层——<code>mChildren</code> 的顺序即 Z 序；这是整棵树最重要的不变量，所有”谁盖谁”最终都落到对列表顺序的维护上（2.2 节）。</p>
+ </details>
+</li>
+<li><p>换父节点为什么必须走 <code>setParent()</code>，不能直接改 <code>mParent</code>？</p>
+ <details><summary>答案展开</summary>
+
+<p> <code>mParent</code> 是 private 的；换父要级联更新 Configuration（孩子继承新父亲的配置），直接赋值会漏掉这步（2.2/2.3 节）。</p>
+ </details>
+</li>
+<li><p><code>TaskFragment</code>、<code>TaskDisplayArea</code> 为什么把 <code>E</code> 填成 <code>WindowContainer</code>，而 <code>WindowToken</code> 填 <code>WindowState</code>？</p>
+ <details><summary>答案展开</summary>
+
+<p> 前两者的孩子类型不唯一（Task 下既有 ActivityRecord 也有嵌套 TaskFragment，TaskDisplayArea 下既有 Task 也有子 TaskDisplayArea），只能填公共父类；WindowToken 的孩子只有 WindowState（2.1 节）。</p>
+ </details>
+</li>
+<li><p><code>WindowState extends WindowContainer&lt;WindowState&gt;</code>——填”自己”意味着什么？</p>
+ <details><summary>答案展开</summary>
+
+<p> 窗口可以有子窗口（PopupWindow、附着式对话框等），”窗口套窗口”（3.1 节）。</p>
+ </details>
+</li>
+<li><p>这里的 <code>E</code> 回答的是”我是谁”还是”孩子是谁”？和 <code>Enum&lt;E extends Enum&lt;E&gt;&gt;</code> 有何区别？</p>
+ <details><summary>答案展开</summary>
+
+<p> “孩子是谁”。<code>Enum&lt;E extends Enum&lt;E&gt;&gt;</code> 的 <code>E</code> 是”我自己这种类型”（自限定/CRTP），这里的 <code>E</code> 与自身类型无关（2.1 节）。</p>
+ </details></li>
+</ol>
+<h3 id="家族与职责"><a href="#家族与职责" class="headerlink" title="家族与职责"></a>家族与职责</h3><ol start="6">
+<li><p><code>Task</code> 和 <code>ActivityRecord</code> 分别继承哪个 WM 容器类？为什么说这两个继承点是 AMS/WMS 的桥？</p>
+ <details><summary>答案展开</summary>
+
+<p> <code>Task extends TaskFragment</code>、<code>ActivityRecord extends WindowToken</code>。AMS 的任务/Activity 组织因此天生具备 WM 容器能力，两个世界共享同一棵树——<code>dumpsys activity containers</code> 能同时看到 Task 和窗口的原因（3.2 节）。</p>
+ </details>
+</li>
+<li><p><code>ImeContainer</code> 的 layer 分配有什么特殊处理？</p>
+ <details><summary>答案展开</summary>
+
+<p> 它的 layer 分配被忽略，输入法窗口的实际层级由 IME 目标窗口决定、贴在其上（3.2 节）。</p>
+ </details></li>
+</ol>
+<h3 id="层级体系"><a href="#层级体系" class="headerlink" title="层级体系"></a>层级体系</h3><ol start="8">
+<li><p><code>TYPE_SYSTEM_ALERT</code> 有/无 <code>INTERNAL_SYSTEM_WINDOW</code> 权限分别落第几层？为什么故意不同？</p>
+ <details><summary>答案展开</summary>
+
+<p> 无权限第 9 层、有权限第 12 层——防止三方冒充系统弹窗压到 <code>APPLICATION_OVERLAY</code>（第 11 层）之上（4.2 节）。</p>
+ </details>
+</li>
+<li><p><code>ScreenDecorOverlay</code> 的 type 是 2024（正常应落第 25 层），为什么出现在 <code>Leaf:36:36</code>？</p>
+ <details><summary>答案展开</summary>
+
+<p> 它设置了 <code>PRIVATE_FLAG_IS_ROUNDED_CORNERS_OVERLAY</code>，映射函数的特殊分支直接返回 <code>getMaxWindowLayer()</code> = 36（4.1 节）。</p>
+ </details>
+</li>
+<li><p>“层是区间不是精确值”怎么理解？同一个 <code>Leaf:3:12</code> 里可能同时装着哪些层的窗口？</p>
+<details><summary>答案展开</summary>
+
+<p>一个叶子容器可占据连续多层（节点名 <code>min:max</code> 即占领声明）；<code>Leaf:3:12</code> 内可同时有第 7 层的 Toast、第 11 层的悬浮窗——跨层看区间，同叶内看兄弟顺序（5.2 节）。</p>
+</details></li>
+</ol>
+<h3 id="屏幕与树"><a href="#屏幕与树" class="headerlink" title="屏幕与树"></a>屏幕与树</h3><ol start="11">
+<li><p>标准 <code>Dialog</code> 和 <code>PopupWindow</code> 在树上的挂点有何不同？各自靠什么盖住主窗口？</p>
+<details><summary>答案展开</summary>
+
+<p>Dialog 是 <code>ActivityRecord</code> 的直接孩子、主窗口的兄弟，靠兄弟列表在后盖上；PopupWindow 是主窗口 WindowState 自己的孩子（子窗口），靠 sublayer 排在父窗口之上（5.1/5.2 节）。</p>
+</details>
+</li>
+<li><p>键盘为什么压得住应用、又被状态栏压？</p>
+<details><summary>答案展开</summary>
+
+<p>13 &gt; 2、13 &lt; 15——policy layer 的粗粒度顺序是全序，与窗口的位置大小无关（5.1 节）。</p>
+</details></li>
+</ol>
+<h3 id="读-dump"><a href="#读-dump" class="headerlink" title="读 dump"></a>读 dump</h3><ol start="13">
+<li><p>dump 输出里的 <code>#N</code> 是什么？<code>#0</code> 在最底还是最顶？</p>
+<details><summary>答案展开</summary>
+
+<p>孩子在 <code>mChildren</code> 中的下标；尾部在上，<code>#0</code> 在最底层（6.1 节）。</p>
+</details>
+</li>
+<li><p>输入法的 token 是 <code>android.os.Binder</code>，其他系统窗口多是 <code>BinderProxy</code>，这个差异说明了什么？</p>
+<details><summary>答案展开</summary>
+
+<p><code>Binder</code> 说明 token 是 system_server 进程内部代建的（输入法由 IMS 代注册）；<code>BinderProxy</code> 说明来自外部进程经 Binder 注册（SystemUI 的系统栏/通知面板等）（6.5 节）。</p>
+</details>
+</li>
+<li><p><code>pip-dismiss-overlay</code> 与 <code>NavigationBar0</code> 同挂 <code>Leaf:24:25</code>，谁在上面？由什么决定？</p>
+<details><summary>答案展开</summary>
+
+<p><code>pip-dismiss-overlay</code>（#1）在 <code>NavigationBar0</code>（#0）之上——同区间内由兄弟下标决定（5.2 规则 2 的实例）。</p>
+</details></li>
+</ol>
+<h2 id="7-2-动手检验：先预测，再-dump"><a href="#7-2-动手检验：先预测，再-dump" class="headerlink" title="7.2 动手检验：先预测，再 dump"></a>7.2 动手检验：先预测，再 dump</h2><p>顺序反过来才算掌握：<strong>先写下预测，再执行 <code>adb shell dumpsys activity containers</code> 对照</strong>。预测错了回对应章节；预测对了，dump 只是确认。</p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>操作</th>
+<th>先预测</th>
+<th>验证点</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>弹一个悬浮窗（已授 <code>SYSTEM_ALERT_WINDOW</code>）</td>
+<td>新 WindowToken 落进哪个叶子？</td>
+<td><code>Leaf:3:12</code>（<code>TYPE_APPLICATION_OVERLAY</code> 第 11 层，type=2038）</td>
+</tr>
+<tr>
+<td>2</td>
+<td>弹一个 Toast</td>
+<td>落哪？和悬浮窗同一个叶子吗？</td>
+<td>也在 <code>Leaf:3:12</code>——Toast 第 7 层，区间 3–12 把两者装进同一格（”层是区间”的实证）</td>
+</tr>
+<tr>
+<td>3</td>
+<td>点开输入框调出键盘</td>
+<td>哪个格子里出现 token？</td>
+<td><code>ImePlaceholder:13:14</code> 下的 <code>ImeContainer</code>，token 是 <code>Binder</code>（内部代建）</td>
+</tr>
+<tr>
+<td>4</td>
+<td>进入分屏</td>
+<td>应用区怎么变？</td>
+<td><code>DefaultTaskDisplayArea</code> 下出现两个 <code>mode=multi-window</code> 的 Task、bounds 各半屏（对照 6.2 里 Task=5/6 残留）</td>
+</tr>
+<tr>
+<td>5</td>
+<td>下拉通知面板</td>
+<td>哪层亮了？</td>
+<td><code>Leaf:17:17</code>——面板窗口常驻，只是可见性变化，<strong>不新增节点</strong>（树管结构，可见性另有状态）</td>
+</tr>
+<tr>
+<td>6</td>
+<td>白纸默画</td>
+<td>五大 Feature + 37 层骨架</td>
+<td>与 6.3 复原图对照；空叶子也要画得出——架子与窗口无关</td>
+</tr>
+</tbody></table>
+<h2 id="7-3-离”熟练掌握”的差距"><a href="#7-3-离”熟练掌握”的差距" class="headerlink" title="7.3 离”熟练掌握”的差距"></a>7.3 离”熟练掌握”的差距</h2><p>下面三块是原文没展开、但”熟练”绕不开的，对应第 8 章的延伸路线：</p>
+<ol>
+<li><strong>动态主干</strong>：一个窗口从 <code>View.addView()</code> 到挂 <code>Leaf:N:N</code> 的完整流，<code>WindowManagerService.addWindow()</code> 的 token 校验、type→layer 映射、找容器、<code>addChild</code>；以及启动 Activity 时是谁在什么时机把 Task <code>positionChildAt(POSITION_TOP)</code> 拉起来。</li>
+<li><strong>树的构建算法</strong>：本文画的是算法的<strong>输出</strong>，<code>DisplayAreaPolicyBuilder</code> 按 Feature×layer 区间切分、<code>except()</code> 列表如何让 <code>Leaf:24:25</code> 不被 <code>FullscreenMagnification</code> 包裹（6.5 节的两处”反向验证”只是它的影子）。</li>
+<li><strong>最后一公里</strong>：<code>assignChildLayers()</code> 如何把树序换算成 SurfaceControl 的 layer 值，即从树到屏幕像素的终点。</li>
+</ol>
+<p>三块补完，再回头白纸默画一棵不带注释的骨架树，一次成型——这时候”熟练掌握”四个字才算立住。</p>
+<hr>
+<h1 id="8-小结与延伸路线"><a href="#8-小结与延伸路线" class="headerlink" title="8. 小结与延伸路线"></a>8. 小结与延伸路线</h1><p><strong>一张图记住全文：</strong></p>
 <img src="/2026/08/31/WMS%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E4%BB%8B%E7%BB%8D/窗口层级小结.png" alt="WMS 窗口树总览：系统窗口路径与应用窗口路径" width="700px">
 
 <ul>
@@ -1460,7 +1611,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#1-%E6%A6%82%E8%BF%B0"><span class="nav-text">1. 概述</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#2-WindowContainer%EF%BC%9A%E7%AA%97%E5%8F%A3%E6%A0%91%E7%9A%84%E5%9F%BA%E7%B1%BB"><span class="nav-text">2. WindowContainer：窗口树的基类</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#2-1-%E7%B1%BB%E5%AE%9A%E4%B9%89%E4%B8%8E%E8%AE%BE%E8%AE%A1%E6%84%8F%E5%9B%BE"><span class="nav-text">2.1 类定义与设计意图</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-2-%E4%B8%A4%E4%B8%AA%E6%A0%B8%E5%BF%83%E6%88%90%E5%91%98"><span class="nav-text">2.2 两个核心成员</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-3-%E6%A0%91%E6%93%8D%E4%BD%9C%E6%A0%B8%E5%BF%83%E6%96%B9%E6%B3%95"><span class="nav-text">2.3 树操作核心方法</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-4-%E7%88%B6%E7%B1%BB%EF%BC%9AConfigurationContainer"><span class="nav-text">2.4 父类：ConfigurationContainer</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#3-WindowContainer-%E5%AE%B6%E6%97%8F%E5%85%A8%E6%99%AF"><span class="nav-text">3. WindowContainer 家族全景</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#3-1-%E7%B1%BB%E7%BB%A7%E6%89%BF%E5%9B%BE"><span class="nav-text">3.1 类继承图</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-2-%E8%81%8C%E8%B4%A3%E9%80%9F%E6%9F%A5%E8%A1%A8"><span class="nav-text">3.2 职责速查表</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#4-%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E4%BD%93%E7%B3%BB"><span class="nav-text">4. 窗口层级体系</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#4-1-%E5%B1%82%E4%BB%8E%E5%93%AA%E6%9D%A5"><span class="nav-text">4.1 层从哪来</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-2-type-%E4%B8%8E-layer-%E5%AF%B9%E7%85%A7%E8%A1%A8"><span class="nav-text">4.2  type 与 layer 对照表</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-3-%E5%B8%B8%E8%A7%81%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E9%80%9F%E8%AE%B0"><span class="nav-text">4.3 常见窗口层级速记</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#5-%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E6%98%BE%E7%A4%BA"><span class="nav-text">5. 窗口层级显示</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#5-1-%E5%B1%8F%E5%B9%95%E4%B8%8A%E7%9C%8B%E5%BE%97%E8%A7%81%E7%9A%84%E6%97%A5%E5%B8%B8%E7%AA%97%E5%8F%A3"><span class="nav-text">5.1 屏幕上看得见的日常窗口</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-2-WMS-%E9%87%8C%E7%9C%8B%E4%B8%8D%E8%A7%81%E7%9A%84%E5%AE%B9%E5%99%A8%E6%A0%91"><span class="nav-text">5.2 WMS 里看不见的容器树</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-3-Z-%E8%BD%B4%E4%BE%A7%E8%A7%86"><span class="nav-text">5.3 Z 轴侧视</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#6-dumpsys-%E8%AF%BB%E5%87%BA%E8%BF%99%E6%A3%B5%E6%A0%91"><span class="nav-text">6. dumpsys 读出这棵树</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#6-1-dumpsys-%E5%91%BD%E4%BB%A4"><span class="nav-text">6.1 dumpsys 命令</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-2-Android-13-%E7%9C%9F%E6%9C%BA%E5%AE%8C%E6%95%B4%E8%BE%93%E5%87%BA"><span class="nav-text">6.2 Android 13 真机完整输出</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-3-Android-13-%E7%9C%9F%E6%9C%BA%E8%BE%93%E5%87%BA%E5%A4%8D%E5%8E%9F"><span class="nav-text">6.3 Android 13 真机输出复原</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-4-Android-15-%E8%BD%A6%E6%9C%BA%E5%AE%8C%E6%95%B4%E8%BE%93%E5%87%BA"><span class="nav-text">6.4 Android 15 车机完整输出</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-5-Android-15-%E8%BD%A6%E6%9C%BA%E8%BE%93%E5%87%BA%E7%B2%BE%E7%AE%80%E4%B8%8E%E5%88%86%E6%9E%90"><span class="nav-text">6.5 Android 15 车机输出精简与分析</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%B2%BE%E7%AE%80%E6%A0%91"><span class="nav-text">精简树</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%80%90-type-%E9%97%AD%E7%8E%AF%E9%AA%8C%E8%AF%81"><span class="nav-text">逐 type 闭环验证</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#ScreenDecorOverlay-%E7%9A%84%E2%80%9D%E8%B6%8A%E7%BA%A7%E2%80%9D"><span class="nav-text">ScreenDecorOverlay 的”越级”</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%BD%A6%E6%9C%BA-vs-%E6%89%8B%E6%9C%BA%E5%B7%AE%E5%BC%82"><span class="nav-text">车机 vs 手机差异</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%BA%94%E7%94%A8%E4%BE%A7%E7%BB%93%E6%9E%84"><span class="nav-text">应用侧结构</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%A9%BA%E8%8A%82%E7%82%B9%E4%B8%8E-Binder-BinderProxy-%E7%9A%84%E5%90%AB%E4%B9%89"><span class="nav-text">空节点与 Binder&#x2F;BinderProxy 的含义</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-6-%E5%8A%A8%E6%89%8B%E9%AA%8C%E8%AF%81%E5%BB%BA%E8%AE%AE"><span class="nav-text">6.6 动手验证建议</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#7-%E5%B0%8F%E7%BB%93%E4%B8%8E%E5%BB%B6%E4%BC%B8%E8%B7%AF%E7%BA%BF"><span class="nav-text">7. 小结与延伸路线</span></a></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#1-%E6%A6%82%E8%BF%B0"><span class="nav-text">1. 概述</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#2-WindowContainer%EF%BC%9A%E7%AA%97%E5%8F%A3%E6%A0%91%E7%9A%84%E5%9F%BA%E7%B1%BB"><span class="nav-text">2. WindowContainer：窗口树的基类</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#2-1-%E7%B1%BB%E5%AE%9A%E4%B9%89%E4%B8%8E%E8%AE%BE%E8%AE%A1%E6%84%8F%E5%9B%BE"><span class="nav-text">2.1 类定义与设计意图</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-2-%E4%B8%A4%E4%B8%AA%E6%A0%B8%E5%BF%83%E6%88%90%E5%91%98"><span class="nav-text">2.2 两个核心成员</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-3-%E6%A0%91%E6%93%8D%E4%BD%9C%E6%A0%B8%E5%BF%83%E6%96%B9%E6%B3%95"><span class="nav-text">2.3 树操作核心方法</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-4-%E7%88%B6%E7%B1%BB%EF%BC%9AConfigurationContainer"><span class="nav-text">2.4 父类：ConfigurationContainer</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#3-WindowContainer-%E5%AE%B6%E6%97%8F%E5%85%A8%E6%99%AF"><span class="nav-text">3. WindowContainer 家族全景</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#3-1-%E7%B1%BB%E7%BB%A7%E6%89%BF%E5%9B%BE"><span class="nav-text">3.1 类继承图</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-2-%E8%81%8C%E8%B4%A3%E9%80%9F%E6%9F%A5%E8%A1%A8"><span class="nav-text">3.2 职责速查表</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#4-%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E4%BD%93%E7%B3%BB"><span class="nav-text">4. 窗口层级体系</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#4-1-%E5%B1%82%E4%BB%8E%E5%93%AA%E6%9D%A5"><span class="nav-text">4.1 层从哪来</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-2-type-%E4%B8%8E-layer-%E5%AF%B9%E7%85%A7%E8%A1%A8"><span class="nav-text">4.2  type 与 layer 对照表</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-3-%E5%B8%B8%E8%A7%81%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E9%80%9F%E8%AE%B0"><span class="nav-text">4.3 常见窗口层级速记</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#5-%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E6%98%BE%E7%A4%BA"><span class="nav-text">5. 窗口层级显示</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#5-1-%E5%B1%8F%E5%B9%95%E4%B8%8A%E7%9C%8B%E5%BE%97%E8%A7%81%E7%9A%84%E6%97%A5%E5%B8%B8%E7%AA%97%E5%8F%A3"><span class="nav-text">5.1 屏幕上看得见的日常窗口</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-2-WMS-%E9%87%8C%E7%9C%8B%E4%B8%8D%E8%A7%81%E7%9A%84%E5%AE%B9%E5%99%A8%E6%A0%91"><span class="nav-text">5.2 WMS 里看不见的容器树</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-3-Z-%E8%BD%B4%E4%BE%A7%E8%A7%86"><span class="nav-text">5.3 Z 轴侧视</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#6-dumpsys-%E8%AF%BB%E5%87%BA%E8%BF%99%E6%A3%B5%E6%A0%91"><span class="nav-text">6. dumpsys 读出这棵树</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#6-1-dumpsys-%E5%91%BD%E4%BB%A4"><span class="nav-text">6.1 dumpsys 命令</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-2-Android-13-%E7%9C%9F%E6%9C%BA%E5%AE%8C%E6%95%B4%E8%BE%93%E5%87%BA"><span class="nav-text">6.2 Android 13 真机完整输出</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-3-Android-13-%E7%9C%9F%E6%9C%BA%E8%BE%93%E5%87%BA%E5%A4%8D%E5%8E%9F"><span class="nav-text">6.3 Android 13 真机输出复原</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-4-Android-15-%E8%BD%A6%E6%9C%BA%E5%AE%8C%E6%95%B4%E8%BE%93%E5%87%BA"><span class="nav-text">6.4 Android 15 车机完整输出</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-5-Android-15-%E8%BD%A6%E6%9C%BA%E8%BE%93%E5%87%BA%E7%B2%BE%E7%AE%80%E4%B8%8E%E5%88%86%E6%9E%90"><span class="nav-text">6.5 Android 15 车机输出精简与分析</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%B2%BE%E7%AE%80%E6%A0%91"><span class="nav-text">精简树</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%80%90-type-%E9%97%AD%E7%8E%AF%E9%AA%8C%E8%AF%81"><span class="nav-text">逐 type 闭环验证</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#ScreenDecorOverlay-%E7%9A%84%E2%80%9D%E8%B6%8A%E7%BA%A7%E2%80%9D"><span class="nav-text">ScreenDecorOverlay 的”越级”</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%BD%A6%E6%9C%BA-vs-%E6%89%8B%E6%9C%BA%E5%B7%AE%E5%BC%82"><span class="nav-text">车机 vs 手机差异</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%BA%94%E7%94%A8%E4%BE%A7%E7%BB%93%E6%9E%84"><span class="nav-text">应用侧结构</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%A9%BA%E8%8A%82%E7%82%B9%E4%B8%8E-Binder-BinderProxy-%E7%9A%84%E5%90%AB%E4%B9%89"><span class="nav-text">空节点与 Binder&#x2F;BinderProxy 的含义</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-6-%E5%8A%A8%E6%89%8B%E9%AA%8C%E8%AF%81%E5%BB%BA%E8%AE%AE"><span class="nav-text">6.6 动手验证建议</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#7-%E8%87%AA%E6%B5%8B%E4%B8%8E%E6%A3%80%E9%AA%8C"><span class="nav-text">7. 自测与检验</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#7-1-%E5%9F%BA%E7%A1%80%E8%87%AA%E6%B5%8B%EF%BC%9A%E5%8D%81%E4%BA%94%E9%A2%98%E9%80%9F%E7%AD%94"><span class="nav-text">7.1 基础自测：十五题速答</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%B1%BB%E4%B8%8E%E6%B3%9B%E5%9E%8B"><span class="nav-text">类与泛型</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AE%B6%E6%97%8F%E4%B8%8E%E8%81%8C%E8%B4%A3"><span class="nav-text">家族与职责</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%B1%82%E7%BA%A7%E4%BD%93%E7%B3%BB"><span class="nav-text">层级体系</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%B1%8F%E5%B9%95%E4%B8%8E%E6%A0%91"><span class="nav-text">屏幕与树</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%AF%BB-dump"><span class="nav-text">读 dump</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-2-%E5%8A%A8%E6%89%8B%E6%A3%80%E9%AA%8C%EF%BC%9A%E5%85%88%E9%A2%84%E6%B5%8B%EF%BC%8C%E5%86%8D-dump"><span class="nav-text">7.2 动手检验：先预测，再 dump</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-3-%E7%A6%BB%E2%80%9D%E7%86%9F%E7%BB%83%E6%8E%8C%E6%8F%A1%E2%80%9D%E7%9A%84%E5%B7%AE%E8%B7%9D"><span class="nav-text">7.3 离”熟练掌握”的差距</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#8-%E5%B0%8F%E7%BB%93%E4%B8%8E%E5%BB%B6%E4%BC%B8%E8%B7%AF%E7%BA%BF"><span class="nav-text">8. 小结与延伸路线</span></a></li></ol></div>
             
 
           </div>
