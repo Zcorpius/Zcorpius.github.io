@@ -109,7 +109,7 @@
 <meta property="og:image" content="https://zcorpius.github.io/2026/08/31/WMS%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E4%BB%8B%E7%BB%8D/%E7%B1%BB%E5%85%B3%E7%B3%BB.png">
 <meta property="og:image" content="https://zcorpius.github.io/2026/08/31/WMS%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E4%BB%8B%E7%BB%8D/%E6%A0%91%E5%BD%A2%E5%9B%BE%E5%B1%82%E7%BB%93%E6%9E%84.png">
 <meta property="article:published_time" content="2026-08-31T14:40:24.000Z">
-<meta property="article:modified_time" content="2026-09-01T14:56:50.084Z">
+<meta property="article:modified_time" content="2026-09-03T05:42:34.495Z">
 <meta property="article:author" content="Zcorpius">
 <meta property="article:tag" content="WMS">
 <meta name="twitter:card" content="summary">
@@ -426,7 +426,7 @@
                   <span class="post-meta-item-text">字数统计&#58;</span>
                 
                 <span title="字数统计">
-                  8.2k
+                  8.1k
                 </span>
               
 
@@ -442,7 +442,7 @@
                   <span class="post-meta-item-text">阅读时长 &asymp;</span>
                 
                 <span title="阅读时长">
-                  41
+                  40
                 </span>
               
             </div>
@@ -480,7 +480,7 @@
 <hr>
 <h1 id="2-WindowContainer：窗口树的基类"><a href="#2-WindowContainer：窗口树的基类" class="headerlink" title="2. WindowContainer：窗口树的基类"></a>2. WindowContainer：窗口树的基类</h1><h2 id="2-1-类定义与设计意图"><a href="#2-1-类定义与设计意图" class="headerlink" title="2.1 类定义与设计意图"></a>2.1 类定义与设计意图</h2><p><strong>WindowContainer 是窗口树上所有节点的公共基类</strong> ：</p>
 <ul>
-<li>WMS 里凡是能挂上树的东西（屏、任务、令牌、窗口本身……）都是它的子类.</li>
+<li>WMS 里凡是能挂上树的东西（屏、任务、令牌、窗口本身……）都是它的子类。</li>
 <li><strong>做一个树节点</strong> 所需的全部公共能力（父子关系、Z 序维护、配置分发、动画、layer 分配）都由这个类统一提供。</li>
 </ul>
 <figure class="highlight java"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/base/services/core/java/com/android/server/wm/WindowContainer.java</span></span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * Defines common functionality for classes that can hold windows directly or through their</span></span><br><span class="line"><span class="comment"> * children in a hierarchy form.</span></span><br><span class="line"><span class="comment"> * The test class is {<span class="doctag">@link</span> WindowContainerTests} which must be kept up-to-date and ran anytime</span></span><br><span class="line"><span class="comment"> * changes are made to this class.</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">WindowContainer</span>&lt;E <span class="keyword">extends</span> <span class="title class_">WindowContainer</span>&gt; <span class="keyword">extends</span> <span class="title class_">ConfigurationContainer</span>&lt;E&gt;</span><br><span class="line">        <span class="keyword">implements</span> <span class="title class_">Comparable</span>&lt;WindowContainer&gt;, Animatable, SurfaceFreezer.Freezable,</span><br><span class="line">        InsetsControlTarget {</span><br></pre></td></tr></tbody></table></figure>
@@ -491,11 +491,12 @@
 <li><strong>间接持有</strong>：自己不挂窗口，但沿子树往下走最终会到达窗口。如 <code>RootWindowContainer</code> 只是树根，窗口都在它子树深处的叶子上。</li>
 </ol>
 <p>注释第二句是给 AOSP 贡献者的硬性约定：修改本类必须同步维护并运行 <code>WindowContainerTests</code>。它是整个窗口体系的基石，一处改动波及全树。</p>
-<p>回到类声明，这一行从左到右其实塞了<strong>三个信息点</strong>，下面逐一拆开：</p>
-<p><strong>① 泛型 <code>E</code>——声明”孩子的类型”。</strong> <code>E</code> 用在哪？看 <code>mChildren</code> 的声明：</p>
+<p>回到类声明。这一行从左到右有三个信息点：<strong>泛型 <code>E</code>、父类、四个接口</strong>，逐一拆开。</p>
+<p><strong>① 泛型 <code>E</code>——孩子的类型</strong></p>
+<p><code>E</code> 只用在一个地方——<code>mChildren</code>：</p>
 <figure class="highlight java"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/base/services/core/java/com/android/server/wm/WindowContainer.java</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">protected</span> <span class="keyword">final</span> ArrayList&lt;E&gt; mChildren = <span class="keyword">new</span> <span class="title class_">ArrayList</span>&lt;E&gt;();</span><br></pre></td></tr></tbody></table></figure>
 
-<p><strong><code>E</code> 就是 mChildren 列表的元素类型</strong>。基类自己不知道”孩子会是谁”，于是把这个决定权下放给子类：子类继承时把 <code>E</code> 填成具体类型，父类里的 <code>ArrayList&lt;E&gt;</code> 随之被实例化成”只装这种孩子”的列表——此后由类型系统把关，装不进别的东西。三个实际源码里的填法：</p>
+<p>基类不知道”孩子会是谁”，于是把决定权下放给子类：子类继承时把 <code>E</code> 填成具体类型，<code>ArrayList&lt;E&gt;</code> 就实例化成”只装这种孩子”的列表，装错类型编译期就被挡下。三个实际源码里的填法：</p>
 <table>
 <thead>
 <tr>
@@ -520,25 +521,14 @@
 <td>孩子既可能是 ActivityRecord 也可能是嵌套 Task，只能填公共父类</td>
 </tr>
 </tbody></table>
-<p>收益是<strong>取孩子免强转</strong>。<code>WindowToken</code> 遍历孩子时可以直接写：</p>
-<figure class="highlight java"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">final</span> <span class="type">WindowState</span> <span class="variable">win</span> <span class="operator">=</span> mChildren.get(i);</span><br></pre></td></tr></tbody></table></figure>
-
+<p>附带收益是<strong>取孩子免强转</strong>：<code>WindowToken</code> 遍历孩子时可以直接写 <code>final WindowState win = mChildren.get(i);</code>。</p>
 <div class="markdown-alert markdown-alert-important">
 <p class="markdown-alert-title"><svg class="octicon octicon-report mr-2" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M0 1.75C0 .784.784 0 1.75 0h12.5C15.216 0 16 .784 16 1.75v9.5A1.75 1.75 0 0 1 14.25 13H8.06l-2.573 2.573A1.458 1.458 0 0 1 3 14.543V13H1.75A1.75 1.75 0 0 1 0 11.25Zm1.75-.25a.25.25 0 0 0-.25.25v9.5c0 .138.112.25.25.25h2a.75.75 0 0 1 .75.75v2.19l2.72-2.72a.749.749 0 0 1 .53-.22h6.5a.25.25 0 0 0 .25-.25v-9.5a.25.25 0 0 0-.25-.25Zm7 2.25v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 9a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"></path></svg>Important</p>
-<p>不要把 <code>E extends WindowContainer</code> 认成 Java 教科书里的<strong>自限定泛型</strong>（CRTP）。把两者并排一比就清楚了：</p>
-<ol>
-<li><code>abstract class Enum&lt;E extends Enum&lt;E&gt;&gt;</code> ，其中<code>E</code>表示”我自己这种类型”</li>
-<li><code>class WindowContainer&lt;E extends WindowContainer&gt;</code> ，其中<code>E</code>表示”我的孩子是什么类型”，与自身类型无关。</li>
-</ol>
-<p>所以出现了下面的情况：</p>
-<ul>
-<li><code>WindowState extends WindowContainer&lt;WindowState&gt;</code> 填”自己”只是巧合（窗口的孩子恰好还是窗口，即子窗口）；</li>
-<li><code>WindowToken</code> 自己是 WindowToken、填的却是它的孩子 WindowState；</li>
-<li><code>TaskFragment</code> 的孩子种类不唯一，只能填公共父类。<strong>E 永远回答”孩子是谁”，从不回答”我是谁”。</strong></li>
-</ul>
+<p>不要把 <code>E extends WindowContainer</code> 认成 Java 教科书里的<strong>自限定泛型</strong>（CRTP）：<code>Enum&lt;E extends Enum&lt;E&gt;&gt;</code> 的 <code>E</code> 回答”我是谁”，这里的 <code>E</code> 回答”孩子是谁”。<code>WindowState extends WindowContainer&lt;WindowState&gt;</code> 填”自己”只是巧合——窗口的孩子恰好还是窗口（子窗口）；<code>WindowToken</code> 自己是 WindowToken，填的却是它的孩子 WindowState。<strong>E 永远回答”孩子是谁”，从不回答”我是谁”。</strong></p>
 </div>
-<p><strong>② 父类 <code>ConfigurationContainer&lt;E&gt;</code>——每个节点持有一份配置。</strong> 树上每个节点都有自己的 <code>Configuration</code>（屏幕尺寸、密度、方向、深色模式……），父节点配置变化时沿树向下 <code>onConfigurationChanged</code> 分发，孩子可自行 override。这是”分屏里两个 Activity 配置可以不同”的实现基础（详见 2.4）。</p>
-<p><strong>③ 四个接口——职责跨度。</strong> 一个类实现什么接口，就说明系统期待它”还能干什么”：</p>
+<p><strong>② 父类 <code>ConfigurationContainer&lt;E&gt;</code>——每个节点持有一份配置</strong></p>
+<p>树上每个节点都有自己的 <code>Configuration</code>（屏幕尺寸、密度、方向、深色模式……），父节点配置变化时沿树向下 <code>onConfigurationChanged</code> 分发，孩子可自行 override。这是”分屏里两个 Activity 配置可以不同”的实现基础（详见 2.4）。</p>
+<p><strong>③ 四个接口——除了当容器，这个节点还能干什么</strong></p>
 <table>
 <thead>
 <tr>
@@ -548,7 +538,7 @@
 </thead>
 <tbody><tr>
 <td><code>Comparable&lt;WindowContainer&gt;</code></td>
-<td>同树任意两个节点可比较 Z 序（<code>compareTo</code>，<code>WindowContainer.java:2554</code>）：兄弟按 <code>mChildren</code> 下标，非兄弟上溯到公共祖先再比较分叉点的下标</td>
+<td>同树任意两个节点可比较 Z 序（<code>compareTo</code>，<code>WindowContainer.java:2554</code>）：兄弟按 <code>mChildren</code> 下标，非兄弟上溯到公共祖先再比较分叉点的下标。这让”谁上谁下”有了统一定义，是 <code>addChild(E, Comparator)</code> 排序插入、动画按 Z 序遍历孩子的基础</td>
 </tr>
 <tr>
 <td><code>Animatable</code></td>
@@ -563,9 +553,6 @@
 <td>作为 SystemBar 内边距（状态栏/导航栏 Inset）的控制目标</td>
 </tr>
 </tbody></table>
-<blockquote>
-<p>其中 <code>Comparable</code> 让”任意两个节点谁上谁下”有了统一定义，是  <code>addChild(E, Comparator)</code> 排序插入、以及动画按 Z 序遍历孩子的基础。</p>
-</blockquote>
 <h2 id="2-2-两个核心成员"><a href="#2-2-两个核心成员" class="headerlink" title="2.2 两个核心成员"></a>2.2 两个核心成员</h2><figure class="highlight java"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/base/services/core/java/com/android/server/wm/WindowContainer.java</span></span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * The parent of this window container.</span></span><br><span class="line"><span class="comment"> * For removing or setting new parent {<span class="doctag">@link</span> #setParent} should be used, because it also</span></span><br><span class="line"><span class="comment"> * performs configuration updates based on new parent's settings.</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">private</span> WindowContainer&lt;WindowContainer&gt; mParent = <span class="literal">null</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">// List of children for this window container. List is in z-order as the children appear on</span></span><br><span class="line"><span class="comment">// screen with the top-most window container at the tail of the list.</span></span><br><span class="line"><span class="keyword">protected</span> <span class="keyword">final</span> ArrayList&lt;E&gt; mChildren = <span class="keyword">new</span> <span class="title class_">ArrayList</span>&lt;E&gt;();</span><br></pre></td></tr></tbody></table></figure>
 
 <p>两个要点：</p>
