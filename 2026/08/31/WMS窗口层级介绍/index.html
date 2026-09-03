@@ -109,7 +109,7 @@
 <meta property="og:image" content="https://zcorpius.github.io/2026/08/31/WMS%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E4%BB%8B%E7%BB%8D/%E7%B1%BB%E5%85%B3%E7%B3%BB.png">
 <meta property="og:image" content="https://zcorpius.github.io/2026/08/31/WMS%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E4%BB%8B%E7%BB%8D/%E6%A0%91%E5%BD%A2%E5%9B%BE%E5%B1%82%E7%BB%93%E6%9E%84.png">
 <meta property="article:published_time" content="2026-08-31T14:40:24.000Z">
-<meta property="article:modified_time" content="2026-09-03T05:42:34.495Z">
+<meta property="article:modified_time" content="2026-09-03T06:05:27.308Z">
 <meta property="article:author" content="Zcorpius">
 <meta property="article:tag" content="WMS">
 <meta name="twitter:card" content="summary">
@@ -426,7 +426,7 @@
                   <span class="post-meta-item-text">字数统计&#58;</span>
                 
                 <span title="字数统计">
-                  8.1k
+                  8.7k
                 </span>
               
 
@@ -442,7 +442,7 @@
                   <span class="post-meta-item-text">阅读时长 &asymp;</span>
                 
                 <span title="阅读时长">
-                  40
+                  42
                 </span>
               
             </div>
@@ -553,6 +553,26 @@
 <td>作为 SystemBar 内边距（状态栏/导航栏 Inset）的控制目标</td>
 </tr>
 </tbody></table>
+<p><strong>最后补两个初读 <code>E</code> 时最容易卡住的点</strong> ：</p>
+<ul>
+<li><code>E</code> 划下的约束究竟约束谁</li>
+<li><code>ArrayList&lt;WindowState&gt;</code> 这个类型从何而来。</li>
+</ul>
+<p><code>E extends WindowContainer</code> 保证的是：孩子一定是树上的合法节点。这不是限制子类，而是基类自己的需要，方法体里到处是对孩子的”节点级”操作，孩子不是 WindowContainer，这些调用就编译不过。</p>
+<p>但上界只划了最宽的范围，具体能装什么，看子类把 <code>E</code> 填成了什么——通常比上限严得多：</p>
+<figure class="highlight java"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">WindowToken</span> <span class="keyword">extends</span> <span class="title class_">WindowContainer</span>&lt;WindowState&gt; { }</span><br><span class="line"></span><br><span class="line"><span class="comment">// 在 WindowToken（及其子类 ActivityRecord）里：</span></span><br><span class="line">mChildren.add(someTask);          <span class="comment">// ❌ 编译错误：Task 不是 WindowState</span></span><br><span class="line">mChildren.add(someWindowState);   <span class="comment">// ✅ 只能放窗口</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">TaskFragment</span> <span class="keyword">extends</span> <span class="title class_">WindowContainer</span>&lt;WindowContainer&gt; { }</span><br><span class="line"><span class="comment">// Task 的孩子既可能是 ActivityRecord 也可能是嵌套的 TaskFragment，</span></span><br><span class="line"><span class="comment">// 没有单一类型能概括，只能填公共父类——它和 TaskDisplayArea 是</span></span><br><span class="line"><span class="comment">// 全树少数几个把上限"用满"的容器</span></span><br></pre></td></tr></tbody></table></figure>
+
+
+
+<p>其次，源码里没有人写过 <code>ArrayList&lt;WindowState&gt; mChildren</code>。<code>E</code> 只是基类里的占位符：子类写下 <code>extends WindowContainer&lt;WindowState&gt;</code> 时，编译器把基类里所有的 <code>E</code> 都替换成 <code>WindowState</code>，这和把 x = 3 代入 f(x) 是一回事：</p>
+<figure class="highlight java"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 基类里写的是（E 是占位符）：</span></span><br><span class="line"><span class="keyword">protected</span> <span class="keyword">final</span> ArrayList&lt;E&gt; mChildren = <span class="keyword">new</span> <span class="title class_">ArrayList</span>&lt;E&gt;();</span><br><span class="line">E <span class="title function_">getChildAt</span><span class="params">(<span class="type">int</span> index)</span> { ... }</span><br><span class="line"></span><br><span class="line"><span class="comment">// WindowToken 继承后，这些成员变成：</span></span><br><span class="line"><span class="keyword">protected</span> <span class="keyword">final</span> ArrayList&lt;WindowState&gt; mChildren = <span class="keyword">new</span> <span class="title class_">ArrayList</span>&lt;WindowState&gt;();</span><br><span class="line">WindowState <span class="title function_">getChildAt</span><span class="params">(<span class="type">int</span> index)</span> { ... }   <span class="comment">// "取孩子免强转"的来源</span></span><br></pre></td></tr></tbody></table></figure>
+
+<p>注意 <code>ArrayList&lt;E&gt;</code> 里叠着两层泛型：</p>
+<ol>
+<li>外层尖括号是 <strong>ArrayList 自己的参数</strong>，回答”这个列表装什么类型”；</li>
+<li>内里的 <code>E</code> 是 <strong>WindowContainer 的占位符</strong>，由子类来填。</li>
+</ol>
+<p><code>ArrayList</code> 说”我装 <code>E</code>“，<code>E</code> 被填成 <code>WindowState</code>，<code>ArrayList&lt;E&gt;</code> 就随之成了 <code>ArrayList&lt;WindowState&gt;</code>。</p>
 <h2 id="2-2-两个核心成员"><a href="#2-2-两个核心成员" class="headerlink" title="2.2 两个核心成员"></a>2.2 两个核心成员</h2><figure class="highlight java"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/base/services/core/java/com/android/server/wm/WindowContainer.java</span></span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * The parent of this window container.</span></span><br><span class="line"><span class="comment"> * For removing or setting new parent {<span class="doctag">@link</span> #setParent} should be used, because it also</span></span><br><span class="line"><span class="comment"> * performs configuration updates based on new parent's settings.</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">private</span> WindowContainer&lt;WindowContainer&gt; mParent = <span class="literal">null</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">// List of children for this window container. List is in z-order as the children appear on</span></span><br><span class="line"><span class="comment">// screen with the top-most window container at the tail of the list.</span></span><br><span class="line"><span class="keyword">protected</span> <span class="keyword">final</span> ArrayList&lt;E&gt; mChildren = <span class="keyword">new</span> <span class="title class_">ArrayList</span>&lt;E&gt;();</span><br></pre></td></tr></tbody></table></figure>
 
 <p>两个要点：</p>
@@ -614,73 +634,59 @@
 <tr>
 <th>类</th>
 <th>一句话职责</th>
-<th>文件</th>
 </tr>
 </thead>
 <tbody><tr>
 <td><code>RootWindowContainer</code></td>
-<td>树根，注释仅一句 “Root WindowContainer for the device”，孩子是各 <code>DisplayContent</code></td>
-<td><code>RootWindowContainer.java</code></td>
+<td>整棵树的树根，管理设备上的所有 <code>DisplayContent</code>；跨屏全局操作的入口：遍历全部窗口、按屏查找、恢复焦点 Activity 等</td>
 </tr>
 <tr>
 <td><code>DisplayContent</code></td>
-<td>一块逻辑屏（内置屏/外接屏/虚拟屏各一个），持有该屏的动画、旋转、输入法焦点等状态</td>
-<td><code>DisplayContent.java</code></td>
+<td>一块逻辑屏（内置/外接/虚拟屏各一个），持有该屏特有的状态：旋转、动画、输入法焦点，以及完整的 DisplayArea 层级</td>
 </tr>
 <tr>
 <td><code>RootDisplayArea</code></td>
-<td>DisplayArea 层级的根：整个屏（DisplayContent）或屏内分区（DisplayAreaGroup）</td>
-<td><code>RootDisplayArea.java</code></td>
+<td>一棵 DisplayArea 子树的根，被 <code>DisplayContent</code>（整屏）和 <code>DisplayAreaGroup</code>（屏内分区）继承，为子树统一应用分组与层级规则</td>
 </tr>
 <tr>
 <td><code>DisplayAreaGroup</code></td>
-<td>“The root of a partition of the logical display”，用于一块屏内划分多个应用区（如折叠屏/车机多区）</td>
-<td><code>DisplayAreaGroup.java</code></td>
+<td>把一块逻辑屏划分成多个独立分区，每个分区各持一棵自己的 DA 子树（折叠屏、车机多显示区的基础）</td>
 </tr>
 <tr>
 <td><code>DisplayArea</code></td>
-<td>“Container for grouping WindowContainer below DisplayContent”，一组窗口的合集，由 <code>DisplayAreaPolicy</code> 管理</td>
-<td><code>DisplayArea.java</code></td>
+<td>功能分组节点：把一段层区间内的容器圈成一组，让 Feature（放大、单手模式、隐藏挖孔……）能对这组窗口整体生效</td>
 </tr>
 <tr>
 <td><code>DisplayArea.Tokens</code></td>
-<td>“DisplayArea that contains WindowTokens, and orders them according to their type”，按 type 排序装 WindowToken 的叶子容器</td>
-<td><code>DisplayArea.java</code></td>
+<td>只装 <code>WindowToken</code> 的叶子节点，系统窗口按 type→layer 的顺序在其中入位</td>
 </tr>
 <tr>
 <td><code>ImeContainer</code></td>
-<td>输入法专用 Tokens，layer 分配被忽略、由 IME 目标窗口决定</td>
-<td><code>DisplayContent.java</code></td>
+<td>输入法专用的 Tokens，layer 分配被忽略——输入法窗口的实际层级由 IME 目标窗口决定</td>
 </tr>
 <tr>
 <td><code>TaskDisplayArea</code></td>
-<td>“represents a section of a screen that contains app window containers”，孩子为 <code>Task</code> 或 <code>TaskDisplayArea</code></td>
-<td><code>TaskDisplayArea.java</code></td>
+<td>屏上的应用区，所有 <code>Task</code> 的挂载点（<code>DefaultTaskDisplayArea</code> 即默认实例），也可承载子 <code>TaskDisplayArea</code></td>
 </tr>
 <tr>
 <td><code>TaskFragment</code></td>
-<td>“A basic container that can be used to contain activities or other TaskFragment”，管理内部 Activity 生命周期与可见性（嵌入式/分屏的基本单元）</td>
-<td><code>TaskFragment.java</code></td>
+<td>Activity 的分组容器，管理组内 Activity 的可见性与生命周期协同，是分屏、Activity 嵌入的基本单元</td>
 </tr>
 <tr>
 <td><code>Task</code></td>
-<td>“a TaskFragment that can contain a group of activities”，即任务/Activity 栈，也是 Recents 中的卡片，可嵌套 Task</td>
-<td><code>Task.java</code></td>
+<td>任务即 Activity 栈：整栈一起切换前后台、统一应用 windowingMode 与 bounds，也是 Recents 里的那张卡片；可嵌套 Task</td>
 </tr>
 <tr>
 <td><code>ActivityRecord</code></td>
-<td>“An entry in the history task, representing an activity”，AMS 侧 token 在 WM 侧的化身</td>
-<td><code>ActivityRecord.java</code></td>
+<td>一个 Activity 在 WM 侧的代表与 token 校验锚点，负责该 Activity 窗口的可见性、动画与生命周期联动</td>
 </tr>
 <tr>
 <td><code>WindowToken</code></td>
-<td>“Container of a set of related windows”，一组相关窗口的容器（一个 Activity 的主窗口+子窗口）</td>
-<td><code>WindowToken.java</code></td>
+<td>同一 token 下相关窗口的容器，统一控制这组窗口的可见性与动画；Activity 用子类 <code>ActivityRecord</code>，系统窗口各有一个普通 token</td>
 </tr>
 <tr>
 <td><code>WindowState</code></td>
-<td>“A window in the window manager”，一个真正的窗口，树的叶子</td>
-<td><code>WindowState.java</code></td>
+<td>一个真正的窗口：持有窗口属性、Surface 与输入通道，是焦点和动画的最终作用对象；Dialog 等子窗口可挂为它的孩子</td>
 </tr>
 </tbody></table>
 <p> 需要重点澄清的几个点</p>
