@@ -544,7 +544,8 @@
     SS --&gt; Services["Bootstrap / Core / Other Services&lt;br/&gt;AMS、WMS、PMS、IMS ..."]
     Services --&gt; Launch["AMS 请求 Zygote 创建应用进程"]
     Z --&gt; App["App 进程&lt;br/&gt;ActivityThread.main"]
-    App &lt;--&gt;|Binder| Services<!------></pre>
+    App --&gt;|Binder 请求| Services
+    Services --&gt;|Binder 回调| App</pre>
 
 <h2 id="2-1-Boot-ROM、Boot-Loader-与-Kernel：把“系统”带到用户空间门口"><a href="#2-1-Boot-ROM、Boot-Loader-与-Kernel：把“系统”带到用户空间门口" class="headerlink" title="2.1 Boot ROM、Boot Loader 与 Kernel：把“系统”带到用户空间门口"></a>2.1 Boot ROM、Boot Loader 与 Kernel：把“系统”带到用户空间门口</h2><ol>
 <li>芯片固化的 Boot ROM 运行最初代码，并验证/加载下一阶段；</li>
