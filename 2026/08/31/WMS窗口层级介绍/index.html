@@ -107,13 +107,14 @@
 <meta property="og:description" content="1. 概述WMS（WindowManagerService）内部用一棵树管理系统中所有的窗口，这棵树的每一个节点都是WindowContainer 的子类。理解这棵树是理解 WMS 的第一步，因为：  Z 轴顺序（谁盖在谁上面）由节点在树中的位置决定； Configuration 分发（屏幕大小、密度、深色模式等）沿树从父到子传播； Surface 层级（渲染合成）按树的结构分配 layer； A">
 <meta property="og:locale">
 <meta property="og:image" content="https://zcorpius.github.io/2026/08/31/WMS%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E4%BB%8B%E7%BB%8D/%E7%B1%BB%E5%85%B3%E7%B3%BB.png">
+<meta property="og:image" content="https://zcorpius.github.io/2026/08/31/WMS%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E4%BB%8B%E7%BB%8D/WMS%E5%AE%B9%E5%99%A8%E5%85%B3%E7%B3%BB%E6%80%BB%E5%9B%BE.png">
 <meta property="og:image" content="https://zcorpius.github.io/2026/08/31/WMS%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E4%BB%8B%E7%BB%8D/%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E6%98%BE%E7%A4%BA-%E5%B1%8F%E5%B9%95%E5%8F%A0%E5%B1%82.png">
 <meta property="og:image" content="https://zcorpius.github.io/2026/08/31/WMS%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E4%BB%8B%E7%BB%8D/%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E6%98%BE%E7%A4%BA-%E5%AE%B9%E5%99%A8%E6%A0%91.png">
 <meta property="og:image" content="https://zcorpius.github.io/2026/08/31/WMS%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E4%BB%8B%E7%BB%8D/%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E6%98%BE%E7%A4%BA-Z%E8%BD%B4.png">
 <meta property="og:image" content="https://zcorpius.github.io/2026/08/31/WMS%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E4%BB%8B%E7%BB%8D/%E6%A0%91%E5%BD%A2%E5%9B%BE%E5%B1%82%E7%BB%93%E6%9E%84.png">
 <meta property="og:image" content="https://zcorpius.github.io/2026/08/31/WMS%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E4%BB%8B%E7%BB%8D/%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E5%B0%8F%E7%BB%93.png">
 <meta property="article:published_time" content="2026-08-31T14:40:24.000Z">
-<meta property="article:modified_time" content="2026-09-03T08:59:11.922Z">
+<meta property="article:modified_time" content="2026-09-04T05:10:01.732Z">
 <meta property="article:author" content="Zcorpius">
 <meta property="article:tag" content="WMS">
 <meta name="twitter:card" content="summary">
@@ -430,7 +431,7 @@
                   <span class="post-meta-item-text">字数统计&#58;</span>
                 
                 <span title="字数统计">
-                  12.2k
+                  12.6k
                 </span>
               
 
@@ -446,7 +447,7 @@
                   <span class="post-meta-item-text">阅读时长 &asymp;</span>
                 
                 <span title="阅读时长">
-                  56
+                  57
                 </span>
               
             </div>
@@ -662,77 +663,107 @@
 <thead>
 <tr>
 <th>类</th>
-<th>一句话职责</th>
+<th>在整棵树中的位置</th>
+<th>核心职责</th>
 </tr>
 </thead>
 <tbody><tr>
 <td><code>RootWindowContainer</code></td>
-<td>整棵树的树根，管理设备上的所有 <code>DisplayContent</code>；跨屏全局操作的入口：遍历全部窗口、按屏查找、恢复焦点 Activity 等</td>
+<td>全局根节点</td>
+<td>管理所有 <code>DisplayContent</code>，负责跨屏遍历、全局焦点、Activity 可见性恢复、Surface Placement 等全局操作</td>
 </tr>
 <tr>
 <td><code>DisplayContent</code></td>
-<td>一块逻辑屏（内置/外接/虚拟屏各一个），持有该屏特有的状态：旋转、动画、输入法焦点，以及完整的 DisplayArea 层级</td>
+<td>一块逻辑屏的根</td>
+<td>保存该屏的旋转、Insets、壁纸、动画、输入、IME 和焦点状态，同时作为整屏 <code>RootDisplayArea</code></td>
 </tr>
 <tr>
 <td><code>RootDisplayArea</code></td>
-<td>一棵 DisplayArea 子树的根，被 <code>DisplayContent</code>（整屏）和 <code>DisplayAreaGroup</code>（屏内分区）继承，为子树统一应用分组与层级规则</td>
+<td>一棵 DA 子树的根</td>
+<td>保存 Feature 到 DisplayArea、window layer 到 Tokens 的映射，统一管理一棵 DisplayArea 子树</td>
 </tr>
 <tr>
 <td><code>DisplayAreaGroup</code></td>
-<td>把一块逻辑屏划分成多个独立分区，每个分区各持一棵自己的 DA 子树（折叠屏、车机多显示区的基础）</td>
+<td>屏内分区根</td>
+<td>在一块逻辑屏中创建独立分区，每个分区可以拥有自己的 DA、TDA、bounds 和 configuration</td>
 </tr>
 <tr>
 <td><code>DisplayArea</code></td>
-<td>功能分组节点：把一段层区间内的容器圈成一组，让 Feature（放大、单手模式、隐藏挖孔……）能对这组窗口整体生效</td>
+<td>功能分组节点</td>
+<td>把一段 window layer 范围组织成可整体变换、裁剪、放大或交给 Organizer 管理的容器</td>
 </tr>
 <tr>
 <td><code>DisplayArea.Tokens</code></td>
-<td>只装 <code>WindowToken</code> 的叶子节点，系统窗口按 type→layer 的顺序在其中入位</td>
+<td>非应用窗口叶子节点</td>
+<td>只容纳 <code>WindowToken</code>，并按照 window type 对应的 policy layer 排序</td>
 </tr>
 <tr>
 <td><code>ImeContainer</code></td>
-<td>输入法专用的 Tokens，layer 分配被忽略——输入法窗口的实际层级由 IME 目标窗口决定</td>
+<td>IME 专用 Tokens</td>
+<td>容纳 IME token；实际 Surface 层级通常相对 IME target 动态设置</td>
 </tr>
 <tr>
 <td><code>TaskDisplayArea</code></td>
-<td>屏上的应用区，所有 <code>Task</code> 的挂载点（<code>DefaultTaskDisplayArea</code> 即默认实例），也可承载子 <code>TaskDisplayArea</code></td>
+<td>应用窗口入口</td>
+<td>位于 application layer，容纳 root Task，也允许嵌套子 <code>TaskDisplayArea</code></td>
 </tr>
 <tr>
 <td><code>TaskFragment</code></td>
-<td>Activity 的分组容器，管理组内 Activity 的可见性与生命周期协同，是分屏、Activity 嵌入的基本单元</td>
+<td>Activity 分组容器</td>
+<td>管理一组 Activity 或子 TaskFragment 的遮挡、可见性和生命周期协同</td>
 </tr>
 <tr>
 <td><code>Task</code></td>
-<td>任务即 Activity 栈：整栈一起切换前后台、统一应用 windowingMode 与 bounds，也是 Recents 里的那张卡片；可嵌套 Task</td>
+<td>带任务身份的 TaskFragment</td>
+<td>在 TaskFragment 能力上增加 taskId、Intent、affinity、Recents、windowingMode、bounds 等任务语义</td>
 </tr>
 <tr>
 <td><code>ActivityRecord</code></td>
-<td>一个 Activity 在 WM 侧的代表与 token 校验锚点，负责该 Activity 窗口的可见性、动画与生命周期联动</td>
+<td>Activity 在系统服务侧的代表</td>
+<td>同时承担 Activity 状态记录和应用窗口 token 的职责，连接 ATMS 生命周期与 WMS 窗口管理</td>
 </tr>
 <tr>
 <td><code>WindowToken</code></td>
-<td>同一 token 下相关窗口的容器，统一控制这组窗口的可见性与动画；Activity 用子类 <code>ActivityRecord</code>，系统窗口各有一个普通 token</td>
+<td>一组相关 WindowState 的容器</td>
+<td>通过 Binder token 标识一组窗口，统一承接配置、可见性、动画和 Surface 容器</td>
 </tr>
 <tr>
 <td><code>WindowState</code></td>
-<td>一个真正的窗口：持有窗口属性、Surface 与输入通道，是焦点和动画的最终作用对象；Dialog 等子窗口可挂为它的孩子</td>
+<td>具体窗口节点</td>
+<td>保存 <code>LayoutParams</code>、客户端、输入信息、窗口层级和动画状态，是布局与显示的最终作用对象</td>
 </tr>
 </tbody></table>
-<p> 需要重点澄清的几个点</p>
-<p><strong>（1）DisplayArea 的三种“口味”</strong></p>
-<figure class="highlight java"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/base/services/core/java/com/android/server/wm/DisplayArea.java</span></span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * DisplayAreas come in three flavors, to ensure that windows have the right Z-Order:</span></span><br><span class="line"><span class="comment"> * - BELOW_TASKS:  Can only contain BELOW_TASK DisplayAreas and WindowTokens that go below tasks.</span></span><br><span class="line"><span class="comment"> * - ABOVE_TASKS:  Can only contain ABOVE_TASK DisplayAreas and WindowTokens that go above tasks.</span></span><br><span class="line"><span class="comment"> * - ANY:          Can contain any kind of DisplayArea, and any kind of WindowToken or the Task</span></span><br><span class="line"><span class="comment"> *                 container.</span></span><br><span class="line"><span class="comment"> */</span></span><br></pre></td></tr></tbody></table></figure>
+<p>WMS 的核心容器体系压缩成下面这张带关系说明的总图：</p>
+<figure class="highlight text"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><span class="line">图例：└──/├── = contains（容器父子关系）</span><br><span class="line">      is-a  = extends（继承关系，不是额外对象层级）</span><br><span class="line">      ↓     = 决策或结果向下传递</span><br><span class="line"></span><br><span class="line">RootWindowContainer                         全设备窗口树根</span><br><span class="line">└── DisplayContent                          一块逻辑屏</span><br><span class="line">    └─ is-a RootDisplayArea                 整屏本身就是一棵 DA 子树根</span><br><span class="line">        └── Feature DisplayArea             按 Feature/window layer 分组</span><br><span class="line">            │</span><br><span class="line">            ├── 应用窗口</span><br><span class="line">            │   └── TaskDisplayArea         应用任务挂载区</span><br><span class="line">            │       └── Task                is-a TaskFragment</span><br><span class="line">            │           ├── ActivityRecord  is-a WindowToken</span><br><span class="line">            │           │   └── WindowState 具体应用窗口</span><br><span class="line">            │           └── TaskFragment [可选，Activity Embedding]</span><br><span class="line">            │               └── ActivityRecord</span><br><span class="line">            │                   └── WindowState</span><br><span class="line">            │</span><br><span class="line">            ├── 普通系统窗口</span><br><span class="line">            │   └── DisplayArea.Tokens      按 type/layer 放置 token</span><br><span class="line">            │       └── WindowToken</span><br><span class="line">            │           └── WindowState     具体系统窗口</span><br><span class="line">            │</span><br><span class="line">            └── 输入法窗口</span><br><span class="line">                └── ImeContainer            is-a DisplayArea.Tokens</span><br><span class="line">                    └── WindowToken</span><br><span class="line">                        └── WindowState      具体 IME 窗口</span><br><span class="line"></span><br><span class="line">三条路径汇聚的含义：上层组织方式不同，但具体窗口节点都是 WindowState</span><br><span class="line">                                      ↓</span><br><span class="line">WindowState 将上层容器决策具体化到单个窗口</span><br><span class="line">                                      ↓</span><br><span class="line">├── WindowFrames                       最终布局 frame</span><br><span class="line">├── InputWindowHandle                  输入命中所需描述</span><br><span class="line">├── focusable/visible 状态             窗口焦点与可见性资格</span><br><span class="line">├── WindowStateAnimator                单窗口绘制、显示和动画状态</span><br><span class="line">└── SurfaceControl                     位置、裁剪、layer、show/hide</span><br><span class="line">                                      ↓</span><br><span class="line">                       客户端通过 Surface 绘制并提交 Buffer</span><br><span class="line">                                      ↓</span><br><span class="line">                          SurfaceFlinger 合成到屏幕</span><br></pre></td></tr></tbody></table></figure>
 
-<p>即 DA 分为以下三类，由构建算法根据 minLayer/maxLayer 相对 <code>APPLICATION_LAYER=2</code> 的位置自动判定，从类型系统上保证壁纸永远不会插到应用上面这类错误。</p>
+<img src="/2026/08/31/WMS%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E4%BB%8B%E7%BB%8D/WMS容器关系总图.png" width="900px">
+
+<blockquote>
+<p>阅读时注意：</p>
 <ul>
-<li>只能在 Task 之下</li>
-<li>只能在 Task 之上</li>
-<li>任意</li>
+<li>蓝色路线表示应用窗口：<code>TaskDisplayArea → Task → ActivityRecord → WindowState</code>；只有 Activity Embedding 等场景才会额外经过纯 <code>TaskFragment</code>。</li>
+<li>橙色路线表示普通系统窗口：<code>DisplayArea.Tokens → WindowToken → WindowState</code>。</li>
+<li>紫色路线表示输入法窗口：<code>ImeContainer → WindowToken → WindowState</code>。</li>
+<li>实线 <code>contains</code> 表示对象树中的容器父子关系，不是 Java 继承。</li>
+<li>黄色 <code>is-a</code> 标牌表示 Java <code>extends</code> 继承关系，不代表运行时又增加了一层容器对象。</li>
+<li>三条路线末尾绘制的 <code>WindowState</code> 是同一种类的不同实例，不是三个不同子类。</li>
+<li>底部四个工具格表示 WindowState 承载的具体窗口结果；再往下才是客户端 Buffer 和 SurfaceFlinger 合成。</li>
+<li>右下角的手机爆炸图补充展示 Z 轴关系：跨 layer 先比较策略层级，同 layer 再由容器树中的兄弟顺序决定前后。</li>
 </ul>
-<p><strong>（2）AMS 与 WMS 的桥</strong></p>
-<p><code>ActivityRecord</code> 继承 <code>WindowToken</code>、<code>Task</code> 继承 <code>TaskFragment</code>（WM 侧容器），但它们同时持有 AMS 侧的 token/ATM 引用——AMS 负责 Activity 生命周期与进程，WMS 负责窗口与层级，两边通过这棵共享的容器树协作。</p>
-<p><code>dumpsys activity containers</code> 之所以能同时看到 Task 和窗口，就是因为它们在同一棵树上。</p>
-<p><strong>（3）WindowState 也能有孩子</strong></p>
-<p><code>WindowState extends WindowContainer&lt;WindowState&gt;</code>：Dialog 之类的子窗口（<code>TYPE_APPLICATION_PANEL/SUB_PANEL/ATTACHED_DIALOG</code>）作为孩子挂在父窗口下，与父窗口共进退（可见性、动画）。</p>
+</blockquote>
+<p>其中从 <code>WindowState</code> 向下的箭头，不表示 Layout、Input、Focus、Animation 和 Surface 全由 WindowState 独自完成，而表示：</p>
+<figure class="highlight text"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">上层容器负责作出整体决策</span><br><span class="line">    ↓</span><br><span class="line">WindowState 承载某个具体窗口的最终结果</span><br><span class="line">    ↓</span><br><span class="line">输入系统、动画系统和图形系统据此完成分发与呈现</span><br></pre></td></tr></tbody></table></figure>
+
+<p>真正需要记住的三个连接点是：</p>
+<ol>
+<li><strong>TaskDisplayArea</strong>：把 DisplayArea 的空间/Z-order 体系连接到 Task 的任务体系。</li>
+<li><strong>ActivityRecord extends WindowToken</strong>：把 ATMS 的 Activity 生命周期连接到 WMS 的窗口 token。</li>
+<li><strong>WindowState</strong>：把上层所有抽象最终落到一个可布局、可接收输入、可参与动画并拥有 Surface 的真实窗口节点。</li>
+</ol>
+<p>掌握这三点以后，再看 Activity 启动、分屏、自由窗口、PiP、IME、状态栏或者多显示屏，实际上都可以还原为三个基本动作：</p>
+<figure class="highlight text"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">选择父容器 → 把节点挂进树 → 重新计算可见性、配置和 Surface 层级</span><br></pre></td></tr></tbody></table></figure>
+
+<p>这正是 Android WindowManager 用一棵统一容器树解决复杂窗口管理问题的核心思路。</p>
 <hr>
 <h1 id="4-窗口层级体系"><a href="#4-窗口层级体系" class="headerlink" title="4. 窗口层级体系"></a>4. 窗口层级体系</h1><h2 id="4-1-层从哪来"><a href="#4-1-层从哪来" class="headerlink" title="4.1 层从哪来"></a>4.1 层从哪来</h2><p>每个 <code>WindowState</code> 有一个窗口类型 <code>type</code>（<code>WindowManager.LayoutParams.type</code>，应用窗口 1–99，系统窗口 2000–2999），WMS 通过 <code>WindowManagerPolicy.getWindowLayerFromTypeLw(type, canAddInternalSystemWindow, roundedCornerOverlay)</code> 把 type 映射成 <strong>layer（0–36 的整数）</strong>。</p>
 <p>核心逻辑：</p>
