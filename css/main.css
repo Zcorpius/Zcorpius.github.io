@@ -1857,7 +1857,7 @@ pre {
   width: 4px;
   height: 4px;
   border-radius: 50%;
-  background: #ff0bec;
+  background: #d2bf38;
 }
 .links-of-blogroll {
   font-size: 13px;
@@ -3565,15 +3565,17 @@ embed {
 }
 .post-body figure.highlight {
   position: relative;
-  margin: 18px 0;
+  margin: 20px 0;
+  padding: 0 !important;
   overflow: hidden;
   background: #f6f8fa;
   border: 1px solid rgba(0,0,0,0.12);
   border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  box-shadow: 0 3px 12px rgba(0,0,0,0.05);
 }
 .post-body .nx-code-body {
   overflow-x: auto;
+  background: #f6f8fa;
 }
 .post-body figure.highlight table {
   margin: 0;
@@ -3608,12 +3610,13 @@ embed {
   background: transparent;
 }
 .post-body .nx-code-header {
+  position: relative;
   display: flex;
   align-items: center;
-  height: 34px;
+  height: 38px;
   padding: 0 12px;
-  background: rgba(0,0,0,0.04);
-  border-bottom: 1px solid rgba(0,0,0,0.08);
+  background: linear-gradient(180deg, rgba(255,255,255,0.55), rgba(0,0,0,0.025));
+  border-bottom: 1px solid rgba(0,0,0,0.09);
 }
 .post-body .nx-dots {
   width: 40px;
@@ -3623,35 +3626,35 @@ embed {
 }
 .post-body .nx-code-lang {
   margin-left: 10px;
-  padding: 1px 8px;
-  color: #6a737d;
-  border-radius: 999px;
+  padding: 0;
+  color: #8c8c8c;
   font-size: 11px;
-  font-weight: 600;
+  font-weight: 500;
   letter-spacing: 0.04em;
   text-transform: lowercase;
   user-select: none;
 }
 .post-body .nx-copy {
   margin-left: auto;
-  padding: 2px 10px;
+  padding: 4px 9px;
   font-size: 12px;
-  color: #6a737d;
+  color: #8c8c8c;
   background: transparent;
-  border: 1px solid rgba(0,0,0,0.08);
-  border-radius: 6px;
+  border: 0;
+  border-radius: 5px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  opacity: 0.65;
+  transition: color 0.2s ease, background 0.2s ease, opacity 0.2s ease;
 }
 .post-body .nx-copy:hover {
-  color: #fff;
-  background: #0593d3;
-  border-color: #0593d3;
+  color: #0478a8;
+  background: rgba(0,0,0,0.06);
+  opacity: 1;
 }
 .post-body .nx-copy.copied {
   color: #fff;
   background: #2da44e;
-  border-color: #2da44e;
+  opacity: 1;
 }
 .post-body figure.highlight .keyword,
 .post-body figure.highlight .selector-tag,
