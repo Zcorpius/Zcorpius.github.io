@@ -102,28 +102,28 @@
 <meta name="description" content="1. 前言这篇主要介绍《WMS&#x2F;AMS 窗口层级介绍》中层级树是如何创建的。先给全程调用链，后面每节展开一段： 12345678910111213141516171819SystemServer.startOtherServices()                    ← ATMS 在更早的 startBootstrapServices() 已启动  ├─ DisplayManager(等默">
 <meta property="og:type" content="article">
 <meta property="og:title" content="WMS&#x2F;AMS 层级树创建">
-<meta property="og:url" content="https://zcorpius.github.io/2026/09/03/WMS%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E5%88%9B%E5%BB%BA/index.html">
+<meta property="og:url" content="https://zcorpius.github.io/2026/09/06/WMS%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E5%88%9B%E5%BB%BA/index.html">
 <meta property="og:site_name" content="Zcorpius&#39;s Blog">
 <meta property="og:description" content="1. 前言这篇主要介绍《WMS&#x2F;AMS 窗口层级介绍》中层级树是如何创建的。先给全程调用链，后面每节展开一段： 12345678910111213141516171819SystemServer.startOtherServices()                    ← ATMS 在更早的 startBootstrapServices() 已启动  ├─ DisplayManager(等默">
 <meta property="og:locale">
-<meta property="og:image" content="https://zcorpius.github.io/2026/09/03/WMS%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E5%88%9B%E5%BB%BA/WMS%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E5%88%9B%E5%BB%BA-%E8%B0%83%E7%94%A8%E9%93%BE%E6%BC%AB%E7%94%BB-v4.png">
-<meta property="og:image" content="https://zcorpius.github.io/2026/09/03/WMS%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E5%88%9B%E5%BB%BA/WMS%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E5%88%9B%E5%BB%BA-3.1.2%E5%BB%BA%E6%A0%91%E5%85%A5%E5%8F%A3%E6%BC%AB%E7%94%BB.png">
-<meta property="og:image" content="https://zcorpius.github.io/2026/09/03/WMS%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E5%88%9B%E5%BB%BA/WMS%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E5%88%9B%E5%BB%BA-3.1.3-01-WM%E9%AA%A8%E6%9E%B6%E6%BC%AB%E7%94%BB.png">
-<meta property="og:image" content="https://zcorpius.github.io/2026/09/03/WMS%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E5%88%9B%E5%BB%BA/WMS%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E5%88%9B%E5%BB%BA-3.1.3-02-HDC%E9%AA%A8%E6%9E%B6%E6%BC%AB%E7%94%BB.png">
-<meta property="og:image" content="https://zcorpius.github.io/2026/09/03/WMS%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E5%88%9B%E5%BB%BA/WMS%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E5%88%9B%E5%BB%BA-3.1.3-03-OH%E9%AA%A8%E6%9E%B6%E6%BC%AB%E7%94%BB.png">
-<meta property="og:image" content="https://zcorpius.github.io/2026/09/03/WMS%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E5%88%9B%E5%BB%BA/WMS%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E5%88%9B%E5%BB%BA-3.1.3-04-FM%E9%AA%A8%E6%9E%B6%E6%BC%AB%E7%94%BB.png">
-<meta property="og:image" content="https://zcorpius.github.io/2026/09/03/WMS%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E5%88%9B%E5%BB%BA/WMS%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E5%88%9B%E5%BB%BA-3.1.3-05-ImePlaceholder%E9%AA%A8%E6%9E%B6%E6%BC%AB%E7%94%BB.png">
-<meta property="og:image" content="https://zcorpius.github.io/2026/09/03/WMS%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E5%88%9B%E5%BB%BA/WMS%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E5%88%9B%E5%BB%BA-3.2.2-01-layer0-14%E5%8F%B6%E5%AD%90%E6%BC%AB%E7%94%BB.png">
-<meta property="og:image" content="https://zcorpius.github.io/2026/09/03/WMS%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E5%88%9B%E5%BB%BA/WMS%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E5%88%9B%E5%BB%BA-3.2.2-02-layer15-23%E5%8F%B6%E5%AD%90%E6%BC%AB%E7%94%BB.png">
-<meta property="og:image" content="https://zcorpius.github.io/2026/09/03/WMS%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E5%88%9B%E5%BB%BA/WMS%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E5%88%9B%E5%BB%BA-3.2.2-03-layer24-31%E5%8F%B6%E5%AD%90%E6%BC%AB%E7%94%BB.png">
-<meta property="og:image" content="https://zcorpius.github.io/2026/09/03/WMS%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E5%88%9B%E5%BB%BA/images/WMS%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E5%88%9B%E5%BB%BA-3.2.2-04-layer32-36%E5%8F%B6%E5%AD%90%E6%BC%AB%E7%94%BB.png">
-<meta property="og:image" content="https://zcorpius.github.io/2026/09/03/WMS%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E5%88%9B%E5%BB%BA/WMS%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E5%88%9B%E5%BB%BA-3.2.2-05-%E5%8F%B6%E5%AD%90%E5%85%A8%E8%B2%8C%E6%BC%AB%E7%94%BB.png">
-<meta property="article:published_time" content="2026-09-03T07:14:17.000Z">
-<meta property="article:modified_time" content="2026-09-04T15:34:24.684Z">
+<meta property="og:image" content="https://zcorpius.github.io/2026/09/06/WMS%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E5%88%9B%E5%BB%BA/WMS%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E5%88%9B%E5%BB%BA-%E8%B0%83%E7%94%A8%E9%93%BE%E6%BC%AB%E7%94%BB-v4.png">
+<meta property="og:image" content="https://zcorpius.github.io/2026/09/06/WMS%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E5%88%9B%E5%BB%BA/WMS%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E5%88%9B%E5%BB%BA-3.1.2%E5%BB%BA%E6%A0%91%E5%85%A5%E5%8F%A3%E6%BC%AB%E7%94%BB.png">
+<meta property="og:image" content="https://zcorpius.github.io/2026/09/06/WMS%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E5%88%9B%E5%BB%BA/WMS%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E5%88%9B%E5%BB%BA-3.1.3-01-WM%E9%AA%A8%E6%9E%B6%E6%BC%AB%E7%94%BB.png">
+<meta property="og:image" content="https://zcorpius.github.io/2026/09/06/WMS%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E5%88%9B%E5%BB%BA/WMS%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E5%88%9B%E5%BB%BA-3.1.3-02-HDC%E9%AA%A8%E6%9E%B6%E6%BC%AB%E7%94%BB.png">
+<meta property="og:image" content="https://zcorpius.github.io/2026/09/06/WMS%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E5%88%9B%E5%BB%BA/WMS%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E5%88%9B%E5%BB%BA-3.1.3-03-OH%E9%AA%A8%E6%9E%B6%E6%BC%AB%E7%94%BB.png">
+<meta property="og:image" content="https://zcorpius.github.io/2026/09/06/WMS%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E5%88%9B%E5%BB%BA/WMS%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E5%88%9B%E5%BB%BA-3.1.3-04-FM%E9%AA%A8%E6%9E%B6%E6%BC%AB%E7%94%BB.png">
+<meta property="og:image" content="https://zcorpius.github.io/2026/09/06/WMS%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E5%88%9B%E5%BB%BA/WMS%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E5%88%9B%E5%BB%BA-3.1.3-05-ImePlaceholder%E9%AA%A8%E6%9E%B6%E6%BC%AB%E7%94%BB.png">
+<meta property="og:image" content="https://zcorpius.github.io/2026/09/06/WMS%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E5%88%9B%E5%BB%BA/WMS%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E5%88%9B%E5%BB%BA-3.2.2-01-layer0-14%E5%8F%B6%E5%AD%90%E6%BC%AB%E7%94%BB.png">
+<meta property="og:image" content="https://zcorpius.github.io/2026/09/06/WMS%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E5%88%9B%E5%BB%BA/WMS%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E5%88%9B%E5%BB%BA-3.2.2-02-layer15-23%E5%8F%B6%E5%AD%90%E6%BC%AB%E7%94%BB.png">
+<meta property="og:image" content="https://zcorpius.github.io/2026/09/06/WMS%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E5%88%9B%E5%BB%BA/WMS%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E5%88%9B%E5%BB%BA-3.2.2-03-layer24-31%E5%8F%B6%E5%AD%90%E6%BC%AB%E7%94%BB.png">
+<meta property="og:image" content="https://zcorpius.github.io/2026/09/06/WMS%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E5%88%9B%E5%BB%BA/images/WMS%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E5%88%9B%E5%BB%BA-3.2.2-04-layer32-36%E5%8F%B6%E5%AD%90%E6%BC%AB%E7%94%BB.png">
+<meta property="og:image" content="https://zcorpius.github.io/2026/09/06/WMS%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E5%88%9B%E5%BB%BA/WMS%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E5%88%9B%E5%BB%BA-3.2.2-05-%E5%8F%B6%E5%AD%90%E5%85%A8%E8%B2%8C%E6%BC%AB%E7%94%BB.png">
+<meta property="article:published_time" content="2026-09-06T07:14:17.000Z">
+<meta property="article:modified_time" content="2026-09-06T11:16:15.604Z">
 <meta property="article:author" content="Zcorpius">
 <meta property="article:tag" content="WMS">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://zcorpius.github.io/2026/09/03/WMS%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E5%88%9B%E5%BB%BA/WMS%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E5%88%9B%E5%BB%BA-%E8%B0%83%E7%94%A8%E9%93%BE%E6%BC%AB%E7%94%BB-v4.png">
+<meta name="twitter:image" content="https://zcorpius.github.io/2026/09/06/WMS%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E5%88%9B%E5%BB%BA/WMS%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E5%88%9B%E5%BB%BA-%E8%B0%83%E7%94%A8%E9%93%BE%E6%BC%AB%E7%94%BB-v4.png">
 
 
 
@@ -153,7 +153,7 @@
 
 
 
-  <link rel="canonical" href="https://Zcorpius.github.io/2026/09/03/WMS窗口层级创建/"/>
+  <link rel="canonical" href="https://Zcorpius.github.io/2026/09/06/WMS窗口层级创建/"/>
 
 
 
@@ -342,7 +342,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="https://Zcorpius.github.io/2026/09/03/WMS%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E5%88%9B%E5%BB%BA/">
+    <link itemprop="mainEntityOfPage" href="https://Zcorpius.github.io/2026/09/06/WMS%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E5%88%9B%E5%BB%BA/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="">
@@ -371,8 +371,8 @@
               
                 <span class="post-meta-item-text">发表于</span>
               
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2026-09-03T15:14:17+08:00">
-                2026-09-03
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2026-09-06T15:14:17+08:00">
+                2026-09-06
               </time>
             
 
@@ -476,7 +476,7 @@
         <h1 id="1-前言"><a href="#1-前言" class="headerlink" title="1. 前言"></a>1. 前言</h1><p>这篇主要介绍<a target="_blank" rel="noopener" href="http://localhost:4000/2026/08/31/WMS%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E4%BB%8B%E7%BB%8D/#more">《WMS/AMS 窗口层级介绍》</a>中层级树是如何创建的。先给全程调用链，后面每节展开一段：</p>
 <figure class="highlight plaintext"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">SystemServer.startOtherServices()                    ← ATMS 在更早的 startBootstrapServices() 已启动</span><br><span class="line">  ├─ DisplayManager(等默认屏就绪) → InputManagerService（已创建） ← 前置服务先行</span><br><span class="line">  └─ WindowManagerService.main() → new WindowManagerService(...) ← WMS 构造（DisplayThread 上）</span><br><span class="line">       ├─ mRoot = new RootWindowContainer(this)      ← 空树根（此刻还没有任何屏）</span><br><span class="line">       └─ Provider.fromResources()                   ← 策略工厂，全局一份（可厂商反射替换）</span><br><span class="line"></span><br><span class="line">SystemServer 后续调用: mActivityManagerService.setWindowManager(wm)</span><br><span class="line">  └─ AMS → ATMS → RootWindowContainer.setWindowManager(wm)</span><br><span class="line">       └─ for (display : getDisplays()) new DisplayContent(...)   ← 每屏一次，树真正建起来</span><br><span class="line">            └─ DisplayAreaPolicy.Provider.instantiate()</span><br><span class="line">                 └─ DefaultProvider.instantiate()</span><br><span class="line">                      ├─ new TaskDisplayArea("DefaultTaskDisplayArea")</span><br><span class="line">                      ├─ new HierarchyBuilder(root) + setImeContainer + setTaskDisplayAreas</span><br><span class="line">                      ├─ isTrusted() → configureTrustedHierarchyBuilder()   ← 声明五大 Feature</span><br><span class="line">                      └─ new DisplayAreaPolicyBuilder().setRootHierarchy(...).build()</span><br><span class="line">                           └─ HierarchyBuilder.build()                       ← 核心算法</span><br><span class="line">                                Step 1  逐 Feature 扫 37 层 → 建 PendingArea 树（骨架）</span><br><span class="line">                                Step 2  逐层挂叶子（Tokens / TDA / ImeContainer）</span><br><span class="line">                                Step 3  PendingArea → 真实 DisplayArea，挂上 DisplayContent</span><br></pre></td></tr></tbody></table></figure>
 
-<img src="/2026/09/03/WMS%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E5%88%9B%E5%BB%BA/WMS窗口层级创建-调用链漫画-v4.png" alt="WMS 窗口层级树创建调用链漫画图" width="900px">
+<img src="/2026/09/06/WMS%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E5%88%9B%E5%BB%BA/WMS窗口层级创建-调用链漫画-v4.png" alt="WMS 窗口层级树创建调用链漫画图" width="900px">
 
 
 <blockquote>
@@ -1005,7 +1005,7 @@
 <h3 id="3-1-2-建树入口与核心数据结构"><a href="#3-1-2-建树入口与核心数据结构" class="headerlink" title="3.1.2 建树入口与核心数据结构"></a>3.1.2 建树入口与核心数据结构</h3><p>第 3 章分析的三步建树算法，并不是另外启动的一段流程。它仍在 2.4 触发的同一次 <code>provider.instantiate(...)</code> 调用中，完整入口如下：</p>
 <figure class="highlight text"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">DisplayContent 构造器                                         ← 2.4</span><br><span class="line">└── provider.instantiate(...)</span><br><span class="line">    └── DefaultProvider.instantiate()                         ← 2.5</span><br><span class="line">        └── new DisplayAreaPolicyBuilder()</span><br><span class="line">            .setRootHierarchy(rootHierarchy)</span><br><span class="line">            .build(wmService)                                 ← 外层 build</span><br><span class="line">            └── mRootHierarchyBuilder.build(groups)            ← 内层 build</span><br><span class="line">                ├── Step 1：逐 Feature 建骨架                  ← 3.1</span><br><span class="line">                ├── Step 2：逐 layer 挂叶子                    ← 3.2</span><br><span class="line">                └── Step 3：PendingArea 转为真实 DA            ← 3.3</span><br></pre></td></tr></tbody></table></figure>
 
-<img src="/2026/09/03/WMS%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E5%88%9B%E5%BB%BA/WMS窗口层级创建-3.1.2建树入口漫画.png" alt="从 instantiate 到三步建树的漫画图" width="700px">
+<img src="/2026/09/06/WMS%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E5%88%9B%E5%BB%BA/WMS窗口层级创建-3.1.2建树入口漫画.png" alt="从 instantiate 到三步建树的漫画图" width="700px">
 
 <blockquote>
 <p>上半部分是一次同步调用链：<code>DisplayContent</code> 把请求交给 Provider，<code>DefaultProvider</code> 准备 Builder；红色外层 <code>DisplayAreaPolicyBuilder.build()</code> 只负责校验、编排和转交，随后进入右侧的内层 <code>HierarchyBuilder.build()</code>。下半部分才是内层真正执行的三步：Feature 形成 <code>PendingArea</code> 骨架 → layer 放入 Tokens/TDA/IME 叶子 → 草稿树转成真实 DA 树。</p>
@@ -1041,7 +1041,7 @@
 <p><strong>Feature 1 <code>WindowedMagnification</code>（0–31）</strong>：第 0 层在 root 下建 <code>WM:0</code>，一路复用到 31；32–36 不覆盖。</p>
 <figure class="highlight plaintext"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">root</span><br><span class="line"> └─ WM:0:31                ← 0–31 归它；32–36 仍归 root</span><br></pre></td></tr></tbody></table></figure>
 
-<img src="/2026/09/03/WMS%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E5%88%9B%E5%BB%BA/WMS窗口层级创建-3.1.3-01-WM骨架漫画.png" alt="Feature 1：WM 骨架漫画图" width="600px">
+<img src="/2026/09/06/WMS%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E5%88%9B%E5%BB%BA/WMS窗口层级创建-3.1.3-01-WM骨架漫画.png" alt="Feature 1：WM 骨架漫画图" width="600px">
 
 <blockquote>
 <p>蓝色 WM 只接管 0–31；32–36 的当前归属仍是 root，是下一次叠加 Feature 时判定父节点的起点。</p>
@@ -1049,7 +1049,7 @@
 <p><strong>Feature 2 <code>HideDisplayCutout</code>（0–14, 16, 18–23, 26–35）</strong>：0–14 连续一段挂 WM 下；16、18–23、26–31 各一段（父都是 WM）；<strong>32–35 这段的父却是 root</strong>——因为第 32 层当前归属是 root（WM 只管到 31）。</p>
 <figure class="highlight plaintext"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">root</span><br><span class="line"> ├─ WM:0:31</span><br><span class="line"> │   ├─ HDC:0:14</span><br><span class="line"> │   ├─ HDC:16:16</span><br><span class="line"> │   ├─ HDC:18:23</span><br><span class="line"> │   └─ HDC:26:31          ← 26–35 里只有 26–31 在 WM 之内</span><br><span class="line"> └─ HDC:32:35</span><br></pre></td></tr></tbody></table></figure>
 
-<img src="/2026/09/03/WMS%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E5%88%9B%E5%BB%BA/WMS窗口层级创建-3.1.3-02-HDC骨架漫画.png" alt="Feature 2：HDC 骨架漫画图" width="600px">
+<img src="/2026/09/06/WMS%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E5%88%9B%E5%BB%BA/WMS窗口层级创建-3.1.3-02-HDC骨架漫画.png" alt="Feature 2：HDC 骨架漫画图" width="600px">
 
 <blockquote>
 <p>HDC 被拆为五段：除了 <code>except</code> 会断开，32–35 的当前归属者从 WM 变回 root，也必须新开一段。</p>
@@ -1057,7 +1057,7 @@
 <p><strong>Feature 3 <code>OneHanded</code>（0–23, 26–32, 34–35）</strong>：每层的父 = 该层<strong>当前归属者</strong>。15 层 HDC 不管 → 父是 WM；26–31 父是 HDC:26:31；32 的父是 HDC:32:35；34–35 的父也是 HDC:32:35（33 被 except，断开成新段）。</p>
 <figure class="highlight plaintext"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">root</span><br><span class="line"> ├─ WM:0:31</span><br><span class="line"> │   ├─ HDC:0:14</span><br><span class="line"> │   │   └─ OH:0:14</span><br><span class="line"> │   ├─ OH:15:15           ← 15 层 HDC 不覆盖，父退到 WM</span><br><span class="line"> │   ├─ HDC:16:16</span><br><span class="line"> │   │   └─ OH:16:16</span><br><span class="line"> │   ├─ OH:17:17</span><br><span class="line"> │   ├─ HDC:18:23</span><br><span class="line"> │   │   └─ OH:18:23</span><br><span class="line"> │   └─ HDC:26:31</span><br><span class="line"> │       └─ OH:26:31</span><br><span class="line"> └─ HDC:32:35</span><br><span class="line">     ├─ OH:32:32</span><br><span class="line">     └─ OH:34:35</span><br></pre></td></tr></tbody></table></figure>
 
-<img src="/2026/09/03/WMS%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E5%88%9B%E5%BB%BA/WMS窗口层级创建-3.1.3-03-OH骨架漫画.png" alt="Feature 3：OH 骨架漫画图" width="600px">
+<img src="/2026/09/06/WMS%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E5%88%9B%E5%BB%BA/WMS窗口层级创建-3.1.3-03-OH骨架漫画.png" alt="Feature 3：OH 骨架漫画图" width="600px">
 
 <blockquote>
 <p>OH 不会固定挂在某一个 Feature 下：15、17 层的父是 WM，32、34–35 层的父则是 root 直下的 HDC:32:35。</p>
@@ -1071,7 +1071,7 @@
 </ul>
 <figure class="highlight plaintext"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line">root</span><br><span class="line"> ├─ WM:0:31</span><br><span class="line"> │   ├─ HDC:0:14</span><br><span class="line"> │   │   └─ OH:0:14</span><br><span class="line"> │   │       └─ FM:0:12         ← 13–14 被 except，止步于 12</span><br><span class="line"> │   ├─ OH:15:15</span><br><span class="line"> │   │   └─ FM:15:15</span><br><span class="line"> │   ├─ HDC:16:16</span><br><span class="line"> │   │   └─ OH:16:16</span><br><span class="line"> │   │       └─ FM:16:16</span><br><span class="line"> │   ├─ OH:17:17</span><br><span class="line"> │   │   └─ FM:17:17</span><br><span class="line"> │   ├─ HDC:18:23</span><br><span class="line"> │   │   └─ OH:18:23</span><br><span class="line"> │   │       └─ FM:18:23        ← 15–23 连续，但归属者逐层不同，切成 4 段</span><br><span class="line"> │   └─ HDC:26:31</span><br><span class="line"> │       └─ OH:26:31</span><br><span class="line"> │           ├─ FM:26:27        ← 28 被 except，切成两段</span><br><span class="line"> │           └─ FM:29:31</span><br><span class="line"> └─ HDC:32:35</span><br><span class="line">     ├─ OH:32:32</span><br><span class="line">     ├─ FM:33:33                ← 33 层 OH 不覆盖，父是 HDC:32:35</span><br><span class="line">     └─ OH:34:35</span><br><span class="line">         └─ FM:34:35</span><br></pre></td></tr></tbody></table></figure>
 
-<img src="/2026/09/03/WMS%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E5%88%9B%E5%BB%BA/WMS窗口层级创建-3.1.3-04-FM骨架漫画.png" alt="Feature 4：FM 骨架漫画图" width="600px">
+<img src="/2026/09/06/WMS%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E5%88%9B%E5%BB%BA/WMS窗口层级创建-3.1.3-04-FM骨架漫画.png" alt="Feature 4：FM 骨架漫画图" width="600px">
 
 <blockquote>
 <p>FM 的九段由两类边界共同决定：<code>except</code> 打断连续 layer，当前归属者变化则打断可复用的父节点；33 层直接挂在 HDC:32:35 下。</p>
@@ -1080,7 +1080,7 @@
 <p>骨架完成：</p>
 <figure class="highlight plaintext"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line">root (DisplayContent)</span><br><span class="line"> ├─ WM:0:31</span><br><span class="line"> │   ├─ HDC:0:14</span><br><span class="line"> │   │   └─ OH:0:14</span><br><span class="line"> │   │       ├─ FM:0:12</span><br><span class="line"> │   │       └─ ImePlaceholder:13:14     ← 挂 OH 下，不在 FM 之内！</span><br><span class="line"> │   ├─ OH:15:15</span><br><span class="line"> │   │   └─ FM:15:15</span><br><span class="line"> │   ├─ HDC:16:16</span><br><span class="line"> │   │   └─ OH:16:16</span><br><span class="line"> │   │       └─ FM:16:16</span><br><span class="line"> │   ├─ OH:17:17</span><br><span class="line"> │   │   └─ FM:17:17</span><br><span class="line"> │   ├─ HDC:18:23</span><br><span class="line"> │   │   └─ OH:18:23</span><br><span class="line"> │   │       └─ FM:18:23</span><br><span class="line"> │   └─ HDC:26:31</span><br><span class="line"> │       └─ OH:26:31</span><br><span class="line"> │           ├─ FM:26:27</span><br><span class="line"> │           └─ FM:29:31</span><br><span class="line"> └─ HDC:32:35</span><br><span class="line">     ├─ OH:32:32</span><br><span class="line">     ├─ FM:33:33</span><br><span class="line">     └─ OH:34:35</span><br><span class="line">         └─ FM:34:35</span><br></pre></td></tr></tbody></table></figure>
 
-<img src="/2026/09/03/WMS%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E5%88%9B%E5%BB%BA/WMS窗口层级创建-3.1.3-05-ImePlaceholder骨架漫画.png" alt="Feature 5：ImePlaceholder 完成骨架漫画图" width="600px">
+<img src="/2026/09/06/WMS%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E5%88%9B%E5%BB%BA/WMS窗口层级创建-3.1.3-05-ImePlaceholder骨架漫画.png" alt="Feature 5：ImePlaceholder 完成骨架漫画图" width="600px">
 
 <blockquote>
 <p>IP 在这里仍只是 PendingArea 骨架中的占位段；它和 <code>FM:0:12</code> 同为 <code>OH:0:14</code> 的孩子。真正的 <code>ImeContainer</code> 要到 3.2 挂叶子、3.3 转正时才出现。</p>
@@ -1126,7 +1126,7 @@
 <p><strong>阶段 ① layer 0–14：OH:0:14 子树装满。</strong> layer 0 在 <code>FM:0:12</code> 下新建 Tokens 叶（0 层无任何窗口类型映射，纯占位），layer 1 同父同类型延伸成 <code>Leaf:0:1</code>；layer 2 类型变 <code>TASK_CONTAINERS</code> → 建 skip 占位叶、挂<strong>预制件 TDA</strong>；layer 3 类型变回 → <code>Leaf:3:12</code> 一路延伸到 12；13–14 变 <code>IME_CONTAINERS</code> → <code>ImePlaceholder:13:14</code> 下挂<strong>预制件 ImeContainer</strong>：</p>
 <figure class="highlight plaintext"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">OH:0:14</span><br><span class="line"> ├─ FM:0:12</span><br><span class="line"> │   ├─ Leaf:0:1               ← 0–1 两层同父延伸（1 层=壁纸，0 层无类型）</span><br><span class="line"> │   ├─ DefaultTaskDisplayArea ← 预制件（layer 2）</span><br><span class="line"> │   └─ Leaf:3:12              ← 3–12 十层同父延伸</span><br><span class="line"> └─ ImePlaceholder:13:14</span><br><span class="line">     └─ ImeContainer           ← 预制件（layer 13–14）</span><br></pre></td></tr></tbody></table></figure>
 
-<img src="/2026/09/03/WMS%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E5%88%9B%E5%BB%BA/WMS窗口层级创建-3.2.2-01-layer0-14叶子漫画.png" alt="阶段 ①：layer 0–14 挂叶子漫画图" width="600px">
+<img src="/2026/09/06/WMS%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E5%88%9B%E5%BB%BA/WMS窗口层级创建-3.2.2-01-layer0-14叶子漫画.png" alt="阶段 ①：layer 0–14 挂叶子漫画图" width="600px">
 
 <blockquote>
 <p>这段同时出现三种叶子处理：普通层合并为 <code>Leaf:0:1</code>、<code>Leaf:3:12</code>，layer 2 插入预制 TDA，13–14 插入预制 ImeContainer。</p>
@@ -1134,7 +1134,7 @@
 <p><strong>阶段 ② layer 15–23：四个中带段。</strong> 15/16/17 每层的父都变（FM:15:15 / FM:16:16 / FM:17:17）→ 三枚单层叶；18–23 同父 <code>FM:18:23</code> → 一枚六层叶：</p>
 <figure class="highlight plaintext"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">WM:0:31（仅中部新增，前后兄弟省略）</span><br><span class="line"> ├─ OH:15:15 → FM:15:15 → Leaf:15:15</span><br><span class="line"> ├─ HDC:16:16 → OH:16:16 → FM:16:16 → Leaf:16:16</span><br><span class="line"> ├─ OH:17:17 → FM:17:17 → Leaf:17:17</span><br><span class="line"> └─ HDC:18:23 → OH:18:23 → FM:18:23 → Leaf:18:23</span><br></pre></td></tr></tbody></table></figure>
 
-<img src="/2026/09/03/WMS%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E5%88%9B%E5%BB%BA/WMS窗口层级创建-3.2.2-02-layer15-23叶子漫画.png" alt="阶段 ②：layer 15–23 挂叶子漫画图" width="600px">
+<img src="/2026/09/06/WMS%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E5%88%9B%E5%BB%BA/WMS窗口层级创建-3.2.2-02-layer15-23叶子漫画.png" alt="阶段 ②：layer 15–23 挂叶子漫画图" width="600px">
 
 <blockquote>
 <p>连续 layer 不等于能合并：15、16、17 的当前父节点不同，各自产生单层 Leaf；18–23 才满足“同父 + 同类型”，延伸为同一枚 Leaf。</p>
@@ -1142,7 +1142,7 @@
 <p><strong>阶段 ③ layer 24–31：一处”失壳”、一处夹层。</strong> 24–25 被 HDC/OH/FM 全部 except（只剩 WM 仍覆盖）→ 归属者是 WM 本人，<code>Leaf:24:25</code> 直挂 WM；26–27 与 29–31 各归一段 FM；<strong>28 被 FM except、归属落回 OH:26:31</strong> → 单层 <code>Leaf:28:28</code> 夹在两个 FM 段中间：</p>
 <figure class="highlight plaintext"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">WM:0:31</span><br><span class="line"> ├─ ...（0–23 段，见阶段①②）</span><br><span class="line"> ├─ Leaf:24:25                 ← 直挂 WM：HDC/OH/FM 都 except 了导航栏两层</span><br><span class="line"> └─ HDC:26:31</span><br><span class="line">     └─ OH:26:31</span><br><span class="line">         ├─ FM:26:27 → Leaf:26:27</span><br><span class="line">         ├─ Leaf:28:28         ← 28 被 FM except，父退回 OH → 夹在两个 FM 段中间！</span><br><span class="line">         └─ FM:29:31 → Leaf:29:31</span><br></pre></td></tr></tbody></table></figure>
 
-<img src="/2026/09/03/WMS%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E5%88%9B%E5%BB%BA/WMS窗口层级创建-3.2.2-03-layer24-31叶子漫画.png" alt="阶段 ③：layer 24–31 挂叶子漫画图" width="600px">
+<img src="/2026/09/06/WMS%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E5%88%9B%E5%BB%BA/WMS窗口层级创建-3.2.2-03-layer24-31叶子漫画.png" alt="阶段 ③：layer 24–31 挂叶子漫画图" width="600px">
 
 <blockquote>
 <p><code>Leaf:24:25</code> 是“少壳”而非无壳——仍直挂 WM；28 则只失去 FM 壳，因此回退到 <code>OH:26:31</code>，夹在两段 FM 之间。</p>
@@ -1158,7 +1158,7 @@
 <p><strong>四段拼起来——PendingArea 草图树全貌</strong>（骨架 + 16 个装窗口的叶子 = 14 枚 Leaf + TDA + ImeContainer；另有 1 枚 skip 占位叶——layer 2 那枚——转正时返回 null 丢弃，layer 13 那枚带着 <code>mExisting = ImeContainer</code>，转正产物就是 ImeContainer 本身）：</p>
 <figure class="highlight plaintext"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><span class="line">root (DisplayContent)</span><br><span class="line"> ├─ WM:0:31</span><br><span class="line"> │   ├─ HDC:0:14</span><br><span class="line"> │   │   └─ OH:0:14</span><br><span class="line"> │   │       ├─ FM:0:12</span><br><span class="line"> │   │       │   ├─ Leaf:0:1</span><br><span class="line"> │   │       │   ├─ DefaultTaskDisplayArea</span><br><span class="line"> │   │       │   └─ Leaf:3:12</span><br><span class="line"> │   │       └─ ImePlaceholder:13:14</span><br><span class="line"> │   │            └─ ImeContainer</span><br><span class="line"> │   ├─ OH:15:15</span><br><span class="line"> │   │   └─ FM:15:15</span><br><span class="line"> │   │        └─ Leaf:15:15</span><br><span class="line"> │   ├─ HDC:16:16</span><br><span class="line"> │   │   └─ OH:16:16</span><br><span class="line"> │   │        └─ FM:16:16</span><br><span class="line"> │   │             └─ Leaf:16:16</span><br><span class="line"> │   ├─ OH:17:17</span><br><span class="line"> │   │   └─ FM:17:17</span><br><span class="line"> │   │        └─ Leaf:17:17</span><br><span class="line"> │   ├─ HDC:18:23</span><br><span class="line"> │   │   └─ OH:18:23</span><br><span class="line"> │   │        └─ FM:18:23</span><br><span class="line"> │   │             └─ Leaf:18:23</span><br><span class="line"> │   ├─ Leaf:24:25               ← 直挂 WM（HDC/OH/FM 全 except 导航栏）</span><br><span class="line"> │   └─ HDC:26:31</span><br><span class="line"> │        └─ OH:26:31</span><br><span class="line"> │             ├─ FM:26:27</span><br><span class="line"> │             │   └─ Leaf:26:27</span><br><span class="line"> │             ├─ Leaf:28:28     ← 夹层</span><br><span class="line"> │             └─ FM:29:31</span><br><span class="line"> │                 └─ Leaf:29:31</span><br><span class="line"> ├─ HDC:32:35</span><br><span class="line"> │   ├─ OH:32:32</span><br><span class="line"> │   │   └─ Leaf:32:32</span><br><span class="line"> │   ├─ FM:33:33</span><br><span class="line"> │   │   └─ Leaf:33:33</span><br><span class="line"> │   └─ OH:34:35</span><br><span class="line"> │        └─ FM:34:35</span><br><span class="line"> │             └─ Leaf:34:35</span><br><span class="line"> └─ Leaf:36:36                   ← 直挂 root，无壳</span><br></pre></td></tr></tbody></table></figure>
 
-<img src="/2026/09/03/WMS%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E5%88%9B%E5%BB%BA/WMS窗口层级创建-3.2.2-05-叶子全貌漫画.png" alt="Step 2 完成：四段叶子全貌漫画图" width="600px">
+<img src="/2026/09/06/WMS%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E5%88%9B%E5%BB%BA/WMS窗口层级创建-3.2.2-05-叶子全貌漫画.png" alt="Step 2 完成：四段叶子全貌漫画图" width="600px">
 
 <blockquote>
 <p>总览按四段展开而非硬塞一棵密集连线树：上方先确认 root 的三个直接孩子（WM、HDC:32:35、Leaf:36），下方再逐段核对每枚叶子的真实父节点。</p>
