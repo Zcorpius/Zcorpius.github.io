@@ -99,18 +99,18 @@
 
 
 
-<meta name="description" content="1. 前言本文以示例工程 LayOutDemo 为起点，梳理一个普通 View 如何变成跨应用显示的悬浮窗，以及它如何移动、如何消失。全部主线就是三句 API： 123mWindowManager.addView(mWindowViewLayout, mLayoutParams);          &#x2F;&#x2F; 第 3 章：创建mWindowManager.updateViewLayout(mWindo">
+<meta name="description" content="1. 前言本文以示例工程 LayOutDemo 为起点，梳理一个普通 View 如何变成跨应用显示的悬浮窗，以及它如何移动、如何消失。全部主线就是三句 API：Bi 123mWindowManager.addView(mWindowViewLayout, mLayoutParams);          &#x2F;&#x2F; 第 3 章：创建mWindowManager.updateViewLayout(mWin">
 <meta property="og:type" content="article">
 <meta property="og:title" content="WMS 悬浮窗剖析">
 <meta property="og:url" content="https://zcorpius.github.io/2026/09/07/WMS%E6%82%AC%E6%B5%AE%E7%AA%97%E5%89%96%E6%9E%90/index.html">
 <meta property="og:site_name" content="Zcorpius&#39;s Blog">
-<meta property="og:description" content="1. 前言本文以示例工程 LayOutDemo 为起点，梳理一个普通 View 如何变成跨应用显示的悬浮窗，以及它如何移动、如何消失。全部主线就是三句 API： 123mWindowManager.addView(mWindowViewLayout, mLayoutParams);          &#x2F;&#x2F; 第 3 章：创建mWindowManager.updateViewLayout(mWindo">
+<meta property="og:description" content="1. 前言本文以示例工程 LayOutDemo 为起点，梳理一个普通 View 如何变成跨应用显示的悬浮窗，以及它如何移动、如何消失。全部主线就是三句 API：Bi 123mWindowManager.addView(mWindowViewLayout, mLayoutParams);          &#x2F;&#x2F; 第 3 章：创建mWindowManager.updateViewLayout(mWin">
 <meta property="og:locale">
 <meta property="og:image" content="https://zcorpius.github.io/2026/09/07/WMS%E6%82%AC%E6%B5%AE%E7%AA%97%E5%89%96%E6%9E%90/WMS%E6%82%AC%E6%B5%AE%E7%AA%97%E7%94%9F%E5%91%BD%E5%91%A8%E6%9C%9F.png">
 <meta property="og:image" content="https://zcorpius.github.io/2026/09/07/WMS%E6%82%AC%E6%B5%AE%E7%AA%97%E5%89%96%E6%9E%90/demo1.png">
 <meta property="og:image" content="https://zcorpius.github.io/2026/09/07/WMS%E6%82%AC%E6%B5%AE%E7%AA%97%E5%89%96%E6%9E%90/demo2.png">
 <meta property="article:published_time" content="2026-09-07T08:20:00.000Z">
-<meta property="article:modified_time" content="2026-09-06T11:16:23.016Z">
+<meta property="article:modified_time" content="2026-09-07T01:58:00.728Z">
 <meta property="article:author" content="Zcorpius">
 <meta property="article:tag" content="WMS">
 <meta property="article:tag" content="ViewRootImpl">
@@ -465,7 +465,7 @@
       
 
       
-        <h1 id="1-前言"><a href="#1-前言" class="headerlink" title="1. 前言"></a>1. 前言</h1><p>本文以示例工程 <code>LayOutDemo</code> 为起点，梳理一个普通 <code>View</code> 如何变成跨应用显示的悬浮窗，以及它如何移动、如何消失。全部主线就是三句 API：</p>
+        <h1 id="1-前言"><a href="#1-前言" class="headerlink" title="1. 前言"></a>1. 前言</h1><p>本文以示例工程 <code>LayOutDemo</code> 为起点，梳理一个普通 <code>View</code> 如何变成跨应用显示的悬浮窗，以及它如何移动、如何消失。全部主线就是三句 API：<br>Bi</p>
 <figure class="highlight java"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">mWindowManager.addView(mWindowViewLayout, mLayoutParams);          <span class="comment">// 第 3 章：创建</span></span><br><span class="line">mWindowManager.updateViewLayout(mWindowViewLayout, mLayoutParams); <span class="comment">// 第 4 章：拖动</span></span><br><span class="line">mWindowManager.removeView(mWindowViewLayout);                      <span class="comment">// 第 5 章：关闭</span></span><br></pre></td></tr></tbody></table></figure>
 
 <p>示例运行在 Android 8.0 及以上时使用的是 <code>TYPE_APPLICATION_OVERLAY</code>（数值 <code>2038</code>）。它是<strong>非应用窗口 / 系统 alert window</strong>：不归属于当前 <code>Activity</code> 的 <code>ActivityRecord</code>，而是 WMS 为其创建一个 <code>WindowToken</code>，再把该 Token 放入默认 Display 已经建好的 <code>DisplayArea.Tokens</code> 叶子。</p>
