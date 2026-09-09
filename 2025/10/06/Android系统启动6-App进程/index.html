@@ -1,0 +1,1346 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next muse use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+<script>
+    (function(){
+        if(''){
+            if (prompt('请输入密码') !== ''){
+                alert('密码错误');
+                history.back();
+            }
+        }
+    })();
+</script>
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/head.jpg?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/head.jpg?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/head.jpg?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/head.jpg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="startop," />
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="Zcorpius's Blog" type="application/atom+xml" />
+
+
+
+
+
+
+<meta name="description" content="Android 应用进程创建 源码基线：frameworks&#x2F;base&#x2F;services&#x2F;core&#x2F;java&#x2F;com&#x2F;android&#x2F;server&#x2F;am、frameworks&#x2F;base&#x2F;core&#x2F;java&#x2F;android&#x2F;os、frameworks&#x2F;base&#x2F;core&#x2F;java&#x2F;com&#x2F;android&#x2F;internal&#x2F;os、frameworks&#x2F;base&#x2F;core&#x2F;java&#x2F;android&#x2F;ap">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Android 系统启动——App进程">
+<meta property="og:url" content="https://zcorpius.github.io/2025/10/06/Android%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A86-App%E8%BF%9B%E7%A8%8B/index.html">
+<meta property="og:site_name" content="Zcorpius&#39;s Blog">
+<meta property="og:description" content="Android 应用进程创建 源码基线：frameworks&#x2F;base&#x2F;services&#x2F;core&#x2F;java&#x2F;com&#x2F;android&#x2F;server&#x2F;am、frameworks&#x2F;base&#x2F;core&#x2F;java&#x2F;android&#x2F;os、frameworks&#x2F;base&#x2F;core&#x2F;java&#x2F;com&#x2F;android&#x2F;internal&#x2F;os、frameworks&#x2F;base&#x2F;core&#x2F;java&#x2F;android&#x2F;ap">
+<meta property="og:locale">
+<meta property="article:published_time" content="2025-10-06T04:56:21.000Z">
+<meta property="article:modified_time" content="2026-09-09T15:40:38.635Z">
+<meta property="article:author" content="Zcorpius">
+<meta property="article:tag" content="startop">
+<meta name="twitter:card" content="summary">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Muse',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":true,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://Zcorpius.github.io/2025/10/06/Android系统启动6-App进程/"/>
+
+
+
+
+
+  <title>Android 系统启动——App进程 | Zcorpius's Blog</title>
+  
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 7.3.0">
+<style>.github-emoji { position: relative; display: inline-block; width: 1.2em; min-height: 1.2em; overflow: hidden; vertical-align: top; color: transparent; }  .github-emoji > span { position: relative; z-index: 10; }  .github-emoji img, .github-emoji .fancybox { margin: 0 !important; padding: 0 !important; border: none !important; outline: none !important; text-decoration: none !important; user-select: none !important; cursor: auto !important; }  .github-emoji img { height: 1.2em !important; width: 1.2em !important; position: absolute !important; left: 50% !important; top: 50% !important; transform: translate(-50%, -50%) !important; user-select: none !important; cursor: auto !important; } .github-emoji-fallback { color: inherit; } .github-emoji-fallback img { opacity: 0 !important; }</style>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Zcorpius's Blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">追寻自我的崎岖路上从不缺勇敢。</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-路径">
+          <a href="/top/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-fire"></i> <br />
+            
+            路径
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://Zcorpius.github.io/2025/10/06/Android%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A86-App%E8%BF%9B%E7%A8%8B/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/head.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Zcorpius's Blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Android 系统启动——App进程</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2025-10-06T12:56:21+08:00">
+                2025-10-06
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Framework/" itemprop="url" rel="index">
+                    <span itemprop="name">Framework</span>
+                  </a>
+                </span>
+
+                
+                
+                  ， 
+                
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Framework/StartUp/" itemprop="url" rel="index">
+                    <span itemprop="name">StartUp</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+            <div class="post-wordcount">
+              
+                
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-file-word-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">字数统计&#58;</span>
+                
+                <span title="字数统计">
+                  3k
+                </span>
+              
+
+              
+                <span class="post-meta-divider">|</span>
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-clock-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">阅读时长 &asymp;</span>
+                
+                <span title="阅读时长">
+                  14
+                </span>
+              
+            </div>
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="Android-应用进程创建"><a href="#Android-应用进程创建" class="headerlink" title="Android 应用进程创建"></a>Android 应用进程创建</h1><blockquote>
+<p>源码基线：<code>frameworks/base/services/core/java/com/android/server/am</code>、<code>frameworks/base/core/java/android/os</code>、<code>frameworks/base/core/java/com/android/internal/os</code>、<code>frameworks/base/core/java/android/app</code> 与 Zygote JNI。本文从 AMS 决定“需要一个进程”开始，到该进程向 AMS 回连并收到 <code>bindApplication()</code> 为止；Activity、Service、Provider 的具体生命周期由各自的调度路径继续驱动。</p>
+</blockquote>
+<h2 id="1-总图：fork-不是应用启动的终点"><a href="#1-总图：fork-不是应用启动的终点" class="headerlink" title="1. 总图：fork 不是应用启动的终点"></a>1. 总图：fork 不是应用启动的终点</h2><p>常规应用进程启动链路：</p>
+<blockquote>
+<p>AMS/ProcessList 建立 <code>ProcessRecord</code> → <code>Process.start()</code> → <code>ZygoteProcess</code> 选择 ABI 对应 socket，必要时尝试 USAP → Zygote 解析参数、做安全检查 → native fork + specialize → 子进程执行 <code>ActivityThread.main()</code> → <code>ActivityThread.attach(false, startSeq)</code> 回调 AMS → AMS 发出 <code>bindApplication()</code> 并把 ProcessRecord 置为 active → ActivityThread 处理 bind，创建 Application / 安装 Provider / 继续执行待启动组件。</p>
+</blockquote>
+<p>这里有三个很重要的分界：</p>
+<ul>
+<li><strong>请求创建</strong>发生在 system_server 的 <code>ProcessList</code>，不是“ActivityThread 自己启动自己”；</li>
+<li><strong>fork 成功</strong>只说明拿到了 PID，应用还没有 <code>Application</code>、也没有 Activity；</li>
+<li><strong><code>attachApplication()</code> 与 <code>bindApplication()</code></strong> 才把新 Java 进程纳入 AMS 管理并赋予应用运行上下文。</li>
+</ul>
+<h2 id="2-谁决定创建：ProcessList-startProcess"><a href="#2-谁决定创建：ProcessList-startProcess" class="headerlink" title="2. 谁决定创建：ProcessList.startProcess()"></a>2. 谁决定创建：<code>ProcessList.startProcess()</code></h2><p>Android 15 的进程创建入口位于 AMS 的 <code>ProcessList</code>。它会根据 hosting 目的、ABI、uid/gid、runtime flags、SELinux <code>seInfo</code>、挂载隔离信息、兼容性变更等组织参数；并不是仅传一个包名或 main class。</p>
+<figure class="highlight java"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/base/services/core/java/com/android/server/am/ProcessList.java</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span> Process.ProcessStartResult <span class="title function_">startProcess</span><span class="params">(HostingRecord hostingRecord,</span></span><br><span class="line"><span class="params">        String entryPoint, ProcessRecord app, <span class="type">int</span> uid, <span class="type">int</span>[] gids, <span class="type">int</span> runtimeFlags,</span></span><br><span class="line"><span class="params">        <span class="type">int</span> zygotePolicyFlags, <span class="type">int</span> mountExternal, String seInfo, String requiredAbi,</span></span><br><span class="line"><span class="params">        String instructionSet, String invokeWith, <span class="type">long</span> startTime)</span> {</span><br><span class="line">    ...</span><br><span class="line">    <span class="keyword">final</span> <span class="type">boolean</span> <span class="variable">isTopApp</span> <span class="operator">=</span> hostingRecord.isTopApp();</span><br><span class="line">    Map&lt;String, Pair&lt;String, Long&gt;&gt; pkgDataInfoMap =</span><br><span class="line">            getPackageAppDataInfoMap(pmInt, targetPackagesList, uid);</span><br><span class="line">    ...</span><br><span class="line">    <span class="keyword">final</span> Process.ProcessStartResult startResult;</span><br><span class="line">    <span class="keyword">if</span> (hostingRecord.usesWebviewZygote()) {</span><br><span class="line">        startResult = startWebView(entryPoint, app.processName, uid, uid, gids, ...);</span><br><span class="line">    } <span class="keyword">else</span> <span class="keyword">if</span> (hostingRecord.usesAppZygote()) {</span><br><span class="line">        <span class="type">AppZygote</span> <span class="variable">appZygote</span> <span class="operator">=</span> createAppZygoteForProcessIfNeeded(app);</span><br><span class="line">        startResult = appZygote.getProcess().start(entryPoint, app.processName,</span><br><span class="line">                uid, uid, gids, ..., ZYGOTE_POLICY_FLAG_EMPTY, ...);</span><br><span class="line">    } <span class="keyword">else</span> {</span><br><span class="line">        startResult = Process.start(entryPoint, app.processName, uid, uid, gids,</span><br><span class="line">                runtimeFlags, mountExternal, app.info.targetSdkVersion, seInfo,</span><br><span class="line">                requiredAbi, instructionSet, app.info.dataDir, invokeWith,</span><br><span class="line">                app.info.packageName, zygotePolicyFlags, isTopApp,</span><br><span class="line">                app.getDisabledCompatChanges(), pkgDataInfoMap,</span><br><span class="line">                allowlistedAppDataInfoMap, bindMountAppsData,</span><br><span class="line">                bindMountAppStorageDirs, bindOverrideSysprops,</span><br><span class="line">                <span class="keyword">new</span> <span class="title class_">String</span>[]{PROC_START_SEQ_IDENT + app.getStartSeq()});</span><br><span class="line">        app.mProcessGroupCreated = <span class="literal">true</span>;</span><br><span class="line">    }</span><br><span class="line">    ...</span><br><span class="line">    <span class="keyword">return</span> startResult;</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<h3 id="2-1-三类-Zygote-路径"><a href="#2-1-三类-Zygote-路径" class="headerlink" title="2.1 三类 Zygote 路径"></a>2.1 三类 Zygote 路径</h3><table>
+<thead>
+<tr>
+<th>路径</th>
+<th>选择条件</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>常规 Zygote</td>
+<td>大多数 app</td>
+<td><code>Process.start()</code>，走 primary/secondary Zygote 或 USAP pool</td>
+</tr>
+<tr>
+<td>App Zygote</td>
+<td><code>android:isolatedProcess</code> 等托管场景</td>
+<td>为特定应用创建的子 Zygote；已有 app 相关预加载/隔离边界</td>
+</tr>
+<tr>
+<td>WebView Zygote</td>
+<td>WebView 渲染相关进程</td>
+<td>独立的 WebView Zygote，避免污染常规 Zygote</td>
+</tr>
+</tbody></table>
+<p>三者最终都产生应用子进程，但预加载内容、父 Zygote、隔离能力和 process group 创建细节不同。分析 ANR 或启动耗时时必须先确认 <code>HostingRecord</code> 选中了哪条路径。</p>
+<h3 id="2-2-数据与存储隔离参数"><a href="#2-2-数据与存储隔离参数" class="headerlink" title="2.2 数据与存储隔离参数"></a>2.2 数据与存储隔离参数</h3><p><code>pkgDataInfoMap</code>、allowlist、<code>bindMountAppsData</code>、<code>bindMountAppStorageDirs</code> 会传给 Zygote native 层，用于应用数据/存储目录的隔离挂载。源码也明确将可能较慢的 <code>prepareStorageDirs()</code> 放在 <code>Process.start()</code> <strong>之后</strong>，以避免它阻塞 fork 发起。</p>
+<p>这意味着“应用 fork 时一定已完成所有存储目录准备”并不成立；冷启动与 FUSE/用户解锁状态会影响实际时序。</p>
+<h2 id="3-system-server-发给-Zygote-的请求"><a href="#3-system-server-发给-Zygote-的请求" class="headerlink" title="3. system_server 发给 Zygote 的请求"></a>3. system_server 发给 Zygote 的请求</h2><h3 id="3-1-Process-start-只是-Java-门面"><a href="#3-1-Process-start-只是-Java-门面" class="headerlink" title="3.1 Process.start() 只是 Java 门面"></a>3.1 <code>Process.start()</code> 只是 Java 门面</h3><p><code>Process.start()</code> 将大量安全与运行参数转发给单例 <code>ZYGOTE_PROCESS</code>。真正的 socket 通信与参数编码在 <code>ZygoteProcess</code>。</p>
+<figure class="highlight java"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/base/core/java/android/os/Process.java</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> ProcessStartResult <span class="title function_">start</span><span class="params">(<span class="meta">@NonNull</span> <span class="keyword">final</span> String processClass,</span></span><br><span class="line"><span class="params">        <span class="meta">@Nullable</span> <span class="keyword">final</span> String niceName, <span class="type">int</span> uid, <span class="type">int</span> gid, <span class="meta">@Nullable</span> <span class="type">int</span>[] gids,</span></span><br><span class="line"><span class="params">        <span class="type">int</span> runtimeFlags, <span class="type">int</span> mountExternal, <span class="type">int</span> targetSdkVersion,</span></span><br><span class="line"><span class="params">        <span class="meta">@Nullable</span> String seInfo, <span class="meta">@NonNull</span> String abi, <span class="meta">@Nullable</span> String instructionSet,</span></span><br><span class="line"><span class="params">        <span class="meta">@Nullable</span> String appDataDir, <span class="meta">@Nullable</span> String invokeWith,</span></span><br><span class="line"><span class="params">        <span class="meta">@Nullable</span> String packageName, <span class="type">int</span> zygotePolicyFlags, <span class="type">boolean</span> isTopApp,</span></span><br><span class="line"><span class="params">        <span class="meta">@Nullable</span> <span class="type">long</span>[] disabledCompatChanges,</span></span><br><span class="line"><span class="params">        <span class="meta">@Nullable</span> Map&lt;String, Pair&lt;String, Long&gt;&gt; pkgDataInfoMap, ... )</span> {</span><br><span class="line">    <span class="keyword">return</span> ZYGOTE_PROCESS.start(processClass, niceName, uid, gid, gids,</span><br><span class="line">            runtimeFlags, mountExternal, targetSdkVersion, seInfo, abi,</span><br><span class="line">            instructionSet, appDataDir, invokeWith, packageName,</span><br><span class="line">            zygotePolicyFlags, isTopApp, disabledCompatChanges, pkgDataInfoMap, ...);</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<h3 id="3-2-startViaZygote-构造-argv"><a href="#3-2-startViaZygote-构造-argv" class="headerlink" title="3.2 startViaZygote() 构造 argv"></a>3.2 <code>startViaZygote()</code> 构造 argv</h3><p><code>ZygoteProcess</code> 将每项配置显式编码成 Zygote 参数。<code>--runtime-args</code>、<code>--setuid</code>、<code>--setgid</code>、<code>--setgroups</code> 的位置有约束；最后才放入真正 Java 入口。普通 Android 应用的入口通常是 <code>android.app.ActivityThread</code>，后面附加 <code>seq=&lt;startSeq&gt;</code> 用于 AMS 与新进程匹配。</p>
+<figure class="highlight java"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/base/core/java/android/os/ZygoteProcess.java</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span> Process.ProcessStartResult <span class="title function_">startViaZygote</span><span class="params">(<span class="meta">@NonNull</span> <span class="keyword">final</span> String processClass,</span></span><br><span class="line"><span class="params">        <span class="meta">@Nullable</span> <span class="keyword">final</span> String niceName, <span class="keyword">final</span> <span class="type">int</span> uid, <span class="keyword">final</span> <span class="type">int</span> gid,</span></span><br><span class="line"><span class="params">        <span class="meta">@Nullable</span> <span class="keyword">final</span> <span class="type">int</span>[] gids, <span class="type">int</span> runtimeFlags, <span class="type">int</span> mountExternal,</span></span><br><span class="line"><span class="params">        <span class="type">int</span> targetSdkVersion, <span class="meta">@Nullable</span> String seInfo, <span class="meta">@NonNull</span> String abi, ...)</span></span><br><span class="line">        <span class="keyword">throws</span> ZygoteStartFailedEx {</span><br><span class="line">    ArrayList&lt;String&gt; argsForZygote = <span class="keyword">new</span> <span class="title class_">ArrayList</span>&lt;&gt;();</span><br><span class="line">    argsForZygote.add(<span class="string">"--runtime-args"</span>);</span><br><span class="line">    argsForZygote.add(<span class="string">"--setuid="</span> + uid);</span><br><span class="line">    argsForZygote.add(<span class="string">"--setgid="</span> + gid);</span><br><span class="line">    argsForZygote.add(<span class="string">"--runtime-flags="</span> + runtimeFlags);</span><br><span class="line">    ...</span><br><span class="line">    argsForZygote.add(<span class="string">"--target-sdk-version="</span> + targetSdkVersion);</span><br><span class="line">    <span class="keyword">if</span> (gids != <span class="literal">null</span> &amp;&amp; gids.length &gt; <span class="number">0</span>) argsForZygote.add(<span class="string">"--setgroups="</span> + ...);</span><br><span class="line">    <span class="keyword">if</span> (niceName != <span class="literal">null</span>) argsForZygote.add(<span class="string">"--nice-name="</span> + niceName);</span><br><span class="line">    <span class="keyword">if</span> (seInfo != <span class="literal">null</span>) argsForZygote.add(<span class="string">"--seinfo="</span> + seInfo);</span><br><span class="line">    <span class="keyword">if</span> (appDataDir != <span class="literal">null</span>) argsForZygote.add(<span class="string">"--app-data-dir="</span> + appDataDir);</span><br><span class="line">    ...</span><br><span class="line">    argsForZygote.add(processClass);</span><br><span class="line">    Collections.addAll(argsForZygote, extraArgs);</span><br><span class="line">    <span class="keyword">synchronized</span> (mLock) {</span><br><span class="line">        <span class="keyword">return</span> zygoteSendArgsAndGetResult(openZygoteSocketIfNeeded(abi),</span><br><span class="line">                zygotePolicyFlags, argsForZygote);</span><br><span class="line">    }</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<h3 id="3-3-ABI-选择与-Zygote-socket"><a href="#3-3-ABI-选择与-Zygote-socket" class="headerlink" title="3.3 ABI 选择与 Zygote socket"></a>3.3 ABI 选择与 Zygote socket</h3><p>primary Zygote socket 先被连接并询问 ABI；不匹配才会尝试 secondary socket。primary 不是“永远 64 位”、secondary 也不是“必然 32 位”的源码保证，实际匹配取决于 init 配置和它们回复的 ABI list。</p>
+<figure class="highlight java"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/base/core/java/android/os/ZygoteProcess.java</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span> ZygoteState <span class="title function_">openZygoteSocketIfNeeded</span><span class="params">(String abi)</span> <span class="keyword">throws</span> ZygoteStartFailedEx {</span><br><span class="line">    attemptConnectionToPrimaryZygote();</span><br><span class="line">    <span class="keyword">if</span> (primaryZygoteState.matches(abi)) <span class="keyword">return</span> primaryZygoteState;</span><br><span class="line">    <span class="keyword">if</span> (mZygoteSecondarySocketAddress != <span class="literal">null</span>) {</span><br><span class="line">        attemptConnectionToSecondaryZygote();</span><br><span class="line">        <span class="keyword">if</span> (secondaryZygoteState.matches(abi)) <span class="keyword">return</span> secondaryZygoteState;</span><br><span class="line">    }</span><br><span class="line">    <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">ZygoteStartFailedEx</span>(<span class="string">"Unsupported zygote ABI: "</span> + abi);</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<h3 id="3-4-协议与-USAP-fallback"><a href="#3-4-协议与-USAP-fallback" class="headerlink" title="3.4 协议与 USAP fallback"></a>3.4 协议与 USAP fallback</h3><p>wire protocol 是“参数个数 + 多行参数”。发送前拒绝换行、回车、NUL，避免突破报文边界。USAP pool 启用且策略允许时先尝试 USAP socket；I/O 失败会记录错误并回退到普通 Zygote socket，而不是直接视为应用创建失败。</p>
+<figure class="highlight java"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/base/core/java/android/os/ZygoteProcess.java</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span> Process.ProcessStartResult <span class="title function_">zygoteSendArgsAndGetResult</span><span class="params">(</span></span><br><span class="line"><span class="params">        ZygoteState zygoteState, <span class="type">int</span> zygotePolicyFlags, ArrayList&lt;String&gt; args)</span></span><br><span class="line">        <span class="keyword">throws</span> ZygoteStartFailedEx {</span><br><span class="line">    <span class="keyword">for</span> (String arg : args) {</span><br><span class="line">        <span class="keyword">if</span> (arg.indexOf(<span class="string">'\n'</span>) &gt;= <span class="number">0</span> || arg.indexOf(<span class="string">'\r'</span>) &gt;= <span class="number">0</span> || arg.indexOf(<span class="string">'\u0000'</span>) &gt;= <span class="number">0</span>) {</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">ZygoteStartFailedEx</span>(<span class="string">"Embedded line terminator not allowed"</span>);</span><br><span class="line">        }</span><br><span class="line">    }</span><br><span class="line">    <span class="type">String</span> <span class="variable">msgStr</span> <span class="operator">=</span> args.size() + <span class="string">"\n"</span> + String.join(<span class="string">"\n"</span>, args) + <span class="string">"\n"</span>;</span><br><span class="line">    <span class="keyword">if</span> (shouldAttemptUsapLaunch(zygotePolicyFlags, args)) {</span><br><span class="line">        <span class="keyword">try</span> {</span><br><span class="line">            <span class="keyword">return</span> attemptUsapSendArgsAndGetResult(zygoteState, msgStr);</span><br><span class="line">        } <span class="keyword">catch</span> (IOException ex) {</span><br><span class="line">            Log.e(LOG_TAG, <span class="string">"IO Exception while communicating with USAP pool - "</span></span><br><span class="line">                    + ex.getMessage());</span><br><span class="line">        }</span><br><span class="line">    }</span><br><span class="line">    <span class="keyword">return</span> attemptZygoteSendArgsAndGetResult(zygoteState, msgStr);</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<figure class="highlight java"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/base/core/java/android/os/ZygoteProcess.java</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span> Process.ProcessStartResult <span class="title function_">attemptZygoteSendArgsAndGetResult</span><span class="params">(</span></span><br><span class="line"><span class="params">        ZygoteState zygoteState, String msgStr)</span> <span class="keyword">throws</span> ZygoteStartFailedEx {</span><br><span class="line">    zygoteState.mZygoteOutputWriter.write(msgStr);</span><br><span class="line">    zygoteState.mZygoteOutputWriter.flush();</span><br><span class="line">    Process.<span class="type">ProcessStartResult</span> <span class="variable">result</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Process</span>.ProcessStartResult();</span><br><span class="line">    result.pid = zygoteState.mZygoteInputStream.readInt();</span><br><span class="line">    result.usingWrapper = zygoteState.mZygoteInputStream.readBoolean();</span><br><span class="line">    <span class="keyword">if</span> (result.pid &lt; <span class="number">0</span>) <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">ZygoteStartFailedEx</span>(<span class="string">"fork() failed"</span>);</span><br><span class="line">    <span class="keyword">return</span> result;</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<h2 id="4-Zygote-接收命令与安全检查"><a href="#4-Zygote-接收命令与安全检查" class="headerlink" title="4. Zygote 接收命令与安全检查"></a>4. Zygote 接收命令与安全检查</h2><p>Zygote 的 <code>ZygoteConnection.processCommand()</code> 解析参数后，会处理查询/预加载/USAP 配置等控制命令；普通创建请求不能由客户端自行携带 capabilities，并必须过 UID 与 <code>invoke-with</code> 安全策略。一般 app 由 system_server 发起，满足 fast path 条件时可能批量 <code>forkSimpleApps()</code>；带 wrapper、child zygote 等情形走普通 <code>forkAndSpecialize()</code>。</p>
+<figure class="highlight java"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/base/core/java/com/android/internal/os/ZygoteConnection.java</span></span><br><span class="line"></span><br><span class="line">Runnable <span class="title function_">processCommand</span><span class="params">(ZygoteServer zygoteServer, <span class="type">boolean</span> multipleOK)</span> {</span><br><span class="line">    ...</span><br><span class="line">    <span class="type">ZygoteArguments</span> <span class="variable">parsedArgs</span> <span class="operator">=</span> ZygoteArguments.getInstance(argBuffer);</span><br><span class="line">    ...</span><br><span class="line">    <span class="keyword">if</span> (parsedArgs.mPermittedCapabilities != <span class="number">0</span> || parsedArgs.mEffectiveCapabilities != <span class="number">0</span>) {</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">ZygoteSecurityException</span>(<span class="string">"Client may not specify capabilities: ..."</span>);</span><br><span class="line">    }</span><br><span class="line">    Zygote.applyUidSecurityPolicy(parsedArgs, peer);</span><br><span class="line">    Zygote.applyInvokeWithSecurityPolicy(parsedArgs, peer);</span><br><span class="line">    Zygote.applyDebuggerSystemProperty(parsedArgs);</span><br><span class="line">    Zygote.applyInvokeWithSystemProperty(parsedArgs);</span><br><span class="line">    ...</span><br><span class="line">    <span class="keyword">if</span> (parsedArgs.mInvokeWith != <span class="literal">null</span> || parsedArgs.mStartChildZygote</span><br><span class="line">            || !multipleOK || peer.getUid() != Process.SYSTEM_UID) {</span><br><span class="line">        pid = Zygote.forkAndSpecialize(parsedArgs.mUid, parsedArgs.mGid,</span><br><span class="line">                parsedArgs.mGids, parsedArgs.mRuntimeFlags, rlimits, ...);</span><br><span class="line">        <span class="keyword">if</span> (pid == <span class="number">0</span>) {</span><br><span class="line">            zygoteServer.setForkChild();</span><br><span class="line">            zygoteServer.closeServerSocket();</span><br><span class="line">            <span class="keyword">return</span> handleChildProc(parsedArgs, childPipeFd, parsedArgs.mStartChildZygote);</span><br><span class="line">        }</span><br><span class="line">        handleParentProc(pid, serverPipeFd);</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">null</span>;</span><br><span class="line">    }</span><br><span class="line">    ...</span><br><span class="line">    <span class="keyword">return</span> Zygote.forkSimpleApps(argBuffer, ...);</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<h2 id="5-native-fork-与-specialize"><a href="#5-native-fork-与-specialize" class="headerlink" title="5. native fork 与 specialize"></a>5. native fork 与 specialize</h2><h3 id="5-1-Java-Hook-与-JNI-入口"><a href="#5-1-Java-Hook-与-JNI-入口" class="headerlink" title="5.1 Java Hook 与 JNI 入口"></a>5.1 Java Hook 与 JNI 入口</h3><figure class="highlight java"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/base/core/java/com/android/internal/os/Zygote.java</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">static</span> <span class="type">int</span> <span class="title function_">forkAndSpecialize</span><span class="params">(<span class="type">int</span> uid, <span class="type">int</span> gid, <span class="type">int</span>[] gids, <span class="type">int</span> runtimeFlags,</span></span><br><span class="line"><span class="params">        <span class="type">int</span>[][] rlimits, <span class="type">int</span> mountExternal, String seInfo, String niceName,</span></span><br><span class="line"><span class="params">        <span class="type">int</span>[] fdsToClose, <span class="type">int</span>[] fdsToIgnore, <span class="type">boolean</span> startChildZygote, ...)</span> {</span><br><span class="line">    ZygoteHooks.preFork();</span><br><span class="line">    <span class="type">int</span> <span class="variable">pid</span> <span class="operator">=</span> nativeForkAndSpecialize(uid, gid, gids, runtimeFlags, rlimits,</span><br><span class="line">            mountExternal, seInfo, niceName, fdsToClose, fdsToIgnore,</span><br><span class="line">            startChildZygote, ...);</span><br><span class="line">    <span class="keyword">if</span> (pid == <span class="number">0</span>) {</span><br><span class="line">        Trace.traceBegin(Trace.TRACE_TAG_ACTIVITY_MANAGER, <span class="string">"PostFork"</span>);</span><br><span class="line">        <span class="keyword">if</span> (gids != <span class="literal">null</span> &amp;&amp; gids.length &gt; <span class="number">0</span>) {</span><br><span class="line">            NetworkUtilsInternal.setAllowNetworkingForProcess(containsInetGid(gids));</span><br><span class="line">        }</span><br><span class="line">    }</span><br><span class="line">    Thread.currentThread().setPriority(Thread.NORM_PRIORITY);</span><br><span class="line">    ZygoteHooks.postForkCommon();</span><br><span class="line">    <span class="keyword">return</span> pid;</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<h3 id="5-2-fork-前-FD-表与子进程清理"><a href="#5-2-fork-前-FD-表与子进程清理" class="headerlink" title="5.2 fork 前 FD 表与子进程清理"></a>5.2 fork 前 FD 表与子进程清理</h3><p>fork 之前 native 层会检查开放 FD 表；child 关闭 Zygote/USAP 相关 FD，重开或脱离剩余 FD，避免子进程继承 Zygote 的控制 socket 或意外共享描述符。</p>
+<figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/base/core/jni/com_android_internal_os_Zygote.cpp</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">pid_t</span> <span class="title">zygote::ForkCommon</span><span class="params">(JNIEnv* env, <span class="type">bool</span> is_system_server,</span></span></span><br><span class="line"><span class="params"><span class="function">        <span class="type">const</span> std::vector&lt;<span class="type">int</span>&gt;&amp; fds_to_close, <span class="type">const</span> std::vector&lt;<span class="type">int</span>&gt;&amp; fds_to_ignore,</span></span></span><br><span class="line"><span class="params"><span class="function">        <span class="type">bool</span> is_priority_fork, <span class="type">bool</span> purge)</span> </span>{</span><br><span class="line">    ...</span><br><span class="line">    <span class="built_in">BlockSignal</span>(SIGCHLD, fail_fn);</span><br><span class="line">    __android_log_close();</span><br><span class="line">    <span class="built_in">AStatsSocket_close</span>();</span><br><span class="line">    <span class="keyword">if</span> (gOpenFdTable == <span class="literal">nullptr</span>) {</span><br><span class="line">        gOpenFdTable = FileDescriptorTable::<span class="built_in">Create</span>(fds_to_ignore, fail_fn);</span><br><span class="line">    } <span class="keyword">else</span> {</span><br><span class="line">        gOpenFdTable-&gt;<span class="built_in">Restat</span>(fds_to_ignore, fail_fn);</span><br><span class="line">    }</span><br><span class="line">    <span class="keyword">if</span> (purge) <span class="built_in">mallopt</span>(M_PURGE_ALL, <span class="number">0</span>);</span><br><span class="line">    <span class="type">pid_t</span> pid = fork();</span><br><span class="line">    <span class="keyword">if</span> (pid == <span class="number">0</span>) {</span><br><span class="line">        <span class="built_in">PreApplicationInit</span>();</span><br><span class="line">        <span class="built_in">DetachDescriptors</span>(env, fds_to_close, fail_fn);</span><br><span class="line">        <span class="built_in">ClearUsapTable</span>();</span><br><span class="line">        gOpenFdTable-&gt;<span class="built_in">ReopenOrDetach</span>(fail_fn);</span><br><span class="line">        gSystemServerSocketFd = <span class="number">-1</span>;</span><br><span class="line">    }</span><br><span class="line">    <span class="built_in">UnblockSignal</span>(SIGCHLD, fail_fn);</span><br><span class="line">    <span class="keyword">return</span> pid;</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<h3 id="5-3-子分支专属化"><a href="#5-3-子分支专属化" class="headerlink" title="5.3 子分支专属化"></a>5.3 子分支专属化</h3><p><code>nativeForkAndSpecialize()</code> 计算 capabilities、拼入 USAP/system-server/preload FD 的关闭或忽略列表，然后 child 调用 <code>SpecializeCommon()</code>。后者才执行 UID/GID、SELinux domain、capability、seccomp、挂载和调度等专属化；它不是一个只设置 <code>setuid()</code> 的薄封装。</p>
+<figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/base/core/jni/com_android_internal_os_Zygote.cpp</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">static</span> jint <span class="title">com_android_internal_os_Zygote_nativeForkAndSpecialize</span><span class="params">(</span></span></span><br><span class="line"><span class="params"><span class="function">        JNIEnv* env, jclass, jint uid, jint gid, jintArray gids, jint runtime_flags,</span></span></span><br><span class="line"><span class="params"><span class="function">        jobjectArray rlimits, jint mount_external, jstring se_info, jstring nice_name, ...)</span> </span>{</span><br><span class="line">    jlong capabilities = <span class="built_in">CalculateCapabilities</span>(env, uid, gid, gids, is_child_zygote);</span><br><span class="line">    jlong bounding_capabilities = <span class="built_in">CalculateBoundingCapabilities</span>(env, uid, gid, gids);</span><br><span class="line">    ...</span><br><span class="line">    fds_to_close.<span class="built_in">push_back</span>(gUsapPoolSocketFD);</span><br><span class="line">    ...</span><br><span class="line">    <span class="type">pid_t</span> pid = zygote::<span class="built_in">ForkCommon</span>(env, <span class="literal">false</span> <span class="comment">/* is_system_server */</span>,</span><br><span class="line">            fds_to_close, fds_to_ignore, <span class="literal">true</span>);</span><br><span class="line">    <span class="keyword">if</span> (pid == <span class="number">0</span>) {</span><br><span class="line">        <span class="built_in">SpecializeCommon</span>(env, uid, gid, gids, runtime_flags, rlimits,</span><br><span class="line">                capabilities, capabilities, bounding_capabilities, mount_external,</span><br><span class="line">                se_info, nice_name, <span class="literal">false</span>, is_child_zygote == JNI_TRUE,</span><br><span class="line">                instruction_set, app_data_dir, is_top_app == JNI_TRUE,</span><br><span class="line">                pkg_data_info_list, allowlisted_data_info_list,</span><br><span class="line">                mount_data_dirs == JNI_TRUE, mount_storage_dirs == JNI_TRUE,</span><br><span class="line">                mount_sysprop_overrides == JNI_TRUE);</span><br><span class="line">    }</span><br><span class="line">    <span class="keyword">return</span> pid;</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<h2 id="6-子进程从-Zygote-栈切换到应用入口"><a href="#6-子进程从-Zygote-栈切换到应用入口" class="headerlink" title="6. 子进程从 Zygote 栈切换到应用入口"></a>6. 子进程从 Zygote 栈切换到应用入口</h2><p>子进程关闭连接 socket，设置进程名；无 wrapper 时由 <code>ZygoteInit.zygoteInit()</code> 完成 runtime 初始化并反射入口。<code>RuntimeInit.applicationInit()</code> 设置 targetSdk 和兼容性变更，再用 <code>findStaticMain()</code> 得到可执行 <code>Runnable</code>，避免把 Zygote 调用链带进应用 main。</p>
+<figure class="highlight java"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/base/core/java/com/android/internal/os/ZygoteConnection.java</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span> Runnable <span class="title function_">handleChildProc</span><span class="params">(ZygoteArguments parsedArgs,</span></span><br><span class="line"><span class="params">        FileDescriptor pipeFd, <span class="type">boolean</span> isZygote)</span> {</span><br><span class="line">    closeSocket();</span><br><span class="line">    Zygote.setAppProcessName(parsedArgs, TAG);</span><br><span class="line">    Trace.traceEnd(Trace.TRACE_TAG_ACTIVITY_MANAGER);</span><br><span class="line">    <span class="keyword">if</span> (parsedArgs.mInvokeWith != <span class="literal">null</span>) {</span><br><span class="line">        WrapperInit.execApplication(parsedArgs.mInvokeWith, parsedArgs.mNiceName,</span><br><span class="line">                parsedArgs.mTargetSdkVersion, VMRuntime.getCurrentInstructionSet(),</span><br><span class="line">                pipeFd, parsedArgs.mRemainingArgs);</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">IllegalStateException</span>(<span class="string">"WrapperInit.execApplication unexpectedly returned"</span>);</span><br><span class="line">    }</span><br><span class="line">    <span class="keyword">if</span> (!isZygote) {</span><br><span class="line">        <span class="keyword">return</span> ZygoteInit.zygoteInit(parsedArgs.mTargetSdkVersion,</span><br><span class="line">                parsedArgs.mDisabledCompatChanges, parsedArgs.mRemainingArgs, <span class="literal">null</span>);</span><br><span class="line">    }</span><br><span class="line">    <span class="keyword">return</span> ZygoteInit.childZygoteInit(parsedArgs.mRemainingArgs);</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<figure class="highlight java"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/base/core/java/com/android/internal/os/RuntimeInit.java</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">protected</span> <span class="keyword">static</span> Runnable <span class="title function_">applicationInit</span><span class="params">(<span class="type">int</span> targetSdkVersion,</span></span><br><span class="line"><span class="params">        <span class="type">long</span>[] disabledCompatChanges, String[] argv, ClassLoader classLoader)</span> {</span><br><span class="line">    nativeSetExitWithoutCleanup(<span class="literal">true</span>);</span><br><span class="line">    VMRuntime.getRuntime().setTargetSdkVersion(targetSdkVersion);</span><br><span class="line">    VMRuntime.getRuntime().setDisabledCompatChanges(disabledCompatChanges);</span><br><span class="line">    <span class="type">Arguments</span> <span class="variable">args</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Arguments</span>(argv);</span><br><span class="line">    Trace.traceEnd(Trace.TRACE_TAG_ACTIVITY_MANAGER);</span><br><span class="line">    <span class="keyword">return</span> findStaticMain(args.startClass, args.startArgs, classLoader);</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<h2 id="7-ActivityThread-main-回连-AMS"><a href="#7-ActivityThread-main-回连-AMS" class="headerlink" title="7. ActivityThread.main() 回连 AMS"></a>7. <code>ActivityThread.main()</code> 回连 AMS</h2><p><code>ActivityThread.main()</code> 创建应用主线程 Looper，解析 <code>seq=&lt;startSeq&gt;</code>，创建 <code>ActivityThread</code>，随后由 <code>attach(false, startSeq)</code> 通过 Binder 调用 AMS。还没有调用 <code>Application.onCreate()</code>。</p>
+<figure class="highlight java"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/base/core/java/android/app/ActivityThread.java</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> {</span><br><span class="line">    Trace.traceBegin(Trace.TRACE_TAG_ACTIVITY_MANAGER, <span class="string">"ActivityThreadMain"</span>);</span><br><span class="line">    AndroidOs.install();</span><br><span class="line">    Environment.initForCurrentUser();</span><br><span class="line">    initializeMainlineModules();</span><br><span class="line">    Process.setArgV0(<span class="string">"&lt;pre-initialized&gt;"</span>);</span><br><span class="line">    Looper.prepareMainLooper();</span><br><span class="line">    <span class="type">long</span> <span class="variable">startSeq</span> <span class="operator">=</span> <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">for</span> (String arg : args) {</span><br><span class="line">        <span class="keyword">if</span> (arg != <span class="literal">null</span> &amp;&amp; arg.startsWith(PROC_START_SEQ_IDENT)) {</span><br><span class="line">            startSeq = Long.parseLong(arg.substring(PROC_START_SEQ_IDENT.length()));</span><br><span class="line">        }</span><br><span class="line">    }</span><br><span class="line">    <span class="type">ActivityThread</span> <span class="variable">thread</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ActivityThread</span>();</span><br><span class="line">    thread.attach(<span class="literal">false</span>, startSeq);</span><br><span class="line">    ...</span><br><span class="line">    Looper.loop();</span><br><span class="line">    <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">RuntimeException</span>(<span class="string">"Main thread loop unexpectedly exited"</span>);</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<figure class="highlight java"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/base/core/java/android/app/ActivityThread.java</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title function_">attach</span><span class="params">(<span class="type">boolean</span> system, <span class="type">long</span> startSeq)</span> {</span><br><span class="line">    sCurrentActivityThread = <span class="built_in">this</span>;</span><br><span class="line">    mSystemThread = system;</span><br><span class="line">    mStartSeq = startSeq;</span><br><span class="line">    <span class="keyword">if</span> (!system) {</span><br><span class="line">        DdmHandleAppName.setAppName(<span class="string">"&lt;pre-initialized&gt;"</span>, UserHandle.myUserId());</span><br><span class="line">        RuntimeInit.setApplicationObject(mAppThread.asBinder());</span><br><span class="line">        <span class="type">IActivityManager</span> <span class="variable">mgr</span> <span class="operator">=</span> ActivityManager.getService();</span><br><span class="line">        mgr.attachApplication(mAppThread, startSeq);</span><br><span class="line">        BinderInternal.addGcWatcher(...);</span><br><span class="line">    }</span><br><span class="line">    ...</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<p>AMS 利用调用方 PID/UID 与 <code>startSeq</code> 验证并找到对应 <code>ProcessRecord</code>，再通过新进程暴露出来的 <code>IApplicationThread</code> 发起 <code>bindApplication()</code>。在 Binder 调用返回后，AMS 才将记录标为 active、更新 LRU 与 OOM 调整，并继续派发等待中的 Activity/Service 等。</p>
+<figure class="highlight java"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/base/services/core/java/com/android/server/am/ActivityManagerService.java</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">final</span> <span class="keyword">void</span> <span class="title function_">attachApplication</span><span class="params">(IApplicationThread thread, <span class="type">long</span> startSeq)</span> {</span><br><span class="line">    <span class="keyword">if</span> (thread == <span class="literal">null</span>) <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">SecurityException</span>(<span class="string">"Invalid application interface"</span>);</span><br><span class="line">    <span class="keyword">synchronized</span> (<span class="built_in">this</span>) {</span><br><span class="line">        <span class="type">int</span> <span class="variable">callingPid</span> <span class="operator">=</span> Binder.getCallingPid();</span><br><span class="line">        <span class="type">int</span> <span class="variable">callingUid</span> <span class="operator">=</span> Binder.getCallingUid();</span><br><span class="line">        <span class="type">long</span> <span class="variable">origId</span> <span class="operator">=</span> Binder.clearCallingIdentity();</span><br><span class="line">        attachApplicationLocked(thread, callingPid, callingUid, startSeq);</span><br><span class="line">        Binder.restoreCallingIdentity(origId);</span><br><span class="line">    }</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<figure class="highlight java"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/base/services/core/java/com/android/server/am/ActivityManagerService.java</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title function_">attachApplicationLocked</span><span class="params">(<span class="meta">@NonNull</span> IApplicationThread thread,</span></span><br><span class="line"><span class="params">        <span class="type">int</span> pid, <span class="type">int</span> callingUid, <span class="type">long</span> startSeq)</span> {</span><br><span class="line">    ...</span><br><span class="line">    ActivityTaskManagerInternal.<span class="type">PreBindInfo</span> <span class="variable">preBindInfo</span> <span class="operator">=</span></span><br><span class="line">            mAtmInternal.preBindApplication(app.getWindowProcessController(), appInfo);</span><br><span class="line">    ...</span><br><span class="line">    thread.bindApplication(processName, appInfo, app.sdkSandboxClientAppVolumeUuid, ...);</span><br><span class="line">    <span class="keyword">synchronized</span> (mProcLock) {</span><br><span class="line">        app.makeActive(<span class="keyword">new</span> <span class="title class_">ApplicationThreadDeferred</span>(thread), mProcessStats);</span><br><span class="line">    }</span><br><span class="line">    updateLruProcessLocked(app, <span class="literal">false</span>, <span class="literal">null</span>);</span><br><span class="line">    updateOomAdjLocked(app, OOM_ADJ_REASON_PROCESS_BEGIN);</span><br><span class="line">    ...</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<h2 id="8-bindApplication-后发生什么"><a href="#8-bindApplication-后发生什么" class="headerlink" title="8. bindApplication() 后发生什么"></a>8. <code>bindApplication()</code> 后发生什么</h2><p><code>bindApplication()</code> 是 AMS → app 的异步 Binder 回调。ActivityThread 将它投递到主线程并在处理流程中建立 <code>LoadedApk</code> / <code>ContextImpl</code>、安装系统与应用 Provider、创建 instrumentation（如有）、调用 <code>makeApplication()</code>，最终进入 <code>Application.onCreate()</code>；随后 AMS/ATMS 可继续调度 Activity，或 ActiveServices 调度 Service。</p>
+<p>这里同样不能把“进程启动”简化为 <code>ActivityThread.main()</code>：</p>
+<ul>
+<li>provider 进程可能先因 ContentProvider 请求被拉起；</li>
+<li>service、broadcast receiver、instrumentation 的后续调度目标不同；</li>
+<li>共享 UID、isolated process、SDK sandbox、App/WebView Zygote 都会改变传入 bind 参数或限制；</li>
+<li>启动过程中 OOM adj、进程组、冻结/后台限制等由 AMS 持续调整，fork 时的状态不是终态。</li>
+</ul>
+<h2 id="9-调试路径"><a href="#9-调试路径" class="headerlink" title="9. 调试路径"></a>9. 调试路径</h2><ul>
+<li><code>logcat -b system -s ActivityManager ActivityTaskManager</code>：关注 <code>Start proc</code>、attach、进程死亡、启动超时；应用侧可看 <code>AndroidRuntime</code>、目标进程 tag。</li>
+<li>Perfetto：查看 <code>Start proc: &lt;name&gt;</code>、<code>PostFork</code>、<code>ActivityThreadMain</code> 与 <code>bindApplication</code> 时间戳，区分“请求到 fork 慢”还是“fork 后绑定慢”。</li>
+<li><code>dumpsys activity processes</code>：确认 <code>ProcessRecord</code>、PID、OOM adj 与 pending 状态；<code>dumpsys meminfo &lt;pid&gt;</code> 可辅助检查新进程。</li>
+<li><code>ps -A -o PID,PPID,UID,NAME,ARGS</code>：可验证 PPID/UID/进程名，但不能仅凭 PPID 判定必然使用哪种 Zygote 路径。</li>
+<li>启动失败应分段定位：socket/ABI/USAP、Zygote 安全策略与 fork、native specialize、<code>attachApplication</code> 匹配、<code>bindApplication</code> 及应用初始化。</li>
+</ul>
+<h2 id="10-小结"><a href="#10-小结" class="headerlink" title="10. 小结"></a>10. 小结</h2><ol>
+<li>AMS 的 <code>ProcessList</code> 根据 hosting 类型决定常规、App 或 WebView Zygote 路径；<code>Process.start()</code> 只是常规路径的 Java 门面。</li>
+<li>Zygote 参数携带 UID/GID、SELinux、runtime flags、挂载与兼容性配置，远不止入口类名；协议对换行/NUL 有边界校验。</li>
+<li>Android 15 允许 USAP 与 fast-fork；USAP I/O 失败会回退普通 Zygote，不要假设每次都由主 Zygote 直接 fork。</li>
+<li>native <code>ForkCommon()</code> 管理 FD 与 fork 安全，<code>SpecializeCommon()</code> 完成权限和隔离；fork 成功时应用仍未初始化。</li>
+<li><code>ActivityThread.attach()</code> → AMS <code>bindApplication()</code> 才让进程成为可调度应用，<code>Application.onCreate()</code> 位于其后的应用绑定处理流程。</li>
+</ol>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/startop/" rel="tag"># startop</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2025/10/03/Android%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A85-Servicemanager%E8%BF%9B%E7%A8%8B/" rel="next" title="Android 系统启动——Servicemanager进程">
+                <i class="fa fa-chevron-left"></i> Android 系统启动——Servicemanager进程
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2026/02/15/AI-Agent%E5%AD%A6%E4%B9%A0%E4%B9%8B%E6%97%85/" rel="prev" title="AI Agent 学习之旅">
+                AI Agent 学习之旅 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="/images/head.jpg"
+                alt="" />
+            
+              <p class="site-author-name" itemprop="name"></p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/%7C%7C%20archive">
+              
+                  <span class="site-state-item-count">46</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">16</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">35</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+            <div class="feed-link motion-element">
+              <a href="/atom.xml" rel="alternate">
+                <i class="fa fa-rss"></i>
+                RSS
+              </a>
+            </div>
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/Zcorpius" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-github"></i>GitHub</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://www.zhihu.com/people/lin-li-yike-cao/activities" target="_blank" title="ZhiHu">
+                      
+                        <i class="fa fa-fw fa-globe"></i>ZhiHu</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+            <div class="links-of-blogroll motion-element links-of-blogroll-block">
+              <div class="links-of-blogroll-title">
+                <i class="fa  fa-fw fa-link"></i>
+                Links
+              </div>
+              <ul class="links-of-blogroll-list">
+                
+                  <li class="links-of-blogroll-item">
+                    <a href="https://blog.schwarzeni.com/" title="Schwarzeni" target="_blank">Schwarzeni</a>
+                  </li>
+                
+                  <li class="links-of-blogroll-item">
+                    <a href="https://www.qcmoke.cn/" title="qcmoke" target="_blank">qcmoke</a>
+                  </li>
+                
+                  <li class="links-of-blogroll-item">
+                    <a href="https://www.zhoujianguo.ltd/" title="ZhouJianGuo" target="_blank">ZhouJianGuo</a>
+                  </li>
+                
+                  <li class="links-of-blogroll-item">
+                    <a href="https://hishiro-xiao.github.io/" title="hishiro-xiao" target="_blank">hishiro-xiao</a>
+                  </li>
+                
+              </ul>
+            </div>
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Android-%E5%BA%94%E7%94%A8%E8%BF%9B%E7%A8%8B%E5%88%9B%E5%BB%BA"><span class="nav-text">Android 应用进程创建</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E6%80%BB%E5%9B%BE%EF%BC%9Afork-%E4%B8%8D%E6%98%AF%E5%BA%94%E7%94%A8%E5%90%AF%E5%8A%A8%E7%9A%84%E7%BB%88%E7%82%B9"><span class="nav-text">1. 总图：fork 不是应用启动的终点</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-%E8%B0%81%E5%86%B3%E5%AE%9A%E5%88%9B%E5%BB%BA%EF%BC%9AProcessList-startProcess"><span class="nav-text">2. 谁决定创建：ProcessList.startProcess()</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#2-1-%E4%B8%89%E7%B1%BB-Zygote-%E8%B7%AF%E5%BE%84"><span class="nav-text">2.1 三类 Zygote 路径</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-2-%E6%95%B0%E6%8D%AE%E4%B8%8E%E5%AD%98%E5%82%A8%E9%9A%94%E7%A6%BB%E5%8F%82%E6%95%B0"><span class="nav-text">2.2 数据与存储隔离参数</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-system-server-%E5%8F%91%E7%BB%99-Zygote-%E7%9A%84%E8%AF%B7%E6%B1%82"><span class="nav-text">3. system_server 发给 Zygote 的请求</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#3-1-Process-start-%E5%8F%AA%E6%98%AF-Java-%E9%97%A8%E9%9D%A2"><span class="nav-text">3.1 Process.start() 只是 Java 门面</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-2-startViaZygote-%E6%9E%84%E9%80%A0-argv"><span class="nav-text">3.2 startViaZygote() 构造 argv</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-3-ABI-%E9%80%89%E6%8B%A9%E4%B8%8E-Zygote-socket"><span class="nav-text">3.3 ABI 选择与 Zygote socket</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-4-%E5%8D%8F%E8%AE%AE%E4%B8%8E-USAP-fallback"><span class="nav-text">3.4 协议与 USAP fallback</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-Zygote-%E6%8E%A5%E6%94%B6%E5%91%BD%E4%BB%A4%E4%B8%8E%E5%AE%89%E5%85%A8%E6%A3%80%E6%9F%A5"><span class="nav-text">4. Zygote 接收命令与安全检查</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-native-fork-%E4%B8%8E-specialize"><span class="nav-text">5. native fork 与 specialize</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#5-1-Java-Hook-%E4%B8%8E-JNI-%E5%85%A5%E5%8F%A3"><span class="nav-text">5.1 Java Hook 与 JNI 入口</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-2-fork-%E5%89%8D-FD-%E8%A1%A8%E4%B8%8E%E5%AD%90%E8%BF%9B%E7%A8%8B%E6%B8%85%E7%90%86"><span class="nav-text">5.2 fork 前 FD 表与子进程清理</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-3-%E5%AD%90%E5%88%86%E6%94%AF%E4%B8%93%E5%B1%9E%E5%8C%96"><span class="nav-text">5.3 子分支专属化</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-%E5%AD%90%E8%BF%9B%E7%A8%8B%E4%BB%8E-Zygote-%E6%A0%88%E5%88%87%E6%8D%A2%E5%88%B0%E5%BA%94%E7%94%A8%E5%85%A5%E5%8F%A3"><span class="nav-text">6. 子进程从 Zygote 栈切换到应用入口</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-ActivityThread-main-%E5%9B%9E%E8%BF%9E-AMS"><span class="nav-text">7. ActivityThread.main() 回连 AMS</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#8-bindApplication-%E5%90%8E%E5%8F%91%E7%94%9F%E4%BB%80%E4%B9%88"><span class="nav-text">8. bindApplication() 后发生什么</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#9-%E8%B0%83%E8%AF%95%E8%B7%AF%E5%BE%84"><span class="nav-text">9. 调试路径</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#10-%E5%B0%8F%E7%BB%93"><span class="nav-text">10. 小结</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Zcorpius</span>
+
+  
+</div>
+
+<!--
+
+
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Muse</a> v5.1.4</div>
+
+
+-->
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+          <span id="scrollpercent"><span>0</span>%</span>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+  
+
+
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@9/dist/mermaid.min.js"></script>
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: 'default'
+    });
+  </script>
+  
+  
+
+  
+
+
+<!-- Nexora 风格代码块增强：顶栏 + 语言标签 + 复制按钮 -->
+<script type="text/javascript" src="/js/src/nexora-code.js"></script>
+<!-- Nexora 风格 TOC scroll-spy（IntersectionObserver，替代 Bootstrap scrollspy） -->
+<script type="text/javascript" src="/js/src/nexora-toc.js"></script>
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"debug":false,"model":{"jsonPath":"https://cdn.jsdelivr.net/gh/evrstr/live2d-widget-models/live2d_evrstr/mashiro_shifuku/model.json"},"display":{"position":"left","width":200,"height":500},"mobile":{"show":true},"encrypt":{"enable":true},"log":false});</script></body>
+</html>
+
+<!-- 页面点击小红心 -->
+<script type="text/javascript" src="/js/src/love.js"></script>

@@ -1,0 +1,1336 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next muse use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+<script>
+    (function(){
+        if(''){
+            if (prompt('请输入密码') !== ''){
+                alert('密码错误');
+                history.back();
+            }
+        }
+    })();
+</script>
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/head.jpg?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/head.jpg?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/head.jpg?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/head.jpg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="startop," />
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="Zcorpius's Blog" type="application/atom+xml" />
+
+
+
+
+
+
+<meta name="description" content="Android 系统启动：servicemanager 源码基线：frameworks&#x2F;native&#x2F;cmds&#x2F;servicemanager 与 frameworks&#x2F;base&#x2F;core&#x2F;java&#x2F;android&#x2F;os&#x2F;ServiceManager.java。本篇讲的是 &#x2F;dev&#x2F;binder 上的 framework servicemanager；不要把它和 Binder 驱动、hwservic">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Android 系统启动——Servicemanager进程">
+<meta property="og:url" content="https://zcorpius.github.io/2025/10/03/Android%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A85-Servicemanager%E8%BF%9B%E7%A8%8B/index.html">
+<meta property="og:site_name" content="Zcorpius&#39;s Blog">
+<meta property="og:description" content="Android 系统启动：servicemanager 源码基线：frameworks&#x2F;native&#x2F;cmds&#x2F;servicemanager 与 frameworks&#x2F;base&#x2F;core&#x2F;java&#x2F;android&#x2F;os&#x2F;ServiceManager.java。本篇讲的是 &#x2F;dev&#x2F;binder 上的 framework servicemanager；不要把它和 Binder 驱动、hwservic">
+<meta property="og:locale">
+<meta property="article:published_time" content="2025-10-03T08:23:12.000Z">
+<meta property="article:modified_time" content="2026-09-09T15:40:35.721Z">
+<meta property="article:author" content="Zcorpius">
+<meta property="article:tag" content="startop">
+<meta name="twitter:card" content="summary">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Muse',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":true,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://Zcorpius.github.io/2025/10/03/Android系统启动5-Servicemanager进程/"/>
+
+
+
+
+
+  <title>Android 系统启动——Servicemanager进程 | Zcorpius's Blog</title>
+  
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 7.3.0">
+<style>.github-emoji { position: relative; display: inline-block; width: 1.2em; min-height: 1.2em; overflow: hidden; vertical-align: top; color: transparent; }  .github-emoji > span { position: relative; z-index: 10; }  .github-emoji img, .github-emoji .fancybox { margin: 0 !important; padding: 0 !important; border: none !important; outline: none !important; text-decoration: none !important; user-select: none !important; cursor: auto !important; }  .github-emoji img { height: 1.2em !important; width: 1.2em !important; position: absolute !important; left: 50% !important; top: 50% !important; transform: translate(-50%, -50%) !important; user-select: none !important; cursor: auto !important; } .github-emoji-fallback { color: inherit; } .github-emoji-fallback img { opacity: 0 !important; }</style>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Zcorpius's Blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">追寻自我的崎岖路上从不缺勇敢。</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-路径">
+          <a href="/top/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-fire"></i> <br />
+            
+            路径
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://Zcorpius.github.io/2025/10/03/Android%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A85-Servicemanager%E8%BF%9B%E7%A8%8B/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/head.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Zcorpius's Blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Android 系统启动——Servicemanager进程</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2025-10-03T16:23:12+08:00">
+                2025-10-03
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Framework/" itemprop="url" rel="index">
+                    <span itemprop="name">Framework</span>
+                  </a>
+                </span>
+
+                
+                
+                  ， 
+                
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Framework/StartUp/" itemprop="url" rel="index">
+                    <span itemprop="name">StartUp</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+            <div class="post-wordcount">
+              
+                
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-file-word-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">字数统计&#58;</span>
+                
+                <span title="字数统计">
+                  2.4k
+                </span>
+              
+
+              
+                <span class="post-meta-divider">|</span>
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-clock-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">阅读时长 &asymp;</span>
+                
+                <span title="阅读时长">
+                  11
+                </span>
+              
+            </div>
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="Android-系统启动：servicemanager"><a href="#Android-系统启动：servicemanager" class="headerlink" title="Android 系统启动：servicemanager"></a>Android 系统启动：servicemanager</h1><blockquote>
+<p>源码基线：<code>frameworks/native/cmds/servicemanager</code> 与 <code>frameworks/base/core/java/android/os/ServiceManager.java</code>。本篇讲的是 <code>/dev/binder</code> 上的 framework <strong>servicemanager</strong>；不要把它和 Binder 驱动、<code>hwservicemanager</code> 或 <code>vndservicemanager</code> 混为一个对象。</p>
+</blockquote>
+<h2 id="1-它解决什么问题"><a href="#1-它解决什么问题" class="headerlink" title="1. 它解决什么问题"></a>1. 它解决什么问题</h2><p>Binder 能把一次事务从进程 A 送到进程 B，但客户端首先要拿到服务的 Binder handle。servicemanager 是 <code>/dev/binder</code> 命名服务的<strong>上下文管理者（context manager）</strong>：</p>
+<blockquote>
+<p>服务进程 <code>addService(name, binder)</code> → servicemanager 保存 <code>name → binder</code> → 客户端 <code>get/check/waitForService(name)</code> → 获得 Binder 引用 → 后续业务事务直接发往目标服务。</p>
+</blockquote>
+<p>它不是“所有服务的执行中心”，也不转发后续业务调用；它只处理服务注册、查找、声明/懒启动、通知、死亡清理与访问控制。</p>
+<h3 id="1-1-四个概念的边界"><a href="#1-1-四个概念的边界" class="headerlink" title="1.1 四个概念的边界"></a>1.1 四个概念的边界</h3><table>
+<thead>
+<tr>
+<th>名称</th>
+<th>所在位置</th>
+<th>职责</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Binder driver</td>
+<td>内核 <code>/dev/binder</code></td>
+<td>事务、对象引用、线程等待和死亡通知的内核传输层</td>
+</tr>
+<tr>
+<td>servicemanager</td>
+<td><code>/system/bin/servicemanager</code></td>
+<td>framework Binder context manager，维护命名服务</td>
+</tr>
+<tr>
+<td>hwservicemanager</td>
+<td>独立 native 进程</td>
+<td>历史 HIDL 服务注册中心；不要与 AIDL framework 服务混写</td>
+</tr>
+<tr>
+<td>vndservicemanager</td>
+<td>变体/厂商 Binder 上下文</td>
+<td>vendor Binder 域中的服务管理；源码通过编译宏复用部分实现</td>
+</tr>
+</tbody></table>
+<p>因此，<code>ServiceManager.addService("activity", ...)</code> 是向 framework servicemanager 注册，<code>service list</code> 看到的也是这一域的服务；它不代表 HAL 的全部服务。</p>
+<h2 id="2-init-启动与重启语义"><a href="#2-init-启动与重启语义" class="headerlink" title="2. init 启动与重启语义"></a>2. init 启动与重启语义</h2><p>init 的 rc 将它置于很早的 <code>core</code> / <code>animation</code> 类，标为 <code>critical</code>；若它反复异常退出，init 的关键服务保护会使设备进入恢复路径。重启时还会停止就绪属性并重启一批依赖服务。</p>
+<figure class="highlight plaintext"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"># frameworks/native/cmds/servicemanager/servicemanager.rc</span><br><span class="line"></span><br><span class="line">service servicemanager /system/bin/servicemanager</span><br><span class="line">    class core animation</span><br><span class="line">    user system</span><br><span class="line">    group system readproc</span><br><span class="line">    critical</span><br><span class="line">    file /dev/kmsg w</span><br><span class="line">    onrestart setprop servicemanager.ready false</span><br><span class="line">    onrestart restart --only-if-running apexd</span><br><span class="line">    onrestart restart audioserver</span><br><span class="line">    onrestart restart gatekeeperd</span><br><span class="line">    onrestart class_restart --only-enabled main</span><br><span class="line">    onrestart class_restart --only-enabled hal</span><br><span class="line">    onrestart class_restart --only-enabled early_hal</span><br><span class="line">    task_profiles ProcessCapacityHigh</span><br><span class="line">    shutdown critical</span><br></pre></td></tr></tbody></table></figure>
+
+<p>这解释了为什么它的稳定性极重要：重启 servicemanager 不只是清空一个 map，很多 system 服务必须随之重新建立 Binder 可发现性。</p>
+<h2 id="3-取得-context-manager-身份"><a href="#3-取得-context-manager-身份" class="headerlink" title="3. 取得 context-manager 身份"></a>3. 取得 context-manager 身份</h2><h3 id="3-1-main-的初始化顺序"><a href="#3-1-main-的初始化顺序" class="headerlink" title="3.1 main() 的初始化顺序"></a>3.1 <code>main()</code> 的初始化顺序</h3><p>默认 Binder driver 是 <code>/dev/binder</code>。进程把 Binder 线程池上限设为 <strong>0</strong>，并非“完全不处理 Binder”；Android 15 的 servicemanager 采用 <code>Looper + setupPolling()</code> 将 Binder FD 接入事件循环，而非普通 Binder 线程池模型。</p>
+<figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/native/cmds/servicemanager/main.cpp</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">main</span><span class="params">(<span class="type">int</span> argc, <span class="type">char</span>** argv)</span> </span>{</span><br><span class="line">    android::base::<span class="built_in">InitLogging</span>(argv, android::base::KernelLogger);</span><br><span class="line">    ...</span><br><span class="line">    <span class="type">const</span> <span class="type">char</span>* driver = argc == <span class="number">2</span> ? argv[<span class="number">1</span>] : <span class="string">"/dev/binder"</span>;</span><br><span class="line">    sp&lt;ProcessState&gt; ps = ProcessState::<span class="built_in">initWithDriver</span>(driver);</span><br><span class="line">    ps-&gt;<span class="built_in">setThreadPoolMaxThreadCount</span>(<span class="number">0</span>);</span><br><span class="line">    ps-&gt;<span class="built_in">setCallRestriction</span>(ProcessState::CallRestriction::FATAL_IF_NOT_ONEWAY);</span><br><span class="line">    IPCThreadState::<span class="built_in">self</span>()-&gt;<span class="built_in">disableBackgroundScheduling</span>(<span class="literal">true</span>);</span><br><span class="line"></span><br><span class="line">    sp&lt;ServiceManager&gt; manager = sp&lt;ServiceManager&gt;::<span class="built_in">make</span>(std::<span class="built_in">make_unique</span>&lt;Access&gt;());</span><br><span class="line">    manager-&gt;<span class="built_in">addService</span>(<span class="string">"manager"</span>, manager, <span class="literal">false</span> <span class="comment">/* allowIsolated */</span>,</span><br><span class="line">            IServiceManager::DUMP_FLAG_PRIORITY_DEFAULT);</span><br><span class="line"></span><br><span class="line">    IPCThreadState::<span class="built_in">self</span>()-&gt;<span class="built_in">setTheContextObject</span>(manager);</span><br><span class="line">    <span class="keyword">if</span> (!ps-&gt;<span class="built_in">becomeContextManager</span>()) {</span><br><span class="line">        <span class="built_in">LOG</span>(FATAL) &lt;&lt; <span class="string">"Could not become context manager"</span>;</span><br><span class="line">    }</span><br><span class="line">    ...</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<p><code>becomeContextManager()</code> 最终通过 Binder driver 的 context-manager 操作占据这个 Binder 域的唯一角色。它失败应直接 fatal：同一 driver 上不能有两个 framework servicemanager。</p>
+<p><code>FATAL_IF_NOT_ONEWAY</code> 是对自身发起 Binder 调用的约束：servicemanager 不应进行可能阻塞的同步 Binder 调用。它降低“服务注册中心又被服务端卡住”的风险，不是对外部客户端事务一刀切的限制。</p>
+<h3 id="3-2-Binder-FD-进入-Looper"><a href="#3-2-Binder-FD-进入-Looper" class="headerlink" title="3.2 Binder FD 进入 Looper"></a>3.2 Binder FD 进入 Looper</h3><figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/native/cmds/servicemanager/main.cpp</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">static</span> sp&lt;BinderCallback&gt; <span class="title">setupTo</span><span class="params">(<span class="type">const</span> sp&lt;Looper&gt;&amp; looper)</span> </span>{</span><br><span class="line">    sp&lt;BinderCallback&gt; cb = sp&lt;BinderCallback&gt;::<span class="built_in">make</span>();</span><br><span class="line">    IPCThreadState::<span class="built_in">self</span>()-&gt;<span class="built_in">setupPolling</span>(&amp;cb-&gt;mBinderFd);</span><br><span class="line">    <span class="built_in">LOG_ALWAYS_FATAL_IF</span>(cb-&gt;mBinderFd &lt; <span class="number">0</span>, <span class="string">"Failed to setupPolling: %d"</span>, cb-&gt;mBinderFd);</span><br><span class="line">    looper-&gt;<span class="built_in">addFd</span>(cb-&gt;mBinderFd, Looper::POLL_CALLBACK,</span><br><span class="line">            Looper::EVENT_INPUT, cb, <span class="literal">nullptr</span>);</span><br><span class="line">    <span class="keyword">return</span> cb;</span><br><span class="line">}</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">BinderCallback::handleEvent</span><span class="params">(<span class="type">int</span>, <span class="type">int</span>, <span class="type">void</span>*)</span> </span>{</span><br><span class="line">    IPCThreadState::<span class="built_in">self</span>()-&gt;<span class="built_in">handlePolledCommands</span>();</span><br><span class="line">    <span class="keyword">return</span> <span class="number">1</span>;</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/native/cmds/servicemanager/main.cpp</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">main</span><span class="params">(<span class="type">int</span> argc, <span class="type">char</span>** argv)</span> </span>{</span><br><span class="line">    ...</span><br><span class="line">    sp&lt;Looper&gt; looper = Looper::<span class="built_in">prepare</span>(<span class="literal">false</span> <span class="comment">/* allowNonCallbacks */</span>);</span><br><span class="line">    sp&lt;BinderCallback&gt; binderCallback = BinderCallback::<span class="built_in">setupTo</span>(looper);</span><br><span class="line">    ClientCallbackCallback::<span class="built_in">setupTo</span>(looper, manager, binderCallback);</span><br><span class="line">    <span class="built_in">SetProperty</span>(<span class="string">"servicemanager.ready"</span>, <span class="string">"true"</span>);</span><br><span class="line">    <span class="keyword">while</span> (<span class="literal">true</span>) {</span><br><span class="line">        looper-&gt;<span class="built_in">pollAll</span>(<span class="number">-1</span>);</span><br><span class="line">    }</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<p>Binder 有输入时，<code>Looper</code> 调回 <code>handlePolledCommands()</code>，从 Binder driver 读取并分发事务到 <code>ServiceManager</code> 的 AIDL 实现；timerfd 的 client callback 也在同一 Looper 体系中处理。</p>
+<h2 id="4-数据、注册与权限"><a href="#4-数据、注册与权限" class="headerlink" title="4. 数据、注册与权限"></a>4. 数据、注册与权限</h2><h3 id="4-1-服务表不是简单的-Map"><a href="#4-1-服务表不是简单的-Map" class="headerlink" title="4.1 服务表不是简单的 Map<String, IBinder>"></a>4.1 服务表不是简单的 <code>Map&lt;String, IBinder&gt;</code></h3><p>Android 15 的 <code>Service</code> 条目至少包含 Binder、是否允许 isolated UID、dump 优先级、client 状态以及注册调用者的 UID/SID/PID 上下文。这样既能做访问判定，也能做延迟服务的 client 回调和故障诊断。</p>
+<figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/native/cmds/servicemanager/ServiceManager.h</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">ServiceManager</span> : <span class="keyword">public</span> os::BnServiceManager, <span class="keyword">public</span> IBinder::DeathRecipient {</span><br><span class="line">    ...</span><br><span class="line">    <span class="keyword">using</span> ServiceMap = std::map&lt;std::string, Service&gt;;</span><br><span class="line">    ServiceMap mNameToService;</span><br><span class="line">    ServiceCallbackMap mNameToRegistrationCallback;</span><br><span class="line">    ClientCallbackMap mNameToClientCallback;</span><br><span class="line">    ...</span><br><span class="line">    <span class="function">sp&lt;IBinder&gt; <span class="title">tryGetBinder</span><span class="params">(<span class="type">const</span> std::string&amp; name, <span class="type">bool</span> startIfNotFound)</span></span>;</span><br><span class="line">    <span class="function">binder::Status <span class="title">canAddService</span><span class="params">(<span class="type">const</span> Access::CallingContext&amp; ctx,</span></span></span><br><span class="line"><span class="params"><span class="function">            <span class="type">const</span> std::string&amp; name, std::optional&lt;std::string&gt;* accessor)</span></span>;</span><br><span class="line">};</span><br></pre></td></tr></tbody></table></figure>
+
+<h3 id="4-2-注册：调用者、SELinux、名称、VINTF、死亡通知"><a href="#4-2-注册：调用者、SELinux、名称、VINTF、死亡通知" class="headerlink" title="4.2 注册：调用者、SELinux、名称、VINTF、死亡通知"></a>4.2 注册：调用者、SELinux、名称、VINTF、死亡通知</h3><p>客户端 app UID 不允许注册系统服务；随后服务名要通过 SELinux <code>add</code> 权限，Binder 不能为空、服务名必须合法。framework servicemanager 还检查 VINTF 声明要求（适用时）。远端 Binder 注册 <code>linkToDeath()</code>，使服务进程死亡时能清表。</p>
+<figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/native/cmds/servicemanager/ServiceManager.cpp</span></span><br><span class="line"></span><br><span class="line"><span class="function">Status <span class="title">ServiceManager::addService</span><span class="params">(<span class="type">const</span> std::string&amp; name, <span class="type">const</span> sp&lt;IBinder&gt;&amp; binder,</span></span></span><br><span class="line"><span class="params"><span class="function">        <span class="type">bool</span> allowIsolated, <span class="type">int32_t</span> dumpPriority)</span> </span>{</span><br><span class="line">    <span class="keyword">auto</span> ctx = mAccess-&gt;<span class="built_in">getCallingContext</span>();</span><br><span class="line">    <span class="keyword">if</span> (<span class="built_in">multiuser_get_app_id</span>(ctx.uid) &gt;= AID_APP) {</span><br><span class="line">        <span class="keyword">return</span> Status::<span class="built_in">fromExceptionCode</span>(Status::EX_SECURITY,</span><br><span class="line">                <span class="string">"App UIDs cannot add services."</span>);</span><br><span class="line">    }</span><br><span class="line">    std::optional&lt;std::string&gt; accessorName;</span><br><span class="line">    <span class="keyword">if</span> (<span class="keyword">auto</span> status = <span class="built_in">canAddService</span>(ctx, name, &amp;accessorName); !status.<span class="built_in">isOk</span>()) {</span><br><span class="line">        <span class="keyword">return</span> status;</span><br><span class="line">    }</span><br><span class="line">    <span class="keyword">if</span> (binder == <span class="literal">nullptr</span> || !<span class="built_in">isValidServiceName</span>(name)) {</span><br><span class="line">        <span class="keyword">return</span> Status::<span class="built_in">fromExceptionCode</span>(Status::EX_ILLEGAL_ARGUMENT, ...);</span><br><span class="line">    }</span><br><span class="line">    <span class="keyword">if</span> (!<span class="built_in">meetsDeclarationRequirements</span>(ctx, binder, name)) {</span><br><span class="line">        <span class="keyword">return</span> Status::<span class="built_in">fromExceptionCode</span>(Status::EX_ILLEGAL_ARGUMENT,</span><br><span class="line">                <span class="string">"VINTF declaration error."</span>);</span><br><span class="line">    }</span><br><span class="line">    <span class="keyword">if</span> (binder-&gt;<span class="built_in">remoteBinder</span>() != <span class="literal">nullptr</span> &amp;&amp;</span><br><span class="line">            binder-&gt;<span class="built_in">linkToDeath</span>(sp&lt;ServiceManager&gt;::<span class="built_in">fromExisting</span>(<span class="keyword">this</span>)) != OK) {</span><br><span class="line">        <span class="keyword">return</span> Status::<span class="built_in">fromExceptionCode</span>(Status::EX_ILLEGAL_STATE,</span><br><span class="line">                <span class="string">"Couldn't linkToDeath."</span>);</span><br><span class="line">    }</span><br><span class="line">    mNameToService[name] = Service{ .binder = binder,</span><br><span class="line">            .allowIsolated = allowIsolated, .dumpPriority = dumpPriority, .ctx = ctx, ... };</span><br><span class="line">    ...</span><br><span class="line">    <span class="keyword">return</span> Status::<span class="built_in">ok</span>();</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/native/cmds/servicemanager/ServiceManager.cpp</span></span><br><span class="line"></span><br><span class="line"><span class="function">Status <span class="title">ServiceManager::canAddService</span><span class="params">(<span class="type">const</span> Access::CallingContext&amp; ctx,</span></span></span><br><span class="line"><span class="params"><span class="function">        <span class="type">const</span> std::string&amp; name, std::optional&lt;std::string&gt;* accessor)</span> </span>{</span><br><span class="line">    <span class="keyword">if</span> (!mAccess-&gt;<span class="built_in">canAdd</span>(ctx, name)) {</span><br><span class="line">        <span class="keyword">return</span> Status::<span class="built_in">fromExceptionCode</span>(Status::EX_SECURITY,</span><br><span class="line">                <span class="string">"SELinux denied for service."</span>);</span><br><span class="line">    }</span><br><span class="line">    *accessor = <span class="built_in">getVintfAccessorName</span>(name);</span><br><span class="line">    <span class="keyword">if</span> (accessor-&gt;<span class="built_in">has_value</span>() &amp;&amp; !mAccess-&gt;<span class="built_in">canAdd</span>(ctx, accessor-&gt;<span class="built_in">value</span>())) {</span><br><span class="line">        <span class="keyword">return</span> Status::<span class="built_in">fromExceptionCode</span>(Status::EX_SECURITY,</span><br><span class="line">                <span class="string">"SELinux denied for the accessor of the service."</span>);</span><br><span class="line">    }</span><br><span class="line">    <span class="keyword">return</span> Status::<span class="built_in">ok</span>();</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<p>注意 <code>addService</code> 的成功不表示任何进程都能获取它；查询方还要经过独立的 <code>find</code> SELinux 判定。</p>
+<h2 id="5-查找、懒启动与通知"><a href="#5-查找、懒启动与通知" class="headerlink" title="5. 查找、懒启动与通知"></a>5. 查找、懒启动与通知</h2><h3 id="5-1-getService、checkService-的区别"><a href="#5-1-getService、checkService-的区别" class="headerlink" title="5.1 getService、checkService 的区别"></a>5.1 <code>getService</code>、<code>checkService</code> 的区别</h3><ul>
+<li><code>checkService()</code>：不触发启动，立即查询；</li>
+<li><code>getService()</code>：服务不存在时可请求按 lazy AIDL service 尝试启动；</li>
+<li><code>waitForService()</code>：Java native 辅助层等待服务可用，适合明确需要它才能继续的场景。</li>
+</ul>
+<p><code>getService()</code> 并不保证立即得到非空 Binder；服务启动仍是异步过程。Android 15 的实现会先看内存表与 isolated 限制，再做 SELinux <code>find</code> 判定，最后在缺失且允许时请求懒服务启动。</p>
+<figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/native/cmds/servicemanager/ServiceManager.cpp</span></span><br><span class="line"></span><br><span class="line"><span class="function">sp&lt;IBinder&gt; <span class="title">ServiceManager::tryGetBinder</span><span class="params">(<span class="type">const</span> std::string&amp; name, <span class="type">bool</span> startIfNotFound)</span> </span>{</span><br><span class="line">    <span class="keyword">auto</span> ctx = mAccess-&gt;<span class="built_in">getCallingContext</span>();</span><br><span class="line">    sp&lt;IBinder&gt; out;</span><br><span class="line">    Service* service = <span class="literal">nullptr</span>;</span><br><span class="line">    <span class="keyword">if</span> (<span class="keyword">auto</span> it = mNameToService.<span class="built_in">find</span>(name); it != mNameToService.<span class="built_in">end</span>()) {</span><br><span class="line">        service = &amp;it-&gt;second;</span><br><span class="line">        <span class="keyword">if</span> (!service-&gt;allowIsolated &amp;&amp; <span class="built_in">is_multiuser_uid_isolated</span>(ctx.uid)) {</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">nullptr</span>;</span><br><span class="line">        }</span><br><span class="line">        out = service-&gt;binder;</span><br><span class="line">    }</span><br><span class="line">    <span class="keyword">if</span> (!mAccess-&gt;<span class="built_in">canFind</span>(ctx, name)) <span class="keyword">return</span> <span class="literal">nullptr</span>;</span><br><span class="line">    <span class="keyword">if</span> (!out &amp;&amp; startIfNotFound) <span class="built_in">tryStartService</span>(ctx, name);</span><br><span class="line">    <span class="keyword">if</span> (out) {</span><br><span class="line">        service-&gt;guaranteeClient = <span class="literal">true</span>;</span><br><span class="line">        <span class="built_in">CHECK</span>(<span class="built_in">handleServiceClientCallback</span>(<span class="number">2</span> <span class="comment">/* sm + transaction */</span>, name, <span class="literal">false</span>));</span><br><span class="line">        service-&gt;guaranteeClient = <span class="literal">true</span>;</span><br><span class="line">    }</span><br><span class="line">    <span class="keyword">return</span> out;</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<h3 id="5-2-注册可用通知"><a href="#5-2-注册可用通知" class="headerlink" title="5.2 注册可用通知"></a>5.2 注册可用通知</h3><p>需要等待某服务出现的客户端可使用 <code>registerForNotifications()</code>。servicemanager 会先校验 <code>find</code> 权限、拒绝 isolated 调用者、将 callback 链到 death；如果服务已在表中，则立即通知。服务后来 <code>addService()</code> 时也会遍历回调。</p>
+<figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/native/cmds/servicemanager/ServiceManager.cpp</span></span><br><span class="line"></span><br><span class="line"><span class="function">Status <span class="title">ServiceManager::registerForNotifications</span><span class="params">(<span class="type">const</span> std::string&amp; name,</span></span></span><br><span class="line"><span class="params"><span class="function">        <span class="type">const</span> sp&lt;IServiceCallback&gt;&amp; callback)</span> </span>{</span><br><span class="line">    <span class="keyword">auto</span> ctx = mAccess-&gt;<span class="built_in">getCallingContext</span>();</span><br><span class="line">    std::optional&lt;std::string&gt; accessorName;</span><br><span class="line">    <span class="keyword">if</span> (<span class="keyword">auto</span> status = <span class="built_in">canFindService</span>(ctx, name, &amp;accessorName); !status.<span class="built_in">isOk</span>()) {</span><br><span class="line">        <span class="keyword">return</span> status;</span><br><span class="line">    }</span><br><span class="line">    <span class="keyword">if</span> (<span class="built_in">is_multiuser_uid_isolated</span>(ctx.uid) || callback == <span class="literal">nullptr</span>) {</span><br><span class="line">        <span class="keyword">return</span> Status::<span class="built_in">fromExceptionCode</span>(Status::EX_SECURITY, ...);</span><br><span class="line">    }</span><br><span class="line">    IInterface::<span class="built_in">asBinder</span>(callback)-&gt;<span class="built_in">linkToDeath</span>(</span><br><span class="line">            sp&lt;ServiceManager&gt;::<span class="built_in">fromExisting</span>(<span class="keyword">this</span>));</span><br><span class="line">    mNameToRegistrationCallback[name].<span class="built_in">push_back</span>(callback);</span><br><span class="line">    <span class="keyword">if</span> (<span class="keyword">auto</span> it = mNameToService.<span class="built_in">find</span>(name); it != mNameToService.<span class="built_in">end</span>()) {</span><br><span class="line">        callback-&gt;<span class="built_in">onRegistration</span>(name, it-&gt;second.binder);</span><br><span class="line">    }</span><br><span class="line">    <span class="keyword">return</span> Status::<span class="built_in">ok</span>();</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<h3 id="5-3-服务死亡"><a href="#5-3-服务死亡" class="headerlink" title="5.3 服务死亡"></a>5.3 服务死亡</h3><p>Binder driver 通知 <code>DeathRecipient</code> 后，servicemanager 删除对应服务条目以及已死 callback。它并不替目标服务“重启进程”：服务如何重启由 init、system_server、懒 AIDL 控制或更上层策略负责。</p>
+<figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/native/cmds/servicemanager/ServiceManager.cpp</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">ServiceManager::binderDied</span><span class="params">(<span class="type">const</span> wp&lt;IBinder&gt;&amp; who)</span> </span>{</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">auto</span> it = mNameToService.<span class="built_in">begin</span>(); it != mNameToService.<span class="built_in">end</span>();) {</span><br><span class="line">        <span class="keyword">if</span> (who == it-&gt;second.binder) {</span><br><span class="line">            it = mNameToService.<span class="built_in">erase</span>(it);</span><br><span class="line">        } <span class="keyword">else</span> {</span><br><span class="line">            ++it;</span><br><span class="line">        }</span><br><span class="line">    }</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">auto</span> it = mNameToRegistrationCallback.<span class="built_in">begin</span>();</span><br><span class="line">            it != mNameToRegistrationCallback.<span class="built_in">end</span>();) {</span><br><span class="line">        <span class="built_in">removeRegistrationCallback</span>(who, &amp;it, <span class="literal">nullptr</span>);</span><br><span class="line">    }</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">auto</span> it = mNameToClientCallback.<span class="built_in">begin</span>(); it != mNameToClientCallback.<span class="built_in">end</span>();) {</span><br><span class="line">        <span class="built_in">removeClientCallback</span>(who, &amp;it);</span><br><span class="line">    }</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<h2 id="6-Java-客户端如何抵达-native-服务管理器"><a href="#6-Java-客户端如何抵达-native-服务管理器" class="headerlink" title="6. Java 客户端如何抵达 native 服务管理器"></a>6. Java 客户端如何抵达 native 服务管理器</h2><p>Java <code>android.os.ServiceManager</code> 先取 Binder driver 的 context object，再转换为 <code>IServiceManager</code> 代理并缓存。每个具体系统服务也可以进入 <code>sCache</code>；缓存命中时不必再找 servicemanager。</p>
+<figure class="highlight java"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/base/core/java/android/os/ServiceManager.java</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> IServiceManager <span class="title function_">getIServiceManager</span><span class="params">()</span> {</span><br><span class="line">    <span class="keyword">if</span> (sServiceManager != <span class="literal">null</span>) <span class="keyword">return</span> sServiceManager;</span><br><span class="line">    sServiceManager = ServiceManagerNative.asInterface(</span><br><span class="line">            Binder.allowBlocking(BinderInternal.getContextObject()));</span><br><span class="line">    <span class="keyword">return</span> sServiceManager;</span><br><span class="line">}</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> IBinder <span class="title function_">getService</span><span class="params">(String name)</span> {</span><br><span class="line">    <span class="keyword">try</span> {</span><br><span class="line">        <span class="type">IBinder</span> <span class="variable">service</span> <span class="operator">=</span> sCache.get(name);</span><br><span class="line">        <span class="keyword">return</span> service != <span class="literal">null</span> ? service : Binder.allowBlocking(rawGetService(name));</span><br><span class="line">    } <span class="keyword">catch</span> (RemoteException e) {</span><br><span class="line">        Log.e(TAG, <span class="string">"error in getService"</span>, e);</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">null</span>;</span><br><span class="line">    }</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<figure class="highlight java"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/base/core/java/android/os/ServiceManager.java</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> IBinder <span class="title function_">checkService</span><span class="params">(String name)</span> {</span><br><span class="line">    <span class="keyword">try</span> {</span><br><span class="line">        <span class="type">IBinder</span> <span class="variable">service</span> <span class="operator">=</span> sCache.get(name);</span><br><span class="line">        <span class="keyword">return</span> service != <span class="literal">null</span> ? service : Binder.allowBlocking(</span><br><span class="line">                getIServiceManager().checkService(name).getBinder());</span><br><span class="line">    } <span class="keyword">catch</span> (RemoteException e) {</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">null</span>;</span><br><span class="line">    }</span><br><span class="line">}</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> IBinder <span class="title function_">waitForService</span><span class="params">(<span class="meta">@NonNull</span> String name)</span> {</span><br><span class="line">    <span class="keyword">return</span> Binder.allowBlocking(waitForServiceNative(name));</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<p>这里的 <code>Binder.allowBlocking()</code> 是 Java 侧对“这个 Binder 可能同步阻塞”的显式标记，和 native servicemanager 自己的 <code>FATAL_IF_NOT_ONEWAY</code> 约束不是同一件事。</p>
+<h2 id="7-排障阅读路径"><a href="#7-排障阅读路径" class="headerlink" title="7. 排障阅读路径"></a>7. 排障阅读路径</h2><ul>
+<li><code>service list</code>：看 framework servicemanager 中当前可列出的 Binder 服务；无权限或其他 Binder 域的服务不会得到同样结果。</li>
+<li><code>dumpsys servicemanager</code> / <code>dumpsys -l</code>：检查可枚举服务和 dump 能力；SELinux 会影响 list/find/add。</li>
+<li><code>logcat -b system -s servicemanager</code>：查注册、权限拒绝、VINTF 声明、死亡与 lazy 启动日志。</li>
+<li>SELinux 拒绝：首先区分是 <code>add</code> 还是 <code>find</code>；注册方能 add 并不自动授予客户端 find。</li>
+<li>Binder driver 状态：需要从 <code>/sys/kernel/debug/binder</code> 或对应 debugfs 节点观察时，应注意用户版本访问限制以及 <code>/dev/binder</code>、<code>/dev/vndbinder</code> 的域差异。</li>
+</ul>
+<h2 id="8-小结"><a href="#8-小结" class="headerlink" title="8. 小结"></a>8. 小结</h2><ol>
+<li>servicemanager 是 <code>/dev/binder</code> 上命名服务的 context manager，不是 Binder driver，也不代理每一次业务 Binder 调用。</li>
+<li>Android 15 主进程用 <code>Looper + setupPolling()</code> 处理 Binder FD，线程池最大数设为 0 不等于停止接收事务。</li>
+<li>注册和查找分别有 SELinux <code>add</code> / <code>find</code> 控制；服务名、UID、VINTF、isolated UID、死亡通知共同构成约束。</li>
+<li><code>getService</code>、<code>checkService</code>、<code>waitForService</code> 的启动/等待语义不同；懒 AIDL 服务尤其不能把它们当作等价 API。</li>
+<li>system service 的 Binder 死亡只会让条目被清理；服务重启由更上层的生命周期管理承担。</li>
+</ol>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/startop/" rel="tag"># startop</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2025/09/30/Android%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A84-SystemServer%E8%BF%9B%E7%A8%8B/" rel="next" title="Android 系统启动——SystemServer进程">
+                <i class="fa fa-chevron-left"></i> Android 系统启动——SystemServer进程
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2025/10/06/Android%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A86-App%E8%BF%9B%E7%A8%8B/" rel="prev" title="Android 系统启动——App进程">
+                Android 系统启动——App进程 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="/images/head.jpg"
+                alt="" />
+            
+              <p class="site-author-name" itemprop="name"></p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/%7C%7C%20archive">
+              
+                  <span class="site-state-item-count">46</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">16</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">35</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+            <div class="feed-link motion-element">
+              <a href="/atom.xml" rel="alternate">
+                <i class="fa fa-rss"></i>
+                RSS
+              </a>
+            </div>
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/Zcorpius" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-github"></i>GitHub</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://www.zhihu.com/people/lin-li-yike-cao/activities" target="_blank" title="ZhiHu">
+                      
+                        <i class="fa fa-fw fa-globe"></i>ZhiHu</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+            <div class="links-of-blogroll motion-element links-of-blogroll-block">
+              <div class="links-of-blogroll-title">
+                <i class="fa  fa-fw fa-link"></i>
+                Links
+              </div>
+              <ul class="links-of-blogroll-list">
+                
+                  <li class="links-of-blogroll-item">
+                    <a href="https://blog.schwarzeni.com/" title="Schwarzeni" target="_blank">Schwarzeni</a>
+                  </li>
+                
+                  <li class="links-of-blogroll-item">
+                    <a href="https://www.qcmoke.cn/" title="qcmoke" target="_blank">qcmoke</a>
+                  </li>
+                
+                  <li class="links-of-blogroll-item">
+                    <a href="https://www.zhoujianguo.ltd/" title="ZhouJianGuo" target="_blank">ZhouJianGuo</a>
+                  </li>
+                
+                  <li class="links-of-blogroll-item">
+                    <a href="https://hishiro-xiao.github.io/" title="hishiro-xiao" target="_blank">hishiro-xiao</a>
+                  </li>
+                
+              </ul>
+            </div>
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Android-%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A8%EF%BC%9Aservicemanager"><span class="nav-text">Android 系统启动：servicemanager</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E5%AE%83%E8%A7%A3%E5%86%B3%E4%BB%80%E4%B9%88%E9%97%AE%E9%A2%98"><span class="nav-text">1. 它解决什么问题</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-1-%E5%9B%9B%E4%B8%AA%E6%A6%82%E5%BF%B5%E7%9A%84%E8%BE%B9%E7%95%8C"><span class="nav-text">1.1 四个概念的边界</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-init-%E5%90%AF%E5%8A%A8%E4%B8%8E%E9%87%8D%E5%90%AF%E8%AF%AD%E4%B9%89"><span class="nav-text">2. init 启动与重启语义</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-%E5%8F%96%E5%BE%97-context-manager-%E8%BA%AB%E4%BB%BD"><span class="nav-text">3. 取得 context-manager 身份</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#3-1-main-%E7%9A%84%E5%88%9D%E5%A7%8B%E5%8C%96%E9%A1%BA%E5%BA%8F"><span class="nav-text">3.1 main() 的初始化顺序</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-2-Binder-FD-%E8%BF%9B%E5%85%A5-Looper"><span class="nav-text">3.2 Binder FD 进入 Looper</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-%E6%95%B0%E6%8D%AE%E3%80%81%E6%B3%A8%E5%86%8C%E4%B8%8E%E6%9D%83%E9%99%90"><span class="nav-text">4. 数据、注册与权限</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#4-1-%E6%9C%8D%E5%8A%A1%E8%A1%A8%E4%B8%8D%E6%98%AF%E7%AE%80%E5%8D%95%E7%9A%84-Map"><span class="nav-text">4.1 服务表不是简单的 Map&lt;String, IBinder&gt;</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-2-%E6%B3%A8%E5%86%8C%EF%BC%9A%E8%B0%83%E7%94%A8%E8%80%85%E3%80%81SELinux%E3%80%81%E5%90%8D%E7%A7%B0%E3%80%81VINTF%E3%80%81%E6%AD%BB%E4%BA%A1%E9%80%9A%E7%9F%A5"><span class="nav-text">4.2 注册：调用者、SELinux、名称、VINTF、死亡通知</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-%E6%9F%A5%E6%89%BE%E3%80%81%E6%87%92%E5%90%AF%E5%8A%A8%E4%B8%8E%E9%80%9A%E7%9F%A5"><span class="nav-text">5. 查找、懒启动与通知</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#5-1-getService%E3%80%81checkService-%E7%9A%84%E5%8C%BA%E5%88%AB"><span class="nav-text">5.1 getService、checkService 的区别</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-2-%E6%B3%A8%E5%86%8C%E5%8F%AF%E7%94%A8%E9%80%9A%E7%9F%A5"><span class="nav-text">5.2 注册可用通知</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-3-%E6%9C%8D%E5%8A%A1%E6%AD%BB%E4%BA%A1"><span class="nav-text">5.3 服务死亡</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-Java-%E5%AE%A2%E6%88%B7%E7%AB%AF%E5%A6%82%E4%BD%95%E6%8A%B5%E8%BE%BE-native-%E6%9C%8D%E5%8A%A1%E7%AE%A1%E7%90%86%E5%99%A8"><span class="nav-text">6. Java 客户端如何抵达 native 服务管理器</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-%E6%8E%92%E9%9A%9C%E9%98%85%E8%AF%BB%E8%B7%AF%E5%BE%84"><span class="nav-text">7. 排障阅读路径</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#8-%E5%B0%8F%E7%BB%93"><span class="nav-text">8. 小结</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Zcorpius</span>
+
+  
+</div>
+
+<!--
+
+
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Muse</a> v5.1.4</div>
+
+
+-->
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+          <span id="scrollpercent"><span>0</span>%</span>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+  
+
+
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@9/dist/mermaid.min.js"></script>
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: 'default'
+    });
+  </script>
+  
+  
+
+  
+
+
+<!-- Nexora 风格代码块增强：顶栏 + 语言标签 + 复制按钮 -->
+<script type="text/javascript" src="/js/src/nexora-code.js"></script>
+<!-- Nexora 风格 TOC scroll-spy（IntersectionObserver，替代 Bootstrap scrollspy） -->
+<script type="text/javascript" src="/js/src/nexora-toc.js"></script>
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"debug":false,"model":{"jsonPath":"https://cdn.jsdelivr.net/gh/evrstr/live2d-widget-models/live2d_evrstr/mashiro_shifuku/model.json"},"display":{"position":"left","width":200,"height":500},"mobile":{"show":true},"encrypt":{"enable":true},"log":false});</script></body>
+</html>
+
+<!-- 页面点击小红心 -->
+<script type="text/javascript" src="/js/src/love.js"></script>

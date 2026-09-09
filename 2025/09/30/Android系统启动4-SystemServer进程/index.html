@@ -1,0 +1,1357 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next muse use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+<script>
+    (function(){
+        if(''){
+            if (prompt('请输入密码') !== ''){
+                alert('密码错误');
+                history.back();
+            }
+        }
+    })();
+</script>
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/head.jpg?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/head.jpg?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/head.jpg?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/head.jpg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="startop," />
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="Zcorpius's Blog" type="application/atom+xml" />
+
+
+
+
+
+
+<meta name="description" content="Android 系统启动：system_server 源码基线：本笔记以当前工作区 Android 15 frameworks&#x2F;base、frameworks&#x2F;base&#x2F;core&#x2F;jni 为准。system_server 不是由 init 直接 exec 出来的进程；它是 Zygote fork 出的第一个 Java 子进程。Zygote 的启动、预加载和 socket 轮询见《03-Zygote">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Android 系统启动——SystemServer进程">
+<meta property="og:url" content="https://zcorpius.github.io/2025/09/30/Android%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A84-SystemServer%E8%BF%9B%E7%A8%8B/index.html">
+<meta property="og:site_name" content="Zcorpius&#39;s Blog">
+<meta property="og:description" content="Android 系统启动：system_server 源码基线：本笔记以当前工作区 Android 15 frameworks&#x2F;base、frameworks&#x2F;base&#x2F;core&#x2F;jni 为准。system_server 不是由 init 直接 exec 出来的进程；它是 Zygote fork 出的第一个 Java 子进程。Zygote 的启动、预加载和 socket 轮询见《03-Zygote">
+<meta property="og:locale">
+<meta property="article:published_time" content="2025-09-30T12:21:12.000Z">
+<meta property="article:modified_time" content="2026-09-09T15:40:29.795Z">
+<meta property="article:author" content="Zcorpius">
+<meta property="article:tag" content="startop">
+<meta name="twitter:card" content="summary">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Muse',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":true,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://Zcorpius.github.io/2025/09/30/Android系统启动4-SystemServer进程/"/>
+
+
+
+
+
+  <title>Android 系统启动——SystemServer进程 | Zcorpius's Blog</title>
+  
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 7.3.0">
+<style>.github-emoji { position: relative; display: inline-block; width: 1.2em; min-height: 1.2em; overflow: hidden; vertical-align: top; color: transparent; }  .github-emoji > span { position: relative; z-index: 10; }  .github-emoji img, .github-emoji .fancybox { margin: 0 !important; padding: 0 !important; border: none !important; outline: none !important; text-decoration: none !important; user-select: none !important; cursor: auto !important; }  .github-emoji img { height: 1.2em !important; width: 1.2em !important; position: absolute !important; left: 50% !important; top: 50% !important; transform: translate(-50%, -50%) !important; user-select: none !important; cursor: auto !important; } .github-emoji-fallback { color: inherit; } .github-emoji-fallback img { opacity: 0 !important; }</style>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Zcorpius's Blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">追寻自我的崎岖路上从不缺勇敢。</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-路径">
+          <a href="/top/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-fire"></i> <br />
+            
+            路径
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://Zcorpius.github.io/2025/09/30/Android%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A84-SystemServer%E8%BF%9B%E7%A8%8B/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/head.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Zcorpius's Blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Android 系统启动——SystemServer进程</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2025-09-30T20:21:12+08:00">
+                2025-09-30
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Framework/" itemprop="url" rel="index">
+                    <span itemprop="name">Framework</span>
+                  </a>
+                </span>
+
+                
+                
+                  ， 
+                
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Framework/StartUp/" itemprop="url" rel="index">
+                    <span itemprop="name">StartUp</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+            <div class="post-wordcount">
+              
+                
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-file-word-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">字数统计&#58;</span>
+                
+                <span title="字数统计">
+                  2.5k
+                </span>
+              
+
+              
+                <span class="post-meta-divider">|</span>
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-clock-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">阅读时长 &asymp;</span>
+                
+                <span title="阅读时长">
+                  11
+                </span>
+              
+            </div>
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="Android-系统启动：system-server"><a href="#Android-系统启动：system-server" class="headerlink" title="Android 系统启动：system_server"></a>Android 系统启动：system_server</h1><blockquote>
+<p>源码基线：本笔记以当前工作区 Android 15 <code>frameworks/base</code>、<code>frameworks/base/core/jni</code> 为准。<code>system_server</code> 不是由 <code>init</code> 直接 <code>exec</code> 出来的进程；它是 <strong>Zygote fork 出的第一个 Java 子进程</strong>。Zygote 的启动、预加载和 socket 轮询见《03-Zygote进程》。</p>
+</blockquote>
+<h2 id="1-角色、边界与总链路"><a href="#1-角色、边界与总链路" class="headerlink" title="1. 角色、边界与总链路"></a>1. 角色、边界与总链路</h2><p><code>system_server</code> 以 <code>system</code> UID 和 SELinux <code>u:r:system_server:s0</code> 域运行，是 Java framework 服务的宿主。AMS、ATMS、PMS、WMS 等服务大多在同一个进程内；它们之间可以直接调用 Java 对象，也会将 Binder 接口发布给其他进程。</p>
+<p>启动主线如下：</p>
+<blockquote>
+<p><code>init</code> 启动 primary zygote → <code>ZygoteInit.main()</code> 预加载 → <code>forkSystemServer()</code> → native <code>fork()</code> 与特权收缩 → 子进程执行 <code>SystemServer.main()</code> → <code>SystemServer.run()</code> 创建上下文与服务管理器 → 按依赖顺序启动服务、推进 boot phase → AMS <code>systemReady()</code> 后允许第三方应用启动。</p>
+</blockquote>
+<p>不要把以下三件事混为一谈：</p>
+<ul>
+<li><strong>进程创建</strong>：Zygote <code>fork()</code> 得到 system_server；</li>
+<li><strong>服务构造/启动</strong>：<code>SystemServiceManager</code> 构造 <code>SystemService</code> 并调用 <code>onStart()</code>；</li>
+<li><strong>Binder 可见</strong>：服务自行通过 <code>ServiceManager.addService()</code> 发布 Binder。<code>onStart()</code> 并不必然等于已发布 Binder。</li>
+</ul>
+<h2 id="2-Zygote-fork-system-server"><a href="#2-Zygote-fork-system-server" class="headerlink" title="2. Zygote fork system_server"></a>2. Zygote fork system_server</h2><h3 id="2-1-ZygoteInit-构造固定启动参数"><a href="#2-1-ZygoteInit-构造固定启动参数" class="headerlink" title="2.1 ZygoteInit 构造固定启动参数"></a>2.1 <code>ZygoteInit</code> 构造固定启动参数</h3><p>Zygote 在自身完成预加载、GC 和 native 初始化后调用 <code>forkSystemServer()</code>。参数包含 system UID/GID、补充 group、能力集及 Java 入口 <code>com.android.server.SystemServer</code>。</p>
+<figure class="highlight java"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/base/core/java/com/android/internal/os/ZygoteInit.java</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> Runnable <span class="title function_">forkSystemServer</span><span class="params">(String abiList, String socketName,</span></span><br><span class="line"><span class="params">        ZygoteServer zygoteServer)</span> {</span><br><span class="line">    <span class="type">long</span> <span class="variable">capabilities</span> <span class="operator">=</span> posixCapabilitiesAsBits(...);</span><br><span class="line">    String args[] = {</span><br><span class="line">            <span class="string">"--setuid="</span> + Process.SYSTEM_UID,</span><br><span class="line">            <span class="string">"--setgid="</span> + Process.SYSTEM_UID,</span><br><span class="line">            <span class="string">"--setgroups="</span> + ...,</span><br><span class="line">            <span class="string">"--capabilities="</span> + capabilities + <span class="string">","</span> + capabilities,</span><br><span class="line">            <span class="string">"--nice-name=system_server"</span>,</span><br><span class="line">            <span class="string">"--runtime-args"</span>,</span><br><span class="line">            <span class="string">"--target-sdk-version="</span> + Build.VERSION.SDK_INT,</span><br><span class="line">            <span class="string">"com.android.server.SystemServer"</span>,</span><br><span class="line">    };</span><br><span class="line">    <span class="type">ZygoteArguments</span> <span class="variable">parsedArgs</span> <span class="operator">=</span> ZygoteArguments.getInstance(args);</span><br><span class="line">    Zygote.applyDebuggerSystemProperty(parsedArgs);</span><br><span class="line">    Zygote.applyInvokeWithSystemProperty(parsedArgs);</span><br><span class="line"></span><br><span class="line">    <span class="type">int</span> <span class="variable">pid</span> <span class="operator">=</span> Zygote.forkSystemServer(parsedArgs.mUid, parsedArgs.mGid,</span><br><span class="line">            parsedArgs.mGids, parsedArgs.mRuntimeFlags, <span class="literal">null</span>,</span><br><span class="line">            parsedArgs.mPermittedCapabilities, parsedArgs.mEffectiveCapabilities);</span><br><span class="line">    <span class="keyword">if</span> (pid == <span class="number">0</span>) {</span><br><span class="line">        <span class="keyword">if</span> (hasSecondZygote(abiList)) waitForSecondaryZygote(socketName);</span><br><span class="line">        zygoteServer.closeServerSocket();</span><br><span class="line">        <span class="keyword">return</span> handleSystemServerProcess(parsedArgs);</span><br><span class="line">    }</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">null</span>;</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<p><code>pid == 0</code> 是子进程分支；父 Zygote 得到子 PID 后继续 <code>runSelectLoop()</code>。在双 Zygote 设备上，子进程会先等待 secondary zygote，以降低 ABI 环境未就绪时 system_server 过早启动的风险。</p>
+<h3 id="2-2-Java-到-JNI：fork-前后-Hook"><a href="#2-2-Java-到-JNI：fork-前后-Hook" class="headerlink" title="2.2 Java 到 JNI：fork 前后 Hook"></a>2.2 Java 到 JNI：fork 前后 Hook</h3><p><code>Zygote.forkSystemServer()</code> 与普通应用的 <code>forkAndSpecialize()</code> 共享大部分 fork 机制。Java 在 fork 前调用 ART Hook；子进程恢复线程优先级并进行 fork 后公共初始化。</p>
+<figure class="highlight java"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/base/core/java/com/android/internal/os/Zygote.java</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">static</span> <span class="type">int</span> <span class="title function_">forkSystemServer</span><span class="params">(<span class="type">int</span> uid, <span class="type">int</span> gid, <span class="type">int</span>[] gids, <span class="type">int</span> runtimeFlags,</span></span><br><span class="line"><span class="params">        <span class="type">int</span>[][] rlimits, <span class="type">long</span> permittedCapabilities, <span class="type">long</span> effectiveCapabilities)</span> {</span><br><span class="line">    ZygoteHooks.preFork();</span><br><span class="line">    <span class="type">int</span> <span class="variable">pid</span> <span class="operator">=</span> nativeForkSystemServer(uid, gid, gids, runtimeFlags, rlimits,</span><br><span class="line">            permittedCapabilities, effectiveCapabilities);</span><br><span class="line">    <span class="keyword">if</span> (pid == <span class="number">0</span>) {</span><br><span class="line">        Thread.currentThread().setPriority(Thread.NORM_PRIORITY);</span><br><span class="line">    }</span><br><span class="line">    ZygoteHooks.postForkCommon();</span><br><span class="line">    <span class="keyword">return</span> pid;</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<h3 id="2-3-native-fork：system-server-死亡会连带杀死-Zygote"><a href="#2-3-native-fork：system-server-死亡会连带杀死-Zygote" class="headerlink" title="2.3 native fork：system_server 死亡会连带杀死 Zygote"></a>2.3 native fork：system_server 死亡会连带杀死 Zygote</h3><p>native 层记录 system_server PID。<code>SIGCHLD</code> 处理逻辑发现该 PID 死亡时会 <code>SIGKILL</code> Zygote；这样 init 观察到 zygote 退出，可按其服务规则恢复一整套 Java 运行时，而不是留下失去核心服务的 Zygote。</p>
+<figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/base/core/jni/com_android_internal_os_Zygote.cpp</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">static</span> jint <span class="title">com_android_internal_os_Zygote_nativeForkSystemServer</span><span class="params">(</span></span></span><br><span class="line"><span class="params"><span class="function">        JNIEnv* env, jclass, jint uid, jint gid, jintArray gids, jint runtime_flags,</span></span></span><br><span class="line"><span class="params"><span class="function">        jobjectArray rlimits, jlong permitted_capabilities, jlong effective_capabilities)</span> </span>{</span><br><span class="line">    ...</span><br><span class="line">    <span class="type">pid_t</span> pid = zygote::<span class="built_in">ForkCommon</span>(env, <span class="literal">true</span> <span class="comment">/* is_system_server */</span>,</span><br><span class="line">            fds_to_close, fds_to_ignore, <span class="literal">true</span> <span class="comment">/* is_priority_fork */</span>);</span><br><span class="line">    <span class="keyword">if</span> (pid == <span class="number">0</span>) {</span><br><span class="line">        <span class="built_in">SpecializeCommon</span>(env, uid, gid, gids, runtime_flags, rlimits,</span><br><span class="line">                permitted_capabilities, effective_capabilities, <span class="number">0</span>,</span><br><span class="line">                MOUNT_EXTERNAL_DEFAULT, <span class="literal">nullptr</span>, <span class="literal">nullptr</span>,</span><br><span class="line">                <span class="literal">true</span> <span class="comment">/* is_system_server */</span>, <span class="literal">false</span>, <span class="literal">nullptr</span>, <span class="literal">nullptr</span>,</span><br><span class="line">                <span class="literal">false</span> <span class="comment">/* is_top_app */</span>, <span class="literal">nullptr</span>, <span class="literal">nullptr</span>, <span class="literal">false</span>, <span class="literal">false</span>, <span class="literal">false</span>);</span><br><span class="line">    } <span class="keyword">else</span> <span class="keyword">if</span> (pid &gt; <span class="number">0</span>) {</span><br><span class="line">        gSystemServerPid = pid;</span><br><span class="line">    }</span><br><span class="line">    <span class="keyword">return</span> pid;</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/base/core/jni/com_android_internal_os_Zygote.cpp</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">static</span> <span class="type">void</span> <span class="title">SigChldHandler</span><span class="params">(<span class="type">int</span> <span class="comment">/* signal_number */</span>)</span> </span>{</span><br><span class="line">    <span class="type">pid_t</span> pid = <span class="built_in">waitpid</span>(<span class="number">-1</span>, &amp;status, WNOHANG);</span><br><span class="line">    ...</span><br><span class="line">    <span class="keyword">if</span> (pid == gSystemServerPid) {</span><br><span class="line">        <span class="built_in">ALOGE</span>(<span class="string">"Exit zygote because system server (%d) has terminated"</span>, pid);</span><br><span class="line">        <span class="built_in">kill</span>(<span class="built_in">getpid</span>(), SIGKILL);</span><br><span class="line">    }</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<h3 id="2-4-特权收缩与安全域"><a href="#2-4-特权收缩与安全域" class="headerlink" title="2.4 特权收缩与安全域"></a>2.4 特权收缩与安全域</h3><p><code>ForkCommon()</code> 负责停用/恢复信号和 fork 相关的通用动作；子分支 <code>SpecializeCommon()</code> 才真正把“预加载时的 root Zygote”转为“system_server 身份”。其关键工作包括关闭不应继承的 FD、设置 cgroup/调度策略、资源限制、挂载隔离、<code>setgroups</code>/<code>setresgid</code>/<code>setresuid</code>、能力集、SELinux context、seccomp 等。</p>
+<figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/base/core/jni/com_android_internal_os_Zygote.cpp</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">static</span> <span class="type">void</span> <span class="title">SpecializeCommon</span><span class="params">(JNIEnv* env, <span class="type">uid_t</span> uid, <span class="type">gid_t</span> gid, jintArray gids,</span></span></span><br><span class="line"><span class="params"><span class="function">        jint runtime_flags, jobjectArray rlimits, jlong permitted_capabilities,</span></span></span><br><span class="line"><span class="params"><span class="function">        jlong effective_capabilities, jlong bounding_capabilities, jint mount_external,</span></span></span><br><span class="line"><span class="params"><span class="function">        jstring managed_se_info, jstring managed_nice_name, <span class="type">bool</span> is_system_server, ...)</span> </span>{</span><br><span class="line">    ...</span><br><span class="line">    <span class="built_in">SetGids</span>(env, gids, is_child_zygote);</span><br><span class="line">    <span class="built_in">SetRLimits</span>(env, rlimits, is_child_zygote);</span><br><span class="line">    <span class="built_in">SetCapabilities</span>(permitted_capabilities, effective_capabilities,</span><br><span class="line">            permitted_capabilities, bounding_capabilities, is_child_zygote);</span><br><span class="line">    ...</span><br><span class="line">    <span class="keyword">if</span> (is_system_server) {</span><br><span class="line">        <span class="type">const</span> <span class="type">char</span>* se_name = <span class="string">"u:r:system_server:s0"</span>;</span><br><span class="line">        <span class="built_in">selinux_android_setcon</span>(se_name);</span><br><span class="line">    } <span class="keyword">else</span> {</span><br><span class="line">        <span class="built_in">selinux_android_setcon</span>(se_info_ptr.<span class="built_in">c_str</span>());</span><br><span class="line">    }</span><br><span class="line">    <span class="built_in">SetSchedulerPolicy</span>(...);</span><br><span class="line">    <span class="built_in">SetUidGid</span>(uid, gid, is_child_zygote);</span><br><span class="line">    ...</span><br><span class="line">    <span class="built_in">SetSeccompFilter</span>(uid, is_child_zygote);</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<p>这里不能概括成“fork 后设置 UID”。安全域与凭据切换的顺序、FD 清理、挂载和 seccomp 共同组成进程隔离；任何一个环节缺失都可能造成权限或资源泄漏。</p>
+<h2 id="3-子进程进入-SystemServer-main"><a href="#3-子进程进入-SystemServer-main" class="headerlink" title="3. 子进程进入 SystemServer.main"></a>3. 子进程进入 <code>SystemServer.main</code></h2><p><code>handleSystemServerProcess()</code> 处理可选 wrapper，然后交给 <code>ZygoteInit.zygoteInit()</code>。后者完成 app 级 Runtime 初始化、启动 Binder 线程池，并反射找到 <code>SystemServer.main(String[])</code>；<code>Runnable</code> 的返回结构用于清除 Zygote 调用栈。</p>
+<figure class="highlight java"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/base/core/java/com/android/internal/os/ZygoteInit.java</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> Runnable <span class="title function_">handleSystemServerProcess</span><span class="params">(ZygoteArguments parsedArgs)</span> {</span><br><span class="line">    <span class="keyword">if</span> (parsedArgs.mInvokeWith != <span class="literal">null</span>) {</span><br><span class="line">        WrapperInit.execApplication(parsedArgs.mInvokeWith, parsedArgs.mNiceName,</span><br><span class="line">                parsedArgs.mTargetSdkVersion, VMRuntime.getCurrentInstructionSet(),</span><br><span class="line">                <span class="literal">null</span>, parsedArgs.mRemainingArgs);</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">IllegalStateException</span>(<span class="string">"WrapperInit.execApplication unexpectedly returned"</span>);</span><br><span class="line">    }</span><br><span class="line">    <span class="keyword">return</span> ZygoteInit.zygoteInit(parsedArgs.mTargetSdkVersion,</span><br><span class="line">            parsedArgs.mDisabledCompatChanges, parsedArgs.mRemainingArgs,</span><br><span class="line">            <span class="literal">null</span> <span class="comment">/* classLoader */</span>);</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<figure class="highlight java"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/base/core/java/com/android/internal/os/ZygoteInit.java</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> Runnable <span class="title function_">zygoteInit</span><span class="params">(<span class="type">int</span> targetSdkVersion, <span class="type">long</span>[] disabledCompatChanges,</span></span><br><span class="line"><span class="params">        String[] argv, ClassLoader classLoader)</span> {</span><br><span class="line">    RuntimeInit.redirectLogStreams();</span><br><span class="line">    RuntimeInit.commonInit();</span><br><span class="line">    ZygoteInit.nativeZygoteInit();</span><br><span class="line">    <span class="keyword">return</span> RuntimeInit.applicationInit(targetSdkVersion, disabledCompatChanges,</span><br><span class="line">            argv, classLoader);</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<figure class="highlight java"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/base/services/java/com/android/server/SystemServer.java</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> {</span><br><span class="line">    <span class="keyword">new</span> <span class="title class_">SystemServer</span>().run();</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<h2 id="4-SystemServer-run-：进程级地基"><a href="#4-SystemServer-run-：进程级地基" class="headerlink" title="4. SystemServer.run()：进程级地基"></a>4. <code>SystemServer.run()</code>：进程级地基</h2><p><code>run()</code> 的前半段不是“启动 AMS”那么简单：它先配置 system_server 自身的 Binder、主线程 Looper、native 库、系统 Context、诊断对象和并行初始化线程池。</p>
+<figure class="highlight java"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/base/services/java/com/android/server/SystemServer.java</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title function_">run</span><span class="params">()</span> {</span><br><span class="line">    <span class="type">TimingsTraceAndSlog</span> <span class="variable">t</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">TimingsTraceAndSlog</span>();</span><br><span class="line">    ...</span><br><span class="line">    Binder.setWarnOnBlocking(<span class="literal">true</span>);</span><br><span class="line">    BinderInternal.disableBackgroundScheduling(<span class="literal">true</span>);</span><br><span class="line">    BinderInternal.setMaxThreads(sMaxBinderThreads);</span><br><span class="line"></span><br><span class="line">    Process.setThreadPriority(Process.THREAD_PRIORITY_FOREGROUND);</span><br><span class="line">    Process.setCanSelfBackground(<span class="literal">false</span>);</span><br><span class="line">    Looper.prepareMainLooper();</span><br><span class="line"></span><br><span class="line">    System.loadLibrary(<span class="string">"android_servers"</span>);</span><br><span class="line">    createSystemContext();</span><br><span class="line">    ActivityThread.initializeMainlineModules();</span><br><span class="line"></span><br><span class="line">    mSystemServiceManager = <span class="keyword">new</span> <span class="title class_">SystemServiceManager</span>(mSystemContext);</span><br><span class="line">    LocalServices.addService(SystemServiceManager.class, mSystemServiceManager);</span><br><span class="line">    <span class="type">SystemServerInitThreadPool</span> <span class="variable">tp</span> <span class="operator">=</span> SystemServerInitThreadPool.start();</span><br><span class="line">    ...</span><br><span class="line">    startBootstrapServices(t);</span><br><span class="line">    startCoreServices(t);</span><br><span class="line">    startOtherServices(t);</span><br><span class="line">    startApexServices(t);</span><br><span class="line">    ...</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<p>几点容易误解：</p>
+<ul>
+<li>system_server <strong>已经</strong>在 <code>zygoteInit()</code> 中启动了 Binder 线程池；<code>setMaxThreads()</code> 是调整该进程 Binder 线程池上限，不是首次启动 Binder。</li>
+<li><code>Looper.prepareMainLooper()</code> 只为 system_server 主线程准备消息循环；Binder 调度与这个 Looper 是两套协作机制。</li>
+<li><code>SystemServerInitThreadPool</code> 用于可并行的初始化任务，不能随意把有严格依赖的服务丢进去。</li>
+</ul>
+<h2 id="5-四个服务启动批次与依赖关系"><a href="#5-四个服务启动批次与依赖关系" class="headerlink" title="5. 四个服务启动批次与依赖关系"></a>5. 四个服务启动批次与依赖关系</h2><p>Android 15 明确按四个方法编排，而不是过去常见的“只分 bootstrap/core/other”三段：</p>
+<table>
+<thead>
+<tr>
+<th>批次</th>
+<th>目的与代表服务</th>
+<th>依赖特点</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>startBootstrapServices</code></td>
+<td>Installer、ATMS、AMS、PMS 前置项、Power 等</td>
+<td>建立最基础的系统调度、安装与包管理能力</td>
+</tr>
+<tr>
+<td><code>startCoreServices</code></td>
+<td>Battery、UsageStats、WebViewUpdate、SystemConfig 等</td>
+<td>依赖核心服务已存在</td>
+</tr>
+<tr>
+<td><code>startOtherServices</code></td>
+<td>WMS、Input、Alarm、Network、Notification、Location 等</td>
+<td>大量硬件能力/特性/属性条件分支</td>
+</tr>
+<tr>
+<td><code>startApexServices</code></td>
+<td>APEX 中声明的 system-server jar 服务</td>
+<td>模块化服务，排序与类加载由配置决定</td>
+</tr>
+</tbody></table>
+<h3 id="5-1-Bootstrap-中的-AMS-ATMS-关系"><a href="#5-1-Bootstrap-中的-AMS-ATMS-关系" class="headerlink" title="5.1 Bootstrap 中的 AMS/ATMS 关系"></a>5.1 Bootstrap 中的 AMS/ATMS 关系</h3><p>ATMS 与 AMS 是两套对象、强协作但不等价。Android 15 中 ATMS 通过 <code>SystemServiceManager</code> 启动；AMS 由其 <code>Lifecycle.startService()</code> 创建，并注入同一个管理器与 Installer。</p>
+<figure class="highlight java"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/base/services/java/com/android/server/SystemServer.java</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title function_">startBootstrapServices</span><span class="params">(<span class="meta">@NonNull</span> TimingsTraceAndSlog t)</span> {</span><br><span class="line">    ...</span><br><span class="line">    <span class="type">Installer</span> <span class="variable">installer</span> <span class="operator">=</span> mSystemServiceManager.startService(Installer.class);</span><br><span class="line">    ...</span><br><span class="line">    <span class="type">ActivityTaskManagerService</span> <span class="variable">atm</span> <span class="operator">=</span> mSystemServiceManager.startService(</span><br><span class="line">            ActivityTaskManagerService.Lifecycle.class).getService();</span><br><span class="line">    mActivityManagerService = ActivityManagerService.Lifecycle.startService(</span><br><span class="line">            mSystemServiceManager, atm);</span><br><span class="line">    mActivityManagerService.setSystemServiceManager(mSystemServiceManager);</span><br><span class="line">    mActivityManagerService.setInstaller(installer);</span><br><span class="line">    ...</span><br><span class="line">    mPowerManagerService = mSystemServiceManager.startService(PowerManagerService.class);</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<h3 id="5-2-SystemServiceManager-的通用启动协议"><a href="#5-2-SystemServiceManager-的通用启动协议" class="headerlink" title="5.2 SystemServiceManager 的通用启动协议"></a>5.2 <code>SystemServiceManager</code> 的通用启动协议</h3><p>它只管理继承 <code>SystemService</code> 的生命周期：反射构造（或指定类加载器）、加入已启动列表、调用 <code>onStart()</code>，随后在每一个 boot phase 回调所有已启动服务。服务是否发布 Binder、是否注册 <code>LocalServices</code>，由服务自身决定。</p>
+<figure class="highlight java"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/base/services/core/java/com/android/server/SystemServiceManager.java</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> &lt;T <span class="keyword">extends</span> <span class="title class_">SystemService</span>&gt; T <span class="title function_">startService</span><span class="params">(Class&lt;T&gt; serviceClass)</span> {</span><br><span class="line">    ...</span><br><span class="line">    Constructor&lt;T&gt; constructor = serviceClass.getConstructor(Context.class);</span><br><span class="line">    <span class="type">T</span> <span class="variable">service</span> <span class="operator">=</span> constructor.newInstance(mContext);</span><br><span class="line">    startService(service);</span><br><span class="line">    <span class="keyword">return</span> service;</span><br><span class="line">}</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">startService</span><span class="params">(<span class="meta">@NonNull</span> <span class="keyword">final</span> SystemService service)</span> {</span><br><span class="line">    <span class="type">String</span> <span class="variable">className</span> <span class="operator">=</span> service.getClass().getName();</span><br><span class="line">    <span class="keyword">if</span> (mServiceClassnames.contains(className)) <span class="keyword">return</span>;</span><br><span class="line">    mServiceClassnames.add(className);</span><br><span class="line">    mServices.add(service);</span><br><span class="line">    service.onStart();</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<h3 id="5-3-APEX-服务不是普通-Java-类名硬编码列表"><a href="#5-3-APEX-服务不是普通-Java-类名硬编码列表" class="headerlink" title="5.3 APEX 服务不是普通 Java 类名硬编码列表"></a>5.3 APEX 服务不是普通 Java 类名硬编码列表</h3><p><code>startApexServices()</code> 通过 <code>ApexManager</code> 获取 APEX 声明的服务信息，按其 name/jarPath 启动。它必须是最后一类启动的服务，随后 <code>SystemServiceManager</code> 被 seal；因而 OEM 或 Mainline 模块中服务是否存在、排序如何，不能只根据 <code>SystemServer.java</code> 中的硬编码行号判断。</p>
+<figure class="highlight java"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/base/services/java/com/android/server/SystemServer.java</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title function_">startApexServices</span><span class="params">(<span class="meta">@NonNull</span> TimingsTraceAndSlog t)</span> {</span><br><span class="line">    t.traceBegin(<span class="string">"startApexServices"</span>);</span><br><span class="line">    ...</span><br><span class="line">    List&lt;ApexSystemServiceInfo&gt; services =</span><br><span class="line">            ApexManager.getInstance().getApexSystemServices();</span><br><span class="line">    <span class="keyword">for</span> (ApexSystemServiceInfo info : services) {</span><br><span class="line">        <span class="keyword">if</span> (TextUtils.isEmpty(info.getJarPath())) {</span><br><span class="line">            mSystemServiceManager.startService(info.getName());</span><br><span class="line">        } <span class="keyword">else</span> {</span><br><span class="line">            mSystemServiceManager.startServiceFromJar(info.getName(), info.getJarPath());</span><br><span class="line">        }</span><br><span class="line">    }</span><br><span class="line">    mSystemServiceManager.sealStartedServices();</span><br><span class="line">    t.traceEnd();</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<h2 id="6-Boot-phase：服务启动后仍需“就绪”"><a href="#6-Boot-phase：服务启动后仍需“就绪”" class="headerlink" title="6. Boot phase：服务启动后仍需“就绪”"></a>6. Boot phase：服务启动后仍需“就绪”</h2><p><code>onStart()</code> 仅表示服务已被创建并接受启动回调。系统以递增 phase 通知服务满足更高层前提，例如默认 Display、传感器、锁设置、系统服务、设备专属服务、AMS ready、可启动第三方应用、开机完成。</p>
+<figure class="highlight java"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/base/services/core/java/com/android/server/SystemServiceManager.java</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">startBootPhase</span><span class="params">(<span class="meta">@NonNull</span> TimingsTraceAndSlog t, <span class="type">int</span> phase)</span> {</span><br><span class="line">    <span class="keyword">if</span> (phase &lt;= mCurrentPhase) {</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">IllegalArgumentException</span>(<span class="string">"Next phase must be larger than previous"</span>);</span><br><span class="line">    }</span><br><span class="line">    mCurrentPhase = phase;</span><br><span class="line">    ...</span><br><span class="line">    <span class="keyword">for</span> (SystemService service : mServices) {</span><br><span class="line">        service.onBootPhase(mCurrentPhase);</span><br><span class="line">    }</span><br><span class="line">    <span class="keyword">if</span> (phase == SystemService.PHASE_BOOT_COMPLETED) {</span><br><span class="line">        shutdownInitThreadPool();</span><br><span class="line">    }</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<p>Android 15 <code>SystemServer</code> 中可见的关键推进点包括：</p>
+<ul>
+<li><code>PHASE_WAIT_FOR_DEFAULT_DISPLAY</code>：PMS 初始化前，需要默认 Display；</li>
+<li><code>PHASE_WAIT_FOR_SENSOR_SERVICE</code>：WMS 创建前等待 sensor service；</li>
+<li><code>PHASE_LOCK_SETTINGS_READY</code>、<code>PHASE_SYSTEM_SERVICES_READY</code>；</li>
+<li><code>PHASE_DEVICE_SPECIFIC_SERVICES_READY</code>；</li>
+<li><code>PHASE_ACTIVITY_MANAGER_READY</code>：放在 AMS <code>systemReady()</code> 回调中；</li>
+<li><code>PHASE_THIRD_PARTY_APPS_CAN_START</code>：允许第三方代码真正运行；</li>
+<li><code>PHASE_BOOT_COMPLETED</code>：完成后关闭初始化线程池。</li>
+</ul>
+<p>相同 phase 会回调“截至此刻已启动”的所有服务；因此服务若在较晚阶段才启动，不会自动补收早期 phase，启动顺序是设计的一部分。</p>
+<h2 id="7-AMS-systemReady-与允许应用启动"><a href="#7-AMS-systemReady-与允许应用启动" class="headerlink" title="7. AMS systemReady() 与允许应用启动"></a>7. AMS <code>systemReady()</code> 与允许应用启动</h2><p><code>SystemServer</code> 不能在“服务都 new 完”后立即认为 Android 已可用。它先让 PMS、WMS、Display 等完成各自 <code>systemReady()</code>；再进入 <code>ActivityManagerService.systemReady()</code>，在其回调中继续推进服务、启动 SystemUI 等关键组件，并最终到达“第三方应用可启动”阶段。</p>
+<figure class="highlight java"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/base/services/java/com/android/server/SystemServer.java</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title function_">startOtherServices</span><span class="params">(<span class="meta">@NonNull</span> TimingsTraceAndSlog t)</span> {</span><br><span class="line">    ...</span><br><span class="line">    mActivityManagerService.systemReady(() -&gt; {</span><br><span class="line">        mSystemServiceManager.startBootPhase(t, SystemService.PHASE_ACTIVITY_MANAGER_READY);</span><br><span class="line">        mActivityManagerService.startObservingNativeCrashes();</span><br><span class="line">        ...</span><br><span class="line">        startSystemUi(context, windowManagerF);</span><br><span class="line">        ...</span><br><span class="line">        mSystemServiceManager.startBootPhase(t,</span><br><span class="line">                SystemService.PHASE_THIRD_PARTY_APPS_CAN_START);</span><br><span class="line">        ...</span><br><span class="line">    });</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<p><code>systemReady()</code> 中还涉及用户、设置、存储解锁、广播、provider、应用启动等状态切换；其内部细节随分支和设备形态变化很大。阅读时应沿 <code>ActivityManagerService.systemReady()</code> 与 <code>SystemServer</code> 回调两端一起追，不应把它误写成“AMS 启动 Launcher 的单一步骤”。</p>
+<h2 id="8-调试与阅读路径"><a href="#8-调试与阅读路径" class="headerlink" title="8. 调试与阅读路径"></a>8. 调试与阅读路径</h2><ul>
+<li>性能时间线：<code>atrace</code> / Perfetto 中查看 <code>SystemServer</code>、<code>StartServices</code>、<code>StartService *</code>、<code>OnBootPhase_*</code>；代码使用 <code>TimingsTraceAndSlog</code> 写入相应 trace。</li>
+<li>日志：<code>logcat -b system -s SystemServer SystemServiceManager ActivityManager</code>；启动失败会在 <code>SystemServer.run()</code> 的 <code>StartServices</code> catch 中抛出。</li>
+<li>Binder 服务：<code>service list</code>、<code>dumpsys &lt;service&gt;</code>；这观察的是已发布 Binder，不等于 <code>mServices</code> 的完整列表。</li>
+<li>启动状态：<code>getprop sys.boot_completed</code> 与 <code>dumpsys activity</code> 可辅助确认 AMS 的后续状态，但不同设备的属性时序可能受厂商服务影响。</li>
+</ul>
+<h2 id="9-小结"><a href="#9-小结" class="headerlink" title="9. 小结"></a>9. 小结</h2><ol>
+<li>system_server 是 Zygote 的特殊子进程；其死亡会触发 Zygote 自杀，交给 init 重建 Java 世界。</li>
+<li>native specialize 不只是改 UID，而是落实 FD、挂载、capability、SELinux、seccomp 等隔离边界。</li>
+<li><code>SystemServer.run()</code> 先搭建进程基础设施，再按 bootstrap → core → other → APEX 启动服务。</li>
+<li><code>SystemServiceManager.onStart()</code>、Binder 发布、<code>onBootPhase()</code> 是三个不同层次；不要混用“服务启动完成”。</li>
+<li><code>PHASE_THIRD_PARTY_APPS_CAN_START</code> 才是“可以真正运行第三方应用”的关键门槛，AMS <code>systemReady()</code> 是其中的枢纽。</li>
+</ol>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/startop/" rel="tag"># startop</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2025/09/23/Android%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A83-Zygote%E8%BF%9B%E7%A8%8B/" rel="next" title="Android 系统启动——Zygote进程">
+                <i class="fa fa-chevron-left"></i> Android 系统启动——Zygote进程
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2025/10/03/Android%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A85-Servicemanager%E8%BF%9B%E7%A8%8B/" rel="prev" title="Android 系统启动——Servicemanager进程">
+                Android 系统启动——Servicemanager进程 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="/images/head.jpg"
+                alt="" />
+            
+              <p class="site-author-name" itemprop="name"></p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/%7C%7C%20archive">
+              
+                  <span class="site-state-item-count">46</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">16</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">35</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+            <div class="feed-link motion-element">
+              <a href="/atom.xml" rel="alternate">
+                <i class="fa fa-rss"></i>
+                RSS
+              </a>
+            </div>
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/Zcorpius" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-github"></i>GitHub</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://www.zhihu.com/people/lin-li-yike-cao/activities" target="_blank" title="ZhiHu">
+                      
+                        <i class="fa fa-fw fa-globe"></i>ZhiHu</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+            <div class="links-of-blogroll motion-element links-of-blogroll-block">
+              <div class="links-of-blogroll-title">
+                <i class="fa  fa-fw fa-link"></i>
+                Links
+              </div>
+              <ul class="links-of-blogroll-list">
+                
+                  <li class="links-of-blogroll-item">
+                    <a href="https://blog.schwarzeni.com/" title="Schwarzeni" target="_blank">Schwarzeni</a>
+                  </li>
+                
+                  <li class="links-of-blogroll-item">
+                    <a href="https://www.qcmoke.cn/" title="qcmoke" target="_blank">qcmoke</a>
+                  </li>
+                
+                  <li class="links-of-blogroll-item">
+                    <a href="https://www.zhoujianguo.ltd/" title="ZhouJianGuo" target="_blank">ZhouJianGuo</a>
+                  </li>
+                
+                  <li class="links-of-blogroll-item">
+                    <a href="https://hishiro-xiao.github.io/" title="hishiro-xiao" target="_blank">hishiro-xiao</a>
+                  </li>
+                
+              </ul>
+            </div>
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Android-%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A8%EF%BC%9Asystem-server"><span class="nav-text">Android 系统启动：system_server</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E8%A7%92%E8%89%B2%E3%80%81%E8%BE%B9%E7%95%8C%E4%B8%8E%E6%80%BB%E9%93%BE%E8%B7%AF"><span class="nav-text">1. 角色、边界与总链路</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-Zygote-fork-system-server"><span class="nav-text">2. Zygote fork system_server</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#2-1-ZygoteInit-%E6%9E%84%E9%80%A0%E5%9B%BA%E5%AE%9A%E5%90%AF%E5%8A%A8%E5%8F%82%E6%95%B0"><span class="nav-text">2.1 ZygoteInit 构造固定启动参数</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-2-Java-%E5%88%B0-JNI%EF%BC%9Afork-%E5%89%8D%E5%90%8E-Hook"><span class="nav-text">2.2 Java 到 JNI：fork 前后 Hook</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-3-native-fork%EF%BC%9Asystem-server-%E6%AD%BB%E4%BA%A1%E4%BC%9A%E8%BF%9E%E5%B8%A6%E6%9D%80%E6%AD%BB-Zygote"><span class="nav-text">2.3 native fork：system_server 死亡会连带杀死 Zygote</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-4-%E7%89%B9%E6%9D%83%E6%94%B6%E7%BC%A9%E4%B8%8E%E5%AE%89%E5%85%A8%E5%9F%9F"><span class="nav-text">2.4 特权收缩与安全域</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-%E5%AD%90%E8%BF%9B%E7%A8%8B%E8%BF%9B%E5%85%A5-SystemServer-main"><span class="nav-text">3. 子进程进入 SystemServer.main</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-SystemServer-run-%EF%BC%9A%E8%BF%9B%E7%A8%8B%E7%BA%A7%E5%9C%B0%E5%9F%BA"><span class="nav-text">4. SystemServer.run()：进程级地基</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-%E5%9B%9B%E4%B8%AA%E6%9C%8D%E5%8A%A1%E5%90%AF%E5%8A%A8%E6%89%B9%E6%AC%A1%E4%B8%8E%E4%BE%9D%E8%B5%96%E5%85%B3%E7%B3%BB"><span class="nav-text">5. 四个服务启动批次与依赖关系</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#5-1-Bootstrap-%E4%B8%AD%E7%9A%84-AMS-ATMS-%E5%85%B3%E7%B3%BB"><span class="nav-text">5.1 Bootstrap 中的 AMS&#x2F;ATMS 关系</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-2-SystemServiceManager-%E7%9A%84%E9%80%9A%E7%94%A8%E5%90%AF%E5%8A%A8%E5%8D%8F%E8%AE%AE"><span class="nav-text">5.2 SystemServiceManager 的通用启动协议</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-3-APEX-%E6%9C%8D%E5%8A%A1%E4%B8%8D%E6%98%AF%E6%99%AE%E9%80%9A-Java-%E7%B1%BB%E5%90%8D%E7%A1%AC%E7%BC%96%E7%A0%81%E5%88%97%E8%A1%A8"><span class="nav-text">5.3 APEX 服务不是普通 Java 类名硬编码列表</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-Boot-phase%EF%BC%9A%E6%9C%8D%E5%8A%A1%E5%90%AF%E5%8A%A8%E5%90%8E%E4%BB%8D%E9%9C%80%E2%80%9C%E5%B0%B1%E7%BB%AA%E2%80%9D"><span class="nav-text">6. Boot phase：服务启动后仍需“就绪”</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-AMS-systemReady-%E4%B8%8E%E5%85%81%E8%AE%B8%E5%BA%94%E7%94%A8%E5%90%AF%E5%8A%A8"><span class="nav-text">7. AMS systemReady() 与允许应用启动</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#8-%E8%B0%83%E8%AF%95%E4%B8%8E%E9%98%85%E8%AF%BB%E8%B7%AF%E5%BE%84"><span class="nav-text">8. 调试与阅读路径</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#9-%E5%B0%8F%E7%BB%93"><span class="nav-text">9. 小结</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Zcorpius</span>
+
+  
+</div>
+
+<!--
+
+
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Muse</a> v5.1.4</div>
+
+
+-->
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+          <span id="scrollpercent"><span>0</span>%</span>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+  
+
+
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@9/dist/mermaid.min.js"></script>
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: 'default'
+    });
+  </script>
+  
+  
+
+  
+
+
+<!-- Nexora 风格代码块增强：顶栏 + 语言标签 + 复制按钮 -->
+<script type="text/javascript" src="/js/src/nexora-code.js"></script>
+<!-- Nexora 风格 TOC scroll-spy（IntersectionObserver，替代 Bootstrap scrollspy） -->
+<script type="text/javascript" src="/js/src/nexora-toc.js"></script>
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"debug":false,"model":{"jsonPath":"https://cdn.jsdelivr.net/gh/evrstr/live2d-widget-models/live2d_evrstr/mashiro_shifuku/model.json"},"display":{"position":"left","width":200,"height":500},"mobile":{"show":true},"encrypt":{"enable":true},"log":false});</script></body>
+</html>
+
+<!-- 页面点击小红心 -->
+<script type="text/javascript" src="/js/src/love.js"></script>
