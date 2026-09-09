@@ -433,7 +433,7 @@
                   <span class="post-meta-item-text">字数统计&#58;</span>
                 
                 <span title="字数统计">
-                  6.4k
+                  11.5k
                 </span>
               
 
@@ -449,7 +449,7 @@
                   <span class="post-meta-item-text">阅读时长 &asymp;</span>
                 
                 <span title="阅读时长">
-                  27
+                  47
                 </span>
               
             </div>
@@ -1047,6 +1047,283 @@
 <img src="/2026/04/09/Binder%E5%90%AF%E5%8A%A8/binder_servicemanager_polling_android_comic.png" alt="servicemanager Binder Polling 模式" width="800px">
 
 <p>这两种模式最终都会通过 <code>getAndExecuteCommand()</code>、<code>talkWithDriver()</code> 和 <code>executeCommand()</code> 处理普通 Binder 命令，区别在于谁负责等待 Binder fd：常规进程使用 Binder 池线程阻塞等待，servicemanager 使用主线程 Looper 统一轮询。</p>
+<h1 id="7-自测与检验"><a href="#7-自测与检验" class="headerlink" title="7. 自测与检验"></a>7. 自测与检验</h1><p>读完 ≠ 能讲清楚。本章按面试的常见追问方式分三层检验：<strong>基础自测</strong>（能否脱离源码速答）、<strong>场景追问</strong>（能否解释设计取舍）、<strong>答题框架</strong>（能否把零散知识组织成完整调用链）。</p>
+<h2 id="7-1-基础自测"><a href="#7-1-基础自测" class="headerlink" title="7.1 基础自测"></a>7.1 基础自测</h2><h3 id="启动入口"><a href="#启动入口" class="headerlink" title="启动入口"></a>启动入口</h3><ol>
+<li><p>为什么 Zygote 父进程不在 <code>ZygoteInit.main()</code> 中启动普通 Binder 线程池？</p>
+ <details><summary>答案展开</summary>
+
+<p> Zygote 的核心职责是预加载并通过 zygote socket 创建子进程，而不是作为普通 Binder 服务端接收事务。它不调用 <code>nativeZygoteInit()</code>；普通应用和 <code>system_server</code> 在 fork 后才由 <code>zygoteInit()</code> 调用该 JNI，最终进入 <code>AppRuntime::onZygoteInit()</code> 启动线程池（1.1、1.2 节）。这样也避免子进程继承父 Zygote 已创建的普通 Binder <code>ProcessState</code>。</p>
+ </details>
+</li>
+<li><p>Zygote fork 出来的应用进程与独立 <code>app_process</code> 工具进程，分别在哪个回调中启动普通 Binder 线程池？</p>
+ <details><summary>答案展开</summary>
+
+<p> 前者走 <code>AppRuntime::onZygoteInit()</code>，调用链是 <code>ZygoteInit.nativeZygoteInit()</code> → JNI → <code>onZygoteInit()</code>；后者走 <code>RuntimeInit.nativeFinishInit()</code> → <code>AppRuntime::onStarted()</code>。两者最终都调用 <code>ProcessState::self()-&gt;startThreadPool()</code>，区别在于进程是从 Zygote 镜像 fork 出来，还是 exec <code>app_process</code> 后新建运行时（1.2、1.3 节）。</p>
+ </details>
+</li>
+<li><p>为什么 Zygote 子进程不会重新执行 <code>app_main.cpp::main()</code>？有哪些例外？</p>
+ <details><summary>答案展开</summary>
+
+<p> 常规子进程只 fork、不 exec，因此从 fork 返回点继续执行，随后进入 <code>handleChildProc()</code> 或 USAP 的 <code>childMain()</code>，再到 <code>zygoteInit()</code>。<code>--invoke-with</code> 会走 <code>WrapperInit.execApplication()</code> 再次 exec；USAP 则是“预先 fork、收到请求后 specialize”的分支，但最终同样进入 <code>zygoteInit()</code>（1 节）。</p>
+ </details>
+</li>
+<li><p><code>system_server</code> 与普通应用启动 Binder 线程池的共同点和区别是什么？</p>
+ <details><summary>答案展开</summary>
+
+<p> 两者都在 Zygote 子进程中进入 <code>ZygoteInit.zygoteInit()</code>，并经 <code>nativeZygoteInit()</code> → <code>onZygoteInit()</code> 启动普通 Binder 池。区别主要在创建入口：<code>system_server</code> 由 primary Zygote 的 <code>forkSystemServer()</code> 在启动早期创建；普通应用通常由 AMS 通过 Zygote/USAP 请求启动（1.2、1.4 节）。</p>
+ </details></li>
+</ol>
+<h3 id="ProcessState-与-fork"><a href="#ProcessState-与-fork" class="headerlink" title="ProcessState 与 fork"></a>ProcessState 与 fork</h3><ol start="5">
+<li><p><code>ProcessState</code> 解决哪些进程级问题？为什么它必须是进程级单例？</p>
+ <details><summary>答案展开</summary>
+
+<p> 它持有 Binder 驱动 fd、接收区映射、线程池配置、handle→<code>BpBinder</code> 映射以及 context manager 状态。这些资源都对应同一个 Binder 驱动进程上下文；同一套 libbinder 再创建一份会使 fd、引用表和线程管理语义混乱，因此通过 <code>std::call_once</code> 只初始化一次（2.1 节）。</p>
+ </details>
+</li>
+<li><p><code>ProcessState::self()</code> 与 <code>initWithDriver()</code> 的关系是什么？什么时候必须先调用后者？</p>
+ <details><summary>答案展开</summary>
+
+<p> <code>self()</code> 选择编译环境对应的默认驱动，通常是 <code>/dev/binder</code>，VNDK 场景为 <code>/dev/vndbinder</code>。若调用方需要非默认 driver，必须在第一次 <code>self()</code> 前执行 <code>initWithDriver()</code>；单例已按某 driver 初始化后，只允许后续请求同一个 driver，不能切换到另一个设备节点（2.1 节）。</p>
+ </details>
+</li>
+<li><p>Binder 接收区为什么是 <code>mmap(PROT_READ, MAP_PRIVATE | MAP_NORESERVE)</code>？它是不是两个进程共用的一段用户态共享内存？</p>
+ <details><summary>答案展开</summary>
+
+<p> 这块区域是<strong>目标进程自己的</strong> Binder 事务接收区：内核为目标进程分配事务缓冲，并映射到其用户地址空间；用户态只读解析数据，再通过 <code>BC_FREE_BUFFER</code> 等命令归还。它不是通信双方协商并共同 mmap 的一块用户态共享内存。默认大小为 <code>1 MiB - 2 × page size</code>，大事务和高并发都可能耗尽它（2.2 节）。</p>
+ </details>
+</li>
+<li><p>为什么 fork 后不能继续使用父进程已有的 <code>ProcessState</code>？<code>childPostFork()</code> 做了什么？</p>
+ <details><summary>答案展开</summary>
+
+<p> 继承的 Binder fd 仍关联父进程的 <code>binder_proc</code>，而 Binder 接收区 VMA 又被驱动标记为 <code>VM_DONTCOPY</code>，不会复制到子进程。<code>childPostFork()</code> 因此将 <code>mForked</code> 置为 <code>true</code>、关闭继承 fd 并设为 <code>-1</code>；之后访问该单例会在 <code>verifyNotForked()</code> 处 fatal，以快速失败替代难以诊断的跨进程状态错乱（2.3 节）。</p>
+ </details></li>
+</ol>
+<h3 id="线程池与驱动交互"><a href="#线程池与驱动交互" class="headerlink" title="线程池与驱动交互"></a>线程池与驱动交互</h3><ol start="9">
+<li><p>默认 Binder 线程池是 15 个还是 16 个线程？</p>
+ <details><summary>答案展开</summary>
+
+<p> 常规的 kernel-managed 上限是 <strong>1 + 15 = 16</strong>：<code>startThreadPool()</code> 先主动创建一个 primary pooled thread；<code>BINDER_SET_MAX_THREADS</code> 的默认 15 表示驱动最多还可通过 <code>BR_SPAWN_LOOPER</code> 请求创建的辅助线程数。显式调用 <code>joinThreadPool()</code> 加入的线程不在这个常规计数内，因此“15 就是总线程数”是常见错误（3.1 节）。</p>
+ </details>
+</li>
+<li><p><code>startThreadPool()</code> 会不会让调用它的线程进入无限循环？</p>
+<details><summary>答案展开</summary>
+
+<p>不会。它异步创建一个 <code>PoolThread</code>，由这个新线程调用 <code>IPCThreadState::joinThreadPool(true)</code> 进入循环；发起 <code>startThreadPool()</code> 的线程继续执行自身逻辑。只有调用方显式执行 <code>joinThreadPool()</code>，当前线程才会长期停留在 Binder 循环中（3.1、3.2 节）。</p>
+</details>
+</li>
+<li><p><code>isMain == true</code> 是否表示 Linux 进程的 main 线程，或表示调度优先级更高？</p>
+<details><summary>答案展开</summary>
+
+<p>都不是。它表示 Binder 线程池的 primary looper 角色：<code>true</code> 时首次向驱动发送 <code>BC_ENTER_LOOPER</code>，<code>false</code> 时响应 <code>BR_SPAWN_LOOPER</code> 并发送 <code>BC_REGISTER_LOOPER</code>。<code>startThreadPool()</code> 创建的 primary looper 本身仍是一个新子线程，不是进程最初的 main 线程（3.2、4.2 节）。</p>
+</details>
+</li>
+<li><p>从驱动发现线程不足到新 Binder 线程实际可接收事务，完整链路是什么？</p>
+<details><summary>答案展开</summary>
+
+<p>驱动向已有 looper 返回 <code>BR_SPAWN_LOOPER</code>；<code>executeCommand()</code> 调用 <code>ProcessState::spawnPooledThread(false)</code>；新 <code>PoolThread</code> 创建自己的 <code>IPCThreadState</code>，进入 <code>joinThreadPool(false)</code>，将 <code>BC_REGISTER_LOOPER</code> 写入 <code>mOut</code>；首次 <code>getAndExecuteCommand()</code> 通过 <code>BINDER_WRITE_READ</code> 把该命令送到驱动，线程随后成为可调度的 Binder looper（3.2、4.2、6 节）。</p>
+</details>
+</li>
+<li><p><code>mIn</code>、<code>mOut</code> 保存的是什么？业务调用的参数和 reply 又在哪里？</p>
+<details><summary>答案展开</summary>
+
+<p><code>mIn</code>/<code>mOut</code> 是线程私有的命令流 Parcel，用于承载 <code>BR_*</code>/<code>BC_*</code> 及其元数据。业务事务参数由 <code>binder_transaction_data</code> 指向发送方的 IPC Parcel；收到 <code>BR_TRANSACTION</code> 或 <code>BR_REPLY</code> 后，libbinder 通过 <code>Parcel::ipcSetDataReference()</code> 引用目标进程接收区中的事务数据。二者不能混为同一个 Parcel（4.1、5.3.1 节）。</p>
+</details>
+</li>
+<li><p><code>talkWithDriver()</code> 为什么在 <code>mIn</code> 还没消费完时通常不再 ioctl？为什么也会暂缓发送 <code>mOut</code>？</p>
+<details><summary>答案展开</summary>
+
+<p><code>mIn</code> 还存在未解析的返回命令时，继续 read 会覆盖或混入现有命令流，因此本轮先在用户态消费。<code>doReceive == true</code> 的该路径也会令 <code>write_size</code> 为 0，避免在“边解析旧输入、边发送新输出”时打乱命令流处理顺序；<code>flushCommands()</code> 使用 <code>doReceive == false</code>，可单独把 <code>mOut</code> 刷给驱动（5.2 节）。</p>
+</details>
+</li>
+<li><p><code>executeCommand()</code> 和 <code>waitForResponse()</code> 如何分工？为什么等待同步 reply 的线程仍可能执行嵌套事务？</p>
+<details><summary>答案展开</summary>
+
+<p><code>executeCommand()</code> 处理入站事务、引用计数、死亡通知和 <code>BR_SPAWN_LOOPER</code> 等通用命令；<code>waitForResponse()</code> 直接处理 <code>BR_REPLY</code>、<code>BR_TRANSACTION_COMPLETE</code>、<code>BR_DEAD_REPLY</code> 等与本次调用相关的返回值。它遇到其他命令会落入 <code>default</code> 并调用 <code>executeCommand()</code>，包括嵌套的 <code>BR_TRANSACTION</code>；这让同步调用链上的线程可以回调处理工作，降低相互等待导致死锁的风险（5.3 节）。</p>
+</details></li>
+</ol>
+<h3 id="驱动初始化与特殊模式"><a href="#驱动初始化与特殊模式" class="headerlink" title="驱动初始化与特殊模式"></a>驱动初始化与特殊模式</h3><ol start="16">
+<li><p><code>open_driver()</code> 在真正 <code>mmap</code> 前做了哪些关键初始化？各自解决什么问题？</p>
+<details><summary>答案展开</summary>
+
+<p>它依次打开 driver fd、通过 <code>BINDER_VERSION</code> 校验用户态与驱动的协议版本、通过 <code>BINDER_SET_MAX_THREADS</code> 设置默认最大辅助线程数 15，并尝试启用 oneway spam detection。随后 <code>ProcessState</code> 才用这个 fd 映射事务接收区；前两步保证“连的是可用且协议匹配的 Binder 驱动”，线程数配置则决定后续动态扩容边界（2.2 节）。</p>
+</details>
+</li>
+<li><p><code>BINDER_SET_MAX_THREADS = 15</code> 能否理解为“这个进程总共只能创建 15 个线程”？</p>
+<details><summary>答案展开</summary>
+
+<p>不能。它只约束 Binder 驱动额外请求的 looper 数，不约束 Linux 进程的所有线程；<code>startThreadPool()</code> 创建的 primary pooled thread 不在这 15 个之内，显式 <code>joinThreadPool()</code> 的加入者也不在常规 <code>1 + 15</code> 估算内。应用的 UI、RenderThread、GC 等普通线程更不受此 ioctl 限制（3.1 节）。</p>
+</details>
+</li>
+<li><p><code>BR_FINISHED</code> 对 primary looper 和辅助 looper 的影响为什么不同？</p>
+<details><summary>答案展开</summary>
+
+<p><code>executeCommand()</code> 将 <code>BR_FINISHED</code> 转成 <code>TIMED_OUT</code>。<code>joinThreadPool()</code> 只允许 <code>isMain == false</code> 的辅助 looper 因该结果退出；primary looper 保持等待，以确保线程池至少保有由用户态主动创建的基础接收能力（4.2 节）。</p>
+</details>
+</li>
+<li><p><code>flushCommands()</code> 与普通的 <code>talkWithDriver()</code> 调用有何不同？为什么它有时会连续 flush 两次？</p>
+<details><summary>答案展开</summary>
+
+<p><code>flushCommands()</code> 以 <code>doReceive == false</code> 调用 <code>talkWithDriver()</code>，只写 <code>mOut</code>、不读取新 <code>BR_*</code> 命令，适合在线程不再自然进入驱动时主动送出 <code>BC_FREE_BUFFER</code> 等积压命令。第一次写入后执行的引用释放可能又产生新的 <code>BC_RELEASE</code> 或 <code>BC_DECREFS</code>，所以源码会视情况再 flush 一次（5.2 节）。</p>
+</details>
+</li>
+<li><p><code>IPCThreadState::stopProcess()</code> 做了什么？为什么它不等价于“杀死进程”？</p>
+<details><summary>答案展开</summary>
+
+<p>它先 flush 待发送命令，再将 <code>mDriverFD</code> 置为 <code>-1</code> 并关闭旧 fd，从而停止这套普通 Binder 连接；它本身不调用 <code>exit()</code> 或发送杀进程信号。独立 <code>app_process</code> 路径中，只有目标 Java <code>main()</code> 返回后才会走到该收尾逻辑，之后进程是否结束由外层运行时流程决定（1.3、4.2 节）。</p>
+</details></li>
+</ol>
+<h3 id="进程类型与上下文管理器"><a href="#进程类型与上下文管理器" class="headerlink" title="进程类型与上下文管理器"></a>进程类型与上下文管理器</h3><ol start="21">
+<li><p>child zygote 为什么不走 <code>ZygoteInit.zygoteInit()</code>，这对 Binder 线程池有什么影响？</p>
+<details><summary>答案展开</summary>
+
+<p>child zygote 走 <code>childZygoteInit()</code>，该方法直接寻找并返回目标类的 <code>main()</code>，跳过 <code>commonInit()</code>、<code>nativeZygoteInit()</code> 等会启动普通 Binder 池的初始化。原因是 child zygote 仍承担派生进程的角色，不应沿用普通应用进程的 Binder 线程池初始化方式（1.2 节）。</p>
+</details>
+</li>
+<li><p><code>/dev/binder</code>、<code>/dev/vndbinder</code> 与 <code>/dev/hwbinder</code> 分别对应什么？本文为什么只聚焦前两者？</p>
+<details><summary>答案展开</summary>
+
+<p>普通 framework 侧 libbinder 默认使用 <code>/dev/binder</code>；VNDK 构建的普通 libbinder 使用 <code>/dev/vndbinder</code>；旧 HIDL/hardware Binder 使用独立的 <code>android::hardware::ProcessState</code> 与 <code>/dev/hwbinder</code>。本文分析的是 <code>android::ProcessState</code> / <code>android::IPCThreadState</code> 这套普通 libbinder，因此不展开 HIDL 的 RPC threadpool（1.6、2.1 节）。</p>
+</details>
+</li>
+<li><p><code>servicemanager</code> 为什么要先 <code>setTheContextObject(manager)</code>，再 <code>becomeContextManager()</code>？</p>
+<details><summary>答案展开</summary>
+
+<p>前者在用户态保存 handle 0 对应的本地 <code>ServiceManager</code> Binder 对象；后者通过 Binder driver 注册自己为 context manager。这样驱动把发往 handle 0 的事务交给该进程时，<code>executeCommand()</code> 的 <code>tr.target.ptr == 0</code> 分支能够分发到这个本地 context object（1.5、5.3.1 节）。</p>
+</details>
+</li>
+<li><p><code>servicemanager</code> 的 <code>setupPolling()</code> 与 <code>joinThreadPool(true)</code> 有哪些共同点和本质区别？</p>
+<details><summary>答案展开</summary>
+
+<p>两者都会发送 <code>BC_ENTER_LOOPER</code>，都能成为 Binder looper。区别是 <code>joinThreadPool(true)</code> 在 Binder 线程自己的循环里阻塞等待；<code>setupPolling()</code> 只完成注册并返回 fd，之后由主线程 <code>Looper.pollAll()</code> 统一等待 Binder fd 和 timerfd 等事件，事件到达时再调用 <code>handlePolledCommands()</code>（1.5、4.2 节）。</p>
+</details>
+</li>
+<li><p>如果 <code>getAndExecuteCommand()</code> 从 <code>mIn</code> 取到的不是它认识的命令，会发生什么？这说明什么？</p>
+<details><summary>答案展开</summary>
+
+<p><code>executeCommand()</code> 的 <code>default</code> 分支会记录 bad command 并返回 <code>UNKNOWN_ERROR</code>，同时更新 <code>mLastError</code>。这也说明不能把所有 <code>BR_*</code> 都送进该通用分发器：与发起方同步调用直接相关的 <code>BR_REPLY</code>、<code>BR_DEAD_REPLY</code> 等必须由 <code>waitForResponse()</code> 按其调用上下文处理（5.3、5.3.2 节）。</p>
+</details></li>
+</ol>
+<h3 id="IPCThreadState-与线程池运行状态"><a href="#IPCThreadState-与线程池运行状态" class="headerlink" title="IPCThreadState 与线程池运行状态"></a>IPCThreadState 与线程池运行状态</h3><ol start="26">
+<li><p><code>IPCThreadState::self()</code> 为什么是线程本地对象，而不是像 <code>ProcessState</code> 一样做成进程级单例？</p>
+<details><summary>答案展开</summary>
+
+<p><code>ProcessState</code> 管的是全进程共用的驱动 fd、接收区和线程池；而一次 Binder 调用的调用者身份、嵌套事务现场、输入/输出命令流 <code>mIn</code>/<code>mOut</code>、是否为 looper 等，都必须彼此隔离。<code>IPCThreadState::self()</code> 用一个全局 TLS key 保存“每个线程各自的实例”：首次访问时创建，后续同一线程复用，因而并发 Binder 调用不会互相覆盖上下文（4.1 节）。</p>
+</details>
+</li>
+<li><p><code>IPCThreadState</code> 构造时为什么要先持有 <code>ProcessState::self()</code>，并调用 <code>clearCaller()</code>？</p>
+<details><summary>答案展开</summary>
+
+<p>前者建立线程状态与所属进程 Binder 资源的关联，后续与驱动交互、读取线程池配置都通过 <code>mProcess</code> 完成；后者把新线程的 calling pid、uid、sid 等调用者信息恢复为“没有正在处理入站 Binder 调用”的初始状态。只有执行 <code>BR_TRANSACTION</code> 期间，线程才会临时改写这些身份信息，并在处理结束后恢复原现场（4.1、5.3.1 节）。</p>
+</details>
+</li>
+<li><p><code>joinThreadPool()</code> 中 <code>mCurrentThreads</code>、<code>mExecutingThreadsCount</code> 与 <code>mWaitingForThreads</code> 分别反映什么？</p>
+<details><summary>答案展开</summary>
+
+<p><code>mCurrentThreads</code> 统计已加入 Binder 池的用户态线程；<code>mExecutingThreadsCount</code> 统计当前正在由 <code>getAndExecuteCommand()</code> 执行命令的线程，用于饥饿检测；<code>mWaitingForThreads</code> 表示正在等待可用 Binder 线程的调用者数量，执行线程减少后会通过条件变量唤醒它们。三者不能简单等同于“驱动允许创建的最大线程数”（4.2、5.1 节）。</p>
+</details>
+</li>
+<li><p><code>getAndExecuteCommand()</code> 每次循环做了什么？它和 <code>joinThreadPool()</code> 是什么层级关系？</p>
+<details><summary>答案展开</summary>
+
+<p><code>joinThreadPool()</code> 是线程长期驻留的外层循环；每轮调用 <code>getAndExecuteCommand()</code>。后者先经 <code>talkWithDriver()</code> 获取命令，若 <code>mIn</code> 有完整命令则读出一个 <code>BR_*</code>，递增执行线程计数，调用 <code>executeCommand()</code>，再递减计数并完成饥饿检测/等待者唤醒。一次调用最多分发一条通用命令，余下的 <code>mIn</code> 命令会留到后续循环继续消费（4.2、5.1 节）。</p>
+</details>
+</li>
+<li><p>Binder 线程池的“饥饿（starvation）”检测在检测什么？它为什么不等于驱动立刻创建新线程？</p>
+<details><summary>答案展开</summary>
+
+<p>libbinder 在执行中的线程数达到 <code>mMaxThreads</code> 时记录饥饿起始时间，恢复到阈值以下时结束计时；持续超过约 100 ms 会输出诊断日志。它主要用于暴露池线程长期忙碌、事务可能排队的现象，不是直接的扩线程命令。实际动态补线程仍是驱动返回 <code>BR_SPAWN_LOOPER</code>、用户态再创建并注册辅助 looper 的协作过程（3.2、5.1 节）。</p>
+</details></li>
+</ol>
+<h3 id="驱动协议与事务分发"><a href="#驱动协议与事务分发" class="headerlink" title="驱动协议与事务分发"></a>驱动协议与事务分发</h3><ol start="31">
+<li><p><code>binder_write_read</code> 的六个字段中，<code>write_consumed</code>、<code>read_consumed</code> 分别表示什么？libbinder 收到它们后如何处理？</p>
+<details><summary>答案展开</summary>
+
+<p><code>write_consumed</code> 是驱动实际消费的 <code>mOut</code> 字节数；若它为正且小于本次待写大小，libbinder 认为驱动没有完整消费命令流并 fatal，完整消费后清空 <code>mOut</code> 并处理 post-write 的延迟引用释放。<code>read_consumed</code> 是驱动实际写入 <code>mIn</code> 的字节数；大于 0 时，libbinder 将 <code>mIn</code> 的有效大小设为该值并将读位置重置到开头，供后续逐条解析 <code>BR_*</code>（5.2.2、5.2.3 节）。</p>
+</details>
+</li>
+<li><p><code>talkWithDriver()</code> 遇到 <code>-EINTR</code> 为什么重试？<code>write_consumed == 0</code> 是否必然是致命错误？</p>
+<details><summary>答案展开</summary>
+
+<p><code>-EINTR</code> 表示 ioctl 被信号中断，而不是 Binder 协议本身失败；libbinder 会重试以完成这次命令交换。源码的 fatal 条件是“已消费正数字节但没有消费完整个 <code>mOut</code>”；<code>write_consumed == 0</code> 本身不会走进这个 fatal 分支，不能把它笼统说成驱动异常（5.2.2、5.2.3 节）。</p>
+</details>
+</li>
+<li><p>为什么 <code>BR_TRANSACTION</code> 的业务数据不直接复制进普通 <code>Parcel</code>？<code>Parcel::ipcSetDataReference()</code> 的作用是什么？</p>
+<details><summary>答案展开</summary>
+
+<p>驱动已把事务数据放在目标进程的 Binder 接收区。<code>Parcel::ipcSetDataReference()</code> 让 Parcel 引用这段由驱动提供的缓冲，而不是再做一份不必要的用户态复制；处理完成后需要通过 Binder 命令归还相应缓冲。<code>mIn</code> 保存的是 <code>BR_TRANSACTION</code> 这类控制命令及元数据，事务载荷则在 mmap 接收区，二者职责不同（2.2、5.3.1 节）。</p>
+</details>
+</li>
+<li><p><code>executeCommand()</code> 收到 <code>BR_TRANSACTION</code> 后，如何找到实际应执行的 Binder 对象？handle 0 的事务又如何分发？</p>
+<details><summary>答案展开</summary>
+
+<p><code>tr.target.ptr</code> 非空时，libbinder 先尝试持有目标对象的强引用，再通过 <code>tr.cookie</code> 取得本地 <code>BBinder</code> 并调用其 <code>transact()</code>；若目标为空，则使用本进程保存的 context object。<code>servicemanager</code> 预先设置该对象并注册为 context manager，因此发往 handle 0 的事务可落到它的本地 Binder 实现（1.5、5.3.1 节）。</p>
+</details>
+</li>
+<li><p>同步事务与 <code>TF_ONE_WAY</code> 事务在服务端回复路径上有什么差别？</p>
+<details><summary>答案展开</summary>
+
+<p>同步事务的服务端在执行本地 Binder 对象后通过 <code>sendReply()</code> 发送回复，<code>sendReply()</code> 还会进入 <code>waitForResponse()</code> 等待驱动确认；带 <code>TF_ONE_WAY</code> 的事务不需要 reply，服务端会丢弃 reply Parcel，不发送 <code>BC_REPLY</code>。因此不能把“收到 <code>BR_TRANSACTION</code>”一概理解为必然有同步返回（5.3.1 节）。</p>
+</details>
+</li>
+<li><p>为什么线程在 <code>waitForResponse()</code> 中等待同步 reply 时还可能触发死亡通知或处理嵌套事务？</p>
+<details><summary>答案展开</summary>
+
+<p><code>waitForResponse()</code> 只直接消费本次调用相关的 <code>BR_REPLY</code>、<code>BR_DEAD_REPLY</code>、<code>BR_FAILED_REPLY</code>、<code>BR_TRANSACTION_COMPLETE</code> 等命令；其它 <code>BR_*</code> 会落入 default 后交给 <code>executeCommand()</code>。所以等待线程可就地处理 <code>BR_DEAD_BINDER</code> 等死亡通知，也可能执行嵌套 <code>BR_TRANSACTION</code>，避免同步调用链彼此等待时无人处理回调造成死锁（5.3、5.3.2 节）。</p>
+</details>
+</li>
+<li><p><code>BR_DEAD_BINDER</code>、<code>BR_CLEAR_DEATH_NOTIFICATION_DONE</code> 分别对应什么用户态动作？</p>
+<details><summary>答案展开</summary>
+
+<p>收到 <code>BR_DEAD_BINDER</code> 时，libbinder 找到对应 <code>BpBinder</code> 并调用 <code>sendObituary()</code>，从而触发已注册的 <code>DeathRecipient</code> 回调，再写入 <code>BC_DEAD_BINDER_DONE</code> 告知驱动处理完成。收到 <code>BR_CLEAR_DEATH_NOTIFICATION_DONE</code> 时则对相关 <code>BpBinder</code> 执行 <code>decWeak()</code>，完成取消死亡通知后的弱引用释放（4 节、5.3 节）。</p>
+</details></li>
+</ol>
+<h2 id="7-2-场景追问：把“背调用链”变成“讲设计”"><a href="#7-2-场景追问：把“背调用链”变成“讲设计”" class="headerlink" title="7.2 场景追问：把“背调用链”变成“讲设计”"></a>7.2 场景追问：把“背调用链”变成“讲设计”</h2><table>
+<thead>
+<tr>
+<th align="right">#</th>
+<th>面试官追问</th>
+<th>回答关键点</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="right">1</td>
+<td><code>servicemanager</code> 把最大线程数设为 0，为什么仍然能够处理 Binder 请求？</td>
+<td>它不调用 <code>startThreadPool()</code>；主线程执行 <code>setupPolling()</code>，发送 <code>BC_ENTER_LOOPER</code> 后把 Binder fd 加入 <code>Looper</code>。fd 可读时由回调执行 <code>handlePolledCommands()</code>，所以是单主线程 polling，不是零个 looper（1.5、6 节）。</td>
+</tr>
+<tr>
+<td align="right">2</td>
+<td>如果 <code>mMaxThreads == 0</code> 却调用 <code>startThreadPool()</code>，会发生什么？</td>
+<td>libbinder 会警告，但仍创建一个 primary pooled thread。<code>0</code> 表示不希望驱动额外请求辅助线程，并不阻止该 API 创建初始线程；这正是 <code>servicemanager</code> 不调用它的原因（3.1 节）。</td>
+</tr>
+<tr>
+<td align="right">3</td>
+<td>一个服务已把 16 个常规 Binder 线程都占满，再来请求一定会失败吗？</td>
+<td>不应简单回答“必失败”。驱动和 libbinder 会受线程池上限、事务类型、嵌套调用和接收区容量共同约束；等待 reply 的调用线程还可能处理嵌套事务。正确结论是：线程池饱和会带来排队、延迟和潜在死锁风险，应缩短 Binder 回调中的阻塞工作并合理配置线程数（3、5 节）。</td>
+</tr>
+<tr>
+<td align="right">4</td>
+<td>为什么应用主线程不需要自己 <code>joinThreadPool()</code>，应用也能接收 Binder 回调？</td>
+<td><code>onZygoteInit()</code> 已通过 <code>startThreadPool()</code> 创建 primary pooled thread，驱动还可按需请求辅助线程。主线程通常负责 Looper/应用生命周期；它在同步 Binder 调用等待 reply 时，也可能处理嵌套事务，但这不是常驻 Binder 池的替代品（1.2、3 节）。</td>
+</tr>
+<tr>
+<td align="right">5</td>
+<td>为什么不能在 Zygote 预加载阶段先 <code>ProcessState::self()</code>，让所有应用继承它来省初始化？</td>
+<td>Binder 驱动的 <code>binder_proc</code>、fd 和接收区必须与具体进程匹配；fork 后接收区不复制，libbinder 也会关闭继承 fd 并标记 <code>mForked</code>。省掉一次初始化会换来错误的内核状态归属，因此设计上必须在子进程首次使用时初始化（2.3 节）。</td>
+</tr>
+<tr>
+<td align="right">6</td>
+<td><code>BINDER_WRITE_READ</code> 一次 ioctl 既可写又可读，为什么还要区分 <code>mIn</code> 和接收区 mmap？</td>
+<td><code>mIn</code> 是很小的用户态命令缓冲，用于驱动返回 <code>BR_*</code> 命令及元数据；mmap 接收区存放真正的 Binder 事务数据。<code>binder_write_read</code> 负责“命令控制面”，事务缓冲映射承载“数据面”（2.2、5.2 节）。</td>
+</tr>
+</tbody></table>
+<h2 id="7-3-面试答题框架与易错点"><a href="#7-3-面试答题框架与易错点" class="headerlink" title="7.3 面试答题框架与易错点"></a>7.3 面试答题框架与易错点</h2><p>遇到“Binder 线程池如何启动”这类开放题，可以按下面顺序组织答案，既完整又不会陷入源码细节：</p>
+<ol>
+<li><strong>先分进程类型</strong>：Zygote 父进程不启动普通 Binder 池；Zygote 子进程走 <code>onZygoteInit()</code>；独立 <code>app_process</code> 走 <code>onStarted()</code>；<code>servicemanager</code> 走 Looper polling。</li>
+<li><strong>再讲进程级初始化</strong>：<code>ProcessState</code> 单例打开驱动、校验版本、设置默认 15 个额外线程、mmap 接收区，并注册 fork 防护。</li>
+<li><strong>说明首线程与扩容</strong>：<code>startThreadPool()</code> 创建一个 primary pooled thread；该线程以 <code>BC_ENTER_LOOPER</code> 加入；驱动不足时返回 <code>BR_SPAWN_LOOPER</code>，用户态创建辅助线程并以 <code>BC_REGISTER_LOOPER</code> 注册。</li>
+<li><strong>落到事件循环</strong>：looper 调用 <code>getAndExecuteCommand()</code>；它经 <code>talkWithDriver()</code> 发起 <code>BINDER_WRITE_READ</code>，再由 <code>executeCommand()</code> 分发通用 <code>BR_*</code> 命令；同步调用的 reply 在 <code>waitForResponse()</code> 处理。</li>
+</ol>
+<p>高频失分点：把 <code>15</code> 说成总线程数；把 <code>isMain</code> 说成进程主线程或优先级；认为 Binder 接收区是双方共用的用户态共享内存；认为 fork 会复制 Binder mmap；以及把 <code>servicemanager</code> 误说成“没有 Binder looper”。</p>
 
       
     </div>
@@ -1170,7 +1447,7 @@
               
                 <a href="/archives/%7C%7C%20archive">
               
-                  <span class="site-state-item-count">39</span>
+                  <span class="site-state-item-count">40</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
@@ -1192,7 +1469,7 @@
               
               <div class="site-state-item site-state-tags">
                 <a href="/tags/index.html">
-                  <span class="site-state-item-count">33</span>
+                  <span class="site-state-item-count">34</span>
                   <span class="site-state-item-name">标签</span>
                 </a>
               </div>
@@ -1274,7 +1551,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#1-%E4%B8%8D%E5%90%8C%E8%BF%9B%E7%A8%8B%E7%9A%84-Binder-%E5%90%AF%E5%8A%A8%E5%85%A5%E5%8F%A3"><span class="nav-text">1. 不同进程的 Binder 启动入口</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-1-Zygote-%E7%88%B6%E8%BF%9B%E7%A8%8B"><span class="nav-text">1.1 Zygote 父进程</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#1-2-Zygote-fork-%E7%9A%84%E6%99%AE%E9%80%9A%E5%AD%90%E8%BF%9B%E7%A8%8B"><span class="nav-text">1.2 Zygote fork 的普通子进程</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#1-3-app-process-%E5%90%AF%E5%8A%A8%E7%9A%84%E8%BF%9B%E7%A8%8B"><span class="nav-text">1.3 app_process 启动的进程</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#1-4-%E4%B8%89%E6%9D%A1%E8%B7%AF%E5%BE%84%E5%AF%B9%E6%AF%94"><span class="nav-text">1.4 三条路径对比</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#1-5-servicemanager-%E5%8D%95%E7%BA%BF%E7%A8%8B%E7%89%B9%E4%BE%8B"><span class="nav-text">1.5 servicemanager 单线程特例</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#1-6-%E6%99%AE%E9%80%9A-Binder-%E4%B8%8E-HW-Binder"><span class="nav-text">1.6 普通 Binder 与 HW Binder</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#2-ProcessState-%E5%88%9D%E5%A7%8B%E5%8C%96"><span class="nav-text">2. ProcessState 初始化</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#2-1-self-%E4%B8%8E-init"><span class="nav-text">2.1 self() 与 init()</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-2-%E6%89%93%E5%BC%80%E9%A9%B1%E5%8A%A8%E5%92%8C-mmap"><span class="nav-text">2.2 打开驱动和 mmap</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-3-fork-%E9%98%B2%E6%8A%A4"><span class="nav-text">2.3 fork 防护</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#3-%E5%90%AF%E5%8A%A8%E6%99%AE%E9%80%9A-Binder-%E7%BA%BF%E7%A8%8B%E6%B1%A0"><span class="nav-text">3. 启动普通 Binder 线程池</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#3-1-startThreadPool"><span class="nav-text">3.1 startThreadPool()</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-2-spawnPooledThread"><span class="nav-text">3.2 spawnPooledThread()</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#4-IPCThreadState%EF%BC%9A%E7%BA%BF%E7%A8%8B%E7%BA%A7%E7%8A%B6%E6%80%81"><span class="nav-text">4. IPCThreadState：线程级状态</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#4-1-TLS-%E5%88%9D%E5%A7%8B%E5%8C%96"><span class="nav-text">4.1 TLS 初始化</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-2-joinThreadPool"><span class="nav-text">4.2 joinThreadPool()</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#5-Binder-%E6%A0%B8%E5%BF%83%E4%BA%8B%E4%BB%B6%E5%BE%AA%E7%8E%AF"><span class="nav-text">5. Binder 核心事件循环</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#5-1-getAndExecuteCommand"><span class="nav-text">5.1 getAndExecuteCommand()</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-2-talkWithDriver"><span class="nav-text">5.2 talkWithDriver()</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#5-2-1-%E5%88%A4%E6%96%AD%E6%98%AF%E5%90%A6%E9%9C%80%E8%A6%81%E8%AF%BB%E5%86%99"><span class="nav-text">5.2.1 判断是否需要读写</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-2-2-BINDER-WRITE-READ"><span class="nav-text">5.2.2 BINDER_WRITE_READ</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-2-3-%E5%A4%84%E7%90%86%E6%B6%88%E8%B4%B9%E7%BB%93%E6%9E%9C"><span class="nav-text">5.2.3 处理消费结果</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-3-executeCommand"><span class="nav-text">5.3 executeCommand()</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#5-3-1-BR-TRANSACTION"><span class="nav-text">5.3.1 BR_TRANSACTION</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-3-2-executeCommand-%E4%B8%8E-waitForResponse"><span class="nav-text">5.3.2 executeCommand() 与 waitForResponse()</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#6-%E5%AE%8C%E6%95%B4%E5%90%AF%E5%8A%A8%E6%97%B6%E5%BA%8F%E6%80%BB%E7%BB%93"><span class="nav-text">6. 完整启动时序总结</span></a></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#1-%E4%B8%8D%E5%90%8C%E8%BF%9B%E7%A8%8B%E7%9A%84-Binder-%E5%90%AF%E5%8A%A8%E5%85%A5%E5%8F%A3"><span class="nav-text">1. 不同进程的 Binder 启动入口</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-1-Zygote-%E7%88%B6%E8%BF%9B%E7%A8%8B"><span class="nav-text">1.1 Zygote 父进程</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#1-2-Zygote-fork-%E7%9A%84%E6%99%AE%E9%80%9A%E5%AD%90%E8%BF%9B%E7%A8%8B"><span class="nav-text">1.2 Zygote fork 的普通子进程</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#1-3-app-process-%E5%90%AF%E5%8A%A8%E7%9A%84%E8%BF%9B%E7%A8%8B"><span class="nav-text">1.3 app_process 启动的进程</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#1-4-%E4%B8%89%E6%9D%A1%E8%B7%AF%E5%BE%84%E5%AF%B9%E6%AF%94"><span class="nav-text">1.4 三条路径对比</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#1-5-servicemanager-%E5%8D%95%E7%BA%BF%E7%A8%8B%E7%89%B9%E4%BE%8B"><span class="nav-text">1.5 servicemanager 单线程特例</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#1-6-%E6%99%AE%E9%80%9A-Binder-%E4%B8%8E-HW-Binder"><span class="nav-text">1.6 普通 Binder 与 HW Binder</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#2-ProcessState-%E5%88%9D%E5%A7%8B%E5%8C%96"><span class="nav-text">2. ProcessState 初始化</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#2-1-self-%E4%B8%8E-init"><span class="nav-text">2.1 self() 与 init()</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-2-%E6%89%93%E5%BC%80%E9%A9%B1%E5%8A%A8%E5%92%8C-mmap"><span class="nav-text">2.2 打开驱动和 mmap</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-3-fork-%E9%98%B2%E6%8A%A4"><span class="nav-text">2.3 fork 防护</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#3-%E5%90%AF%E5%8A%A8%E6%99%AE%E9%80%9A-Binder-%E7%BA%BF%E7%A8%8B%E6%B1%A0"><span class="nav-text">3. 启动普通 Binder 线程池</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#3-1-startThreadPool"><span class="nav-text">3.1 startThreadPool()</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-2-spawnPooledThread"><span class="nav-text">3.2 spawnPooledThread()</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#4-IPCThreadState%EF%BC%9A%E7%BA%BF%E7%A8%8B%E7%BA%A7%E7%8A%B6%E6%80%81"><span class="nav-text">4. IPCThreadState：线程级状态</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#4-1-TLS-%E5%88%9D%E5%A7%8B%E5%8C%96"><span class="nav-text">4.1 TLS 初始化</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-2-joinThreadPool"><span class="nav-text">4.2 joinThreadPool()</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#5-Binder-%E6%A0%B8%E5%BF%83%E4%BA%8B%E4%BB%B6%E5%BE%AA%E7%8E%AF"><span class="nav-text">5. Binder 核心事件循环</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#5-1-getAndExecuteCommand"><span class="nav-text">5.1 getAndExecuteCommand()</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-2-talkWithDriver"><span class="nav-text">5.2 talkWithDriver()</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#5-2-1-%E5%88%A4%E6%96%AD%E6%98%AF%E5%90%A6%E9%9C%80%E8%A6%81%E8%AF%BB%E5%86%99"><span class="nav-text">5.2.1 判断是否需要读写</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-2-2-BINDER-WRITE-READ"><span class="nav-text">5.2.2 BINDER_WRITE_READ</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-2-3-%E5%A4%84%E7%90%86%E6%B6%88%E8%B4%B9%E7%BB%93%E6%9E%9C"><span class="nav-text">5.2.3 处理消费结果</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-3-executeCommand"><span class="nav-text">5.3 executeCommand()</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#5-3-1-BR-TRANSACTION"><span class="nav-text">5.3.1 BR_TRANSACTION</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-3-2-executeCommand-%E4%B8%8E-waitForResponse"><span class="nav-text">5.3.2 executeCommand() 与 waitForResponse()</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#6-%E5%AE%8C%E6%95%B4%E5%90%AF%E5%8A%A8%E6%97%B6%E5%BA%8F%E6%80%BB%E7%BB%93"><span class="nav-text">6. 完整启动时序总结</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#7-%E8%87%AA%E6%B5%8B%E4%B8%8E%E6%A3%80%E9%AA%8C"><span class="nav-text">7. 自测与检验</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#7-1-%E5%9F%BA%E7%A1%80%E8%87%AA%E6%B5%8B"><span class="nav-text">7.1 基础自测</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%90%AF%E5%8A%A8%E5%85%A5%E5%8F%A3"><span class="nav-text">启动入口</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#ProcessState-%E4%B8%8E-fork"><span class="nav-text">ProcessState 与 fork</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%BA%BF%E7%A8%8B%E6%B1%A0%E4%B8%8E%E9%A9%B1%E5%8A%A8%E4%BA%A4%E4%BA%92"><span class="nav-text">线程池与驱动交互</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%A9%B1%E5%8A%A8%E5%88%9D%E5%A7%8B%E5%8C%96%E4%B8%8E%E7%89%B9%E6%AE%8A%E6%A8%A1%E5%BC%8F"><span class="nav-text">驱动初始化与特殊模式</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%BF%9B%E7%A8%8B%E7%B1%BB%E5%9E%8B%E4%B8%8E%E4%B8%8A%E4%B8%8B%E6%96%87%E7%AE%A1%E7%90%86%E5%99%A8"><span class="nav-text">进程类型与上下文管理器</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#IPCThreadState-%E4%B8%8E%E7%BA%BF%E7%A8%8B%E6%B1%A0%E8%BF%90%E8%A1%8C%E7%8A%B6%E6%80%81"><span class="nav-text">IPCThreadState 与线程池运行状态</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%A9%B1%E5%8A%A8%E5%8D%8F%E8%AE%AE%E4%B8%8E%E4%BA%8B%E5%8A%A1%E5%88%86%E5%8F%91"><span class="nav-text">驱动协议与事务分发</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-2-%E5%9C%BA%E6%99%AF%E8%BF%BD%E9%97%AE%EF%BC%9A%E6%8A%8A%E2%80%9C%E8%83%8C%E8%B0%83%E7%94%A8%E9%93%BE%E2%80%9D%E5%8F%98%E6%88%90%E2%80%9C%E8%AE%B2%E8%AE%BE%E8%AE%A1%E2%80%9D"><span class="nav-text">7.2 场景追问：把“背调用链”变成“讲设计”</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-3-%E9%9D%A2%E8%AF%95%E7%AD%94%E9%A2%98%E6%A1%86%E6%9E%B6%E4%B8%8E%E6%98%93%E9%94%99%E7%82%B9"><span class="nav-text">7.3 面试答题框架与易错点</span></a></li></ol></li></ol></div>
             
 
           </div>
