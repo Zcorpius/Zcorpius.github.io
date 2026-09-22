@@ -114,7 +114,7 @@
 <meta property="og:image" content="https://zcorpius.github.io/2026/08/31/WMS%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E4%BB%8B%E7%BB%8D/%E6%A0%91%E5%BD%A2%E5%9B%BE%E5%B1%82%E7%BB%93%E6%9E%84-Android15%E5%AE%8C%E6%95%B4.png">
 <meta property="og:image" content="https://zcorpius.github.io/2026/08/31/WMS%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E4%BB%8B%E7%BB%8D/%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E5%B0%8F%E7%BB%93.png">
 <meta property="article:published_time" content="2026-08-31T14:40:24.000Z">
-<meta property="article:modified_time" content="2026-09-22T03:02:21.686Z">
+<meta property="article:modified_time" content="2026-09-22T05:49:45.272Z">
 <meta property="article:author" content="Zcorpius">
 <meta property="article:tag" content="WMS">
 <meta name="twitter:card" content="summary">
@@ -431,7 +431,7 @@
                   <span class="post-meta-item-text">字数统计&#58;</span>
                 
                 <span title="字数统计">
-                  12.8k
+                  13.2k
                 </span>
               
 
@@ -447,7 +447,7 @@
                   <span class="post-meta-item-text">阅读时长 &asymp;</span>
                 
                 <span title="阅读时长">
-                  54
+                  56
                 </span>
               
             </div>
@@ -960,7 +960,7 @@
 </tr>
 <tr>
 <td align="right">36</td>
-<td>圆角遮罩（<code>PRIVATE_FLAG_IS_ROUNDED_CORNERS_OVERLAY</code>）+ <code>TYPE_SCREEN_DECORATION_OVERLAY</code>(2024)</td>
+<td>带 <code>PRIVATE_FLAG_IS_ROUNDED_CORNERS_OVERLAY</code> 的窗口 token（<code>ScreenDecorations</code> 使用 <code>TYPE_NAVIGATION_BAR_PANEL</code>，type=2024）</td>
 <td>屏幕装饰（挖孔/圆角描边）</td>
 </tr>
 </tbody></table>
@@ -969,7 +969,7 @@
 <ul>
 <li><strong>同一 type 的 layer 并非固定</strong>：<code>TYPE_SYSTEM_ALERT</code> 有内部权限是 12、没有是 9，防止三方冒充系统弹窗压在 <code>APPLICATION_OVERLAY</code> 之上。</li>
 <li><strong>层是“区间”不是“精确值”</strong>：一个容器节点可以占据连续多层（如 <code>Leaf:18:23</code>），窗口进树时按自己 type 的 layer 落到对应节点。</li>
-<li><strong>层 ≠ 最终 Surface z</strong>：<code>assignChildLayers()</code>（<code>WindowContainer.java</code>）会按树序重算 SurfaceControl 的相对层级，树结构才是最终依据。</li>
+<li><strong>层 ≠ 最终 Surface z</strong>：<code>assignChildLayers()</code>（<code>WindowContainer.java</code>）是按树序重算 SurfaceControl layer 的常规主路径；<code>needsZBoost</code>、IME 相对 layer、Starting Window 和动画 leash 等专门逻辑还可能改写最终结果。树结构是理解这些规则的基础，但不能把它单独当成唯一依据。</li>
 </ul>
 </blockquote>
 <h2 id="4-3-常见窗口层级速记"><a href="#4-3-常见窗口层级速记" class="headerlink" title="4.3 常见窗口层级速记"></a>4.3 常见窗口层级速记</h2><table>
@@ -1164,7 +1164,7 @@
 <td><code>Leaf:15:15</code></td>
 </tr>
 </tbody></table>
-<p><code>Leaf:24:25</code> 同时容纳第 24 与第 25 层：<code>Taskbar</code>（#0）在下，<code>EdgeBackGestureHandler0</code>（#1）在上。这说明 layer 先决定窗口进入哪个区间，区间内部的兄弟顺序再决定精细 Z 序。</p>
+<p><code>Leaf:24:25</code> 同时容纳第 24 与第 25 层：<code>Taskbar</code>（type=2019，policy layer 24，#0）在下，<code>EdgeBackGestureHandler0</code>（type=2024，policy layer 25，#1）在上。<code>DisplayArea.Tokens</code> 会按 <code>WindowToken.getWindowLayerFromType()</code> 的结果排序 token，所以这里 #0/#1 是 layer 24/25 排序后的结果，不是“同一 Leaf 中任意兄弟只靠下标排上下”。只有 policy layer 相同的 token，才进一步由同一父容器中的兄弟顺序细分。</p>
 <p><code>ScreenDecorOverlay</code> 也显示为 type=2024，却不在 24–25，而在 <code>Leaf:36:36</code>。它带有圆角装饰的私有标记，命中 4.1 的特殊分支，直接映射到 <code>getMaxWindowLayer()</code>。因此，type 是重要索引但不是唯一条件；权限和 flag 同样可能改变最终层。</p>
 <h2 id="6-5-从任务、空节点和-Binder-读运行状态"><a href="#6-5-从任务、空节点和-Binder-读运行状态" class="headerlink" title="6.5 从任务、空节点和 Binder 读运行状态"></a>6.5 从任务、空节点和 Binder 读运行状态</h2><h3 id="应用侧：列表顺序就是前后台关系"><a href="#应用侧：列表顺序就是前后台关系" class="headerlink" title="应用侧：列表顺序就是前后台关系"></a>应用侧：列表顺序就是前后台关系</h3><p><code>DefaultTaskDisplayArea</code> 的孩子从 <code>#0</code> 到 <code>#5</code> 排列。由于尾部在上，<code>#5 Task=233</code> 的 MatrixAgent LauncherActivity 位于这组任务的最上方；其下依次能看到 Home 根任务、QQ Music、Bilibili 和 Operit 的任务容器。<code>Task=1</code> 是 Home 根任务，真正的桌面 Activity 位于其内部的 <code>Task=70</code>。</p>
 <p><code>Task=223</code> 下同一个 <code>ActivityRecord</code> 有两个 <code>WindowState</code>，说明它在本次快照中挂了两个窗口；而 <code>Task=222</code> 只显示 <code>ActivityRecord</code>，没有继续显示 <code>WindowState</code>。这只能说明该快照里的窗口容器挂载状态不同，不能仅凭这一点断言 Activity 是否存活或可见。</p>
@@ -1181,7 +1181,11 @@
 <h2 id="7-1-记忆总结"><a href="#7-1-记忆总结" class="headerlink" title="7.1 记忆总结"></a>7.1 记忆总结</h2><h3 id="L0：本模块在-WMS-全图中的位置"><a href="#L0：本模块在-WMS-全图中的位置" class="headerlink" title="L0：本模块在 WMS 全图中的位置"></a>L0：本模块在 WMS 全图中的位置</h3><p>本模块只回答一个问题：<strong>WMS 用一棵什么样的树管理所有窗口，Z 序、Configuration 和 Surface 层级为什么都由这棵树决定？</strong></p>
 <ol>
 <li><strong>树由一个基类统一供能。</strong> 凡能挂上树的东西都是 <code>WindowContainer</code> 的子类：父子关系与 Z 序维护（<code>mChildren</code> 头在下、尾在上）、Configuration 沿树分发、Surface 动画与冻结、layer 递归分配，外加“孩子的类型由子类填 <code>E</code>”的泛型容器机制。</li>
-<li><strong>家族分两半。</strong> 屏侧是 <code>RootWindowContainer → DisplayContent</code> 与 DA 家族（<code>RootDisplayArea</code>/<code>TaskDisplayArea</code>/<code>DisplayArea.Tokens</code>/<code>ImeContainer</code>）搭出的层架子；应用侧一条链 <code>Task → ActivityRecord → WindowState</code>。<code>Task extends TaskFragment</code>、<code>ActivityRecord extends WindowToken</code> 两个继承点，就是 AMS 嫁接进 WM 树的桥。</li>
+<li><strong>家族分两半。</strong> <ol>
+<li>屏侧是 <code>RootWindowContainer → DisplayContent</code> 与 DA 家族（<code>RootDisplayArea</code>/<code>TaskDisplayArea</code>/<code>DisplayArea.Tokens</code>/<code>ImeContainer</code>）搭出的层架子；</li>
+<li>应用侧一条链 <code>Task → ActivityRecord → WindowState</code>。<code>Task extends TaskFragment</code>、<code>ActivityRecord extends WindowToken</code> 两个继承点，就是 AMS 嫁接进 WM 树的桥。</li>
+</ol>
+</li>
 <li><strong>层由 type 映射而来。</strong> 窗口 type 经 <code>WindowManagerPolicy.getWindowLayerFromTypeLw()</code> 映射成 0–36 的 policy layer：应用统一第 2 层，壁纸 1、输入法 13、状态栏 15、导航栏 24、圆角装饰 36 置顶；同一 type 可因权限/flag 落不同层。</li>
 <li><strong>树落到屏幕上就是窗口叠层。</strong> “打开 App、弹 Dialog、键盘弹起”的日常瞬间，同屏 6 个窗口各是树上一片 <code>WindowState</code> 叶子：壁纸挂 <code>Leaf:0:1</code>、应用链走 <code>TaskDisplayArea</code>、键盘进 <code>ImeContainer</code>、状态栏/导航栏各进 15/24 层的 Leaf 格子。</li>
 <li><strong>这棵树可以用 dumpsys 读出来。</strong> <code>adb shell dumpsys activity containers</code> 按 <code>#下标 名字:层区间</code> 输出整棵树，下标大的在上；0–36 每层都有节点认领、无空洞无重叠，可把实际窗口、任务和 Binder token 对回各自的容器逐层验证。</li>
@@ -1192,7 +1196,7 @@
 <ul>
 <li>把 <code>mChildren</code> 顺序当成“先加的在上”（实际头在下层、尾在上层）；</li>
 <li>把泛型 <code>E</code> 当成回答“我是谁”的自限定泛型（它只回答“孩子是谁”）；</li>
-<li>把 policy layer 当最终 Surface z（<code>assignChildLayers()</code> 会按树序重算）；</li>
+<li>把 policy layer 当最终 Surface z（<code>assignChildLayers()</code> 是树序分层的主路径，但 Z-boost、IME 相对 layer、Starting Window、动画 leash 等还有专门处理）；</li>
 <li>把层当精确值（层是区间，一枚 <code>Leaf:3:12</code> 可同时装第 7 层 Toast 和第 11 层悬浮窗）；</li>
 <li>把空 <code>Leaf</code> 当成“这一层不存在”（37 层骨架建屏时就有，窗口出现才把 token 放进格子）；</li>
 <li>把 Task/ActivityRecord 当成 WM 树之外的额外对象（它们靠继承嫁接，所以 <code>dumpsys activity containers</code> 能同时看到任务和窗口）。</li>
@@ -1201,12 +1205,44 @@
 <h3 id="L1：必须能展开的模块骨架"><a href="#L1：必须能展开的模块骨架" class="headerlink" title="L1：必须能展开的模块骨架"></a>L1：必须能展开的模块骨架</h3><p>下面五句是本章的“生成器”。无需逐字背诵；标准是每句都能展开成类关系、层号映射或 dump 实例。</p>
 <ol>
 <li><code>WindowContainer</code> 把“当一个树节点”所需的全部能力统一收编：<code>mChildren</code> 顺序即 Z 序（全树最重要的不变量）、<code>compareTo</code> 让任意两节点可比上下、Configuration 沿树向下分发、<code>assignChildLayers</code> 递归分配 Surface 层级。</li>
-<li>全树 = 屏侧架子 + 应用侧链：<code>DisplayContent</code>（is-a <code>RootDisplayArea</code>）之下，Feature 壳与 <code>Leaf</code> 格子收纳系统窗口，<code>TaskDisplayArea → Task → ActivityRecord → WindowState</code> 收纳应用窗口——对应类注释的 “can hold windows <strong>directly or through their children</strong>“（<code>WindowToken</code> 直接持窗、<code>Task</code> 一族间接持窗）。</li>
-<li>type 经 <code>getWindowLayerFromTypeLw(type, canAddInternalSystemWindow, roundedCornerOverlay)</code> 映射 0–36：应用 1–99 统一 <code>APPLICATION_LAYER=2</code>；<code>TYPE_SYSTEM_ALERT</code> 无内部权限 9、有权限 12（防止三方冒充系统弹窗压过 <code>APPLICATION_OVERLAY</code>）；带圆角装饰 flag 直接返回 <code>getMaxWindowLayer()=36</code>。</li>
-<li>屏幕读树三条规律：同一盒子里兄弟顺序定谁盖谁（Dialog 排主窗口后）；盒子挂哪个 layer 区间、整盒就压在哪些层上（状态栏 15 压应用 2，与窗口位置大小无关）；盒子是一组窗口的命运共同体（ActivityRecord 同进同出，Task 是最近任务里飞进飞出的卡片）。</li>
-<li>dump 读法：<code>#N</code> 是孩子在 <code>mChildren</code> 中的下标、下标越大越靠上；四个锚点——壁纸 <code>Leaf:0:1</code> 最底、应用在 <code>DefaultTaskDisplayArea</code>（第 2 层）、输入法 <code>ImePlaceholder:13:14 → ImeContainer</code>、装饰 <code>Leaf:36:36</code> 置顶——沿锚点向上向下扫，其余节点不易迷失。</li>
+<li>全树 = 屏侧架子 + 应用侧链：<ol>
+<li><code>DisplayContent</code>（is-a <code>RootDisplayArea</code>）之下，Feature 壳与 <code>Leaf</code> 格子收纳系统窗口</li>
+<li><code>TaskDisplayArea → Task → ActivityRecord → WindowState</code> 收纳应用窗口（<code>WindowToken</code> 直接持窗、<code>Task</code> 一族间接持窗）。</li>
 </ol>
-<p>必须同时记住的 AOSP 15 事实：<code>WindowList</code> 类已删除，<code>mChildren</code> 直接是 <code>ArrayList&lt;E&gt;</code>；每屏共 37 层（0–36，层 0 保留未用）；层是“区间”不是精确值；最终 Surface z 由树结构经 <code>assignChildLayers()</code> 决定，层号只是窗口进树时的索引。</p>
+</li>
+<li>type 经 <code>getWindowLayerFromTypeLw()</code> 映射 0–36：<ol>
+<li>应用 1–99 统一 <code>APPLICATION_LAYER=2</code>；</li>
+<li><code>TYPE_SYSTEM_ALERT</code> 无内部权限 9、有权限 12（防止三方冒充系统弹窗压过 <code>APPLICATION_OVERLAY</code>）；</li>
+<li>带圆角装饰 flag 直接返回 <code>getMaxWindowLayer()=36</code>。</li>
+</ol>
+</li>
+<li>屏幕读树三条规律：<ol>
+<li>同一盒子里兄弟顺序定谁盖谁（Dialog 排主窗口后）；</li>
+<li>盒子挂哪个 layer 区间、整盒就压在哪些层上（状态栏 15 压应用 2，与窗口位置大小无关）；</li>
+<li>盒子是一组窗口的命运共同体（ActivityRecord 同进同出，Task 是最近任务里飞进飞出的卡片）。</li>
+</ol>
+</li>
+<li>dump 读法：<ol>
+<li><code>#N</code> 是孩子在 <code>mChildren</code> 中的下标、下标越大越靠上；</li>
+<li>四个锚点，沿锚点向上向下扫，其余节点不易迷失。<ol>
+<li>壁纸 <code>Leaf:0:1</code> 最底</li>
+<li>应用在 <code>DefaultTaskDisplayArea</code>（第 2 层）</li>
+<li>输入法 <code>ImePlaceholder:13:14 → ImeContainer</code></li>
+<li>装饰 <code>Leaf:36:36</code> 置顶</li>
+</ol>
+</li>
+</ol>
+</li>
+</ol>
+<div class="markdown-alert markdown-alert-important">
+<p class="markdown-alert-title"><svg class="octicon octicon-report mr-2" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M0 1.75C0 .784.784 0 1.75 0h12.5C15.216 0 16 .784 16 1.75v9.5A1.75 1.75 0 0 1 14.25 13H8.06l-2.573 2.573A1.458 1.458 0 0 1 3 14.543V13H1.75A1.75 1.75 0 0 1 0 11.25Zm1.75-.25a.25.25 0 0 0-.25.25v9.5c0 .138.112.25.25.25h2a.75.75 0 0 1 .75.75v2.19l2.72-2.72a.749.749 0 0 1 .53-.22h6.5a.25.25 0 0 0 .25-.25v-9.5a.25.25 0 0 0-.25-.25Zm7 2.25v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 9a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"></path></svg>Important</p>
+<p>必须同时记住的 AOSP 15 事实：</p>
+<ol>
+<li><code>WindowList</code> 类已删除，<code>mChildren</code> 直接是 <code>ArrayList&lt;E&gt;</code>；</li>
+<li>每屏共 37 层（0–36，层 0 保留未用）；层是“区间”不是精确值；</li>
+<li><code>assignChildLayers()</code> 按树序完成常规 Surface 分层，层号是窗口进树与 token 排序的重要索引；Z-boost、IME 相对 layer、Starting Window 和动画 leash 等专门路径仍可能调整最终 Surface z。</li>
+</ol>
+</div>
 <h3 id="L2：只需快速定位的细节"><a href="#L2：只需快速定位的细节" class="headerlink" title="L2：只需快速定位的细节"></a>L2：只需快速定位的细节</h3><p>以下细节需要时应能在本文 30 秒内定位，不要求死背：</p>
 <ul>
 <li>0–36 每层对应的窗口 type 完整对照表（4.2 节）；</li>
@@ -1257,7 +1293,7 @@
 <li><p><code>ImeContainer</code> 的 layer 分配有什么特殊处理？</p>
  <details><summary>答案展开</summary>
 
-<p> 它的 layer 分配被忽略，输入法窗口的实际层级由 IME 目标窗口决定、贴在其上（3.2 节）。</p>
+<p> 常规、未由 Organizer 接管的场景中，<code>ImeContainer</code> 先忽略普通的 layer 分配；<code>DisplayContent</code> 会在满足条件时把它相对 <code>mImeLayeringTarget</code> 置于 +1。无合格 target、分屏或 Surface 父节点变化时会走回退/专门路径，因此不能把“总是贴在目标正上方”当成无条件规则（3.2 节）。</p>
  </details></li>
 </ol>
 <h3 id="层级体系"><a href="#层级体系" class="headerlink" title="层级体系"></a>层级体系</h3><ol start="8">
@@ -1276,7 +1312,7 @@
 <li><p>“层是区间不是精确值”怎么理解？同一个 <code>Leaf:3:12</code> 里可能同时装着哪些层的窗口？</p>
 <details><summary>答案展开</summary>
 
-<p>一个叶子容器可占据连续多层（节点名 <code>min:max</code> 即占领声明）；<code>Leaf:3:12</code> 内可同时有第 7 层的 Toast、第 11 层的悬浮窗——跨层看区间，同叶内看兄弟顺序（5.2 节）。</p>
+<p>一个叶子容器可占据连续多层（节点名 <code>min:max</code> 即占领声明）；<code>Leaf:3:12</code> 内可同时有第 7 层的 Toast、第 11 层的悬浮窗。共享同一 Leaf 不会把 layer 压平：<code>DisplayArea.Tokens</code> 会先按 token 的 policy layer 排序，所以 Toast 在悬浮窗下；只有 policy layer 相同，才继续由兄弟顺序细分（5.2、6.4 节）。</p>
 </details></li>
 </ol>
 <h3 id="屏幕与树"><a href="#屏幕与树" class="headerlink" title="屏幕与树"></a>屏幕与树</h3><ol start="11">
@@ -1308,20 +1344,20 @@
 <li><p><code>EdgeBackGestureHandler0</code> 与 <code>Taskbar</code> 同挂 <code>Leaf:24:25</code>，谁在上面？由什么决定？</p>
 <details><summary>答案展开</summary>
 
-<p><code>EdgeBackGestureHandler0</code>（#1）在 <code>Taskbar</code>（#0）之上——同区间内由兄弟下标决定（6.4 节的实例）。</p>
+<p><code>EdgeBackGestureHandler0</code>（type=2024，policy layer 25，#1）在 <code>Taskbar</code>（type=2019，policy layer 24，#0）之上。两者同在 <code>Leaf:24:25</code>，但先由 <code>DisplayArea.Tokens</code> 按 policy layer 24/25 排序；#0/#1 是这一排序的 dump 结果。若两个 token 的 policy layer 相同，才由兄弟顺序决定细粒度上下（6.4 节）。</p>
 </details></li>
 </ol>
 <h2 id="7-3-场景追问"><a href="#7-3-场景追问" class="headerlink" title="7.3 场景追问"></a>7.3 场景追问</h2><ol>
 <li><p>先弹一个已授 <code>SYSTEM_ALERT_WINDOW</code> 的悬浮窗，紧接着弹一个 Toast，dump 里它们会落进同一个节点吗？为什么？</p>
  <details><summary>答案展开</summary>
 
-<p> 会。悬浮窗是 <code>TYPE_APPLICATION_OVERLAY</code>（type=2038，第 11 层），Toast 是 <code>TYPE_TOAST</code>（第 7 层），两者都落进 <code>Leaf:3:12</code>——十层共用一枚叶子，是“层是区间不是精确值”的实证；同叶之内再按兄弟下标分上下（4.2、6.4 节）。</p>
+<p> 对 6.2 的这套默认策略会。悬浮窗是 <code>TYPE_APPLICATION_OVERLAY</code>（type=2038，第 11 层），Toast 是 <code>TYPE_TOAST</code>（第 7 层），两者都落进 <code>Leaf:3:12</code>——十层共用一枚叶子，是“层是区间不是精确值”的实证。但 <code>DisplayArea.Tokens</code> 会先按 policy layer 排序，Toast 仍在悬浮窗下；只有相同 policy layer 的 token 才再由兄弟下标分上下。设备可替换 <code>DisplayAreaPolicy</code>，所以不能把 <code>Leaf:3:12</code> 当成所有设备都固定存在的节点（4.2、6.4 节）。</p>
  </details>
 </li>
 <li><p>下拉通知面板前后各 dump 一次，树里会新增节点吗？</p>
  <details><summary>答案展开</summary>
 
-<p> 不会。<code>NotificationShade</code> 的 WindowToken 与窗口常驻 <code>Leaf:17:17</code>（6.2 节的 dump 里它一直在），下拉改变的只是可见性——树管结构，可见性另有状态字段（5.2、6.6 节）。</p>
+<p> 对 6.2 这台设备、SystemUI 未重启且该 token 已存在的前后两次 dump，通常不会：<code>NotificationShade</code> 的 WindowToken 与窗口已在 <code>Leaf:17:17</code>，下拉主要改变可见性——树管结构，可见性另有状态字段。它不是 WMS 对所有设备和生命周期的保证；SystemUI 重启、窗口/token 重建或设备定制策略都可能让树节点变化（5.2、6.6 节）。</p>
  </details>
 </li>
 <li><p>进入分屏后再 dump，应用区会怎么变？看到带 <code>MULTI-WINDOW</code> 标记的 Task 就能断言正在分屏吗？</p>
@@ -1333,7 +1369,7 @@
 <li><p>面试官说“窗口的 policy layer 就是它最终的 Surface Z 序”，这句话哪里不准确？</p>
  <details><summary>答案展开</summary>
 
-<p> policy layer 只是进树时的粗粒度全序索引：层是区间（一枚 Leaf 可占连续多层），同层/同叶内由兄弟下标决定，父子窗口还受 sublayer 影响；最终 SurfaceControl 的 layer 由 <code>assignChildLayers()</code> 按树序重算，树结构才是最终依据（2.3、4.2 节）。</p>
+<p> policy layer 不是最终 Surface Z，但也不只是可忽略的“粗粒度标签”：它决定 token 的 policy 顺序；即使多个 layer 共用一个 Leaf，<code>DisplayArea.Tokens</code> 也会先按 <code>getWindowLayerFromType()</code> 排序。相同 policy layer 再看兄弟顺序，父子窗口还受 sublayer 影响。<code>assignChildLayers()</code> 按树序完成常规 Surface 分层，但 Z-boost、IME 相对 layer、Starting Window 和动画 leash 等专门路径仍会影响最终结果（2.3、4.2、6.4 节）。</p>
  </details>
 </li>
 <li><p>dump 里 <code>Leaf:16:16</code>、<code>Leaf:18:23</code> 是空的，<code>ShellDropTarget</code> 有 token 却没有窗口孩子——这棵树坏了吗？</p>
