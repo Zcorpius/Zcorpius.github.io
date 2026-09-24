@@ -472,7 +472,7 @@
 <li><code>WindowContainer&lt;E&gt;</code> + <code>ArrayList&lt;E&gt; mChildren</code> 声明”孩子是 E 这种容器”——E 是谁？本类不决定，等子类来填（概念三）。</li>
 </ul>
 <div class="markdown-alert markdown-alert-note">
-<p class="markdown-alert-title"><svg class="octicon octicon-info mr-2" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"></path></svg>Note</p>
+<p class="markdown-alert-title"><svg class="octicon octicon-info mr-2" viewbox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"/></svg>Note</p>
 <p>类型参数名只是个代号，叫 E、T、ChildType 都行。JDK 惯例：E = Element（元素）、T = Type（类型）、K/V = Key/Value。AOSP 的 WindowContainer 家族统一用 E，语义是”孩子（Element of mChildren）”。</p>
 </div>
 <h2 id="1-2-给-E-画一条”资格线”"><a href="#1-2-给-E-画一条”资格线”" class="headerlink" title="1.2. 给 E 画一条”资格线”"></a>1.2. 给 E 画一条”资格线”</h2><h3 id="1-2-1-语法与语义"><a href="#1-2-1-语法与语义" class="headerlink" title="1.2.1 语法与语义"></a>1.2.1 语法与语义</h3><p><code>&lt;E extends WindowContainer&gt;</code> 读作：<strong>E 必须是 WindowContainer 或其子类</strong>。<code>extends</code> 在这里画出一条资格线，线外的类型不许填进来。</p>
@@ -503,7 +503,7 @@
 <p><code>mChildren.get(i)</code> 的静态类型是 E，而 <code>updateAboveInsetsState()</code> 是 WindowContainer 的方法——这行能编译，靠的正是上界那条承诺。</p>
 <h3 id="1-2-3-WindowContainer-为什么不带"><a href="#1-2-3-WindowContainer-为什么不带" class="headerlink" title="1.2.3 WindowContainer 为什么不带 <>"></a>1.2.3 WindowContainer 为什么不带 &lt;&gt;</h3><p>细心的话会注意到：上界写的是<strong>裸类型</strong> <code>WindowContainer</code>，而不是 <code>WindowContainer&lt;E&gt;</code> 或 <code>WindowContainer&lt;?&gt;</code>。这属于进阶话题（自限定泛型 / F-bounded），对读代码的影响只有一句话：</p>
 <div class="markdown-alert markdown-alert-important">
-<p class="markdown-alert-title"><svg class="octicon octicon-report mr-2" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M0 1.75C0 .784.784 0 1.75 0h12.5C15.216 0 16 .784 16 1.75v9.5A1.75 1.75 0 0 1 14.25 13H8.06l-2.573 2.573A1.458 1.458 0 0 1 3 14.543V13H1.75A1.75 1.75 0 0 1 0 11.25Zm1.75-.25a.25.25 0 0 0-.25.25v9.5c0 .138.112.25.25.25h2a.75.75 0 0 1 .75.75v2.19l2.72-2.72a.749.749 0 0 1 .53-.22h6.5a.25.25 0 0 0 .25-.25v-9.5a.25.25 0 0 0-.25-.25Zm7 2.25v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 9a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"></path></svg>Important</p>
+<p class="markdown-alert-title"><svg class="octicon octicon-report mr-2" viewbox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M0 1.75C0 .784.784 0 1.75 0h12.5C15.216 0 16 .784 16 1.75v9.5A1.75 1.75 0 0 1 14.25 13H8.06l-2.573 2.573A1.458 1.458 0 0 1 3 14.543V13H1.75A1.75 1.75 0 0 1 0 11.25Zm1.75-.25a.25.25 0 0 0-.25.25v9.5c0 .138.112.25.25.25h2a.75.75 0 0 1 .75.75v2.19l2.72-2.72a.749.749 0 0 1 .53-.22h6.5a.25.25 0 0 0 .25-.25v-9.5a.25.25 0 0 0-.25-.25Zm7 2.25v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 9a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"/></svg>Important</p>
 <p><code>E extends WindowContainer</code> 只表达”孩子必须是这族容器”，<strong>刻意不说</strong>“孩子是哪种容器”。如果写成 <code>E extends WindowContainer&lt;E&gt;</code>（像 <code>Enum&lt;E extends Enum&lt;E&gt;&gt;</code> 那样），语义就变成”孩子必须是一个’装它自己’的容器”——窗口树不满足这个假设（TaskFragment 的孩子既可能是 ActivityRecord 也可能是 Task，没有唯一的”它自己”可填）。详见《窗口层级剖析》2.1 的对比框。</p>
 </div>
 <h2 id="1-3-类型实参替换"><a href="#1-3-类型实参替换" class="headerlink" title="1.3. 类型实参替换"></a>1.3. 类型实参替换</h2><h3 id="1-3-1-填空发生在哪里"><a href="#1-3-1-填空发生在哪里" class="headerlink" title="1.3.1 填空发生在哪里"></a>1.3.1 填空发生在哪里</h3><p>类型参数定义时留空，使用时必须填上具体类型，这个具体类型叫<strong>类型实参（type argument）</strong>，填的动作就是<strong>替换</strong>。填空有两个场合：</p>
@@ -521,7 +521,7 @@
 
 <p>如果当年 AOSP 把 mChildren 声明成 <code>ArrayList&lt;WindowContainer&gt;</code>，这行就得写 <code>(WindowState) mChildren.get(i)</code>，并且装错类型编译器不会报错、只在运行时崩溃。<strong>泛型把”孩子装错了”这类错误从运行期提前到了编译期。</strong></p>
 <div class="markdown-alert markdown-alert-note">
-<p class="markdown-alert-title"><svg class="octicon octicon-info mr-2" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"></path></svg>Note</p>
+<p class="markdown-alert-title"><svg class="octicon octicon-info mr-2" viewbox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"/></svg>Note</p>
 <p>严格说，”替换”发生在<strong>编译期类型检查</strong>层面；运行时并不存在 <code>ArrayList&lt;WindowState&gt;</code> 这个类（虚拟机里只有擦除后的 ArrayList）——这就是”类型擦除”。它不影响读代码的心智模型，标为进阶，知道即可。</p>
 </div>
 <h2 id="1-4-再看声明"><a href="#1-4-再看声明" class="headerlink" title="1.4. 再看声明"></a>1.4. 再看声明</h2><p>三个概念就位，回到开头那行：</p>

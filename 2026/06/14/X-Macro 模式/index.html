@@ -456,7 +456,7 @@
 <hr>
 <h1 id="2-前置：Macro-是什么"><a href="#2-前置：Macro-是什么" class="headerlink" title="2. 前置：Macro 是什么"></a>2. 前置：Macro 是什么</h1><p>要彻底理解 <strong>X-Macro</strong>，必须先把 <strong>Macro</strong> 这个词搞清楚——因为 X-Macro 这个技巧的<strong>全部基础</strong>就是 C 语言的宏系统。</p>
 <h2 id="2-1-定义"><a href="#2-1-定义" class="headerlink" title="2.1. 定义"></a>2.1. 定义</h2><div class="markdown-alert markdown-alert-note">
-<p class="markdown-alert-title"><svg class="octicon octicon-info mr-2" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"></path></svg>Note</p>
+<p class="markdown-alert-title"><svg class="octicon octicon-info mr-2" viewbox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"/></svg>Note</p>
 <p><strong>Macro（宏）= C 预处理器的一种”文本替换规则”</strong>——给一段代码起个名字，用的时候预处理器会<strong>自动替换</strong>。</p>
 </div>
 <h2 id="2-2-Macro-在-C-语言里是什么"><a href="#2-2-Macro-在-C-语言里是什么" class="headerlink" title="2.2. Macro 在 C 语言里是什么"></a>2.2. Macro 在 C 语言里是什么</h2><p>C 编译过程分两阶段：</p>
@@ -579,7 +579,7 @@
 <h1 id="3-什么是-X-Macro"><a href="#3-什么是-X-Macro" class="headerlink" title="3. 什么是 X-Macro"></a>3. 什么是 X-Macro</h1><h2 id="3-1-定义"><a href="#3-1-定义" class="headerlink" title="3.1. 定义"></a>3.1. 定义</h2><p>X-Macro 模式早在 1980 年代就被贝尔实验室的 C 程序员使用，1994 年由 <strong>Andrew Koenig</strong>（C++ 之父 Bjarne Stroustrup 的同事，著作《C 陷阱与缺陷》）在 <strong>《C Traps and Pitfalls》</strong> 一书的相关讨论中正式命名。</p>
 <p>从此 X-Macro 成为 C/C++ 系统编程的标准武器，Linux 内核、Windows SDK、OpenSSL、BusyBox 大量使用。</p>
 <div class="markdown-alert markdown-alert-note">
-<p class="markdown-alert-title"><svg class="octicon octicon-info mr-2" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"></path></svg>Note</p>
+<p class="markdown-alert-title"><svg class="octicon octicon-info mr-2" viewbox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"/></svg>Note</p>
 <p><strong>X-Macro = 把”数据列表”放在 <code>.h</code> 文件里，通过多次 <code>#include</code> + 每次重新定义宏，让同一份数据驱动多处代码自动生成。</strong></p>
 </div>
 <p><strong>X-Macro 不是 C 标准的关键字或特性</strong>，而是利用 C 预处理器（CPP）的 <code>#define</code>、<code>#include</code>、<code>#</code>、<code>##</code> 组合出的<strong>编程技巧</strong>（idiom）。</p>

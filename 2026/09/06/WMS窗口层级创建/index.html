@@ -119,7 +119,7 @@
 <meta property="og:image" content="https://zcorpius.github.io/2026/09/06/WMS%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E5%88%9B%E5%BB%BA/WMS%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E5%88%9B%E5%BB%BA/images/WMS%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E5%88%9B%E5%BB%BA-3.2.2-04-layer32-36%E5%8F%B6%E5%AD%90%E6%BC%AB%E7%94%BB.png">
 <meta property="og:image" content="https://zcorpius.github.io/2026/09/06/WMS%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E5%88%9B%E5%BB%BA/WMS%E7%AA%97%E5%8F%A3%E5%B1%82%E7%BA%A7%E5%88%9B%E5%BB%BA-3.2.2-05-%E5%8F%B6%E5%AD%90%E5%85%A8%E8%B2%8C%E6%BC%AB%E7%94%BB.png">
 <meta property="article:published_time" content="2026-09-06T07:14:17.000Z">
-<meta property="article:modified_time" content="2026-09-24T07:08:39.148Z">
+<meta property="article:modified_time" content="2026-09-24T07:17:53.638Z">
 <meta property="article:author" content="Zcorpius">
 <meta property="article:tag" content="WMS">
 <meta name="twitter:card" content="summary">
@@ -527,7 +527,7 @@
 
 <p>上述是WMS启动时序的基本骨架，其中有三个容易忽略的时序要点：</p>
 <div class="markdown-alert markdown-alert-important">
-<p class="markdown-alert-title"><svg class="octicon octicon-report mr-2" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M0 1.75C0 .784.784 0 1.75 0h12.5C15.216 0 16 .784 16 1.75v9.5A1.75 1.75 0 0 1 14.25 13H8.06l-2.573 2.573A1.458 1.458 0 0 1 3 14.543V13H1.75A1.75 1.75 0 0 1 0 11.25Zm1.75-.25a.25.25 0 0 0-.25.25v9.5c0 .138.112.25.25.25h2a.75.75 0 0 1 .75.75v2.19l2.72-2.72a.749.749 0 0 1 .53-.22h6.5a.25.25 0 0 0 .25-.25v-9.5a.25.25 0 0 0-.25-.25Zm7 2.25v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 9a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"></path></svg>Important</p>
+<p class="markdown-alert-title"><svg class="octicon octicon-report mr-2" viewbox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M0 1.75C0 .784.784 0 1.75 0h12.5C15.216 0 16 .784 16 1.75v9.5A1.75 1.75 0 0 1 14.25 13H8.06l-2.573 2.573A1.458 1.458 0 0 1 3 14.543V13H1.75A1.75 1.75 0 0 1 0 11.25Zm1.75-.25a.25.25 0 0 0-.25.25v9.5c0 .138.112.25.25.25h2a.75.75 0 0 1 .75.75v2.19l2.72-2.72a.749.749 0 0 1 .53-.22h6.5a.25.25 0 0 0 .25-.25v-9.5a.25.25 0 0 0-.25-.25Zm7 2.25v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 9a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"/></svg>Important</p>
 <ol>
 <li><strong>“WMS 构造完” ≠ “树已存在”</strong>：构建内容：<ol>
 <li>构造器只建了<strong>空的树根</strong>（<code>mRoot</code> 没有任何 DisplayContent 孩子）</li>
@@ -552,13 +552,13 @@
 <li>非空，则<strong>反射实例化厂商自定义类</strong>（必须有无参构造并实现 <code>Provider</code>）。这是车机/折叠屏定制整套层级树的官方入口。</li>
 </ul>
 <div class="markdown-alert markdown-alert-note">
-<p class="markdown-alert-title"><svg class="octicon octicon-info mr-2" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"></path></svg>Note</p>
+<p class="markdown-alert-title"><svg class="octicon octicon-info mr-2" viewbox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"/></svg>Note</p>
 <p>注意 <code>return new DisplayAreaPolicy.DefaultProvider();</code> 这行<strong>只创建、不调用</strong>：<code>new</code> 只会运行构造器，而 <code>DefaultProvider</code> 既没写构造器、也没有实例字段，走的是编译器生成的空构造器。所以除了造出一个对象，什么代码都没执行。</p>
 <p><code>instantiate()</code> 的方法体此刻一个字节都没跑，要等 <code>DisplayContent</code> 中 <code>.instantiate(...)</code> 才第一次执行。</p>
 <p>而且这个对象<strong>无状态、可复用</strong>：每来一块屏（开机首屏、热插拔的每一块）都调它一次 <code>instantiate</code>，每次产出一份新 <code>Result</code> 成品，这正是 <strong>工厂 1 份、成品每屏 1 份</strong> 的代码基础。</p>
 </div>
 <div class="markdown-alert markdown-alert-important">
-<p class="markdown-alert-title"><svg class="octicon octicon-report mr-2" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M0 1.75C0 .784.784 0 1.75 0h12.5C15.216 0 16 .784 16 1.75v9.5A1.75 1.75 0 0 1 14.25 13H8.06l-2.573 2.573A1.458 1.458 0 0 1 3 14.543V13H1.75A1.75 1.75 0 0 1 0 11.25Zm1.75-.25a.25.25 0 0 0-.25.25v9.5c0 .138.112.25.25.25h2a.75.75 0 0 1 .75.75v2.19l2.72-2.72a.749.749 0 0 1 .53-.22h6.5a.25.25 0 0 0 .25-.25v-9.5a.25.25 0 0 0-.25-.25Zm7 2.25v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 9a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"></path></svg>Important</p>
+<p class="markdown-alert-title"><svg class="octicon octicon-report mr-2" viewbox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M0 1.75C0 .784.784 0 1.75 0h12.5C15.216 0 16 .784 16 1.75v9.5A1.75 1.75 0 0 1 14.25 13H8.06l-2.573 2.573A1.458 1.458 0 0 1 3 14.543V13H1.75A1.75 1.75 0 0 1 0 11.25Zm1.75-.25a.25.25 0 0 0-.25.25v9.5c0 .138.112.25.25.25h2a.75.75 0 0 1 .75.75v2.19l2.72-2.72a.749.749 0 0 1 .53-.22h6.5a.25.25 0 0 0 .25-.25v-9.5a.25.25 0 0 0-.25-.25Zm7 2.25v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 9a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"/></svg>Important</p>
 <p>注意到此为止只是备好了<strong>工厂</strong>：Provider 全局一份、本身不持有任何树，它只回答”这台设备用哪套策略”。真正投产是每块屏创建时对工厂的一次调用。</p>
 </div>
 <p>从 WMS 启动到策略工厂就位的完整时序——起点是 2.1 的 <code>WindowManagerService.main()</code>，终点是本节的 <code>fromResources()</code>：</p>
@@ -660,7 +660,7 @@
 </tr>
 </tbody></table>
 <div class="markdown-alert markdown-alert-note">
-<p class="markdown-alert-title"><svg class="octicon octicon-info mr-2" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"></path></svg>Note</p>
+<p class="markdown-alert-title"><svg class="octicon octicon-info mr-2" viewbox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"/></svg>Note</p>
 <p>最容易误解的是 <code>DisplayContent</code> 这个名字</p>
 <ul>
 <li>它<strong>不持有任何像素内容</strong>，既没有位图也没有缓冲区</li>
@@ -681,7 +681,7 @@
 <li>在 <code>instantiate()</code> 返回之后。此时它已经完成 Feature 配置和 3.x 的建树流程，并返回 <code>DisplayAreaPolicyBuilder.Result</code>；返回值随后才写入 <code>mDisplayAreaPolicy</code>。因此执行到下一行 <code>getPendingTransaction()</code> 时，DA 树已经建好。</li>
 </ol>
 <div class="markdown-alert markdown-alert-important">
-<p class="markdown-alert-title"><svg class="octicon octicon-report mr-2" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M0 1.75C0 .784.784 0 1.75 0h12.5C15.216 0 16 .784 16 1.75v9.5A1.75 1.75 0 0 1 14.25 13H8.06l-2.573 2.573A1.458 1.458 0 0 1 3 14.543V13H1.75A1.75 1.75 0 0 1 0 11.25Zm1.75-.25a.25.25 0 0 0-.25.25v9.5c0 .138.112.25.25.25h2a.75.75 0 0 1 .75.75v2.19l2.72-2.72a.749.749 0 0 1 .53-.22h6.5a.25.25 0 0 0 .25-.25v-9.5a.25.25 0 0 0-.25-.25Zm7 2.25v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 9a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"></path></svg>Important</p>
+<p class="markdown-alert-title"><svg class="octicon octicon-report mr-2" viewbox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M0 1.75C0 .784.784 0 1.75 0h12.5C15.216 0 16 .784 16 1.75v9.5A1.75 1.75 0 0 1 14.25 13H8.06l-2.573 2.573A1.458 1.458 0 0 1 3 14.543V13H1.75A1.75 1.75 0 0 1 0 11.25Zm1.75-.25a.25.25 0 0 0-.25.25v9.5c0 .138.112.25.25.25h2a.75.75 0 0 1 .75.75v2.19l2.72-2.72a.749.749 0 0 1 .53-.22h6.5a.25.25 0 0 0 .25-.25v-9.5a.25.25 0 0 0-.25-.25Zm7 2.25v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 9a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"/></svg>Important</p>
 <p><strong>2.2 创建工厂，2.4 使用工厂建树</strong>：<code>new WindowManagerService(...)</code> 期间，<code>Provider.fromResources()</code> 只创建并保存一份 <code>DefaultProvider</code>（或厂商 Provider），此时还没有 DisplayArea 树。</p>
 <p>后续每次 <code>new DisplayContent(...)</code>，才取回这份既有 Provider 并调用 <code>instantiate()</code>，为当前这块屏创建独立的 <code>DisplayAreaPolicy</code> 与 DA 层级树。</p>
 </div>
@@ -924,7 +924,7 @@
 </tbody></table>
 <p>最容易混淆的是：<strong>layer 是编号，Feature 是规则，PendingArea 是草稿，DisplayArea 才是真实节点；Provider 是工厂，Policy 是每块屏的成品。</strong></p>
 <div class="markdown-alert markdown-alert-important">
-<p class="markdown-alert-title"><svg class="octicon octicon-report mr-2" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M0 1.75C0 .784.784 0 1.75 0h12.5C15.216 0 16 .784 16 1.75v9.5A1.75 1.75 0 0 1 14.25 13H8.06l-2.573 2.573A1.458 1.458 0 0 1 3 14.543V13H1.75A1.75 1.75 0 0 1 0 11.25Zm1.75-.25a.25.25 0 0 0-.25.25v9.5c0 .138.112.25.25.25h2a.75.75 0 0 1 .75.75v2.19l2.72-2.72a.749.749 0 0 1 .53-.22h6.5a.25.25 0 0 0 .25-.25v-9.5a.25.25 0 0 0-.25-.25Zm7 2.25v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 9a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"></path></svg>Important</p>
+<p class="markdown-alert-title"><svg class="octicon octicon-report mr-2" viewbox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M0 1.75C0 .784.784 0 1.75 0h12.5C15.216 0 16 .784 16 1.75v9.5A1.75 1.75 0 0 1 14.25 13H8.06l-2.573 2.573A1.458 1.458 0 0 1 3 14.543V13H1.75A1.75 1.75 0 0 1 0 11.25Zm1.75-.25a.25.25 0 0 0-.25.25v9.5c0 .138.112.25.25.25h2a.75.75 0 0 1 .75.75v2.19l2.72-2.72a.749.749 0 0 1 .53-.22h6.5a.25.25 0 0 0 .25-.25v-9.5a.25.25 0 0 0-.25-.25Zm7 2.25v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 9a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"/></svg>Important</p>
 <p><strong>WMS 先创建 Provider；每个 DisplayContent 调用 Provider 的 <code>instantiate()</code>，以 Feature 和 layer 为输入，经 PendingArea 中间结构创建真实 DisplayArea 树，最终得到每屏独立的 DisplayAreaPolicy。</strong></p>
 </div>
 <h2 id="2-6-创建层级树之前的准备时序"><a href="#2-6-创建层级树之前的准备时序" class="headerlink" title="2.6 创建层级树之前的准备时序"></a>2.6 创建层级树之前的准备时序</h2><p>把 2.3、2.4、2.5 连起来看：</p>
@@ -955,12 +955,11 @@
             WMS--&gt;&gt;DC: 返回已有 Provider
             DC-&gt;&gt;P: instantiate(wm, content=this,<br>root=this, imeContainer)
             activate P
-            rect rgb(253, 232, 245)
+            rect rgb(251, 240, 247)
                 alt AOSP 默认 Provider 
                     P-&gt;&gt;P: DefaultProvider.instantiate()
                     P-&gt;&gt;P: 创建 DefaultTaskDisplayArea<br>组装 HierarchyBuilder 与 Feature 规则
                     P-&gt;&gt;B: build(wmService)
-                    activate B
                     Note over B: 第 3 章：真正创建层级树
                     B--&gt;&gt;P: DisplayAreaPolicyBuilder.Result
                     deactivate B
@@ -1213,7 +1212,7 @@
 <h1 id="4-厂商与多区屏定制"><a href="#4-厂商与多区屏定制" class="headerlink" title="4. 厂商与多区屏定制"></a>4. 厂商与多区屏定制</h1><h2 id="4-1-整套替换：自定义-Provider"><a href="#4-1-整套替换：自定义-Provider" class="headerlink" title="4.1 整套替换：自定义 Provider"></a>4.1 整套替换：自定义 Provider</h2><p>实现 <code>DisplayAreaPolicy.Provider</code> 并配置资源 <code>config_deviceSpecificDisplayAreaPolicyProvider</code>（第 2.2 章的反射装载），即可替换整套层级树。常见于车机/折叠屏：声明自己的 Feature 列表（如”仪表区/导航区/副驾娱乐区”各一个壳），或重排系统窗口分层。Feature ID 厂商区间从 <code>FEATURE_VENDOR_FIRST = FEATURE_SYSTEM_LAST + 1 = 10001</code> 起。</p>
 <h2 id="4-2-屏内分区：DisplayAreaGroup"><a href="#4-2-屏内分区：DisplayAreaGroup" class="headerlink" title="4.2 屏内分区：DisplayAreaGroup"></a>4.2 屏内分区：DisplayAreaGroup</h2><p><code>build()</code> 有个带参重载 <code>build(displayAreaGroupHierarchyBuilders)</code>：多块应用区（<code>DisplayAreaGroup</code>，各自是一棵小 DA 树，至少含一个 TDA）时，3.2 节的 <code>addDisplayAreaGroupsToApplicationLayer</code> 会把各 Group 根作为”预制件”（<code>mExisting</code>）挂到应用层——对应车机主驾/副驾同屏两区、或大屏多窗口的形态。</p>
 <div class="markdown-alert markdown-alert-note">
-<p class="markdown-alert-title"><svg class="octicon octicon-info mr-2" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"></path></svg>Note</p>
+<p class="markdown-alert-title"><svg class="octicon octicon-info mr-2" viewbox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"/></svg>Note</p>
 <p>AOSP 15 还引入了 <code>FEATURE_WINDOWING_LAYER</code>（ID=9）。外层 <code>Result build(WindowManagerService)</code> 开头会检查首个 Feature 是否为窗口化层（<code>WindowedMagnification</code> 或 <code>WindowingLayer</code> 二者之一，见 <code>canBeWindowingLayer</code>）。</p>
 <p>默认策略首个就是 <code>WindowedMagnification</code>，无需动作；若厂商自定义策略首个 Feature 不合规，会<strong>自动在最外层补插</strong>一个全层的 <code>WindowingLayer</code> 壳（屏幕级动画用），且它 <code>setExcludeRoundedCornerOverlay(false)</code>。 <strong>唯独这个壳包含第 36 层</strong>。外层 <code>build</code> 与内层 <code>HierarchyBuilder.build</code> 的分工：外层只做”补壳 + validate + 编排主树/子树先后 + 组装 Result”，三步算法全在内层。</p>
 </div>
@@ -1311,7 +1310,7 @@
 <li><strong>树同时是运行时索引。</strong> 建树把每个非应用 layer 对应的 <code>DisplayArea.Tokens</code> 写入 <code>RootDisplayArea.mAreaForLayer</code>；以后新增系统窗口不用遍历树，而是 <code>type → layer → Tokens → addChild(token)</code>。应用窗口例外，它走 Task / <code>TaskDisplayArea</code> 链。</li>
 </ol>
 <div class="markdown-alert markdown-alert-warning">
-<p class="markdown-alert-title"><svg class="octicon octicon-alert mr-2" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M6.457 1.047c.659-1.234 2.427-1.234 3.086 0l6.082 11.378A1.75 1.75 0 0 1 14.082 15H1.918a1.75 1.75 0 0 1-1.543-2.575Zm1.763.707a.25.25 0 0 0-.44 0L1.698 13.132a.25.25 0 0 0 .22.368h12.164a.25.25 0 0 0 .22-.368Zm.53 3.996v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 11a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"></path></svg>Warning</p>
+<p class="markdown-alert-title"><svg class="octicon octicon-alert mr-2" viewbox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M6.457 1.047c.659-1.234 2.427-1.234 3.086 0l6.082 11.378A1.75 1.75 0 0 1 14.082 15H1.918a1.75 1.75 0 0 1-1.543-2.575Zm1.763.707a.25.25 0 0 0-.44 0L1.698 13.132a.25.25 0 0 0 .22.368h12.164a.25.25 0 0 0 .22-.368Zm.53 3.996v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 11a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"/></svg>Warning</p>
 <p>容易把下面几件事混为一谈：</p>
 <ul>
 <li>把 WMS 构造完成说成“整棵窗口树已建好”；</li>
