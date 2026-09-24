@@ -467,7 +467,7 @@
 
       
         <div class="markdown-alert markdown-alert-note">
-<p class="markdown-alert-title"><svg class="octicon octicon-info mr-2" viewbox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"/></svg>Note</p>
+<p class="markdown-alert-title"><svg class="octicon octicon-info mr-2" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"></path></svg>Note</p>
 <p>基于Android 16.0的源码剖析， 本文以 AudiioManager setStreamVolume 为例，完整梳理 getService 的流程。</p>
 </div>
 <p>从 AudioManager 中的设置音量方法 <code>setStreamVolume</code> 方法来着手分析 <code>getService</code> 的流程：</p>
@@ -479,7 +479,7 @@
 
 <p>第一步还是先查询本地缓存，<code>sCache</code> 是一个 <code>ArrayMap&lt;String, IBinder&gt;</code>，在进程启动时由 <code>initServiceCache()</code> 一次性填充。</p>
 <div class="markdown-alert markdown-alert-note">
-<p class="markdown-alert-title"><svg class="octicon octicon-info mr-2" viewbox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"/></svg>Note</p>
+<p class="markdown-alert-title"><svg class="octicon octicon-info mr-2" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"></path></svg>Note</p>
 <p>sCache 由 Zygote 在 fork 出子进程前就预先缓存好，其中存放的是”知名服务”（如 window, activity, package 等），这样避免每次都走 Binder IPC 查询，提升效率。</p>
 </div>
 <p>缓存未命中时，获取 IServiceManager 代理:</p>
@@ -500,7 +500,7 @@
 <figure class="highlight java"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/native/libs/binder/aidl/android/os/IServiceManager.aidl</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">interface</span> <span class="title class_">IServiceManager</span> {</span><br><span class="line">    ...</span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">        * Retrieve an existing service called <span class="doctag">@a</span> name from the service</span></span><br><span class="line"><span class="comment">        * manager. Non-blocking. Returns null if the service does not</span></span><br><span class="line"><span class="comment">        * exist.</span></span><br><span class="line"><span class="comment">        */</span></span><br><span class="line">    Service <span class="title function_">checkService2</span><span class="params">(<span class="meta">@utf8InCpp</span> String name)</span>;</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
 
 <div class="markdown-alert markdown-alert-note">
-<p class="markdown-alert-title"><svg class="octicon octicon-info mr-2" viewbox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"/></svg>Note</p>
+<p class="markdown-alert-title"><svg class="octicon octicon-info mr-2" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"></path></svg>Note</p>
 <p><code>mRemote.transact()</code> 看起来像是 IPC 调用，但实际是不是 IPC 取决于<strong>底层 C++ 对象的类型</strong>。BinderProxy 只是一个 Java 壳子，不决定通信方式。<strong>真正的行为由它包装的 C++ 对象决定。</strong></p>
 </div>
 <p>由于 <code>mRemote</code> 是 封装后的 <code>BinderProxy</code> 对象，<code>mRemote.transact()</code> 调用的是 <code>BinderProxy</code> 类的 <code>transact()</code> 方法:</p>
@@ -537,7 +537,7 @@
 
 <p>上述过程就是在 <code>BackendUnifiedServiceManager</code> 的缓存中查找所需要 get 的服务，如果命中，那就通过 <code>_out</code> 进行返回。<strong>全程都在本进程内，不需要经过驱动。****<code>_data</code></strong> <strong>和</strong> <strong><code>_reply</code></strong> <strong>这两个 Parcel 也是在本进程内存中传递，不经过序列化/反序列化。</strong></p>
 <div class="markdown-alert markdown-alert-note">
-<p class="markdown-alert-title"><svg class="octicon octicon-info mr-2" viewbox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"/></svg>Note</p>
+<p class="markdown-alert-title"><svg class="octicon octicon-info mr-2" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"></path></svg>Note</p>
 <p><code>BackendUnifiedServiceManager</code> 的缓存只优化了<strong>getService/checkService 这一步</strong>，也就是<code>找到服务的 BinderProxy</code>。之后用这个 BinderProxy 调业务方法照样每次都走 IPC。</p>
 <p>不过这个优化还是有意义的，因为系统服务启动时大量的 <code>getService</code> 调用集中在少数高频服务上（window、activity、package 等），省掉这些重复查询能减少启动耗时。</p>
 </div>
@@ -590,7 +590,7 @@
 
 <p>最终就是在 <code>tryGetBinder</code> 方法中通过 name 查找到 这个 IBinder ，也就是各服务在 <code>addService</code> 注册时传入的那个对象。随后将查找到的 out 传递给 <code>serviceWithMetadata.service</code>，这也和最上面 <code>getService2(name).getServiceWithMetadata().service</code> 对应商量。</p>
 <div class="markdown-alert markdown-alert-important">
-<p class="markdown-alert-title"><svg class="octicon octicon-report mr-2" viewbox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M0 1.75C0 .784.784 0 1.75 0h12.5C15.216 0 16 .784 16 1.75v9.5A1.75 1.75 0 0 1 14.25 13H8.06l-2.573 2.573A1.458 1.458 0 0 1 3 14.543V13H1.75A1.75 1.75 0 0 1 0 11.25Zm1.75-.25a.25.25 0 0 0-.25.25v9.5c0 .138.112.25.25.25h2a.75.75 0 0 1 .75.75v2.19l2.72-2.72a.749.749 0 0 1 .53-.22h6.5a.25.25 0 0 0 .25-.25v-9.5a.25.25 0 0 0-.25-.25Zm7 2.25v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 9a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"/></svg>Important</p>
+<p class="markdown-alert-title"><svg class="octicon octicon-report mr-2" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M0 1.75C0 .784.784 0 1.75 0h12.5C15.216 0 16 .784 16 1.75v9.5A1.75 1.75 0 0 1 14.25 13H8.06l-2.573 2.573A1.458 1.458 0 0 1 3 14.543V13H1.75A1.75 1.75 0 0 1 0 11.25Zm1.75-.25a.25.25 0 0 0-.25.25v9.5c0 .138.112.25.25.25h2a.75.75 0 0 1 .75.75v2.19l2.72-2.72a.749.749 0 0 1 .53-.22h6.5a.25.25 0 0 0 .25-.25v-9.5a.25.25 0 0 0-.25-.25Zm7 2.25v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 9a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"></path></svg>Important</p>
 <p><strong>整个查找就是从</strong> <strong><code>map&lt;string, Service&gt;</code></strong> <strong>中取出</strong> <strong><code>Service</code></strong> <strong>结构体，然后把它持有的</strong> <strong><code>sp&lt;IBinder&gt;</code></strong> <strong>返回给客户端。客户端进程收到的会是一个新的</strong> <strong><code>BpBinder</code></strong>（代理），指向这个服务实体的 binder 句柄。</p>
 </div>
 <p>最后应用端拿到的就是  AudioService 的 BpBinder 封装的 BinderProxy 远程代理对象的 AIDL 代理。后续对 AudioService 的任何调用都是通过下来的流程来完成的。</p>
