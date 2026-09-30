@@ -1,0 +1,1401 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next muse use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+<script>
+    (function(){
+        if(''){
+            if (prompt('请输入密码') !== ''){
+                alert('密码错误');
+                history.back();
+            }
+        }
+    })();
+</script>
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/head.jpg?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/head.jpg?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/head.jpg?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/head.jpg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="AI-Agent," />
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="Zcorpius's Blog" type="application/atom+xml" />
+
+
+
+
+
+
+<meta name="description" content="1. 前言 一句话介绍：MatrixAgent 是一个运行在定制 Android ROM 上的 Agent 系统。它把对话、模型、工具执行、定时任务和跨应用会话放进一条可验证的链路：用户在 Matrix AI 中提出目标，系统级 Host 负责判断、执行和记录结果。  这个项目要回答的问题很直接：如果用户说“帮我找到李健的《传奇》并播放”，一个聊天框当然能回答“好的”，但它真的找到了哪一首？用户有">
+<meta property="og:type" content="article">
+<meta property="og:title" content="MatrixAgent 开发之旅">
+<meta property="og:url" content="https://zcorpius.github.io/2026/09/30/MatrixAgent%E5%BC%80%E5%8F%91%E4%B9%8B%E6%97%85/index.html">
+<meta property="og:site_name" content="Zcorpius&#39;s Blog">
+<meta property="og:description" content="1. 前言 一句话介绍：MatrixAgent 是一个运行在定制 Android ROM 上的 Agent 系统。它把对话、模型、工具执行、定时任务和跨应用会话放进一条可验证的链路：用户在 Matrix AI 中提出目标，系统级 Host 负责判断、执行和记录结果。  这个项目要回答的问题很直接：如果用户说“帮我找到李健的《传奇》并播放”，一个聊天框当然能回答“好的”，但它真的找到了哪一首？用户有">
+<meta property="og:locale">
+<meta property="og:image" content="https://zcorpius.github.io/2026/09/30/MatrixAgent%E5%BC%80%E5%8F%91%E4%B9%8B%E6%97%85/architecture.png">
+<meta property="og:image" content="https://zcorpius.github.io/2026/09/30/MatrixAgent%E5%BC%80%E5%8F%91%E4%B9%8B%E6%97%85/conversation.png">
+<meta property="og:image" content="https://zcorpius.github.io/2026/09/30/MatrixAgent%E5%BC%80%E5%8F%91%E4%B9%8B%E6%97%85/overlay.png">
+<meta property="og:image" content="https://zcorpius.github.io/2026/09/30/MatrixAgent%E5%BC%80%E5%8F%91%E4%B9%8B%E6%97%85/tasks.png">
+<meta property="article:published_time" content="2026-09-30T11:00:00.000Z">
+<meta property="article:modified_time" content="2026-09-30T11:23:06.032Z">
+<meta property="article:author" content="Zcorpius">
+<meta property="article:tag" content="AI-Agent">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://zcorpius.github.io/2026/09/30/MatrixAgent%E5%BC%80%E5%8F%91%E4%B9%8B%E6%97%85/architecture.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Muse',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":true,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://Zcorpius.github.io/2026/09/30/MatrixAgent开发之旅/"/>
+
+
+
+
+
+  <title>MatrixAgent 开发之旅 | Zcorpius's Blog</title>
+  
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 7.3.0">
+<style>.github-emoji { position: relative; display: inline-block; width: 1.2em; min-height: 1.2em; overflow: hidden; vertical-align: top; color: transparent; }  .github-emoji > span { position: relative; z-index: 10; }  .github-emoji img, .github-emoji .fancybox { margin: 0 !important; padding: 0 !important; border: none !important; outline: none !important; text-decoration: none !important; user-select: none !important; cursor: auto !important; }  .github-emoji img { height: 1.2em !important; width: 1.2em !important; position: absolute !important; left: 50% !important; top: 50% !important; transform: translate(-50%, -50%) !important; user-select: none !important; cursor: auto !important; } .github-emoji-fallback { color: inherit; } .github-emoji-fallback img { opacity: 0 !important; }</style>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Zcorpius's Blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">追寻自我的崎岖路上从不缺勇敢。</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-路径">
+          <a href="/top/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-fire"></i> <br />
+            
+            路径
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://Zcorpius.github.io/2026/09/30/MatrixAgent%E5%BC%80%E5%8F%91%E4%B9%8B%E6%97%85/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/head.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Zcorpius's Blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">MatrixAgent 开发之旅</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2026-09-30T19:00:00+08:00">
+                2026-09-30
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/AI-Agent/" itemprop="url" rel="index">
+                    <span itemprop="name">AI-Agent</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+            <div class="post-wordcount">
+              
+                
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-file-word-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">字数统计&#58;</span>
+                
+                <span title="字数统计">
+                  4.7k
+                </span>
+              
+
+              
+                <span class="post-meta-divider">|</span>
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-clock-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">阅读时长 &asymp;</span>
+                
+                <span title="阅读时长">
+                  16
+                </span>
+              
+            </div>
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="1-前言"><a href="#1-前言" class="headerlink" title="1. 前言"></a>1. 前言</h1><blockquote>
+<p><strong>一句话介绍</strong>：MatrixAgent 是一个运行在定制 Android ROM 上的 Agent 系统。它把对话、模型、工具执行、定时任务和跨应用会话放进一条可验证的链路：用户在 Matrix AI 中提出目标，系统级 Host 负责判断、执行和记录结果。</p>
+</blockquote>
+<p>这个项目要回答的问题很直接：如果用户说“帮我找到李健的《传奇》并播放”，一个聊天框当然能回答“好的”，但它真的找到了哪一首？用户有没有确认？点击之后，播放器是否真的开始播放？应用切到 QQ 音乐之后，对话又到哪里去了？</p>
+<p>这些问题的答案，决定了 Agent 是一个会说话的界面，还是一个可以承担任务的系统能力。MatrixAgent 的开发主线，也因此从“接入模型”延伸到“建立可信执行边界”。本文按一次任务的生命周期，拆解这个项目的关键设计、实现取舍和验证方法。</p>
+<div align="center">
+  <img src="/2026/09/30/MatrixAgent%E5%BC%80%E5%8F%91%E4%B9%8B%E6%97%85/architecture.png" alt="MatrixAgent 系统架构：Launcher 和可信应用通过 SDK 进入 System Host" width="900">
+  <p><small>项目架构图。图中的业务域按职责分组，实际调用还包含回调和内部依赖。</small></p>
+</div>
+
+<hr>
+<h1 id="2-项目结构"><a href="#2-项目结构" class="headerlink" title="2. 项目结构"></a>2. 项目结构</h1><h2 id="2-1-模块分工"><a href="#2-1-模块分工" class="headerlink" title="2.1 模块分工"></a>2.1 模块分工</h2><p>MatrixAgent 的运行环境是定制 ROM。仓库分成五个主要模块：</p>
+<table>
+<thead>
+<tr>
+<th>模块</th>
+<th>做什么</th>
+<th>产物</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>matrix-agent-launcher</code></td>
+<td>Matrix AI 工作区、任务中心、模型设置、悬浮角色和会话小窗</td>
+<td>Launcher APK</td>
+</tr>
+<tr>
+<td><code>matrix-agent-service-lib</code></td>
+<td>AIDL、Parcelable、版本协商和面向客户端的 Manager</td>
+<td>SDK AAR</td>
+</tr>
+<tr>
+<td><code>matrix-agent-service</code></td>
+<td>系统级 Host：对话、执行、计划、语音、存储、审计与权限判断</td>
+<td>Host APK</td>
+</tr>
+<tr>
+<td><code>ondevice</code></td>
+<td>MNN 推理的 Java / JNI 边界与 native 生命周期</td>
+<td>Android Library</td>
+</tr>
+<tr>
+<td><code>matrix-agent-test</code></td>
+<td>可信与非可信客户端的跨 APK 契约验证</td>
+<td>测试 APK</td>
+</tr>
+</tbody></table>
+<h2 id="2-2-职责边界"><a href="#2-2-职责边界" class="headerlink" title="2.2 职责边界"></a>2.2 职责边界</h2><p>这层拆分首先解决“权力放在哪里”。Launcher 负责把状态讲清楚：消息、候选、进度、失败原因、角色动作都属于呈现。Host 才拥有任务状态、数据库、能力注册表、模型配置和执行权限。客户端可以请求某项能力，却不能通过改一个 UI 状态就宣布它已经成功，也不能传入一个自称是系统用户的字符串来获得权限。</p>
+<h2 id="2-3-运行链路"><a href="#2-3-运行链路" class="headerlink" title="2.3 运行链路"></a>2.3 运行链路</h2><p>Host 在目标 ROM 上使用 platform 签名与 <code>android.uid.system</code>，通过 <code>ServiceManager</code> 发布根 Binder，同时保留受签名权限保护的显式绑定入口。SDK 把 AIDL 封装成域 Manager，并处理 Binder 死亡与重连。入口处读取真实 Binder UID，再核对签名与权限；业务域继续基于当前请求的身份、用户和区域作约束。<strong>签名权限是入口，业务授权仍要逐次判断。</strong></p>
+<pre class="mermaid">flowchart LR
+    U[用户] --&gt; L[Matrix AI Launcher]
+    L --&gt; S[版本化 SDK / AIDL]
+    S --&gt; B[Host 根 Binder<br>调用方身份与契约]
+    B --&gt; C[对话 / 计划 / 语音]
+    C --&gt; E[Agent Engine]
+    E --&gt; P[Policy + Capability]
+    P --&gt; R[真实 Provider / 回读]
+    C --&gt; D[(加密存储)]
+    E --&gt; D</pre>
+
+<h2 id="2-4-运行前提"><a href="#2-4-运行前提" class="headerlink" title="2.4 运行前提"></a>2.4 运行前提</h2><p>这里有一个必须说清的前提：<strong>它不是一只下载到任意手机就能工作的普通 APK</strong>。系统 UID、framework 编译桩、平台证书、系统权限与 SELinux 配置必须和目标 ROM 匹配。当前主要联调机是 Mi 9 SE / Android 15 / LineageOS 22.2；换 ROM 后，需要重新验证这些边界。</p>
+<blockquote>
+<p>源码入口：<a target="_blank" rel="noopener" href="https://github.com/Zcorpius/MatrixAgentProject/blob/ae4d504/matrix-agent-service/src/main/java/com/matrix/agent/host/MatrixAgentManagerService.java">Host 服务</a>、<a target="_blank" rel="noopener" href="https://github.com/Zcorpius/MatrixAgentProject/blob/ae4d504/matrix-agent-service/src/main/java/com/matrix/agent/host/rpc/CallerContext.java">调用方身份</a>、<a target="_blank" rel="noopener" href="https://github.com/Zcorpius/MatrixAgentProject/blob/ae4d504/matrix-agent-service-lib/src/main/java/com/matrix/agent/client/MatrixAgent.java">SDK 连接管理</a>。</p>
+</blockquote>
+<hr>
+<h1 id="3-消息生命周期"><a href="#3-消息生命周期" class="headerlink" title="3. 消息生命周期"></a>3. 消息生命周期</h1><h2 id="3-1-统一受理"><a href="#3-1-统一受理" class="headerlink" title="3.1 统一受理"></a>3.1 统一受理</h2><p>用户输入并不只有文字。按住说话的最终转写、唤醒后的最终转写，也会进入同一个 <code>ConversationCoordinator</code>。实时语音的 partial 只用于显示；只有最终被接受的文本才会成为用户消息并触发 Agent。这使“屏幕上闪过的识别中间结果”不会意外变成一次操作。</p>
+<p>一次提交可以压缩成四步：</p>
+<figure class="highlight text"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">校验输入与归属</span><br><span class="line">    ↓</span><br><span class="line">事务内：按幂等键判重 → 分配会话序号 → 写入 ACCEPTED → 关联任务</span><br><span class="line">    ↓</span><br><span class="line">按 conversationId 进入串行执行通道</span><br><span class="line">    ↓</span><br><span class="line">写入终态与助手消息 → 通知全屏页和悬浮小窗</span><br></pre></td></tr></tbody></table></figure>
+
+<h2 id="3-2-事务与串行"><a href="#3-2-事务与串行" class="headerlink" title="3.2 事务与串行"></a>3.2 事务与串行</h2><p>为什么要把“接受”写在执行前？因为模型请求可能排队，Binder 可能断开，应用也可能被系统杀掉。如果先执行、后补一条消息，用户看到的历史就无法可靠解释已经发生的副作用。这里先形成持久化事实，再开始执行；相同客户端操作 ID 的重试返回已有回执，不重新发起一次任务。同一会话用 keyed lane 串行处理，后一个请求能在真正出队时看到前一个请求的终态，排队时间也不会提前烧掉 Agent 的执行预算。</p>
+<p>在代码层，这条链路有几条不能破坏的约束：</p>
+<table>
+<thead>
+<tr>
+<th>机制</th>
+<th>要避免什么</th>
+<th>失败时怎样收敛</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>幂等键与事务受理</td>
+<td>Binder 重试生成两条消息、执行两次</td>
+<td>重试返回已存在的消息和任务回执</td>
+</tr>
+<tr>
+<td>会话串行 lane</td>
+<td>后一轮抢在前一轮结束前读到旧历史</td>
+<td>按会话出队；派发失败写确定终态</td>
+</tr>
+<tr>
+<td>终态持久化与重启对账</td>
+<td>进程死亡留下永远 <code>RUNNING</code> 的消息</td>
+<td>恢复时核对悬挂记录，保留未知效果语义</td>
+</tr>
+<tr>
+<td>附件与引用预校验</td>
+<td>用户消息入库后才发现资料越权或不存在</td>
+<td>受理前拒绝，不留下半条消息</td>
+</tr>
+</tbody></table>
+<h2 id="3-3-终态与恢复"><a href="#3-3-终态与恢复" class="headerlink" title="3.3 终态与恢复"></a>3.3 终态与恢复</h2><p>状态设计同样重要。<code>ACCEPTED</code> 表示已经受理，<code>RUNNING</code> 表示正在执行；<code>COMPLETED</code>、<code>FAILED</code>、<code>CANCELLED</code>、<code>REJECTED</code> 是确定终态。还有一个看似“不漂亮”却不能省的状态：<code>EXECUTION_UNKNOWN</code>。当写操作可能已经发出，而进程中断或回读失败时，系统没有证据说“成功”，也没有证据说“没做”。此时盲目重试，可能把一次动作变成两次动作；把它显示为“需要核查”，才是忠于事实的行为。</p>
+<h2 id="3-4-草稿与附件"><a href="#3-4-草稿与附件" class="headerlink" title="3.4 草稿与附件"></a>3.4 草稿与附件</h2><p>草稿、引用消息、附件元数据和任务关联也遵循这个思路。引用在受理前核对是否属于同一会话；附件先核对 READY 状态与归属，再冻结这一轮可使用的上下文；已经提交的草稿不能被迟到的保存请求“复活”。这些细节看起来像 UI 功能，实际上都在维护一条消息的因果顺序。</p>
+<blockquote>
+<p>源码入口：<a target="_blank" rel="noopener" href="https://github.com/Zcorpius/MatrixAgentProject/blob/ae4d504/matrix-agent-service/src/main/java/com/matrix/agent/conversation/ConversationCoordinator.java">ConversationCoordinator</a>、<a target="_blank" rel="noopener" href="https://github.com/Zcorpius/MatrixAgentProject/blob/ae4d504/matrix-agent-service/src/main/java/com/matrix/agent/conversation/ConversationStore.java">ConversationStore</a>。</p>
+</blockquote>
+<hr>
+<h1 id="4-执行与授权"><a href="#4-执行与授权" class="headerlink" title="4. 执行与授权"></a>4. 执行与授权</h1><h2 id="4-1-Agent-主循环"><a href="#4-1-Agent-主循环" class="headerlink" title="4.1 Agent 主循环"></a>4.1 Agent 主循环</h2><p>进入 Agent 后，主循环是大家熟悉的结构：模型提出工具调用，系统校验并执行，工具观察再交回模型。真正决定可靠性的不是这个循环本身，而是<strong>每一圈都必须经过受信任的边界</strong>。</p>
+<figure class="highlight text"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">用户原始请求</span><br><span class="line">   ↓</span><br><span class="line">模型提出 ToolCall（能力名 + 参数）</span><br><span class="line">   ↓</span><br><span class="line">CapabilityRegistry 查能力定义</span><br><span class="line">   ↓</span><br><span class="line">PolicyEngine 校验授权、风险、意图、区域、Schema 与参数</span><br><span class="line">   ↓</span><br><span class="line">ToolExecutor 在预算和取消约束内调用 Provider</span><br><span class="line">   ↓</span><br><span class="line">Provider 回读真实状态，形成 Observation</span><br><span class="line">   ↓</span><br><span class="line">模型决定继续、澄清或结束</span><br></pre></td></tr></tbody></table></figure>
+
+<h2 id="4-2-策略校验"><a href="#4-2-策略校验" class="headerlink" title="4.2 策略校验"></a>4.2 策略校验</h2><p><code>PolicyEngine</code> 的输入不是“模型保证安全”，而是模型给出的<strong>待审提案</strong>。例如：</p>
+<ul>
+<li>未注册或被标为禁止级别的能力直接拒绝；只读任务即使被模型提议了写工具，也不能执行。</li>
+<li>用户明确说了目标区域，工具参数就不能悄悄换成另一个区域；身份与目标区域还要各自通过授权检查。</li>
+<li>写入长期记忆需要用户明确要求；模型在资料里读到“记住我……”不等于用户授权。</li>
+<li>工具参数按严格 Schema 校验。参数错误可返回观察，让模型在剩余预算内修正；越权能力不会靠“换个参数”重试放行。</li>
+</ul>
+<h2 id="4-3-媒体确认"><a href="#4-3-媒体确认" class="headerlink" title="4.3 媒体确认"></a>4.3 媒体确认</h2><p>媒体播放是这个边界最直观的例子。用户说“播放李健的《传奇》”，模型可以理解标题与歌手，并要求 QQ 音乐搜索。但搜索页上可能有现场版、翻唱版或同名作品。Host 必须读取真实候选，将模型提出的目标与实际行核对，随后在<strong>下一轮</strong>请用户确认或选择。确认后再执行播放，并读取媒体会话状态。搜索和播放不能被合并成“模型觉得只有这一首，所以顺手点了”。新的搜索还会清理旧待确认上下文，避免用户一句“就这个”误确认上一次的候选。</p>
+<p>这一设计也给错误分类留下空间：是模型理解错、策略拒绝、外部 App 搜索失败，还是点击后没有可验证的播放状态？把它们混成一个“工具失败”，排障和用户体验都会变差。</p>
+<blockquote>
+<p>源码入口：<a target="_blank" rel="noopener" href="https://github.com/Zcorpius/MatrixAgentProject/blob/ae4d504/matrix-agent-service/src/main/java/com/matrix/agent/task/AgentEngine.java">AgentEngine</a>、<a target="_blank" rel="noopener" href="https://github.com/Zcorpius/MatrixAgentProject/blob/ae4d504/matrix-agent-service/src/main/java/com/matrix/agent/task/policy/PolicyEngine.java">PolicyEngine</a>、<a target="_blank" rel="noopener" href="https://github.com/Zcorpius/MatrixAgentProject/blob/ae4d504/matrix-agent-service/src/main/java/com/matrix/agent/platform/media/MediaCapabilityProvider.java">媒体 Provider</a>。</p>
+</blockquote>
+<hr>
+<h1 id="5-跨应用会话"><a href="#5-跨应用会话" class="headerlink" title="5. 跨应用会话"></a>5. 跨应用会话</h1><h2 id="5-1-会话交接"><a href="#5-1-会话交接" class="headerlink" title="5.1 会话交接"></a>5.1 会话交接</h2><p>如果 Agent 打开 QQ 音乐，用户不应该被迫在音乐 App 和聊天页面之间反复切换。MatrixAgent 在交接外部应用前建立会话上下文，由 Launcher 显示一个可拖动的悬浮角色；点击角色展开的是<strong>原会话的小窗</strong>，可以看历史、补充输入、取消任务、回到全屏。</p>
+<div align="center">
+  <div class="img-row"><img src="/2026/09/30/MatrixAgent%E5%BC%80%E5%8F%91%E4%B9%8B%E6%97%85/conversation.png" alt="Matrix AI 的对话页" style="width:45%;max-width:400px;height:auto"><img src="/2026/09/30/MatrixAgent%E5%BC%80%E5%8F%91%E4%B9%8B%E6%97%85/overlay.png" alt="QQ 音乐上方的跨应用会话小窗" style="width:45%;max-width:400px;height:auto"></div>
+  <p><small>同一会话的两种呈现：全屏工作区与跨应用小窗。图片来自项目的设备采集记录。</small></p>
+</div>
+
+<h2 id="5-2-状态投影"><a href="#5-2-状态投影" class="headerlink" title="5.2 状态投影"></a>5.2 状态投影</h2><p>这里的关键不是画一个浮层，而是让浮层遵守 Host 的事实。全屏页和小窗共享消息来源；关闭窗口不会取消 Host 任务；正在编辑的草稿要能保留；Binder 断线要显示离线，而不是继续播放“正在执行”的动画。角色的 <code>waiting</code>、<code>running</code>、<code>jumping</code>、<code>failed</code> 和 <code>review</code> 对应任务阶段与结果，其中 <code>review</code> 用来提示“执行结果未确认”。动画是状态的投影，不是状态来源。</p>
+<h2 id="5-3-权限边界"><a href="#5-3-权限边界" class="headerlink" title="5.3 权限边界"></a>5.3 权限边界</h2><p>实现上，小窗使用 <code>TYPE_APPLICATION_OVERLAY</code>，需要 Launcher 的悬浮窗权限。跨应用 UI 搜索另需 Host 的无障碍服务。角色看向屏幕触点的效果则是另一层平台能力：Host 用 <code>InputMonitor</code> 观察同用户、可信 Launcher 场景下的输入副本，不截获底层应用的原始事件；这条路径依赖 API 35+、匹配的 framework 与 <code>MONITOR_INPUT</code> 权限。权限不同，不能因为“有悬浮窗”就推断“能观察全屏触点”。</p>
+<p>这也解释了为什么项目把“交接”单独做成域：何时显示、何时隐藏、窗口是否还能接收输入、交接失败后任务如何继续，都不能只靠 Activity 生命周期猜测。</p>
+<blockquote>
+<p>源码入口：<a target="_blank" rel="noopener" href="https://github.com/Zcorpius/MatrixAgentProject/blob/ae4d504/matrix-agent-launcher/src/main/java/com/matrix/agent/launcher/overlay/OverlayWindow.java">OverlayWindow</a>、<a target="_blank" rel="noopener" href="https://github.com/Zcorpius/MatrixAgentProject/blob/ae4d504/docs/%E5%8A%9F%E8%83%BD%E4%B8%8E%E4%BA%A4%E4%BA%92.md">功能与交互说明</a>。</p>
+</blockquote>
+<hr>
+<h1 id="6-系统能力"><a href="#6-系统能力" class="headerlink" title="6. 系统能力"></a>6. 系统能力</h1><p>Agent 真正进入日常使用后，问题不再都是“现在回答我”。它可能要在明天早上提醒日程，可能从麦克风接收请求，也可能需要记住用户亲自指定的偏好。MatrixAgent 没有给这些入口各造一套“简化版 Agent”，而是尽量让它们复用 Host 的身份、策略、预算、状态与存储语义。</p>
+<h2 id="6-1-计划调度"><a href="#6-1-计划调度" class="headerlink" title="6.1 计划调度"></a>6.1 计划调度</h2><p>任务中心支持一次性、延迟、每天、每周以及日历实例绑定计划。Host 用加密持久化保存计划，并用<strong>一个物理业务闹钟</strong>指向下一次应处理的发生时间；广播到来后对账，再安排下一次。这样管理的是一组业务计划，而不是给每一条计划永久挂一个系统闹钟。</p>
+<p>计划创建时冻结授权范围，触发时仍要核验用户、来源修订、能力范围和运行条件。自动任务使用独立会话；固定的“每日行程提醒”可并行读取今明日历，用确定性摘要发通知；“Agent 日程简报”则在授权范围内调用模型。两者都有步骤、依赖、预算、重试与取消，但并不开放任意代码执行。通知和播报分别记录交付事实：通知已经出现，不等于用户听到了播报；播报被勿扰或音频状态抑制时，也不能把整次交付写成完全成功。</p>
+<div align="center">
+  <img src="/2026/09/30/MatrixAgent%E5%BC%80%E5%8F%91%E4%B9%8B%E6%97%85/tasks.png" alt="Matrix AI 任务中心的工作流模板" width="250">
+  <p><small>任务中心：计划、运行记录与固定模板共同展示，历史保留执行时的模板版本。</small></p>
+</div>
+
+<h2 id="6-2-语音与模型"><a href="#6-2-语音与模型" class="headerlink" title="6.2 语音与模型"></a>6.2 语音与模型</h2><p>语音的 PTT 与唤醒转写最终都提交到会话链；采音由 Host 管理，麦克风权限、前台服务、音频焦点和识别资源就绪都会返回明确状态。播报在已配置路径之间选择并回退，但“配置了 TTS”与“真实扬声器已播放”仍是不同证据。模型侧由 Host 管理云端 API、局域网服务与端侧 MNN；下载器提供断点续传、校验和原子安装，模型文件未完成校验前不会被当成已安装。</p>
+<h2 id="6-3-分层记忆"><a href="#6-3-分层记忆" class="headerlink" title="6.3 分层记忆"></a>6.3 分层记忆</h2><p>记忆划分为会话状态、长期偏好、长期事实和事件摘要四层。温控等会话状态只从成功且经过回读的工具结果更新；偏好和长期事实要由用户明确要求保存；事件摘要只保留有限、已核验的任务事实。召回还要受用户、区域和 Prompt 预算限制。附件文本也按归属与状态核对，切块检索后只把有界片段投影给模型，不能把附件里的指令当成用户的新授权。</p>
+<p>这几处看似属于不同功能，设计原则却相同：<strong>模型上下文是帮助理解的材料，身份、授权和完成状态必须来自 Host 可核验的事实。</strong></p>
+<blockquote>
+<p>源码入口：<a target="_blank" rel="noopener" href="https://github.com/Zcorpius/MatrixAgentProject/blob/ae4d504/matrix-agent-service/src/main/java/com/matrix/agent/schedule/store/ScheduleStore.java">ScheduleStore</a>、<a target="_blank" rel="noopener" href="https://github.com/Zcorpius/MatrixAgentProject/blob/ae4d504/matrix-agent-service/src/main/java/com/matrix/agent/voice/VoiceSessionController.java">VoiceSessionController</a>、<a target="_blank" rel="noopener" href="https://github.com/Zcorpius/MatrixAgentProject/blob/ae4d504/matrix-agent-service/src/main/java/com/matrix/agent/data/memory/MemoryRouter.java">MemoryRouter</a>。</p>
+</blockquote>
+<hr>
+<h1 id="7-效果验证"><a href="#7-效果验证" class="headerlink" title="7. 效果验证"></a>7. 效果验证</h1><h2 id="7-1-评分依据"><a href="#7-1-评分依据" class="headerlink" title="7.1 评分依据"></a>7.1 评分依据</h2><p>Agent 系统最容易出现的假象，是模型说“已经完成”，日志里也出现 <code>SUCCESS</code>，但外部世界没有改变。因此项目评测把三个东西分开记录：<strong>模型提出了什么、策略和工具观察到什么、实际副作用是什么</strong>。只有最后一项与预期一致，才能判定目标达成。</p>
+<h2 id="7-2-固定语料"><a href="#7-2-固定语料" class="headerlink" title="7.2 固定语料"></a>7.2 固定语料</h2><p>固定语料覆盖媒体、计划和多轮对话：110 个独立场景，132 个用户轮次。离线模式每次运行两遍，使用生产 <code>AgentEngine</code>、<code>PolicyEngine</code>、能力定义与评分器，但不调用真实模型，也不访问外部服务；它适合检查“已知提案进入真实编排后是否安全、可重复”。真实模型模式另行采样，测试的是模型理解与提案质量。两者不能混成一个通过率。</p>
+<p>一条很有代表性的反例是：模型给出正确的确认话术，任务状态也显示 <code>SUCCEEDED</code>，但低层端口没有播放副作用。评分器仍判失败。反过来，如果系统本应拒绝写入，实际却发生了副作用，哪怕回复在道歉，也要判为越权。计划任务同样以实际存储的触发时刻、时区与动作类型评分，不靠标题相似度蒙混过关。</p>
+<h2 id="7-3-真实模型"><a href="#7-3-真实模型" class="headerlink" title="7.3 真实模型"></a>7.3 真实模型</h2><p>这套评测也暴露了真实问题。2026 年 9 月的模型采样里，<code>schedule.create</code> 曾出现绝对时间、周规则和授权范围与原话不一致的实际写入。项目随后在共享工具边界增加了字面计划约束；修复后的兼容 JSON 模式完整采样为 <strong>158/220 场景达成目标、错误参数实际写入 0</strong>。原生工具调用模式在前 <strong>160/220</strong> 个有效样本里有 <strong>125</strong> 个达成目标、错误参数实际写入 0，但后续遇到 HTTP 429 限流，报告保留为 <code>complete=false</code>。因此它还不是一份双模式完整质量基线。这个“没有测完就不写通过”的结论，比一个好看的百分比更有价值。</p>
+<h2 id="7-4-构建与真机"><a href="#7-4-构建与真机" class="headerlink" title="7.4 构建与真机"></a>7.4 构建与真机</h2><p>项目还有架构门禁和设备验证。<code>./gradlew verifyArchitecture</code> 会跑五个模块的非设备检查、SDK 发布依赖核对和离线评测；真机测试再检查系统签名、Binder、悬浮窗、输入链路、媒体应用与 Doze 等行为。不同日期、不同 APK 的专项结果不应相加成一个“大而全”的认证数字。阅读验证报告时，还应区分合成探针、JVM 单测和真实设备上观察到的外部效果。</p>
+<blockquote>
+<p>评测设计：<a target="_blank" rel="noopener" href="https://github.com/Zcorpius/MatrixAgentProject/blob/ae4d504/docs/evaluation.md">运行指南</a>；最新这轮的范围与中断原因：<a target="_blank" rel="noopener" href="https://github.com/Zcorpius/MatrixAgentProject/blob/ae4d504/docs/verification/intelligence-2026-09-28/README.md">智能层整改验证记录</a>。</p>
+</blockquote>
+<hr>
+<h1 id="8-总结"><a href="#8-总结" class="headerlink" title="8. 总结"></a>8. 总结</h1><h2 id="8-1-当前边界"><a href="#8-1-当前边界" class="headerlink" title="8.1 当前边界"></a>8.1 当前边界</h2><p>MatrixAgent 已经形成了从输入、模型提案、策略、执行、回读到呈现的完整骨架，但它仍有明确边界：</p>
+<ul>
+<li>当前核心设备基线是 Mi 9 SE 的定制 Android 15 ROM；多 ROM、分屏和长时间压力还不能由这一台设备的结果外推。</li>
+<li>车辆控制默认使用 demo Provider。接入真实车辆，必须由 OEM/VHAL Provider 实现并复用策略、参数校验和回读契约。</li>
+<li>QQ 音乐的搜索、独立确认与播放回读已有真机记录；B 站的候选搜索记录不等于视频打开闭环认证。</li>
+<li>语音资源、云端服务、端侧模型、麦克风和扬声器的组合，要在目标设备上分别完成认证；JVM 测试不能代替音频硬件与供应商可用性验证。</li>
+<li>定时任务首期面向已解锁、前台的 Android user 0；通知权限、精确闹钟权限与系统限制都可能让计划处于阻塞状态。</li>
+</ul>
+<h2 id="8-2-开发体会"><a href="#8-2-开发体会" class="headerlink" title="8.2 开发体会"></a>8.2 开发体会</h2><p>回头看这个项目，最难的部分并不是写出一段漂亮的 Agent Loop，而是把“不确定”保存下来，把“可执行”放到系统边界内，把“已完成”绑定到回读和副作用上。对话、悬浮角色、工作流与模型市场让系统好用；事务、身份、策略、幂等、恢复和评测让它值得信任。</p>
+<p>如果只记住一条经验，可以写成：<strong>Agent 负责提出下一步，系统负责证明这一步有没有资格执行，以及到底发生了什么。</strong></p>
+<hr>
+<p><strong>项目与延伸阅读</strong>：<a target="_blank" rel="noopener" href="https://github.com/Zcorpius/MatrixAgentProject">MatrixAgent 仓库</a> · <a target="_blank" rel="noopener" href="https://github.com/Zcorpius/MatrixAgentProject/blob/ae4d504/docs/%E5%BC%80%E5%8F%91%E4%B8%8E%E9%AA%8C%E8%AF%81.md">架构、构建与 SDK</a> · <a target="_blank" rel="noopener" href="https://github.com/Zcorpius/MatrixAgentProject/blob/ae4d504/docs/%E5%8A%9F%E8%83%BD%E4%B8%8E%E4%BA%A4%E4%BA%92.md">功能和交互</a>。文中实现与数据基于仓库的 <code>ae4d504</code> 快照及其归档验证记录；后续版本请以新代码和对应设备证据为准。</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/AI-Agent/" rel="tag"># AI-Agent</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2026/09/15/WMS%E6%82%AC%E6%B5%AE%E7%AA%97%E5%89%96%E6%9E%90/" rel="next" title="WMS 悬浮窗剖析">
+                <i class="fa fa-chevron-left"></i> WMS 悬浮窗剖析
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="/images/head.jpg"
+                alt="" />
+            
+              <p class="site-author-name" itemprop="name"></p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/%7C%7C%20archive">
+              
+                  <span class="site-state-item-count">47</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">16</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">35</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+            <div class="feed-link motion-element">
+              <a href="/atom.xml" rel="alternate">
+                <i class="fa fa-rss"></i>
+                RSS
+              </a>
+            </div>
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/Zcorpius" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-github"></i>GitHub</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://www.zhihu.com/people/lin-li-yike-cao/activities" target="_blank" title="ZhiHu">
+                      
+                        <i class="fa fa-fw fa-globe"></i>ZhiHu</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+            <div class="links-of-blogroll motion-element links-of-blogroll-block">
+              <div class="links-of-blogroll-title">
+                <i class="fa  fa-fw fa-link"></i>
+                Links
+              </div>
+              <ul class="links-of-blogroll-list">
+                
+                  <li class="links-of-blogroll-item">
+                    <a href="https://blog.schwarzeni.com/" title="Schwarzeni" target="_blank">Schwarzeni</a>
+                  </li>
+                
+                  <li class="links-of-blogroll-item">
+                    <a href="https://www.qcmoke.cn/" title="qcmoke" target="_blank">qcmoke</a>
+                  </li>
+                
+                  <li class="links-of-blogroll-item">
+                    <a href="https://www.zhoujianguo.ltd/" title="ZhouJianGuo" target="_blank">ZhouJianGuo</a>
+                  </li>
+                
+                  <li class="links-of-blogroll-item">
+                    <a href="https://hishiro-xiao.github.io/" title="hishiro-xiao" target="_blank">hishiro-xiao</a>
+                  </li>
+                
+              </ul>
+            </div>
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#1-%E5%89%8D%E8%A8%80"><span class="nav-text">1. 前言</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#2-%E9%A1%B9%E7%9B%AE%E7%BB%93%E6%9E%84"><span class="nav-text">2. 项目结构</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#2-1-%E6%A8%A1%E5%9D%97%E5%88%86%E5%B7%A5"><span class="nav-text">2.1 模块分工</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-2-%E8%81%8C%E8%B4%A3%E8%BE%B9%E7%95%8C"><span class="nav-text">2.2 职责边界</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-3-%E8%BF%90%E8%A1%8C%E9%93%BE%E8%B7%AF"><span class="nav-text">2.3 运行链路</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-4-%E8%BF%90%E8%A1%8C%E5%89%8D%E6%8F%90"><span class="nav-text">2.4 运行前提</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#3-%E6%B6%88%E6%81%AF%E7%94%9F%E5%91%BD%E5%91%A8%E6%9C%9F"><span class="nav-text">3. 消息生命周期</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#3-1-%E7%BB%9F%E4%B8%80%E5%8F%97%E7%90%86"><span class="nav-text">3.1 统一受理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-2-%E4%BA%8B%E5%8A%A1%E4%B8%8E%E4%B8%B2%E8%A1%8C"><span class="nav-text">3.2 事务与串行</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-3-%E7%BB%88%E6%80%81%E4%B8%8E%E6%81%A2%E5%A4%8D"><span class="nav-text">3.3 终态与恢复</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-4-%E8%8D%89%E7%A8%BF%E4%B8%8E%E9%99%84%E4%BB%B6"><span class="nav-text">3.4 草稿与附件</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#4-%E6%89%A7%E8%A1%8C%E4%B8%8E%E6%8E%88%E6%9D%83"><span class="nav-text">4. 执行与授权</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#4-1-Agent-%E4%B8%BB%E5%BE%AA%E7%8E%AF"><span class="nav-text">4.1 Agent 主循环</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-2-%E7%AD%96%E7%95%A5%E6%A0%A1%E9%AA%8C"><span class="nav-text">4.2 策略校验</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-3-%E5%AA%92%E4%BD%93%E7%A1%AE%E8%AE%A4"><span class="nav-text">4.3 媒体确认</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#5-%E8%B7%A8%E5%BA%94%E7%94%A8%E4%BC%9A%E8%AF%9D"><span class="nav-text">5. 跨应用会话</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#5-1-%E4%BC%9A%E8%AF%9D%E4%BA%A4%E6%8E%A5"><span class="nav-text">5.1 会话交接</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-2-%E7%8A%B6%E6%80%81%E6%8A%95%E5%BD%B1"><span class="nav-text">5.2 状态投影</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-3-%E6%9D%83%E9%99%90%E8%BE%B9%E7%95%8C"><span class="nav-text">5.3 权限边界</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#6-%E7%B3%BB%E7%BB%9F%E8%83%BD%E5%8A%9B"><span class="nav-text">6. 系统能力</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#6-1-%E8%AE%A1%E5%88%92%E8%B0%83%E5%BA%A6"><span class="nav-text">6.1 计划调度</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-2-%E8%AF%AD%E9%9F%B3%E4%B8%8E%E6%A8%A1%E5%9E%8B"><span class="nav-text">6.2 语音与模型</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-3-%E5%88%86%E5%B1%82%E8%AE%B0%E5%BF%86"><span class="nav-text">6.3 分层记忆</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#7-%E6%95%88%E6%9E%9C%E9%AA%8C%E8%AF%81"><span class="nav-text">7. 效果验证</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#7-1-%E8%AF%84%E5%88%86%E4%BE%9D%E6%8D%AE"><span class="nav-text">7.1 评分依据</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-2-%E5%9B%BA%E5%AE%9A%E8%AF%AD%E6%96%99"><span class="nav-text">7.2 固定语料</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-3-%E7%9C%9F%E5%AE%9E%E6%A8%A1%E5%9E%8B"><span class="nav-text">7.3 真实模型</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-4-%E6%9E%84%E5%BB%BA%E4%B8%8E%E7%9C%9F%E6%9C%BA"><span class="nav-text">7.4 构建与真机</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#8-%E6%80%BB%E7%BB%93"><span class="nav-text">8. 总结</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#8-1-%E5%BD%93%E5%89%8D%E8%BE%B9%E7%95%8C"><span class="nav-text">8.1 当前边界</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#8-2-%E5%BC%80%E5%8F%91%E4%BD%93%E4%BC%9A"><span class="nav-text">8.2 开发体会</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Zcorpius</span>
+
+  
+</div>
+
+<!--
+
+
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Muse</a> v5.1.4</div>
+
+
+-->
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+          <span id="scrollpercent"><span>0</span>%</span>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+  
+
+
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@9/dist/mermaid.min.js"></script>
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: 'default'
+    });
+  </script>
+  
+  
+
+  
+
+
+<!-- Nexora 风格代码块增强：顶栏 + 语言标签 + 复制按钮 -->
+<script type="text/javascript" src="/js/src/nexora-code.js"></script>
+<!-- Nexora 风格 TOC scroll-spy（IntersectionObserver，替代 Bootstrap scrollspy） -->
+<script type="text/javascript" src="/js/src/nexora-toc.js"></script>
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"debug":false,"model":{"jsonPath":"https://cdn.jsdelivr.net/gh/evrstr/live2d-widget-models/live2d_evrstr/mashiro_shifuku/model.json"},"display":{"position":"left","width":200,"height":500},"mobile":{"show":true},"encrypt":{"enable":true},"log":false});</script></body>
+</html>
+
+<!-- 页面点击小红心 -->
+<script type="text/javascript" src="/js/src/love.js"></script>
