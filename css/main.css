@@ -1857,7 +1857,7 @@ pre {
   width: 4px;
   height: 4px;
   border-radius: 50%;
-  background: #f6b3ff;
+  background: #f042ff;
 }
 .links-of-blogroll {
   font-size: 13px;
@@ -3815,6 +3815,11 @@ embed {
 }
 .toprest hr {
   margin: 0;
+}
+.topslogan p {
+  text-align: center;
+  margin: 24px 0;
+  color: #0593d3;
 }
 .img-row {
   display: flex;
