@@ -102,20 +102,20 @@
 <meta name="description" content="1. 前言 一句话介绍：MatrixAgent 是一个运行在定制 Android ROM 上的 Agent 系统。它把对话、模型、工具执行、定时任务和跨应用会话放进一条可验证的链路：用户在 Matrix AI 中提出目标，系统级 Host 负责判断、执行和记录结果。  这个项目要回答的问题很直接：如果用户说“帮我找到李健的《传奇》并播放”，一个聊天框当然能回答“好的”，但它真的找到了哪一首？用户有">
 <meta property="og:type" content="article">
 <meta property="og:title" content="MatrixAgent 开发之旅">
-<meta property="og:url" content="https://zcorpius.github.io/2026/09/30/MatrixAgent%E5%BC%80%E5%8F%91%E4%B9%8B%E6%97%85/index.html">
+<meta property="og:url" content="https://zcorpius.github.io/2026/09/29/MatrixAgent%E5%BC%80%E5%8F%91%E4%B9%8B%E6%97%85/index.html">
 <meta property="og:site_name" content="Zcorpius&#39;s Blog">
 <meta property="og:description" content="1. 前言 一句话介绍：MatrixAgent 是一个运行在定制 Android ROM 上的 Agent 系统。它把对话、模型、工具执行、定时任务和跨应用会话放进一条可验证的链路：用户在 Matrix AI 中提出目标，系统级 Host 负责判断、执行和记录结果。  这个项目要回答的问题很直接：如果用户说“帮我找到李健的《传奇》并播放”，一个聊天框当然能回答“好的”，但它真的找到了哪一首？用户有">
 <meta property="og:locale">
-<meta property="og:image" content="https://zcorpius.github.io/2026/09/30/MatrixAgent%E5%BC%80%E5%8F%91%E4%B9%8B%E6%97%85/architecture.png">
-<meta property="og:image" content="https://zcorpius.github.io/2026/09/30/MatrixAgent%E5%BC%80%E5%8F%91%E4%B9%8B%E6%97%85/conversation.png">
-<meta property="og:image" content="https://zcorpius.github.io/2026/09/30/MatrixAgent%E5%BC%80%E5%8F%91%E4%B9%8B%E6%97%85/overlay.png">
-<meta property="og:image" content="https://zcorpius.github.io/2026/09/30/MatrixAgent%E5%BC%80%E5%8F%91%E4%B9%8B%E6%97%85/tasks.png">
-<meta property="article:published_time" content="2026-09-30T11:00:00.000Z">
-<meta property="article:modified_time" content="2026-09-30T11:29:09.469Z">
+<meta property="og:image" content="https://zcorpius.github.io/2026/09/29/MatrixAgent%E5%BC%80%E5%8F%91%E4%B9%8B%E6%97%85/architecture.png">
+<meta property="og:image" content="https://zcorpius.github.io/2026/09/29/MatrixAgent%E5%BC%80%E5%8F%91%E4%B9%8B%E6%97%85/conversation.png">
+<meta property="og:image" content="https://zcorpius.github.io/2026/09/29/MatrixAgent%E5%BC%80%E5%8F%91%E4%B9%8B%E6%97%85/overlay.png">
+<meta property="og:image" content="https://zcorpius.github.io/2026/09/29/MatrixAgent%E5%BC%80%E5%8F%91%E4%B9%8B%E6%97%85/tasks.png">
+<meta property="article:published_time" content="2026-09-29T11:00:00.000Z">
+<meta property="article:modified_time" content="2026-10-02T13:36:35.412Z">
 <meta property="article:author" content="Zcorpius">
 <meta property="article:tag" content="AI-Agent">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://zcorpius.github.io/2026/09/30/MatrixAgent%E5%BC%80%E5%8F%91%E4%B9%8B%E6%97%85/architecture.png">
+<meta name="twitter:image" content="https://zcorpius.github.io/2026/09/29/MatrixAgent%E5%BC%80%E5%8F%91%E4%B9%8B%E6%97%85/architecture.png">
 
 
 
@@ -145,7 +145,7 @@
 
 
 
-  <link rel="canonical" href="https://Zcorpius.github.io/2026/09/30/MatrixAgent开发之旅/"/>
+  <link rel="canonical" href="https://Zcorpius.github.io/2026/09/29/MatrixAgent开发之旅/"/>
 
 
 
@@ -334,7 +334,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="https://Zcorpius.github.io/2026/09/30/MatrixAgent%E5%BC%80%E5%8F%91%E4%B9%8B%E6%97%85/">
+    <link itemprop="mainEntityOfPage" href="https://Zcorpius.github.io/2026/09/29/MatrixAgent%E5%BC%80%E5%8F%91%E4%B9%8B%E6%97%85/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="">
@@ -363,8 +363,8 @@
               
                 <span class="post-meta-item-text">发表于</span>
               
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2026-09-30T19:00:00+08:00">
-                2026-09-30
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2026-09-29T19:00:00+08:00">
+                2026-09-29
               </time>
             
 
@@ -460,7 +460,7 @@
 <p>这个项目要回答的问题很直接：如果用户说“帮我找到李健的《传奇》并播放”，一个聊天框当然能回答“好的”，但它真的找到了哪一首？用户有没有确认？点击之后，播放器是否真的开始播放？应用切到 QQ 音乐之后，对话又到哪里去了？</p>
 <p>这些问题的答案，决定了 Agent 是一个会说话的界面，还是一个可以承担任务的系统能力。MatrixAgent 的开发主线，也因此从“接入模型”延伸到“建立可信执行边界”。本文按一次任务的生命周期，拆解这个项目的关键设计、实现取舍和验证方法。</p>
 <div align="center">
-  <img src="/2026/09/30/MatrixAgent%E5%BC%80%E5%8F%91%E4%B9%8B%E6%97%85/architecture.png" alt="MatrixAgent 系统架构：Launcher 和可信应用通过 SDK 进入 System Host" width="900">
+  <img src="/2026/09/29/MatrixAgent%E5%BC%80%E5%8F%91%E4%B9%8B%E6%97%85/architecture.png" alt="MatrixAgent 系统架构：Launcher 和可信应用通过 SDK 进入 System Host" width="900">
   <p><small>项目架构图。图中的业务域按职责分组，实际调用还包含回调和内部依赖。</small></p>
 </div>
 
@@ -577,7 +577,7 @@
 <hr>
 <h1 id="5-跨应用会话"><a href="#5-跨应用会话" class="headerlink" title="5. 跨应用会话"></a>5. 跨应用会话</h1><h2 id="5-1-会话交接"><a href="#5-1-会话交接" class="headerlink" title="5.1 会话交接"></a>5.1 会话交接</h2><p>如果 Agent 打开 QQ 音乐，用户不应该被迫在音乐 App 和聊天页面之间反复切换。MatrixAgent 在交接外部应用前建立会话上下文，由 Launcher 显示一个可拖动的悬浮角色；点击角色展开的是<strong>原会话的小窗</strong>，可以看历史、补充输入、取消任务、回到全屏。</p>
 <div align="center">
-  <div class="img-row"><img src="/2026/09/30/MatrixAgent%E5%BC%80%E5%8F%91%E4%B9%8B%E6%97%85/conversation.png" alt="Matrix AI 的对话页" style="width:45%;max-width:400px;height:auto"><img src="/2026/09/30/MatrixAgent%E5%BC%80%E5%8F%91%E4%B9%8B%E6%97%85/overlay.png" alt="QQ 音乐上方的跨应用会话小窗" style="width:45%;max-width:400px;height:auto"></div>
+  <div class="img-row"><img src="/2026/09/29/MatrixAgent%E5%BC%80%E5%8F%91%E4%B9%8B%E6%97%85/conversation.png" alt="Matrix AI 的对话页" style="width:45%;max-width:400px;height:auto"><img src="/2026/09/29/MatrixAgent%E5%BC%80%E5%8F%91%E4%B9%8B%E6%97%85/overlay.png" alt="QQ 音乐上方的跨应用会话小窗" style="width:45%;max-width:400px;height:auto"></div>
   <p><small>同一会话的两种呈现：全屏工作区与跨应用小窗。图片来自项目的设备采集记录。</small></p>
 </div>
 
@@ -592,7 +592,7 @@
 <h2 id="6-1-计划调度"><a href="#6-1-计划调度" class="headerlink" title="6.1 计划调度"></a>6.1 计划调度</h2><p>任务中心支持一次性、延迟、每天、每周以及日历实例绑定计划。Host 用加密持久化保存计划，并用<strong>一个物理业务闹钟</strong>指向下一次应处理的发生时间；广播到来后对账，再安排下一次。这样管理的是一组业务计划，而不是给每一条计划永久挂一个系统闹钟。</p>
 <p>计划创建时冻结授权范围，触发时仍要核验用户、来源修订、能力范围和运行条件。自动任务使用独立会话；固定的“每日行程提醒”可并行读取今明日历，用确定性摘要发通知；“Agent 日程简报”则在授权范围内调用模型。两者都有步骤、依赖、预算、重试与取消，但并不开放任意代码执行。通知和播报分别记录交付事实：通知已经出现，不等于用户听到了播报；播报被勿扰或音频状态抑制时，也不能把整次交付写成完全成功。</p>
 <div align="center">
-  <img src="/2026/09/30/MatrixAgent%E5%BC%80%E5%8F%91%E4%B9%8B%E6%97%85/tasks.png" alt="Matrix AI 任务中心的工作流模板" width="250">
+  <img src="/2026/09/29/MatrixAgent%E5%BC%80%E5%8F%91%E4%B9%8B%E6%97%85/tasks.png" alt="Matrix AI 任务中心的工作流模板" width="250">
   <p><small>任务中心：计划、运行记录与固定模板共同展示，历史保留执行时的模板版本。</small></p>
 </div>
 
