@@ -2077,6 +2077,18 @@
       </tags>
   </entry>
   <entry>
+    <title>Audio Usage 新增流程</title>
+    <url>/2026/07/01/Audio-Usage%E6%96%B0%E5%A2%9E%E6%B5%81%E7%A8%8B/</url>
+    <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="/assets/css/APlayer.min.css"><script src="/assets/js/APlayer.min.js" class="aplayer-secondary-script-marker"></script>]]></content>
+      <categories>
+        <category>Audio</category>
+        <category>AudioUsage</category>
+      </categories>
+      <tags>
+        <tag>Audio</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Android 系统启动——App进程</title>
     <url>/2025/10/06/Android%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A86-App%E8%BF%9B%E7%A8%8B/</url>
     <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="/assets/css/APlayer.min.css"><script src="/assets/js/APlayer.min.js" class="aplayer-secondary-script-marker"></script><h1 id="Android-应用进程创建"><a href="#Android-应用进程创建" class="headerlink" title="Android 应用进程创建"></a>Android 应用进程创建</h1><blockquote>
@@ -2191,18 +2203,6 @@
       </categories>
       <tags>
         <tag>startup</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>Audio Usage 新增流程</title>
-    <url>/2026/07/01/Audio-Usage%E6%96%B0%E5%A2%9E%E6%B5%81%E7%A8%8B/</url>
-    <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="/assets/css/APlayer.min.css"><script src="/assets/js/APlayer.min.js" class="aplayer-secondary-script-marker"></script>]]></content>
-      <categories>
-        <category>Audio</category>
-        <category>AudioUsage</category>
-      </categories>
-      <tags>
-        <tag>Audio</tag>
       </tags>
   </entry>
   <entry>
@@ -6901,6 +6901,105 @@
       </tags>
   </entry>
   <entry>
+    <title>C重拾之旅</title>
+    <url>/2025/05/26/C%E9%87%8D%E6%8B%BE%E4%B9%8B%E6%97%85/</url>
+    <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="/assets/css/APlayer.min.css"><script src="/assets/js/APlayer.min.js" class="aplayer-secondary-script-marker"></script><h1 id="C有关的重要问题"><a href="#C有关的重要问题" class="headerlink" title="C有关的重要问题"></a>C有关的重要问题</h1><h2 id="1-main函数是如何被调用的"><a href="#1-main函数是如何被调用的" class="headerlink" title="1. main函数是如何被调用的"></a>1. main函数是如何被调用的</h2><p>C程序总是从main函数开始执行，main函数的原型是：</p>
+<figure class="highlight c"><table><tbody><tr><td class="code"><pre><span class="line"><span class="type">int</span> <span class="title function_">main</span><span class="params">(<span class="type">int</span> argc, <span class="type">char</span> *argv)</span>;</span><br></pre></td></tr></tbody></table></figure>
+
+<blockquote>
+<p> 其中，argc是命令行参数的数目，argv是指向参数的各个指针所构成的数组</p>
+</blockquote>
+<p><strong>当内核执行C程序时(使用一个exec函数),在调用main前先调用一个特殊的启动例程</strong>。  </p>
+<p><strong>可执行程序文件将此启动例程指定为程序的起始地址—这是由连接编辑器设置的,而连接编辑器则由C编译器调用。</strong> 启动例程从内核取得命令行参数和环境变量值,然后为按上述方式调用main函数做好安排。</p>
+<hr>
+<h2 id="2-C程序如何启动和终止的"><a href="#2-C程序如何启动和终止的" class="headerlink" title="2. C程序如何启动和终止的"></a>2. C程序如何启动和终止的</h2><div align="center"><img src="/2025/05/26/C%E9%87%8D%E6%8B%BE%E4%B9%8B%E6%97%85/7-1.png" width="500px"></div>
+
+<ul>
+<li><p>注意,<strong>内核使程序执行的唯一方法是调用一个exec函数。进程自愿终止的唯一方法是显式或隐式地(通过调用exit)调用exit或Exit</strong>。进程也可非自愿地由一个信号使其终止。</p>
+</li>
+<li><p>当执行一个程序时,调用exec的进程可将命令行参数传递给该新程序。ISO C和POSIX.1都要求argv[argc]是一个空指针。这就使我们可以将参数处理循环改写为</p>
+<figure class="highlight c"><table><tbody><tr><td class="code"><pre><span class="line"><span class="keyword">for</span>(i = <span class="number">0</span>; argv[i] != <span class="literal">NULL</span>; i++)</span><br></pre></td></tr></tbody></table></figure></li>
+</ul>
+<hr>
+<h2 id="3-atexit函数"><a href="#3-atexit函数" class="headerlink" title="3. atexit函数"></a>3. atexit函数</h2><p>按照ISO C的规定,一个进程可以登记多至32个函数,这些函数将由exit自动调用。我们称这些函数为终止处理程序( exit handler),并调用 atexit函数来登记这些函数。</p>
+<figure class="highlight c"><table><tbody><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;stdlib.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="type">int</span> <span class="title function_">atexit</span><span class="params">(<span class="type">void</span> (*func)(<span class="type">void</span>))</span>;</span><br><span class="line"><span class="comment">// Returns: 0 if OK, nonzero on error</span></span><br></pre></td></tr></tbody></table></figure>
+
+<blockquote>
+<p> 其中, <code>atexit</code>的参数是一个函数地址,当调用此函数时无需向它传递任何参数,也不期望它返回一个值。exit调用这些函数的顺序与它们登记时候的顺序相反。同一函数如若登记多次也会被调用多次。</p>
+</blockquote>
+<figure class="highlight c"><table><tbody><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">"apue.h"</span></span></span><br><span class="line"><span class="type">static</span> <span class="type">void</span>	<span class="title function_">my_exit1</span><span class="params">(<span class="type">void</span>)</span>;</span><br><span class="line"><span class="type">static</span> <span class="type">void</span>	<span class="title function_">my_exit2</span><span class="params">(<span class="type">void</span>)</span>;</span><br><span class="line"></span><br><span class="line"><span class="type">int</span> <span class="title function_">main</span><span class="params">(<span class="type">void</span>)</span>{</span><br><span class="line">	<span class="keyword">if</span> (atexit(my_exit2) != <span class="number">0</span>)</span><br><span class="line">		err_sys(<span class="string">"can't register my_exit2"</span>);</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> (atexit(my_exit1) != <span class="number">0</span>)</span><br><span class="line">		err_sys(<span class="string">"can't register my_exit1"</span>);</span><br><span class="line">	<span class="keyword">if</span> (atexit(my_exit1) != <span class="number">0</span>)</span><br><span class="line">		err_sys(<span class="string">"can't register my_exit1"</span>);</span><br><span class="line">	<span class="keyword">if</span> (atexit(my_exit1) != <span class="number">0</span>)</span><br><span class="line">		err_sys(<span class="string">"can't register my_exit1"</span>);</span><br><span class="line"></span><br><span class="line">	<span class="built_in">printf</span>(<span class="string">"main is done\n"</span>);</span><br><span class="line">	<span class="keyword">return</span>(<span class="number">0</span>);</span><br><span class="line">}</span><br><span class="line"></span><br><span class="line"><span class="type">static</span> <span class="type">void</span></span><br><span class="line"><span class="title function_">my_exit1</span><span class="params">(<span class="type">void</span>)</span></span><br><span class="line">	<span class="title function_">printf</span><span class="params">(<span class="string">"first exit handler\n"</span>)</span>;</span><br><span class="line"></span><br><span class="line"><span class="type">static</span> <span class="type">void</span></span><br><span class="line"><span class="title function_">my_exit2</span><span class="params">(<span class="type">void</span>)</span></span><br><span class="line">	<span class="title function_">printf</span><span class="params">(<span class="string">"second exit handler\n"</span>)</span>;</span><br></pre></td></tr></tbody></table></figure>
+
+<div align="center"><img src="/2025/05/26/C%E9%87%8D%E6%8B%BE%E4%B9%8B%E6%97%85/7-2.png" width="600px"></div>
+
+<hr>
+<h2 id="4-C程序的存储空间布局"><a href="#4-C程序的存储空间布局" class="headerlink" title="4. C程序的存储空间布局"></a>4. C程序的存储空间布局</h2><p>C程序一直由以下几个部分组成：</p>
+<div align="center"><img src="/2025/05/26/C%E9%87%8D%E6%8B%BE%E4%B9%8B%E6%97%85/7-4.png" width="300px"></div>
+
+<ul>
+<li><strong>正文段。</strong> 这是由CPU执行的机器指令部分。通常正文段是可共享的，但通常也只能制度，防止程序由于意外而修改其指令。</li>
+<li><strong>初始化数据段。</strong> 通常将此段称为数据段,它包含了程序中需明确地赋初值的变量。</li>
+<li><strong>未初始化数据段。</strong> 通常将此段称为bss段 (名称来源于早期汇编程序一个操作符,意思是“由符号开始的块”( block started by symbol))。在程序开始执行之前， <strong>内核将此段中的数据初始化为0或空指针</strong> 。</li>
+<li><strong>栈。</strong> 自动变量以及每次函数调用时所需保存的信息都存放在此段中。</li>
+<li><strong>堆。</strong> 通常在堆中进行动态存储分配。</li>
+</ul>
+<blockquote>
+<ul>
+<li>a.out 中还有其他类型的段，如符号表的段，包含调试信息的段以及包含动态共享库链接表的段等。这些部分并不装载到进程执行的程序映像中。</li>
+<li>未初始化数据段的内容并不存放在磁盘程序文件中。其原因是,内核在程序开始运行前将它们都设置为0。需要存放在磁盘程序文件中的段只有正文段和初始化数据段</li>
+</ul>
+</blockquote>
+<hr>
+<h2 id="5-共享库"><a href="#5-共享库" class="headerlink" title="5. 共享库"></a>5. 共享库</h2><ul>
+<li>共享库使得<strong>可执行文件中不再需要包含公用的库函数</strong> ，而只需在所有进程都可引用的存储区中保存这种库例程的一个副本。</li>
+<li>程序第一次执行或者第一次调用某个库函数时,<strong>用动态链接方法将程序与共享库函数相链接</strong>。这减少了每个可执行文件的长度,但增加了一些运行时间开销。这种时间开销发生在该程序第一次被执行时,或者每个共享库函数第一次被调用时。</li>
+<li>共享库的另一个优点是<strong>可以用库函数的新版本代替老版本而无需对使用该库的程序重新连接编辑</strong>(假定参数的数目和类型都没有发生改变)</li>
+</ul>
+<h2 id="6-存储空间分配——malloc-realloc-calloc"><a href="#6-存储空间分配——malloc-realloc-calloc" class="headerlink" title="6. 存储空间分配——malloc, realloc, calloc"></a>6. 存储空间分配——malloc, realloc, calloc</h2><p>ISO C说明了3个用于存储空间动态分配的函数</p>
+<ol>
+<li>malloc,分配 <strong>指定字节数的存储区</strong> 。此存储区中的初始值不确定。</li>
+<li>calloc,为 <strong>指定数量 指定长度</strong> 的对象分配存储空间。<strong>该空间中的每一位(bit)都初始化为0</strong></li>
+<li>realloc, <strong>增加或减少以前分配区的长度</strong> 。当增加长度时,可能需将以前分配区的内容移到另一个足够大的区域,以便在尾端提供增加的存储区,而新增区域内的初始值则不确定。</li>
+</ol>
+<figure class="highlight c"><table><tbody><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;stdlib.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="comment">// All three return: non-null pointer if OK, NULL on error</span></span><br><span class="line"><span class="type">void</span> *<span class="title function_">malloc</span><span class="params">(<span class="type">size_t</span> size)</span>;</span><br><span class="line"><span class="type">void</span> *<span class="title function_">calloc</span><span class="params">(<span class="type">size_t</span> nobj, <span class="type">size_t</span> size)</span>;</span><br><span class="line"><span class="type">void</span> *<span class="title function_">realloc</span><span class="params">(<span class="type">void</span> *ptr, <span class="type">size_t</span> newsize)</span>;</span><br><span class="line"><span class="comment">//这3个分配函数所返回的指针一定是适当对齐的,使其可用于任何数据对象。</span></span><br><span class="line"></span><br><span class="line"><span class="type">void</span> <span class="title function_">free</span><span class="params">(<span class="type">void</span> *ptr)</span>;</span><br><span class="line"><span class="comment">//free函数释放ptr所指向的存储空间。被释放的空间通常被送入可用存储区池。以后可在调用上述3个分配函数时再分配。</span></span><br></pre></td></tr></tbody></table></figure>
+
+<hr>
+<h2 id="7-C-中的string与C中的char-有什么区别？如何实现的？"><a href="#7-C-中的string与C中的char-有什么区别？如何实现的？" class="headerlink" title="7. C++中的string与C中的char * 有什么区别？如何实现的？"></a>7. C++中的string与C中的char * 有什么区别？如何实现的？</h2><p>string继承自basic_string,其实是对char<em>进行了封装，封装的string包含了char</em>数组，容量，长度等等属性。</p>
+<p>string可以进行动态扩展，在每次扩展的时候另外申请一块原空间大小两倍的空间(2^n)，然后将原字 符串拷贝过去，并加上新增的内容</p>
+<hr>
+]]></content>
+      <categories>
+        <category>Linux C</category>
+      </categories>
+      <tags>
+        <tag>Linux C</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Git提速代理</title>
+    <url>/2024/11/09/Git%E6%8F%90%E9%80%9F%E4%BB%A3%E7%90%86/</url>
+    <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="/assets/css/APlayer.min.css"><script src="/assets/js/APlayer.min.js" class="aplayer-secondary-script-marker"></script><blockquote>
+<p>因为平时在Ubuntu虚拟机上使用Git clone的时候速度特别慢，使用干脆写个代理文件进行提速。</p>
+</blockquote>
+<h2 id="梯子准备"><a href="#梯子准备" class="headerlink" title="梯子准备"></a>梯子准备</h2><p>在主机上挂个梯子，然后查看IP地址与端口(确保能使用)。</p>
+<figure class="highlight shell"><table><tbody><tr><td class="code"><pre><span class="line">en0: flags=8863&lt;UP,BROADCAST,SMART,RUNNING,SIMPLEX,MULTICAST&gt; mtu 1500</span><br><span class="line">	options=400&lt;CHANNEL_IO&gt;</span><br><span class="line">	ether 38:f9:d3:8d:58:3e</span><br><span class="line">	inet6 fe80::1434:df1:87d5:7e09%en0 prefixlen 64 secured scopeid 0x6</span><br><span class="line">	inet 192.168.1.4 netmask 0xffffff00 broadcast 192.168.1.255</span><br><span class="line">	nd6 options=201&lt;PERFORMNUD,DAD&gt;</span><br><span class="line">	media: autoselect</span><br><span class="line">	status: active</span><br></pre></td></tr></tbody></table></figure>
+
+<img src="/2024/11/09/Git%E6%8F%90%E9%80%9F%E4%BB%A3%E7%90%86/1.png" style="zoom:50%;">
+
+<p>我的IP与端口:192.168.1.4:7890</p>
+<h2 id="写代理文件"><a href="#写代理文件" class="headerlink" title="写代理文件"></a>写代理文件</h2><p>在Ubuntu上写代理文件，在与Desktop同一级的目录下新建.gitconfig文件并进行编辑。</p>
+<p><img src="/2024/11/09/Git%E6%8F%90%E9%80%9F%E4%BB%A3%E7%90%86/2.png"></p>
+<p>这样就可以加速了。实践一下。</p>
+<p><img src="/2024/11/09/Git%E6%8F%90%E9%80%9F%E4%BB%A3%E7%90%86/3.png"></p>
+<p>这个速度就爽多！</p>
+]]></content>
+      <categories>
+        <category>Tool</category>
+      </categories>
+      <tags>
+        <tag>Git</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>C++重拾之旅</title>
     <url>/2025/07/12/C++%E9%87%8D%E6%8B%BE%E4%B9%8B%E6%97%85/</url>
     <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="/assets/css/APlayer.min.css"><script src="/assets/js/APlayer.min.js" class="aplayer-secondary-script-marker"></script><h1 id="一-C-基本介绍"><a href="#一-C-基本介绍" class="headerlink" title="一. C++ 基本介绍"></a>一. C++ 基本介绍</h1><h2 id="1-C-面向对象的三大特性"><a href="#1-C-面向对象的三大特性" class="headerlink" title="1. C++面向对象的三大特性"></a>1. C++面向对象的三大特性</h2><h3 id="1-1-继承"><a href="#1-1-继承" class="headerlink" title="1.1. 继承"></a>1.1. 继承</h3><p> 让某种类型对象获得另一个类型对象的属性和方法。** 它可以使用现有类的所有功能，并在无需重新编写原来的类的情况下对这些功能进行扩展 常见的继承有三种方式:</p>
@@ -9184,105 +9283,6 @@
       </categories>
       <tags>
         <tag>C++</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>C重拾之旅</title>
-    <url>/2025/05/26/C%E9%87%8D%E6%8B%BE%E4%B9%8B%E6%97%85/</url>
-    <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="/assets/css/APlayer.min.css"><script src="/assets/js/APlayer.min.js" class="aplayer-secondary-script-marker"></script><h1 id="C有关的重要问题"><a href="#C有关的重要问题" class="headerlink" title="C有关的重要问题"></a>C有关的重要问题</h1><h2 id="1-main函数是如何被调用的"><a href="#1-main函数是如何被调用的" class="headerlink" title="1. main函数是如何被调用的"></a>1. main函数是如何被调用的</h2><p>C程序总是从main函数开始执行，main函数的原型是：</p>
-<figure class="highlight c"><table><tbody><tr><td class="code"><pre><span class="line"><span class="type">int</span> <span class="title function_">main</span><span class="params">(<span class="type">int</span> argc, <span class="type">char</span> *argv)</span>;</span><br></pre></td></tr></tbody></table></figure>
-
-<blockquote>
-<p> 其中，argc是命令行参数的数目，argv是指向参数的各个指针所构成的数组</p>
-</blockquote>
-<p><strong>当内核执行C程序时(使用一个exec函数),在调用main前先调用一个特殊的启动例程</strong>。  </p>
-<p><strong>可执行程序文件将此启动例程指定为程序的起始地址—这是由连接编辑器设置的,而连接编辑器则由C编译器调用。</strong> 启动例程从内核取得命令行参数和环境变量值,然后为按上述方式调用main函数做好安排。</p>
-<hr>
-<h2 id="2-C程序如何启动和终止的"><a href="#2-C程序如何启动和终止的" class="headerlink" title="2. C程序如何启动和终止的"></a>2. C程序如何启动和终止的</h2><div align="center"><img src="/2025/05/26/C%E9%87%8D%E6%8B%BE%E4%B9%8B%E6%97%85/7-1.png" width="500px"></div>
-
-<ul>
-<li><p>注意,<strong>内核使程序执行的唯一方法是调用一个exec函数。进程自愿终止的唯一方法是显式或隐式地(通过调用exit)调用exit或Exit</strong>。进程也可非自愿地由一个信号使其终止。</p>
-</li>
-<li><p>当执行一个程序时,调用exec的进程可将命令行参数传递给该新程序。ISO C和POSIX.1都要求argv[argc]是一个空指针。这就使我们可以将参数处理循环改写为</p>
-<figure class="highlight c"><table><tbody><tr><td class="code"><pre><span class="line"><span class="keyword">for</span>(i = <span class="number">0</span>; argv[i] != <span class="literal">NULL</span>; i++)</span><br></pre></td></tr></tbody></table></figure></li>
-</ul>
-<hr>
-<h2 id="3-atexit函数"><a href="#3-atexit函数" class="headerlink" title="3. atexit函数"></a>3. atexit函数</h2><p>按照ISO C的规定,一个进程可以登记多至32个函数,这些函数将由exit自动调用。我们称这些函数为终止处理程序( exit handler),并调用 atexit函数来登记这些函数。</p>
-<figure class="highlight c"><table><tbody><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;stdlib.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="type">int</span> <span class="title function_">atexit</span><span class="params">(<span class="type">void</span> (*func)(<span class="type">void</span>))</span>;</span><br><span class="line"><span class="comment">// Returns: 0 if OK, nonzero on error</span></span><br></pre></td></tr></tbody></table></figure>
-
-<blockquote>
-<p> 其中, <code>atexit</code>的参数是一个函数地址,当调用此函数时无需向它传递任何参数,也不期望它返回一个值。exit调用这些函数的顺序与它们登记时候的顺序相反。同一函数如若登记多次也会被调用多次。</p>
-</blockquote>
-<figure class="highlight c"><table><tbody><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">"apue.h"</span></span></span><br><span class="line"><span class="type">static</span> <span class="type">void</span>	<span class="title function_">my_exit1</span><span class="params">(<span class="type">void</span>)</span>;</span><br><span class="line"><span class="type">static</span> <span class="type">void</span>	<span class="title function_">my_exit2</span><span class="params">(<span class="type">void</span>)</span>;</span><br><span class="line"></span><br><span class="line"><span class="type">int</span> <span class="title function_">main</span><span class="params">(<span class="type">void</span>)</span>{</span><br><span class="line">	<span class="keyword">if</span> (atexit(my_exit2) != <span class="number">0</span>)</span><br><span class="line">		err_sys(<span class="string">"can't register my_exit2"</span>);</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> (atexit(my_exit1) != <span class="number">0</span>)</span><br><span class="line">		err_sys(<span class="string">"can't register my_exit1"</span>);</span><br><span class="line">	<span class="keyword">if</span> (atexit(my_exit1) != <span class="number">0</span>)</span><br><span class="line">		err_sys(<span class="string">"can't register my_exit1"</span>);</span><br><span class="line">	<span class="keyword">if</span> (atexit(my_exit1) != <span class="number">0</span>)</span><br><span class="line">		err_sys(<span class="string">"can't register my_exit1"</span>);</span><br><span class="line"></span><br><span class="line">	<span class="built_in">printf</span>(<span class="string">"main is done\n"</span>);</span><br><span class="line">	<span class="keyword">return</span>(<span class="number">0</span>);</span><br><span class="line">}</span><br><span class="line"></span><br><span class="line"><span class="type">static</span> <span class="type">void</span></span><br><span class="line"><span class="title function_">my_exit1</span><span class="params">(<span class="type">void</span>)</span></span><br><span class="line">	<span class="title function_">printf</span><span class="params">(<span class="string">"first exit handler\n"</span>)</span>;</span><br><span class="line"></span><br><span class="line"><span class="type">static</span> <span class="type">void</span></span><br><span class="line"><span class="title function_">my_exit2</span><span class="params">(<span class="type">void</span>)</span></span><br><span class="line">	<span class="title function_">printf</span><span class="params">(<span class="string">"second exit handler\n"</span>)</span>;</span><br></pre></td></tr></tbody></table></figure>
-
-<div align="center"><img src="/2025/05/26/C%E9%87%8D%E6%8B%BE%E4%B9%8B%E6%97%85/7-2.png" width="600px"></div>
-
-<hr>
-<h2 id="4-C程序的存储空间布局"><a href="#4-C程序的存储空间布局" class="headerlink" title="4. C程序的存储空间布局"></a>4. C程序的存储空间布局</h2><p>C程序一直由以下几个部分组成：</p>
-<div align="center"><img src="/2025/05/26/C%E9%87%8D%E6%8B%BE%E4%B9%8B%E6%97%85/7-4.png" width="300px"></div>
-
-<ul>
-<li><strong>正文段。</strong> 这是由CPU执行的机器指令部分。通常正文段是可共享的，但通常也只能制度，防止程序由于意外而修改其指令。</li>
-<li><strong>初始化数据段。</strong> 通常将此段称为数据段,它包含了程序中需明确地赋初值的变量。</li>
-<li><strong>未初始化数据段。</strong> 通常将此段称为bss段 (名称来源于早期汇编程序一个操作符,意思是“由符号开始的块”( block started by symbol))。在程序开始执行之前， <strong>内核将此段中的数据初始化为0或空指针</strong> 。</li>
-<li><strong>栈。</strong> 自动变量以及每次函数调用时所需保存的信息都存放在此段中。</li>
-<li><strong>堆。</strong> 通常在堆中进行动态存储分配。</li>
-</ul>
-<blockquote>
-<ul>
-<li>a.out 中还有其他类型的段，如符号表的段，包含调试信息的段以及包含动态共享库链接表的段等。这些部分并不装载到进程执行的程序映像中。</li>
-<li>未初始化数据段的内容并不存放在磁盘程序文件中。其原因是,内核在程序开始运行前将它们都设置为0。需要存放在磁盘程序文件中的段只有正文段和初始化数据段</li>
-</ul>
-</blockquote>
-<hr>
-<h2 id="5-共享库"><a href="#5-共享库" class="headerlink" title="5. 共享库"></a>5. 共享库</h2><ul>
-<li>共享库使得<strong>可执行文件中不再需要包含公用的库函数</strong> ，而只需在所有进程都可引用的存储区中保存这种库例程的一个副本。</li>
-<li>程序第一次执行或者第一次调用某个库函数时,<strong>用动态链接方法将程序与共享库函数相链接</strong>。这减少了每个可执行文件的长度,但增加了一些运行时间开销。这种时间开销发生在该程序第一次被执行时,或者每个共享库函数第一次被调用时。</li>
-<li>共享库的另一个优点是<strong>可以用库函数的新版本代替老版本而无需对使用该库的程序重新连接编辑</strong>(假定参数的数目和类型都没有发生改变)</li>
-</ul>
-<h2 id="6-存储空间分配——malloc-realloc-calloc"><a href="#6-存储空间分配——malloc-realloc-calloc" class="headerlink" title="6. 存储空间分配——malloc, realloc, calloc"></a>6. 存储空间分配——malloc, realloc, calloc</h2><p>ISO C说明了3个用于存储空间动态分配的函数</p>
-<ol>
-<li>malloc,分配 <strong>指定字节数的存储区</strong> 。此存储区中的初始值不确定。</li>
-<li>calloc,为 <strong>指定数量 指定长度</strong> 的对象分配存储空间。<strong>该空间中的每一位(bit)都初始化为0</strong></li>
-<li>realloc, <strong>增加或减少以前分配区的长度</strong> 。当增加长度时,可能需将以前分配区的内容移到另一个足够大的区域,以便在尾端提供增加的存储区,而新增区域内的初始值则不确定。</li>
-</ol>
-<figure class="highlight c"><table><tbody><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;stdlib.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="comment">// All three return: non-null pointer if OK, NULL on error</span></span><br><span class="line"><span class="type">void</span> *<span class="title function_">malloc</span><span class="params">(<span class="type">size_t</span> size)</span>;</span><br><span class="line"><span class="type">void</span> *<span class="title function_">calloc</span><span class="params">(<span class="type">size_t</span> nobj, <span class="type">size_t</span> size)</span>;</span><br><span class="line"><span class="type">void</span> *<span class="title function_">realloc</span><span class="params">(<span class="type">void</span> *ptr, <span class="type">size_t</span> newsize)</span>;</span><br><span class="line"><span class="comment">//这3个分配函数所返回的指针一定是适当对齐的,使其可用于任何数据对象。</span></span><br><span class="line"></span><br><span class="line"><span class="type">void</span> <span class="title function_">free</span><span class="params">(<span class="type">void</span> *ptr)</span>;</span><br><span class="line"><span class="comment">//free函数释放ptr所指向的存储空间。被释放的空间通常被送入可用存储区池。以后可在调用上述3个分配函数时再分配。</span></span><br></pre></td></tr></tbody></table></figure>
-
-<hr>
-<h2 id="7-C-中的string与C中的char-有什么区别？如何实现的？"><a href="#7-C-中的string与C中的char-有什么区别？如何实现的？" class="headerlink" title="7. C++中的string与C中的char * 有什么区别？如何实现的？"></a>7. C++中的string与C中的char * 有什么区别？如何实现的？</h2><p>string继承自basic_string,其实是对char<em>进行了封装，封装的string包含了char</em>数组，容量，长度等等属性。</p>
-<p>string可以进行动态扩展，在每次扩展的时候另外申请一块原空间大小两倍的空间(2^n)，然后将原字 符串拷贝过去，并加上新增的内容</p>
-<hr>
-]]></content>
-      <categories>
-        <category>Linux C</category>
-      </categories>
-      <tags>
-        <tag>Linux C</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>Git提速代理</title>
-    <url>/2024/11/09/Git%E6%8F%90%E9%80%9F%E4%BB%A3%E7%90%86/</url>
-    <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="/assets/css/APlayer.min.css"><script src="/assets/js/APlayer.min.js" class="aplayer-secondary-script-marker"></script><blockquote>
-<p>因为平时在Ubuntu虚拟机上使用Git clone的时候速度特别慢，使用干脆写个代理文件进行提速。</p>
-</blockquote>
-<h2 id="梯子准备"><a href="#梯子准备" class="headerlink" title="梯子准备"></a>梯子准备</h2><p>在主机上挂个梯子，然后查看IP地址与端口(确保能使用)。</p>
-<figure class="highlight shell"><table><tbody><tr><td class="code"><pre><span class="line">en0: flags=8863&lt;UP,BROADCAST,SMART,RUNNING,SIMPLEX,MULTICAST&gt; mtu 1500</span><br><span class="line">	options=400&lt;CHANNEL_IO&gt;</span><br><span class="line">	ether 38:f9:d3:8d:58:3e</span><br><span class="line">	inet6 fe80::1434:df1:87d5:7e09%en0 prefixlen 64 secured scopeid 0x6</span><br><span class="line">	inet 192.168.1.4 netmask 0xffffff00 broadcast 192.168.1.255</span><br><span class="line">	nd6 options=201&lt;PERFORMNUD,DAD&gt;</span><br><span class="line">	media: autoselect</span><br><span class="line">	status: active</span><br></pre></td></tr></tbody></table></figure>
-
-<img src="/2024/11/09/Git%E6%8F%90%E9%80%9F%E4%BB%A3%E7%90%86/1.png" style="zoom:50%;">
-
-<p>我的IP与端口:192.168.1.4:7890</p>
-<h2 id="写代理文件"><a href="#写代理文件" class="headerlink" title="写代理文件"></a>写代理文件</h2><p>在Ubuntu上写代理文件，在与Desktop同一级的目录下新建.gitconfig文件并进行编辑。</p>
-<p><img src="/2024/11/09/Git%E6%8F%90%E9%80%9F%E4%BB%A3%E7%90%86/2.png"></p>
-<p>这样就可以加速了。实践一下。</p>
-<p><img src="/2024/11/09/Git%E6%8F%90%E9%80%9F%E4%BB%A3%E7%90%86/3.png"></p>
-<p>这个速度就爽多！</p>
-]]></content>
-      <categories>
-        <category>Tool</category>
-      </categories>
-      <tags>
-        <tag>Git</tag>
       </tags>
   </entry>
   <entry>
