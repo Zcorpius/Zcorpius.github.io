@@ -86,12 +86,10 @@
 
 
 
-  <meta name="keywords" content="Hexo, NexT" />
+  <meta name="keywords" content="startup," />
 
 
 
-
-  
 
 
   <link rel="alternate" href="/atom.xml" title="Zcorpius's Blog" type="application/atom+xml" />
@@ -101,19 +99,18 @@
 
 
 
-<meta name="description" content=".description { 		margin: 0 auto; 		text-align: center; 	} 	.logoimg{ 		display: block; 		margin: 0 auto; 		padding: 2px; 		max-width: 96px; 		height: auto; 		border: 2px solid #333; 		border-radius">
-<meta property="og:type" content="website">
-<meta property="og:title" content="Zcorpius&#39;s Blog">
-<meta property="og:url" content="https://zcorpius.github.io/about/index.html">
+<meta name="description" content="Android 系统启动：从开机动画到桌面就绪 源码基线：本地 LineageOS 22.2 &#x2F; Android 15 的 frameworks&#x2F;native&#x2F;services&#x2F;surfaceflinger、frameworks&#x2F;base&#x2F;cmds&#x2F;bootanimation 和 frameworks&#x2F;base&#x2F;services。本文接在 system_server 的 systemReady()">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Android 系统启动——从开机动画到桌面就绪">
+<meta property="og:url" content="https://zcorpius.github.io/2025/10/08/Android%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A87-%E5%BC%80%E6%9C%BA%E7%95%8C%E9%9D%A2%E4%B8%8E%E5%AE%8C%E6%88%90/index.html">
 <meta property="og:site_name" content="Zcorpius&#39;s Blog">
-<meta property="og:description" content=".description { 		margin: 0 auto; 		text-align: center; 	} 	.logoimg{ 		display: block; 		margin: 0 auto; 		padding: 2px; 		max-width: 96px; 		height: auto; 		border: 2px solid #333; 		border-radius">
+<meta property="og:description" content="Android 系统启动：从开机动画到桌面就绪 源码基线：本地 LineageOS 22.2 &#x2F; Android 15 的 frameworks&#x2F;native&#x2F;services&#x2F;surfaceflinger、frameworks&#x2F;base&#x2F;cmds&#x2F;bootanimation 和 frameworks&#x2F;base&#x2F;services。本文接在 system_server 的 systemReady()">
 <meta property="og:locale">
-<meta property="og:image" content="https://zcorpius.github.io/images/Myhead.jpg">
-<meta property="article:published_time" content="2026-10-01T12:28:41.557Z">
-<meta property="article:modified_time" content="2026-10-01T12:28:15.809Z">
+<meta property="article:published_time" content="2025-10-07T16:00:00.000Z">
+<meta property="article:modified_time" content="2026-10-08T14:01:32.758Z">
 <meta property="article:author" content="Zcorpius">
+<meta property="article:tag" content="startup">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://zcorpius.github.io/images/Myhead.jpg">
 
 
 
@@ -143,13 +140,13 @@
 
 
 
-  <link rel="canonical" href="https://Zcorpius.github.io/about/"/>
+  <link rel="canonical" href="https://Zcorpius.github.io/2025/10/08/Android系统启动7-开机界面与完成/"/>
 
 
 
 
 
-  <title>title.top | Zcorpius's Blog</title>
+  <title>Android 系统启动——从开机动画到桌面就绪 | Zcorpius's Blog</title>
   
 
 
@@ -161,8 +158,6 @@
 
 <meta name="generator" content="Hexo 7.3.0">
 <style>.github-emoji { position: relative; display: inline-block; width: 1.2em; min-height: 1.2em; overflow: hidden; vertical-align: top; color: transparent; }  .github-emoji > span { position: relative; z-index: 10; }  .github-emoji img, .github-emoji .fancybox { margin: 0 !important; padding: 0 !important; border: none !important; outline: none !important; text-decoration: none !important; user-select: none !important; cursor: auto !important; }  .github-emoji img { height: 1.2em !important; width: 1.2em !important; position: absolute !important; left: 50% !important; top: 50% !important; transform: translate(-50%, -50%) !important; user-select: none !important; cursor: auto !important; } .github-emoji-fallback { color: inherit; } .github-emoji-fallback img { opacity: 0 !important; }</style>
-<link rel="stylesheet" href="/assets/css/APlayer.min.css" class="aplayer-style-marker">
-<script src="/assets/js/APlayer.min.js" class="aplayer-script-marker"></script>
 </head>
 
 <body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
@@ -322,137 +317,312 @@
 
   <div id="posts" class="posts-expand">
     
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://Zcorpius.github.io/2025/10/08/Android%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A87-%E5%BC%80%E6%9C%BA%E7%95%8C%E9%9D%A2%E4%B8%8E%E5%AE%8C%E6%88%90/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/head.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Zcorpius's Blog">
+    </span>
+
     
-    
-    <div class="post-block page">
       <header class="post-header">
 
-	<h1 class="post-title" itemprop="name headline"></h1>
-
-
-
-</header>
-
-      
-      
-      
-      <div class="post-body">
         
         
-          <span id="more"></span>
-<style>
-	.description {
-		margin: 0 auto;
-		text-align: center;
-	}
-	.logoimg{
-		display: block;
-		margin: 0 auto;
-		padding: 2px;
-		max-width: 96px;
-		height: auto;
-		border: 2px solid #333;
-		border-radius: 50%;
-		transition: 2s all;
-	}
-	.logoimg:hover{
-		transform: rotate(360deg);
-	}
-	.aboutbox {
-		width: 90%;
-		height: 90%;
-		margin: 0 auto;
-		margin-top: 30px;
-		box-shadow: 0 0 10px 0 rgba(0,0,0,.5);
-	}
-	.musicbox {
-		width: 90%;
-		margin: 60px auto;
-		padding: 10px;
-	}
-	.days{
-		margin: 0 auto;
-		text-align: center;
-		font-weight: bold;
-		margin-top: 30px;
-		margin-bottom: 35px;
-	}
-
-</style>
-
-
-<div class="aboutbox">
-<div class="description">
-	<br>
-	<a href="/"><img class=" nofancybox" itemprop="image" width="720px" src="/images/Myhead.jpg"></a>
-	<br>
-	Zcorpius，96年老登，喜欢跑步、健身、阅读、动漫、音乐。
-	<br>
-    目前从业于车企智能座舱系统研发, 技术栈为 Android Framework、AI Agent、C++、Java
-  <br>
-	“沧浪之水清兮，可以濯我缨；沧浪之水浊兮，可以濯我足。” ——《楚辞》
-  <br>
-	“不是因为喜欢，才认真起来；而是因为认真起来，说不定会喜欢。” ——《强风吹拂》
-</div>
-
-<div class="musicbox">
-	
-        <div id="aplayer-uItsDGoQ" class="aplayer aplayer-tag-marker" style="margin-bottom: 20px;"></div>
-			  <script>
-				  var options = {"narrow":false,"autoplay":false,"showlrc":3,"mutex":true,"music":[{"title":"完美坚持","author":"李健","url":"/music/wanmeijianchi.mp3","pic":"/music/1.jpg","lrc":"/music/1.lrc"},{"title":"璀璨","author":"李健","url":"/music/cuican.mp3","pic":"/music/2.jpg","lrc":"/music/1.lrc"},{"title":"绽放","author":"李健","url":"/music/zhanfang.mp3","pic":"/music/3.jpg","lrc":"/music/1.lrc"},{"title":"水流众生","author":"李健","url":"/music/shuiliuzhongsheng.mp3","pic":"/music/4.jpg","lrc":"/music/1.lrc"},{"title":"雨后初晴","author":"李健","url":"/music/yuhouchuqing.mp3","pic":"/music/5.jpg","lrc":"/music/1.lrc"},{"title":"沧海轻舟","author":"李健","url":"/music/canghaiqingzhou.mp3","pic":"/music/6.jpg","lrc":"/music/1.lrc"},{"title":"依然在路上","author":"李健","url":"/music/yiranzailushang.mp3","pic":"/music/7.jpg","lrc":"/music/1.lrc"}]};
-				  options.element = document.getElementById("aplayer-uItsDGoQ");
-				  var ap = new APlayer(options);
-			    window.aplayers || (window.aplayers = []);
-				  window.aplayers.push(ap);
-			  </script>
-</div>
-
-
-<div id="days" class="days"></div>
-<script>
-	function show_date_time(){
-		window.setTimeout("show_date_time()", 1000);
-		BirthDay=new Date("11/09/2024 00:00:00");
-		today=new Date();
-		timeold=(today.getTime()-BirthDay.getTime());
-		sectimeold=timeold/1000
-		secondsold=Math.floor(sectimeold);
-		msPerDay=24*60*60*1000
-		e_daysold=timeold/msPerDay
-		daysold=Math.floor(e_daysold);
-		e_hrsold=(e_daysold-daysold)*24;
-		hrsold=setzero(Math.floor(e_hrsold));
-		e_minsold=(e_hrsold-hrsold)*60;
-		minsold=setzero(Math.floor((e_hrsold-hrsold)*60));
-		seconds=setzero(Math.floor((e_minsold-minsold)*60));
-		document.getElementById('days').innerHTML="已运行"+daysold+"天"+hrsold+"小时"+minsold+"分"+seconds+"秒";
-	}
-	function setzero(i){
-		if (i<10)
-			{i="0" + i};
-			return i;
-	}
-	show_date_time();
-</script>
-
-</div>
-
-
-
-
-
-
-
-
+          <h1 class="post-title" itemprop="name headline">Android 系统启动——从开机动画到桌面就绪</h1>
         
-      </div>
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2025-10-08T00:00:00+08:00">
+                2025-10-08
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Android/" itemprop="url" rel="index">
+                    <span itemprop="name">Android</span>
+                  </a>
+                </span>
+
+                
+                
+                  ， 
+                
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Android/StartUp/" itemprop="url" rel="index">
+                    <span itemprop="name">StartUp</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+            <div class="post-wordcount">
+              
+                
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-file-word-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">字数统计&#58;</span>
+                
+                <span title="字数统计">
+                  1.9k
+                </span>
+              
+
+              
+                <span class="post-meta-divider">|</span>
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-clock-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">阅读时长 &asymp;</span>
+                
+                <span title="阅读时长">
+                  7
+                </span>
+              
+            </div>
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
       
       
+
+      
+        <h1 id="Android-系统启动：从开机动画到桌面就绪"><a href="#Android-系统启动：从开机动画到桌面就绪" class="headerlink" title="Android 系统启动：从开机动画到桌面就绪"></a>Android 系统启动：从开机动画到桌面就绪</h1><blockquote>
+<p>源码基线：本地 LineageOS 22.2 / Android 15 的 <code>frameworks/native/services/surfaceflinger</code>、<code>frameworks/base/cmds/bootanimation</code> 和 <code>frameworks/base/services</code>。本文接在 system_server 的 <code>systemReady()</code> 与应用进程创建之后，追踪画面如何出现，以及 framework 如何宣布启动完成。设备形态、用户模式和厂商实现会改变 HOME 的选择与可见时序。</p>
+</blockquote>
+<h2 id="1-先区分四个“完成”"><a href="#1-先区分四个“完成”" class="headerlink" title="1. 先区分四个“完成”"></a>1. 先区分四个“完成”</h2><p>启动后半程有两条并行的线，最后在窗口就绪处交汇：</p>
+<blockquote>
+<p><strong>显示线</strong>：init 启动 SurfaceFlinger → SurfaceFlinger 请求 init 启动 bootanimation → bootanimation 向 SurfaceFlinger 提交画面 → WMS 等待可显示的窗口并结束动画 → SurfaceFlinger 收到 <code>bootFinished()</code>。</p>
+</blockquote>
+<blockquote>
+<p><strong>应用线</strong>：system_server 启动 AMS/ATMS/WMS 等服务 → AMS <code>systemReady()</code> → ATMS 发起 HOME Activity → 应用进程启动、绘制窗口并进入 idle → AMS 完成 framework boot phase，安排用户的开机广播。</p>
+</blockquote>
+<p>不要把下列事件画成同一个时间点：</p>
+<table>
+<thead>
+<tr>
+<th>事件</th>
+<th>表示什么</th>
+<th>不能据此断言</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>systemReady()</code></td>
+<td>AMS 已允许启动真实应用，并开始 HOME 等后续工作</td>
+<td>桌面已经绘制</td>
+</tr>
+<tr>
+<td><code>service.bootanim.exit=1</code></td>
+<td>请求开机动画自行退出</td>
+<td>动画进程已经退出、屏幕已经启用</td>
+</tr>
+<tr>
+<td><code>SurfaceControl.bootFinished()</code></td>
+<td>WMS 告知 SurfaceFlinger 启动显示阶段结束</td>
+<td>每个用户都已解锁、每个应用都收到广播</td>
+</tr>
+<tr>
+<td><code>sys.boot_completed=1</code></td>
+<td>AMS 的 <code>finishBooting()</code> 到达设备级完成点</td>
+<td><code>ACTION_BOOT_COMPLETED</code> 的所有接收者都执行完毕</td>
+</tr>
+</tbody></table>
+<h2 id="2-SurfaceFlinger-是独立的显示服务"><a href="#2-SurfaceFlinger-是独立的显示服务" class="headerlink" title="2. SurfaceFlinger 是独立的显示服务"></a>2. SurfaceFlinger 是独立的显示服务</h2><p><code>surfaceflinger.rc</code> 将 <code>/system/bin/surfaceflinger</code> 声明为 init service，属于 <code>core animation</code> 类。它与 Zygote、system_server 不是父子关系，也不是 system_server 里的 Java 服务。<code>main_surfaceflinger.cpp</code> 创建并初始化 SurfaceFlinger 后，向 servicemanager 发布 <code>SurfaceFlinger</code> 和 <code>SurfaceFlingerAIDL</code> 服务，再运行主循环。</p>
+<figure class="highlight plaintext"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"># frameworks/native/services/surfaceflinger/surfaceflinger.rc</span><br><span class="line">service surfaceflinger /system/bin/surfaceflinger</span><br><span class="line">    class core animation</span><br><span class="line">    user system</span><br><span class="line">    group graphics drmrpc readproc</span><br><span class="line">    onrestart restart --only-if-running zygote</span><br></pre></td></tr></tbody></table></figure>
+
+<p>SurfaceFlinger 负责图层合成与显示提交。开机动画、SystemUI、HOME 和普通应用都可以是画面来源；WMS 决定窗口组织与显示启用的时机，SurfaceFlinger 负责把这些图层合成为可呈现的帧。因而“SurfaceFlinger 启动”与“桌面可见”之间仍有一段相当长的依赖链。</p>
+<h2 id="3-开机动画如何启动与退出"><a href="#3-开机动画如何启动与退出" class="headerlink" title="3. 开机动画如何启动与退出"></a>3. 开机动画如何启动与退出</h2><p><code>bootanim.rc</code> 把 bootanimation 声明成 <code>disabled</code>、<code>oneshot</code> 的 init service。它不会仅因为所属 class 启动就自动运行。在这份源码中，SurfaceFlinger 初始化属性时重置 <code>service.bootanim.exit</code> 和进度，并写入 <code>ctl.start=bootanim</code>，由 init 启动动画进程（也受 <code>debug.sf.boot_animation</code> 等配置控制）。</p>
+<figure class="highlight plaintext"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"># frameworks/base/cmds/bootanimation/bootanim.rc</span><br><span class="line">service bootanim /system/bin/bootanimation</span><br><span class="line">    class core animation</span><br><span class="line">    user graphics</span><br><span class="line">    disabled</span><br><span class="line">    oneshot</span><br></pre></td></tr></tbody></table></figure>
+
+<figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/native/services/surfaceflinger/SurfaceFlinger.cpp</span></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">SurfaceFlinger::initBootProperties</span><span class="params">()</span> </span>{</span><br><span class="line">    ...</span><br><span class="line">    <span class="keyword">if</span> (base::<span class="built_in">GetBoolProperty</span>(<span class="string">"debug.sf.boot_animation"</span>s, <span class="literal">true</span>)) {</span><br><span class="line">        <span class="built_in">property_set</span>(<span class="string">"service.bootanim.exit"</span>, <span class="string">"0"</span>);</span><br><span class="line">        <span class="built_in">property_set</span>(<span class="string">"service.bootanim.progress"</span>, <span class="string">"0"</span>);</span><br><span class="line">        <span class="built_in">property_set</span>(<span class="string">"ctl.start"</span>, <span class="string">"bootanim"</span>);</span><br><span class="line">    }</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<p>bootanimation 等待 SurfaceFlinger 服务可用，再创建显示图层并播放动画。它定期检查 <code>service.bootanim.exit</code>；属性变为非零时调用 <code>requestExit()</code>，但动画内容仍可能有收尾帧，因此设置属性与进程退出不能视作同步事件。动画结束也不表示 HOME 已经显示，WMS 还要确认应等待的窗口、动画服务状态和显示策略。</p>
+<h2 id="4-systemReady-如何发起-HOME"><a href="#4-systemReady-如何发起-HOME" class="headerlink" title="4. systemReady() 如何发起 HOME"></a>4. <code>systemReady()</code> 如何发起 HOME</h2><p>前一章的 <code>SystemServer.startOtherServices()</code> 会进入 AMS <code>systemReady()</code>。AMS 完成启动前进程清理、将 <code>mProcessesReady</code> 置为 true，并在回调之后开始启动应用。对于普通的非 headless system user，关键入口是：</p>
+<figure class="highlight java"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/base/services/core/java/com/android/server/am/ActivityManagerService.java</span></span><br><span class="line">mAtmInternal.startHomeOnAllDisplays(currentUserId, <span class="string">"systemReady"</span>);</span><br><span class="line">mAtmInternal.resumeTopActivities(<span class="literal">false</span> <span class="comment">/* scheduleIdle */</span>);</span><br></pre></td></tr></tbody></table></figure>
+
+<p>ATMS 的 <code>RootWindowContainer.startHomeOnTaskDisplayArea()</code> 为主显示区域生成 HOME Intent、解析符合条件的 Home Activity，并交给 <code>ActivityStartController.startHomeActivity()</code>。默认入口通常带 <code>ACTION_MAIN</code> 与 <code>CATEGORY_HOME</code>。若对应进程尚不存在，后续由 AMS/ProcessList 请求 Zygote 创建进程，再经过 <code>ActivityThread</code> 启动 Activity、创建窗口并绘制首帧；进程创建细节见《06-App进程》。</p>
+<p>这里的“HOME”是系统要启动的 Activity 类型，并不保证画面一定是常见手机 Launcher。设置向导、用户选择的桌面、车机或电视的 Home，以及 headless system user、多显示屏场景都会改变解析和启动路径。当前源码还允许主题叠加准备阶段延迟 HOME 启动，所以不能把 <code>systemReady()</code> 等同于 Launcher <code>onCreate()</code> 已执行。</p>
+<h2 id="5-WMS-如何结束动画并启用显示"><a href="#5-WMS-如何结束动画并启用显示" class="headerlink" title="5. WMS 如何结束动画并启用显示"></a>5. WMS 如何结束动画并启用显示</h2><p>当 Activity 启动并进入 idle，<code>ActivityTaskSupervisor.checkFinishBootingLocked()</code> 会通过 <code>ActivityTaskManagerService.postFinishBooting()</code> 安排两项工作：请求 AMS <code>finishBooting()</code>，以及调用 WMS <code>enableScreenAfterBoot()</code>。异常情况下也可能通过 <code>ensureBootCompleted()</code> 走到这一阶段；不要把“HOME idle”写成唯一入口。</p>
+<p>WMS 的 <code>performEnableScreen()</code> 会检查显示策略和应等待的系统窗口。条件满足后，它先将 <code>service.bootanim.exit</code> 设为 <code>1</code>，再轮询 bootanimation service 是否已经结束。确认动画结束后，WMS 调用 <code>SurfaceControl.bootFinished()</code>，通过 Binder 通知 SurfaceFlinger；随后标记显示已启用、打开输入分发，并通知 AMS <code>bootAnimationComplete()</code>。</p>
+<figure class="highlight java"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/base/services/core/java/com/android/server/wm/WindowManagerService.java</span></span><br><span class="line">SystemProperties.set(<span class="string">"service.bootanim.exit"</span>, <span class="string">"1"</span>);</span><br><span class="line"><span class="keyword">if</span> (!mForceDisplayEnabled &amp;&amp; !checkBootAnimationCompleteLocked()) <span class="keyword">return</span>;</span><br><span class="line"><span class="keyword">if</span> (!SurfaceControl.bootFinished()) <span class="keyword">return</span>;</span><br><span class="line">mDisplayEnabled = <span class="literal">true</span>;</span><br><span class="line">...</span><br><span class="line">mActivityManager.bootAnimationComplete();</span><br></pre></td></tr></tbody></table></figure>
+
+<p><code>SurfaceFlinger::bootFinished()</code> 也会将 <code>service.bootanim.exit</code> 设为 <code>1</code>，并切换自身的启动期状态。WMS 另有启动超时的强制显示路径，所以实际设备上“屏幕亮起”“动画进程退出”“桌面首帧可见”不应被当作绝对相同的检查点。</p>
+<h2 id="6-BOOT-COMPLETED-到底在哪里发生"><a href="#6-BOOT-COMPLETED-到底在哪里发生" class="headerlink" title="6. BOOT_COMPLETED 到底在哪里发生"></a>6. <code>BOOT_COMPLETED</code> 到底在哪里发生</h2><p><code>ActivityManagerService.finishBooting()</code> 首先等待 <code>mBootAnimationComplete</code>；如果动画尚未结束，就记录待完成状态，等 WMS 的 <code>bootAnimationComplete()</code> 回调后继续。随后它通知 Zygote/ART、推进 <code>SystemService.PHASE_BOOT_COMPLETED</code>，设置 <code>sys.boot_completed=1</code> 和 <code>dev.bootcomplete=1</code>，并调用 <code>UserController.onBootComplete()</code> 开放用户解锁与后续广播流程。</p>
+<figure class="highlight java"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/base/services/core/java/com/android/server/am/ActivityManagerService.java</span></span><br><span class="line"><span class="keyword">if</span> (!mBootAnimationComplete) {</span><br><span class="line">    mCallFinishBooting = <span class="literal">true</span>;</span><br><span class="line">    <span class="keyword">return</span>;</span><br><span class="line">}</span><br><span class="line">...</span><br><span class="line">mSystemServiceManager.startBootPhase(t, SystemService.PHASE_BOOT_COMPLETED);</span><br><span class="line">...</span><br><span class="line">SystemProperties.set(<span class="string">"sys.boot_completed"</span>, <span class="string">"1"</span>);</span><br><span class="line">SystemProperties.set(<span class="string">"dev.bootcomplete"</span>, <span class="string">"1"</span>);</span><br><span class="line">mUserController.onBootComplete(...);</span><br></pre></td></tr></tbody></table></figure>
+
+<p>这又分成三个概念：</p>
+<ol>
+<li><strong>boot phase</strong>：<code>PHASE_BOOT_COMPLETED</code> 是 system_server 向 <code>SystemService</code> 发出的生命周期回调。</li>
+<li><strong>系统属性</strong>：<code>sys.boot_completed=1</code> 是设备级状态，也可触发 init 的属性 action。</li>
+<li><strong>广播</strong>：<code>ACTION_LOCKED_BOOT_COMPLETED</code> 与 <code>ACTION_BOOT_COMPLETED</code> 按用户状态分别投递。后者要等用户凭据加密存储可用，并由 <code>UserController</code> 安排；其投递和接收者执行是异步的。锁屏、次要用户、headless system user 等情况下，它与属性变为 <code>1</code> 的时间可能相差很远。</li>
+</ol>
+<p>因此，排障时看到 <code>getprop sys.boot_completed</code> 为 <code>1</code>，只说明 AMS 到达设备级完成点，不能证明某个用户已经解锁、某个接收者已经处理完广播，也不能证明桌面一定可交互。</p>
+<h2 id="7-用四组证据定位卡点"><a href="#7-用四组证据定位卡点" class="headerlink" title="7. 用四组证据定位卡点"></a>7. 用四组证据定位卡点</h2><table>
+<thead>
+<tr>
+<th>现象</th>
+<th>优先检查</th>
+<th>关键边界</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>一直黑屏或没有动画</td>
+<td><code>getprop init.svc.surfaceflinger</code>、<code>getprop init.svc.bootanim</code>、SurfaceFlinger/bootanimation 日志</td>
+<td>SurfaceFlinger 注册、动画进程与显示设备</td>
+</tr>
+<tr>
+<td>动画一直不退出</td>
+<td><code>getprop service.bootanim.exit</code>、<code>dumpsys window</code>、WMS <code>performEnableScreen</code> 日志</td>
+<td>系统窗口/策略是否满足，动画进程是否响应退出</td>
+</tr>
+<tr>
+<td>动画退出后没有 HOME</td>
+<td><code>dumpsys activity activities</code>、<code>dumpsys window</code>、ActivityTaskManager/ActivityManager 日志</td>
+<td>HOME 解析、进程启动、首帧绘制</td>
+</tr>
+<tr>
+<td>属性已为 1 但应用没收到广播</td>
+<td><code>getprop sys.boot_completed</code>、用户解锁状态、ActivityManager 广播日志</td>
+<td>设备级完成与用户级广播的差别</td>
+</tr>
+</tbody></table>
+<p>读取 Perfetto 时，可以把 SurfaceFlinger/bootanimation 的时间线，与 <code>Start proc</code>、HOME Activity 启动、<code>wm_boot_animation_done</code>、<code>FinishBooting</code> 放在同一条时间轴上。先判断卡在显示线还是应用线，再追具体进程和调用边界。</p>
+<h2 id="8-小结"><a href="#8-小结" class="headerlink" title="8. 小结"></a>8. 小结</h2><p>SurfaceFlinger 和 bootanimation 是 init 管理的独立 native 进程；HOME 是 ATMS 发起的 Activity；WMS 负责在窗口可显示时退出动画、通知 SurfaceFlinger 并启用显示；AMS 在动画完成后推进 <code>PHASE_BOOT_COMPLETED</code>、设置完成属性，再由 UserController 按用户状态投递开机广播。这些事件彼此有关，但不能互相替代作为“系统启动完成”的证据。</p>
+
       
     </div>
     
     
     
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/startup/" rel="tag"># startup</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2025/10/06/Android%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A86-App%E8%BF%9B%E7%A8%8B/" rel="next" title="Android 系统启动——App进程">
+                <i class="fa fa-chevron-left"></i> Android 系统启动——App进程
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2026/02/15/AI-Agent%E5%AD%A6%E4%B9%A0%E4%B9%8B%E6%97%85/" rel="prev" title="AI Agent 学习之旅">
+                AI Agent 学习之旅 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
   </div>
 
 
@@ -461,6 +631,10 @@
 
 
           
+
+  
+
+
 
         </div>
         
@@ -481,8 +655,17 @@
       
 
       
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
 
-      <section class="site-overview-wrap sidebar-panel sidebar-panel-active">
+      <section class="site-overview-wrap sidebar-panel">
         <div class="site-overview">
           <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
             
@@ -595,6 +778,22 @@
         </div>
       </section>
 
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Android-%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A8%EF%BC%9A%E4%BB%8E%E5%BC%80%E6%9C%BA%E5%8A%A8%E7%94%BB%E5%88%B0%E6%A1%8C%E9%9D%A2%E5%B0%B1%E7%BB%AA"><span class="nav-text">Android 系统启动：从开机动画到桌面就绪</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E5%85%88%E5%8C%BA%E5%88%86%E5%9B%9B%E4%B8%AA%E2%80%9C%E5%AE%8C%E6%88%90%E2%80%9D"><span class="nav-text">1. 先区分四个“完成”</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-SurfaceFlinger-%E6%98%AF%E7%8B%AC%E7%AB%8B%E7%9A%84%E6%98%BE%E7%A4%BA%E6%9C%8D%E5%8A%A1"><span class="nav-text">2. SurfaceFlinger 是独立的显示服务</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-%E5%BC%80%E6%9C%BA%E5%8A%A8%E7%94%BB%E5%A6%82%E4%BD%95%E5%90%AF%E5%8A%A8%E4%B8%8E%E9%80%80%E5%87%BA"><span class="nav-text">3. 开机动画如何启动与退出</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-systemReady-%E5%A6%82%E4%BD%95%E5%8F%91%E8%B5%B7-HOME"><span class="nav-text">4. systemReady() 如何发起 HOME</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-WMS-%E5%A6%82%E4%BD%95%E7%BB%93%E6%9D%9F%E5%8A%A8%E7%94%BB%E5%B9%B6%E5%90%AF%E7%94%A8%E6%98%BE%E7%A4%BA"><span class="nav-text">5. WMS 如何结束动画并启用显示</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-BOOT-COMPLETED-%E5%88%B0%E5%BA%95%E5%9C%A8%E5%93%AA%E9%87%8C%E5%8F%91%E7%94%9F"><span class="nav-text">6. BOOT_COMPLETED 到底在哪里发生</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-%E7%94%A8%E5%9B%9B%E7%BB%84%E8%AF%81%E6%8D%AE%E5%AE%9A%E4%BD%8D%E5%8D%A1%E7%82%B9"><span class="nav-text">7. 用四组证据定位卡点</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#8-%E5%B0%8F%E7%BB%93"><span class="nav-text">8. 小结</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
       
 
       

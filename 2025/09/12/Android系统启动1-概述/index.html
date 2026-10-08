@@ -99,15 +99,15 @@
 
 
 
-<meta name="description" content="Android 系统启动总览 本章是《Android 系统启动》的总导航。源码基线为当前工作区 Android 15 AOSP；它只建立端到端的进程、服务与权限边界，不替代后续章节的逐行分析。  1. 先建立正确的全局模型从 Linux 内核切入 Android 用户空间之后，启动不是一条“init 依次启动所有应用”的直线，而是两条彼此协作的主线：  native 基础设施线：init 启动并监">
+<meta name="description" content="Android 系统启动总览 本章是《Android 系统启动》的总导航。源码基线为当前工作区 Android 15 AOSP；它只建立端到端的进程、服务与权限边界，不替代后续章节的逐行分析。开机画面到桌面就绪的收尾链路见《07-开机界面与完成》。  1. 先建立正确的全局模型从 Linux 内核切入 Android 用户空间之后，启动不是一条“init 依次启动所有应用”的直线，而是两条彼此协作">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Android 系统启动——概述">
 <meta property="og:url" content="https://zcorpius.github.io/2025/09/12/Android%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A81-%E6%A6%82%E8%BF%B0/index.html">
 <meta property="og:site_name" content="Zcorpius&#39;s Blog">
-<meta property="og:description" content="Android 系统启动总览 本章是《Android 系统启动》的总导航。源码基线为当前工作区 Android 15 AOSP；它只建立端到端的进程、服务与权限边界，不替代后续章节的逐行分析。  1. 先建立正确的全局模型从 Linux 内核切入 Android 用户空间之后，启动不是一条“init 依次启动所有应用”的直线，而是两条彼此协作的主线：  native 基础设施线：init 启动并监">
+<meta property="og:description" content="Android 系统启动总览 本章是《Android 系统启动》的总导航。源码基线为当前工作区 Android 15 AOSP；它只建立端到端的进程、服务与权限边界，不替代后续章节的逐行分析。开机画面到桌面就绪的收尾链路见《07-开机界面与完成》。  1. 先建立正确的全局模型从 Linux 内核切入 Android 用户空间之后，启动不是一条“init 依次启动所有应用”的直线，而是两条彼此协作">
 <meta property="og:locale">
 <meta property="article:published_time" content="2025-09-12T15:35:12.000Z">
-<meta property="article:modified_time" content="2026-09-11T02:41:41.341Z">
+<meta property="article:modified_time" content="2026-10-08T13:56:56.789Z">
 <meta property="article:author" content="Zcorpius">
 <meta property="article:tag" content="startup">
 <meta name="twitter:card" content="summary">
@@ -423,7 +423,7 @@
                   <span class="post-meta-item-text">字数统计&#58;</span>
                 
                 <span title="字数统计">
-                  2.7k
+                  2.9k
                 </span>
               
 
@@ -461,7 +461,7 @@
 
       
         <h1 id="Android-系统启动总览"><a href="#Android-系统启动总览" class="headerlink" title="Android 系统启动总览"></a>Android 系统启动总览</h1><blockquote>
-<p>本章是《Android 系统启动》的总导航。源码基线为当前工作区 Android 15 AOSP；它只建立端到端的进程、服务与权限边界，不替代后续章节的逐行分析。</p>
+<p>本章是《Android 系统启动》的总导航。源码基线为当前工作区 Android 15 AOSP；它只建立端到端的进程、服务与权限边界，不替代后续章节的逐行分析。开机画面到桌面就绪的收尾链路见《07-开机界面与完成》。</p>
 </blockquote>
 <h2 id="1-先建立正确的全局模型"><a href="#1-先建立正确的全局模型" class="headerlink" title="1. 先建立正确的全局模型"></a>1. 先建立正确的全局模型</h2><p>从 Linux 内核切入 Android 用户空间之后，启动不是一条“init 依次启动所有应用”的直线，而是两条彼此协作的主线：</p>
 <blockquote>
@@ -472,6 +472,7 @@
 <blockquote>
 <p>Boot ROM / Bootloader → Linux kernel → <code>/init</code> (PID 1) → rc action/service → servicemanager 与 Zygote → system_server → AMS/ATMS/PMS/WMS 等系统服务 → Zygote / USAP → 应用进程 <code>ActivityThread</code> → AMS <code>bindApplication()</code> → <code>Application</code> / Activity / Service / Provider。</p>
 </blockquote>
+<p>显示侧还有一条并行路径：init 启动 SurfaceFlinger，SurfaceFlinger 请求启动开机动画；AMS/ATMS 发起 HOME 后，WMS 等待窗口就绪、退出动画并启用显示，AMS 随后推进 boot completed 阶段。详见 <a href="/2025/10/08/Android%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A87-%E5%BC%80%E6%9C%BA%E7%95%8C%E9%9D%A2%E4%B8%8E%E5%AE%8C%E6%88%90/" title="Android 系统启动——从开机动画到桌面就绪">07-开机界面与完成</a>。</p>
 <p>其中 <code>servicemanager</code> 与 Zygote 并不是父子关系：二者通常都由 init 启动；system_server 虽然向 servicemanager 注册 Binder 服务，但它是 Zygote 的子进程；普通 Java app 也由 Zygote（或 USAP、App/WebView Zygote）创建，而不是由 system_server <code>fork()</code>。</p>
 <h2 id="2-进程、父子关系与职责"><a href="#2-进程、父子关系与职责" class="headerlink" title="2. 进程、父子关系与职责"></a>2. 进程、父子关系与职责</h2><table>
 <thead>
@@ -511,6 +512,12 @@
 <td>Zygote / USAP / 专用 Zygote</td>
 <td>执行 <code>ActivityThread</code>，向 AMS attach，承载应用组件</td>
 <td><a href="06-App%E8%BF%9B%E7%A8%8B.md">06-App进程</a></td>
+</tr>
+<tr>
+<td>SurfaceFlinger / bootanimation</td>
+<td>init service</td>
+<td>合成显示图层、播放和退出开机动画</td>
+<td><a href="/2025/10/08/Android%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A87-%E5%BC%80%E6%9C%BA%E7%95%8C%E9%9D%A2%E4%B8%8E%E5%AE%8C%E6%88%90/" title="Android 系统启动——从开机动画到桌面就绪">07-开机界面与完成</a></td>
 </tr>
 </tbody></table>
 <p>常见但错误的两种画法：</p>
@@ -597,6 +604,7 @@
 <li><a href="03-Zygote%E8%BF%9B%E7%A8%8B.md">03-Zygote进程</a>：理解 app_process、ART 预加载、socket、普通 fork 与 USAP。</li>
 <li><a href="04-SystemServer%E8%BF%9B%E7%A8%8B.md">04-SystemServer进程</a>：理解 system_server 特化、服务批次、boot phase 与 AMS <code>systemReady()</code>。</li>
 <li><a href="06-App%E8%BF%9B%E7%A8%8B.md">06-App进程</a>：从 ProcessList 到 <code>ActivityThread.bindApplication()</code>，串起真正的应用进程启动。</li>
+<li><a href="/2025/10/08/Android%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A87-%E5%BC%80%E6%9C%BA%E7%95%8C%E9%9D%A2%E4%B8%8E%E5%AE%8C%E6%88%90/" title="Android 系统启动——从开机动画到桌面就绪">07-开机界面与完成</a>：沿显示线与应用线追踪 HOME、开机动画退出、显示启用和开机广播。</li>
 </ol>
 <p>排障时建议先定位故障落在哪个边界：</p>
 <ul>
@@ -611,7 +619,7 @@
 <li>Zygote 是 Java 进程父体：预加载后 fork system_server 和 app；system_server 不是 init 直接启动的服务。</li>
 <li>servicemanager 管命名 Binder 服务，system_server 管 framework 服务生命周期，AMS 管 app 进程记录与调度；三者职责互补而不重叠。</li>
 <li>fork 只创建进程；app 还必须 attach AMS 并收到 <code>bindApplication()</code>，系统服务也还要经过 Binder 发布和 boot phase。</li>
-<li>后续五章按上述边界展开，遇到启动/重启/服务发现问题应先判断它跨越了哪一个边界。</li>
+<li>后续六章按上述边界展开，遇到启动/重启/服务发现或开机画面卡住的问题，应先判断它跨越了哪一个边界。</li>
 </ol>
 
       
@@ -736,7 +744,7 @@
               
                 <a href="/archives/%7C%7C%20archive">
               
-                  <span class="site-state-item-count">48</span>
+                  <span class="site-state-item-count">49</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
