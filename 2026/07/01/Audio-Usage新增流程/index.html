@@ -99,16 +99,22 @@
 
 
 
+<meta name="description" content="title: Audio Usage 新增流程梳理date: 2026-07-01 21:34:23tags:   Audiocategory: Audio AudioUsagesummary_img: &#x2F;images&#x2F;AndroidAudioUsage新增流程.png   1. 背景知识1.1 AudioUsage 是什么AudioUsage 描述音频的用途&#x2F;场景，告诉系统”这个声音是干什么的">
 <meta property="og:type" content="article">
-<meta property="og:title" content="Audio Usage 新增流程">
+<meta property="og:title" content="Audio Usage 新增流程梳理">
 <meta property="og:url" content="https://zcorpius.github.io/2026/07/01/Audio-Usage%E6%96%B0%E5%A2%9E%E6%B5%81%E7%A8%8B/index.html">
 <meta property="og:site_name" content="Zcorpius&#39;s Blog">
+<meta property="og:description" content="title: Audio Usage 新增流程梳理date: 2026-07-01 21:34:23tags:   Audiocategory: Audio AudioUsagesummary_img: &#x2F;images&#x2F;AndroidAudioUsage新增流程.png   1. 背景知识1.1 AudioUsage 是什么AudioUsage 描述音频的用途&#x2F;场景，告诉系统”这个声音是干什么的">
 <meta property="og:locale">
+<meta property="og:image" content="https://zcorpius.github.io/2026/07/01/Audio-Usage%E6%96%B0%E5%A2%9E%E6%B5%81%E7%A8%8B/architecture-whale.png">
+<meta property="og:image" content="https://zcorpius.github.io/2026/07/01/Audio-Usage%E6%96%B0%E5%A2%9E%E6%B5%81%E7%A8%8B/playback-whale-v2.png">
+<meta property="og:image" content="https://zcorpius.github.io/2026/07/01/Audio-Usage%E6%96%B0%E5%A2%9E%E6%B5%81%E7%A8%8B/focus-whale.png">
 <meta property="article:published_time" content="2026-07-01T13:34:23.000Z">
-<meta property="article:modified_time" content="2026-08-24T16:15:17.704Z">
+<meta property="article:modified_time" content="2026-10-15T07:02:36.619Z">
 <meta property="article:author" content="Zcorpius">
 <meta property="article:tag" content="Audio">
 <meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://zcorpius.github.io/2026/07/01/Audio-Usage%E6%96%B0%E5%A2%9E%E6%B5%81%E7%A8%8B/architecture-whale.png">
 
 
 
@@ -144,7 +150,7 @@
 
 
 
-  <title>Audio Usage 新增流程 | Zcorpius's Blog</title>
+  <title>Audio Usage 新增流程梳理 | Zcorpius's Blog</title>
   
 
 
@@ -354,7 +360,7 @@
 
         
         
-          <h1 class="post-title" itemprop="name headline">Audio Usage 新增流程</h1>
+          <h1 class="post-title" itemprop="name headline">Audio Usage 新增流程梳理</h1>
         
 
         <div class="post-meta">
@@ -431,7 +437,7 @@
                   <span class="post-meta-item-text">字数统计&#58;</span>
                 
                 <span title="字数统计">
-                  0
+                  3.8k
                 </span>
               
 
@@ -447,7 +453,7 @@
                   <span class="post-meta-item-text">阅读时长 &asymp;</span>
                 
                 <span title="阅读时长">
-                  1
+                  17
                 </span>
               
             </div>
@@ -468,7 +474,293 @@
       
 
       
-        
+        <hr>
+<p>title: Audio Usage 新增流程梳理<br>date: 2026-07-01 21:34:23<br>tags: </p>
+<ul>
+<li>Audio<br>category:</li>
+<li>Audio</li>
+<li>AudioUsage<br>summary_img: /images/AndroidAudioUsage新增流程.png</li>
+</ul>
+<hr>
+<h1 id="1-背景知识"><a href="#1-背景知识" class="headerlink" title="1. 背景知识"></a>1. 背景知识</h1><h2 id="1-1-AudioUsage-是什么"><a href="#1-1-AudioUsage-是什么" class="headerlink" title="1.1 AudioUsage 是什么"></a>1.1 AudioUsage 是什么</h2><p><code>AudioUsage</code> 描述音频的<strong>用途/场景</strong>，告诉系统”这个声音是干什么的”。系统根据 Usage 决定：</p>
+<ul>
+<li><strong>音频焦点</strong>（Audio Focus）：导航语音来了是否压低媒体</li>
+<li><strong>路由决策</strong>（Routing）：声音从哪个物理设备输出</li>
+<li><strong>音量曲线</strong>（Volume Curve）：不同设备上的音量映射</li>
+<li><strong>音频处理</strong>（Processing）：是否开启 AEC、NS 等</li>
+</ul>
+<h2 id="1-2-Route-是什么"><a href="#1-2-Route-是什么" class="headerlink" title="1.2 Route 是什么"></a>1.2 Route 是什么</h2><p>Route 是音频数据从**源（source）→ 目标（sink）**的传输路径，在 <code>audio_policy_configuration.xml</code> 中定义：</p>
+<figure class="highlight plaintext"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">App 播放音频 → mixPort(软件流) → route → devicePort(物理设备) → 扬声器</span><br></pre></td></tr></tbody></table></figure>
+
+<h2 id="1-3-为什么要新增"><a href="#1-3-为什么要新增" class="headerlink" title="1.3 为什么要新增"></a>1.3 为什么要新增</h2><p>车载场景中，前排和后排可能有独立的扬声器区域，需要将前排媒体（<code>MEDIA_FRONT</code>）和后排媒体（<code>MEDIA_REAR</code>）路由到不同的物理输出设备，实现分区控制。</p>
+<hr>
+<h1 id="2-整体架构与数据流"><a href="#2-整体架构与数据流" class="headerlink" title="2. 整体架构与数据流"></a>2. 整体架构与数据流</h1><h2 id="2-1-六层修改架构"><a href="#2-1-六层修改架构" class="headerlink" title="2.1 六层修改架构"></a>2.1 六层修改架构</h2><img src="/2026/07/01/Audio-Usage%E6%96%B0%E5%A2%9E%E6%B5%81%E7%A8%8B/architecture-whale.png" alt="六层修改架构：定义、转换、校验、路由、CarAudio 与 HAL 的配置依赖" width="900px">
+
+<h2 id="2-2-播放数据流（MEDIA-FRONT-的声音之路）"><a href="#2-2-播放数据流（MEDIA-FRONT-的声音之路）" class="headerlink" title="2.2 播放数据流（MEDIA_FRONT 的声音之路）"></a>2.2 播放数据流（MEDIA_FRONT 的声音之路）</h2><img src="/2026/07/01/Audio-Usage%E6%96%B0%E5%A2%9E%E6%B5%81%E7%A8%8B/playback-whale-v2.png" alt="MEDIA_FRONT 播放：选路控制、配置依赖与 PCM 数据通路" width="900px">
+
+<h2 id="2-3-焦点控制流（MEDIA-FRONT-抢焦点时发生什么）"><a href="#2-3-焦点控制流（MEDIA-FRONT-抢焦点时发生什么）" class="headerlink" title="2.3 焦点控制流（MEDIA_FRONT 抢焦点时发生什么）"></a>2.3 焦点控制流（MEDIA_FRONT 抢焦点时发生什么）</h2><img src="/2026/07/01/Audio-Usage%E6%96%B0%E5%A2%9E%E6%B5%81%E7%A8%8B/focus-whale.png" alt="MEDIA_FRONT 焦点控制：分区仲裁、交互矩阵与结果回传" width="900px">
+
+
+
+<hr>
+<h1 id="3-逐层详细修改"><a href="#3-逐层详细修改" class="headerlink" title="3. 逐层详细修改"></a>3. 逐层详细修改</h1><h2 id="3-1-第一层：定义"><a href="#3-1-第一层：定义" class="headerlink" title="3.1. 第一层：定义"></a>3.1. 第一层：定义</h2><h3 id="3-1-1-XSD-Schema"><a href="#3-1-1-XSD-Schema" class="headerlink" title="3.1.1 XSD Schema"></a>3.1.1 XSD Schema</h3><p><strong>文件</strong>：<code>hardware/interfaces/audio/7.0/config/audio_policy_configuration.xsd</code></p>
+<p><strong>修改位置</strong>：<code>audioUsage</code> 简单类型（simpleType）的枚举列表</p>
+<figure class="highlight xml"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">xs:simpleType</span> <span class="attr">name</span>=<span class="string">"audioUsage"</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">xs:restriction</span> <span class="attr">base</span>=<span class="string">"xs:string"</span>&gt;</span></span><br><span class="line">        <span class="comment">&lt;!-- 已有枚举值 --&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">xs:enumeration</span> <span class="attr">value</span>=<span class="string">"AUDIO_USAGE_MEDIA"</span> /&gt;</span></span><br><span class="line">        <span class="comment">&lt;!-- 新增 --&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">xs:enumeration</span> <span class="attr">value</span>=<span class="string">"AUDIO_USAGE_MEDIA_FRONT"</span> /&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">xs:restriction</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">xs:simpleType</span>&gt;</span></span><br></pre></td></tr></tbody></table></figure>
+
+<div class="markdown-alert markdown-alert-important">
+<p class="markdown-alert-title"><svg class="octicon octicon-report mr-2" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M0 1.75C0 .784.784 0 1.75 0h12.5C15.216 0 16 .784 16 1.75v9.5A1.75 1.75 0 0 1 14.25 13H8.06l-2.573 2.573A1.458 1.458 0 0 1 3 14.543V13H1.75A1.75 1.75 0 0 1 0 11.25Zm1.75-.25a.25.25 0 0 0-.25.25v9.5c0 .138.112.25.25.25h2a.75.75 0 0 1 .75.75v2.19l2.72-2.72a.749.749 0 0 1 .53-.22h6.5a.25.25 0 0 0 .25-.25v-9.5a.25.25 0 0 0-.25-.25Zm7 2.25v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 9a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"></path></svg>Important</p>
+<p><strong>修改原因</strong>：XSD 是整条链路的<strong>源头定义</strong>。它定义了 <code>audio_policy_configuration.xml</code> 中 <code>preferredUsage</code> 属性的合法值。同时，<code>xsd_config</code> 构建规则会根据 XSD 自动生成 Java 枚举类 <code>AudioUsage.java</code>。不在 XSD 中定义，后续所有引用都不成立。</p>
+</div>
+<div class="markdown-alert markdown-alert-note">
+<p class="markdown-alert-title"><svg class="octicon octicon-info mr-2" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"></path></svg>Note</p>
+<p><strong>定位修改位置</strong> : 那为什么是 <code>hardware/interfaces/audio/7.0</code> 中的文件，而不是其他的version呢？有两个方法：</p>
+<ol>
+<li>在 <code>framework/av/</code> 下运行 <code>grep -rni "include &lt;android_audio_policy_configuration_"</code> 后面搜寻到的结果就是对应的版本。</li>
+<li>在 <code>/out/target/product/gen4_gvm/vendor/etc/vintf/manifest.xml</code>  配置，也就是编译产物中的实际配置中寻找: <code>grep -A5 "android.hardware.audio" manifest.xml</code> ，找到的 <code>&lt;fqname&gt;@7.0::IDevicesFactory/default&lt;/fqname&gt;</code>就是答案。</li>
+</ol>
+</div>
+<p><strong>编译命令</strong>：</p>
+<figure class="highlight bash"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">mmma hardware/interfaces/audio/7.0/config/</span><br></pre></td></tr></tbody></table></figure>
+
+<p><strong>自动生成的文件</strong>：</p>
+<figure class="highlight bash"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">`config/api/current.txt` <span class="comment"># API 签名文件，编译后需更新</span></span><br></pre></td></tr></tbody></table></figure>
+
+
+
+<h3 id="3-1-2-C-C-枚举定义"><a href="#3-1-2-C-C-枚举定义" class="headerlink" title="3.1.2 C/C++ 枚举定义"></a>3.1.2 C/C++ 枚举定义</h3><p><strong>文件</strong>：<code>system/media/audio/include/system/audio-hal-enums.h</code></p>
+<p><strong>修改位置</strong>：<code>AUDIO_USAGE</code> 枚举宏定义</p>
+<figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">define</span> AUDIO_USAGE_LIST \</span></span><br><span class="line"><span class="meta">    V(AUDIO_USAGE_UNKNOWN, 0) \</span></span><br><span class="line"><span class="meta">    V(AUDIO_USAGE_MEDIA, 1) \</span></span><br><span class="line"><span class="meta">    ...</span></span><br><span class="line">    <span class="built_in">V</span>(AUDIO_USAGE_MEDIA_OUTSIED, <span class="number">27</span>) \</span><br><span class="line">    <span class="comment">/* 新增 */</span></span><br><span class="line">    <span class="built_in">V</span>(AUDIO_USAGE_MEDIA_FRONT, <span class="number">28</span>) \</span><br><span class="line">    ...</span><br></pre></td></tr></tbody></table></figure>
+
+<div class="markdown-alert markdown-alert-important">
+<p class="markdown-alert-title"><svg class="octicon octicon-report mr-2" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M0 1.75C0 .784.784 0 1.75 0h12.5C15.216 0 16 .784 16 1.75v9.5A1.75 1.75 0 0 1 14.25 13H8.06l-2.573 2.573A1.458 1.458 0 0 1 3 14.543V13H1.75A1.75 1.75 0 0 1 0 11.25Zm1.75-.25a.25.25 0 0 0-.25.25v9.5c0 .138.112.25.25.25h2a.75.75 0 0 1 .75.75v2.19l2.72-2.72a.749.749 0 0 1 .53-.22h6.5a.25.25 0 0 0 .25-.25v-9.5a.25.25 0 0 0-.25-.25Zm7 2.25v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 9a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"></path></svg>Important</p>
+<p><strong>修改原因</strong>：这是 C/C++ 层的枚举定义，是 HAL 层、AudioFlinger、AudioPolicyManager 等所有 native 代码使用的底层枚举值。不定义这个宏，所有 C/C++ 代码都无法引用 <code>AUDIO_USAGE_MEDIA_FRONT</code>。</p>
+</div>
+<p><strong>注意</strong>：枚举数值必须未被占用，且与 AIDL 定义保持一致。</p>
+<h3 id="3-1-3-AIDL-接口定义"><a href="#3-1-3-AIDL-接口定义" class="headerlink" title="3.1.3 AIDL 接口定义"></a>3.1.3 AIDL 接口定义</h3><p><strong>文件</strong>：</p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>路径</th>
+<th>性质</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td><code>system/hardware/interfaces/media/aidl/android/media/audio/common/AudioUsage.aidl</code></td>
+<td>源文件</td>
+</tr>
+<tr>
+<td>2</td>
+<td><code>system/hardware/interfaces/media/aidl_api/android.media.audio.common.types/2/android/media/audio/common/AudioUsage.aidl</code></td>
+<td>冻结版本 2（当前最新冻结版）</td>
+</tr>
+<tr>
+<td>3</td>
+<td><code>system/hardware/interfaces/media/aidl_api/android.media.audio.common.types/current/android/media/audio/common/AudioUsage.aidl</code></td>
+<td>开发中版本</td>
+</tr>
+</tbody></table>
+<p><strong>修改位置</strong>：<code>AudioUsage</code> 枚举定义</p>
+<figure class="highlight plaintext"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">enum AudioUsage {</span><br><span class="line">    ...</span><br><span class="line">    MEDIA_OUTSIED = 27,</span><br><span class="line">    MEDIA_FRONT = 28,    /* 新增 */</span><br><span class="line">    ...</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<div class="markdown-alert markdown-alert-important">
+<p class="markdown-alert-title"><svg class="octicon octicon-report mr-2" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M0 1.75C0 .784.784 0 1.75 0h12.5C15.216 0 16 .784 16 1.75v9.5A1.75 1.75 0 0 1 14.25 13H8.06l-2.573 2.573A1.458 1.458 0 0 1 3 14.543V13H1.75A1.75 1.75 0 0 1 0 11.25Zm1.75-.25a.25.25 0 0 0-.25.25v9.5c0 .138.112.25.25.25h2a.75.75 0 0 1 .75.75v2.19l2.72-2.72a.749.749 0 0 1 .53-.22h6.5a.25.25 0 0 0 .25-.25v-9.5a.25.25 0 0 0-.25-.25Zm7 2.25v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 9a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"></path></svg>Important</p>
+<p><strong>修改原因</strong>：AIDL 是 Android HIDL/AIDL HAL 接口层的数据类型定义。Audio HAL 7.0+ 使用 AIDL 定义跨进程通信的数据结构。不在这里定义，HAL 服务和框架之间的 IPC 传递无法识别新值。</p>
+</div>
+<div class="markdown-alert markdown-alert-tip">
+<p class="markdown-alert-title"><svg class="octicon octicon-light-bulb mr-2" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M8 1.5c-2.363 0-4 1.69-4 3.75 0 .984.424 1.625.984 2.304l.214.253c.223.264.47.556.673.848.284.411.537.896.621 1.49a.75.75 0 0 1-1.484.211c-.04-.282-.163-.547-.37-.847a8.456 8.456 0 0 0-.542-.68c-.084-.1-.173-.205-.268-.32C3.201 7.75 2.5 6.766 2.5 5.25 2.5 2.31 4.863 0 8 0s5.5 2.31 5.5 5.25c0 1.516-.701 2.5-1.328 3.259-.095.115-.184.22-.268.319-.207.245-.383.453-.541.681-.208.3-.33.565-.37.847a.751.751 0 0 1-1.485-.212c.084-.593.337-1.078.621-1.489.203-.292.45-.584.673-.848.075-.088.147-.173.213-.253.561-.679.985-1.32.985-2.304 0-2.06-1.637-3.75-4-3.75ZM5.75 12h4.5a.75.75 0 0 1 0 1.5h-4.5a.75.75 0 0 1 0-1.5ZM6 15.25a.75.75 0 0 1 .75-.75h2.5a.75.75 0 0 1 0 1.5h-2.5a.75.75 0 0 1-.75-.75Z"></path></svg>Tip</p>
+<p><strong>同步修改（需要知道hash值怎么计算）</strong>：需要更新 AIDL 的hash文件: <code>system/hardware/interfaces/media/aidl_api/android.media.audio.common.types/2/.hash</code></p>
+</div>
+<h3 id="3-1-4-Java-框架常量"><a href="#3-1-4-Java-框架常量" class="headerlink" title="3.1.4 Java 框架常量"></a>3.1.4 Java 框架常量</h3><p><strong>文件</strong>：<code>frameworks/base/media/java/android/media/AudioAttributes.java</code></p>
+<p><strong>需要修改的位置（共约 7 处）</strong>：</p>
+<p><strong>① 常量定义</strong></p>
+<figure class="highlight java"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="type">int</span> <span class="variable">USAGE_MEDIA_OUTSIED</span> <span class="operator">=</span> <span class="number">27</span>;</span><br><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="type">int</span> <span class="variable">USAGE_MEDIA_FRONT</span> <span class="operator">=</span> <span class="number">28</span>;    <span class="comment">// 新增</span></span><br></pre></td></tr></tbody></table></figure>
+
+<p><strong>② 抑制映射（SUPPRESSIBLE_USAGES）</strong></p>
+<figure class="highlight java"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">SUPPRESSIBLE_USAGES.put(USAGE_MEDIA_REAR, SUPPRESSIBLE_NEVER);</span><br><span class="line">SUPPRESSIBLE_USAGES.put(USAGE_MEDIA_FRONT, SUPPRESSIBLE_NEVER);  <span class="comment">// 新增</span></span><br></pre></td></tr></tbody></table></figure>
+
+<p><strong>③ Usage → AudioUsage 转换 switch</strong></p>
+<figure class="highlight java"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">case</span> AudioAttributes.USAGE_MEDIA_FRONT:</span><br><span class="line">    <span class="keyword">return</span> AudioUsage.AUDIO_USAGE_MEDIA_FRONT.toString();</span><br></pre></td></tr></tbody></table></figure>
+
+<p><strong>④ AudioUsage → Usage 反向映射</strong></p>
+<figure class="highlight java"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sXsdStringToUsage.put(AudioUsage.AUDIO_USAGE_MEDIA_FRONT.toString(), USAGE_MEDIA_FRONT);</span><br></pre></td></tr></tbody></table></figure>
+
+<p><strong>⑤ toString() switch</strong></p>
+<figure class="highlight java"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">case</span> USAGE_MEDIA_FRONT: <span class="keyword">return</span> <span class="string">"USAGE_MEDIA_FRONT"</span>;</span><br></pre></td></tr></tbody></table></figure>
+
+<p><strong>⑥ 其他 switch/case</strong>（如 <code>usageForStreamType</code>、<code>toBundle</code> 等相关方法）</p>
+<div class="markdown-alert markdown-alert-important">
+<p class="markdown-alert-title"><svg class="octicon octicon-report mr-2" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M0 1.75C0 .784.784 0 1.75 0h12.5C15.216 0 16 .784 16 1.75v9.5A1.75 1.75 0 0 1 14.25 13H8.06l-2.573 2.573A1.458 1.458 0 0 1 3 14.543V13H1.75A1.75 1.75 0 0 1 0 11.25Zm1.75-.25a.25.25 0 0 0-.25.25v9.5c0 .138.112.25.25.25h2a.75.75 0 0 1 .75.75v2.19l2.72-2.72a.749.749 0 0 1 .53-.22h6.5a.25.25 0 0 0 .25-.25v-9.5a.25.25 0 0 0-.25-.25Zm7 2.25v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 9a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"></path></svg>Important</p>
+<p><strong>修改原因</strong>：<code>AudioAttributes</code> 是应用层设置音频属性的入口，开发者通过 <code>setUsage(USAGE_MEDIA_FRONT)</code> 来指定用途。所有内部映射和转换都需要覆盖新值，否则运行时会抛异常或返回错误值。</p>
+</div>
+<h2 id="3-2-第二层：转换"><a href="#3-2-第二层：转换" class="headerlink" title="3.2. 第二层：转换"></a>3.2. 第二层：转换</h2><h3 id="3-2-1-AIDL-↔-C-双向转换"><a href="#3-2-1-AIDL-↔-C-双向转换" class="headerlink" title="3.2.1 AIDL ↔ C++ 双向转换"></a>3.2.1 AIDL ↔ C++ 双向转换</h3><p><strong>文件</strong>：<code>frameworks/av/media/audioaidlconversion/AidlConversionCppNdk.cpp</code></p>
+<p><strong>需要修改两处</strong>：</p>
+<p><strong>① AIDL → legacy</strong></p>
+<figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">ConversionResult&lt;<span class="type">audio_usage_t</span>&gt;</span></span><br><span class="line"><span class="function"><span class="title">aidl2legacy_AudioUsage_audio_usage_t</span><span class="params">(AudioUsage aidl)</span> </span>{</span><br><span class="line">    <span class="keyword">switch</span> (aidl) {</span><br><span class="line">        ...</span><br><span class="line">        <span class="keyword">case</span> AudioUsage::MEDIA_REAR:</span><br><span class="line">            <span class="keyword">return</span> AUDIO_USAGE_MEDIA_REAR;</span><br><span class="line">        <span class="keyword">case</span> AudioUsage::MEDIA_FRONT:           <span class="comment">// 新增</span></span><br><span class="line">            <span class="keyword">return</span> AUDIO_USAGE_MEDIA_FRONT;</span><br><span class="line">        ...</span><br><span class="line">    }</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<p><strong>② legacy → AIDL</strong></p>
+<figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">ConversionResult&lt;AudioUsage&gt;</span></span><br><span class="line"><span class="function"><span class="title">legacy2aidl_audio_usage_t_AudioUsage</span><span class="params">(<span class="type">audio_usage_t</span> legacy)</span> </span>{</span><br><span class="line">    <span class="keyword">switch</span> (legacy) {</span><br><span class="line">        ...</span><br><span class="line">        <span class="keyword">case</span> AUDIO_USAGE_MEDIA_REAR:</span><br><span class="line">            <span class="keyword">return</span> AudioUsage::MEDIA_REAR;</span><br><span class="line">        <span class="keyword">case</span> AUDIO_USAGE_MEDIA_FRONT:           <span class="comment">// 新增</span></span><br><span class="line">            <span class="keyword">return</span> AudioUsage::MEDIA_FRONT;</span><br><span class="line">        ...</span><br><span class="line">    }</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<p><strong>修改原因</strong>：AIDL 接口使用 <code>AudioUsage</code> 枚举，C++ 层使用 <code>audio_usage_t</code> 枚举。两个方向的转换函数用 switch 遍历所有枚举值，编译器开启 <code>-Werror,-Wswitch</code>，<strong>缺少任何一个 case 都会编译报错</strong>。</p>
+<h2 id="3-3-第三层：校验与策略"><a href="#3-3-第三层：校验与策略" class="headerlink" title="3.3 第三层：校验与策略"></a>3.3 第三层：校验与策略</h2><h3 id="3-3-1-Usage-合法性校验"><a href="#3-3-1-Usage-合法性校验" class="headerlink" title="3.3.1 Usage 合法性校验"></a>3.3.1 Usage 合法性校验</h3><p><strong>文件</strong>：<code>frameworks/av/services/audiopolicy/managerdefault/AudioPolicyManager.cpp</code></p>
+<p><strong>修改位置</strong>：<code>isValidAttributes()</code> 函数</p>
+<figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">bool</span> <span class="title">AudioPolicyManager::isValidAttributes</span><span class="params">(<span class="type">const</span> <span class="type">audio_attributes_t</span> *paa)</span> </span>{</span><br><span class="line">    <span class="comment">// has known usage?</span></span><br><span class="line">    <span class="keyword">switch</span> (paa-&gt;usage) {</span><br><span class="line">        <span class="keyword">case</span> AUDIO_USAGE_MEDIA:</span><br><span class="line">        ...</span><br><span class="line">        <span class="keyword">case</span> AUDIO_USAGE_MEDIA_REAR:</span><br><span class="line">        <span class="keyword">case</span> AUDIO_USAGE_MEDIA_FRONT:    <span class="comment">// 新增</span></span><br><span class="line">        <span class="keyword">case</span> AUDIO_USAGE_MEDIA_PASSENGER_REAR:</span><br><span class="line">        ...</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        <span class="keyword">default</span>:</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">false</span>;  <span class="comment">// ← 不加 case 的话，新 Usage 会被当作非法值拒绝</span></span><br><span class="line">    }</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<div class="markdown-alert markdown-alert-important">
+<p class="markdown-alert-title"><svg class="octicon octicon-report mr-2" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M0 1.75C0 .784.784 0 1.75 0h12.5C15.216 0 16 .784 16 1.75v9.5A1.75 1.75 0 0 1 14.25 13H8.06l-2.573 2.573A1.458 1.458 0 0 1 3 14.543V13H1.75A1.75 1.75 0 0 1 0 11.25Zm1.75-.25a.25.25 0 0 0-.25.25v9.5c0 .138.112.25.25.25h2a.75.75 0 0 1 .75.75v2.19l2.72-2.72a.749.749 0 0 1 .53-.22h6.5a.25.25 0 0 0 .25-.25v-9.5a.25.25 0 0 0-.25-.25Zm7 2.25v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 9a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"></path></svg>Important</p>
+<p><strong>修改原因</strong>：音频策略管理器在处理任何音频流之前，会先校验其属性是否合法。如果新 Usage 不在 switch 中，<code>isValidAttributes()</code> 返回 <code>false</code>，音频流直接被拒绝，无法播放。</p>
+</div>
+<h3 id="3-3-2-策略映射（核心！决定走哪个-Route）"><a href="#3-3-2-策略映射（核心！决定走哪个-Route）" class="headerlink" title="3.3.2 策略映射（核心！决定走哪个 Route）"></a>3.3.2 策略映射（核心！决定走哪个 Route）</h3><p><strong>文件</strong>：<code>frameworks/av/services/audiopolicy/engineconfigurable/config/&lt;target&gt;/audio_policy_engine_product_strategies.xml</code></p>
+<p><strong>方式 A：复用现有策略（不需要新 Route）</strong></p>
+<figure class="highlight xml"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">ProductStrategy</span> <span class="attr">name</span>=<span class="string">"STRATEGY_MEDIA"</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">AttributesGroup</span> <span class="attr">streamType</span>=<span class="string">"AUDIO_STREAM_MUSIC"</span> <span class="attr">volumeGroup</span>=<span class="string">"music"</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">Attributes</span>&gt;</span> <span class="tag">&lt;<span class="name">Usage</span> <span class="attr">value</span>=<span class="string">"AUDIO_USAGE_MEDIA"</span>/&gt;</span> <span class="tag">&lt;/<span class="name">Attributes</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">Attributes</span>&gt;</span> <span class="tag">&lt;<span class="name">Usage</span> <span class="attr">value</span>=<span class="string">"AUDIO_USAGE_GAME"</span>/&gt;</span> <span class="tag">&lt;/<span class="name">Attributes</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">Attributes</span>&gt;</span> <span class="tag">&lt;<span class="name">Usage</span> <span class="attr">value</span>=<span class="string">"AUDIO_USAGE_MEDIA_FRONT"</span>/&gt;</span> <span class="tag">&lt;/<span class="name">Attributes</span>&gt;</span>  <span class="comment">&lt;!-- 新增 --&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">AttributesGroup</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">ProductStrategy</span>&gt;</span></span><br></pre></td></tr></tbody></table></figure>
+
+<p><strong>方式 B：创建独立策略（需要新 Route）</strong> </p>
+<figure class="highlight xml"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">&lt;!-- 新增独立策略 --&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">ProductStrategy</span> <span class="attr">name</span>=<span class="string">"STRATEGY_MEDIA_FRONT"</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">AttributesGroup</span> <span class="attr">streamType</span>=<span class="string">"AUDIO_STREAM_MUSIC"</span> <span class="attr">volumeGroup</span>=<span class="string">"media_front"</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">Attributes</span>&gt;</span> <span class="tag">&lt;<span class="name">Usage</span> <span class="attr">value</span>=<span class="string">"AUDIO_USAGE_MEDIA_FRONT"</span>/&gt;</span> <span class="tag">&lt;/<span class="name">Attributes</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">AttributesGroup</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">ProductStrategy</span>&gt;</span></span><br></pre></td></tr></tbody></table></figure>
+
+<p><strong>修改原因</strong>：策略映射是 Usage → Route 的<strong>核心桥梁</strong>。<code>getProductStrategyForAttributes()</code> 函数根据这个 XML 配置，将音频流的 Usage 匹配到对应的 ProductStrategy，进而决定使用哪个输出设备、哪条路由、哪个音量组。</p>
+<p><strong>如果使用 configurable 引擎</strong>，还需要在以下文件中配置：</p>
+<ul>
+<li><code>audio_policy_engine_volume_groups.xml</code> — 定义音量组</li>
+<li><code>audio_policy_engine_default_volumes.xml</code> — 定义默认音量曲线</li>
+<li><code>audio_policy_engine_product_strategies.xml</code> — 策略优先级排序</li>
+</ul>
+<p><strong>如果使用 default 引擎</strong>，策略在 C++ 代码中硬编码，需要修改：</p>
+<ul>
+<li><code>frameworks/av/services/audiopolicy/enginedefault/src/Engine.h</code> — 添加策略枚举</li>
+<li><code>frameworks/av/services/audiopolicy/enginedefault/src/Engine.cpp</code> — 实现策略映射逻辑</li>
+</ul>
+<h2 id="3-4-第四层：物理路由"><a href="#3-4-第四层：物理路由" class="headerlink" title="3.4. 第四层：物理路由"></a>3.4. 第四层：物理路由</h2><h3 id="3-4-1-音频策略配置（实际设备配置）"><a href="#3-4-1-音频策略配置（实际设备配置）" class="headerlink" title="3.4.1 音频策略配置（实际设备配置）"></a>3.4.1 音频策略配置（实际设备配置）</h3><p><strong>文件</strong>：<code>vendor/&lt;vendor&gt;/audio_policy_configuration.xml</code>（具体路径因厂商而异）</p>
+<p><strong>需要新增三部分</strong>：</p>
+<p><strong>① mixPort — 软件输出流</strong></p>
+<figure class="highlight xml"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">mixPort</span> <span class="attr">name</span>=<span class="string">"media_front"</span> <span class="attr">role</span>=<span class="string">"source"</span></span></span><br><span class="line"><span class="tag">         <span class="attr">preferredUsage</span>=<span class="string">"AUDIO_USAGE_MEDIA_FRONT"</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">profile</span> <span class="attr">name</span>=<span class="string">""</span></span></span><br><span class="line"><span class="tag">             <span class="attr">format</span>=<span class="string">"AUDIO_FORMAT_PCM_16_BIT"</span></span></span><br><span class="line"><span class="tag">             <span class="attr">samplingRates</span>=<span class="string">"48000"</span></span></span><br><span class="line"><span class="tag">             <span class="attr">channelMasks</span>=<span class="string">"AUDIO_CHANNEL_OUT_STEREO"</span>/&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">mixPort</span>&gt;</span></span><br></pre></td></tr></tbody></table></figure>
+
+<p><strong>② devicePort — 物理设备</strong></p>
+<figure class="highlight xml"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">devicePort</span> <span class="attr">tagName</span>=<span class="string">"Media Front Bus"</span></span></span><br><span class="line"><span class="tag">            <span class="attr">type</span>=<span class="string">"AUDIO_DEVICE_OUT_BUS"</span></span></span><br><span class="line"><span class="tag">            <span class="attr">role</span>=<span class="string">"sink"</span></span></span><br><span class="line"><span class="tag">            <span class="attr">address</span>=<span class="string">"bus08_media_front_out"</span>/&gt;</span></span><br></pre></td></tr></tbody></table></figure>
+
+<p><strong>③ route — 连接路径</strong></p>
+<figure class="highlight xml"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">route</span> <span class="attr">type</span>=<span class="string">"mix"</span></span></span><br><span class="line"><span class="tag">       <span class="attr">sink</span>=<span class="string">"Media Front Bus"</span></span></span><br><span class="line"><span class="tag">       <span class="attr">sources</span>=<span class="string">"media_front"</span>/&gt;</span></span><br></pre></td></tr></tbody></table></figure>
+
+<p><strong>修改原因</strong>：</p>
+<ul>
+<li><strong>mixPort</strong> 定义了 HAL 暴露的输出流，<code>preferredUsage</code> 指定该流专门服务 <code>MEDIA_FRONT</code></li>
+<li><strong>devicePort</strong> 定义了物理输出设备（车载场景下通常是 BUS 类型），address 标识具体的硬件总线</li>
+<li><strong>route</strong> 将 mixPort 和 devicePort 连接起来，建立数据通路</li>
+</ul>
+<p>三者缺一不可：没有 mixPort 无法创建音频流，没有 devicePort 无法输出到硬件，没有 route 两者无法连通。</p>
+<hr>
+<h3 id="3-4-2-attachedDevices（可选）"><a href="#3-4-2-attachedDevices（可选）" class="headerlink" title="3.4.2 attachedDevices（可选）"></a>3.4.2 attachedDevices（可选）</h3><figure class="highlight xml"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">attachedDevices</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">item</span>&gt;</span>Media Front Bus<span class="tag">&lt;/<span class="name">item</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">attachedDevices</span>&gt;</span></span><br></pre></td></tr></tbody></table></figure>
+
+<p><strong>修改原因</strong>：如果该设备是永久挂载的（焊接在车内），需要加入 <code>attachedDevices</code> 列表，表示设备始终可用。</p>
+<h2 id="3-5-第五层：CarAudio"><a href="#3-5-第五层：CarAudio" class="headerlink" title="3.5 第五层：CarAudio"></a>3.5 第五层：CarAudio</h2><h3 id="3-5-1-CarAudioContext"><a href="#3-5-1-CarAudioContext" class="headerlink" title="3.5.1. CarAudioContext"></a>3.5.1. CarAudioContext</h3><p>CarAudioContext 是 usage 的逻辑分组，是 zone 配置、动态路由、焦点矩阵的共同”货币”。现有定制 context 编号到 12（<code>ANNOUNCEMENT</code>），新增 <code>MEDIA_FRONT = 13</code></p>
+<p><strong>① context 常量</strong></p>
+<figure class="highlight java"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> <span class="keyword">final</span> <span class="type">int</span> <span class="variable">ANNOUNCEMENT</span> <span class="operator">=</span> <span class="number">12</span>;</span><br><span class="line"><span class="keyword">static</span> <span class="keyword">final</span> <span class="type">int</span> <span class="variable">MEDIA_FRONT</span> <span class="operator">=</span> <span class="number">13</span>;          <span class="comment">// 新增</span></span><br></pre></td></tr></tbody></table></figure>
+
+<p><strong>② @AudioContext IntDef</strong></p>
+<figure class="highlight java"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@IntDef({</span></span><br><span class="line"><span class="meta">    /* ... */</span></span><br><span class="line"><span class="meta">    ANNOUNCEMENT,</span></span><br><span class="line"><span class="meta">    MEDIA_FRONT                            // 新增</span></span><br><span class="line"><span class="meta">})</span></span><br><span class="line"><span class="meta">@Retention(RetentionPolicy.SOURCE)</span></span><br><span class="line"><span class="keyword">public</span> <span class="meta">@interface</span> AudioContext { }</span><br></pre></td></tr></tbody></table></figure>
+
+<p><strong>③ CONTEXTS 列表</strong></p>
+<figure class="highlight java"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> List&lt;Integer&gt; CONTEXTS = List.of(</span><br><span class="line">    <span class="comment">/* ... */</span></span><br><span class="line">    ANNOUNCEMENT,</span><br><span class="line">    MEDIA_FRONT                            <span class="comment">// 新增</span></span><br><span class="line">);</span><br></pre></td></tr></tbody></table></figure>
+
+<p><strong>④ NON_CAR_SYSTEM_CONTEXTS</strong></p>
+<figure class="highlight java"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> List&lt;Integer&gt; NON_CAR_SYSTEM_CONTEXTS = List.of(</span><br><span class="line">    <span class="comment">/* ... */</span></span><br><span class="line">    ANNOUNCEMENT,</span><br><span class="line">    MEDIA_FRONT                            <span class="comment">// 新增</span></span><br><span class="line">);</span><br></pre></td></tr></tbody></table></figure>
+
+<p><strong>⑤ 定义 CarAudioContextInfo</strong></p>
+<figure class="highlight java"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="type">CarAudioContextInfo</span> <span class="variable">CAR_CONTEXT_INFO_MEDIA_FRONT</span> <span class="operator">=</span></span><br><span class="line">        <span class="keyword">new</span> <span class="title class_">CarAudioContextInfo</span>(<span class="keyword">new</span> <span class="title class_">AudioAttributes</span>[] {</span><br><span class="line">                getAudioAttributeFromUsage(AudioAttributes.USAGE_MEDIA_FRONT)</span><br><span class="line">        }, <span class="string">"MEDIA_FRONT"</span>, MEDIA_FRONT);    <span class="comment">// 新增</span></span><br></pre></td></tr></tbody></table></figure>
+
+<p><strong>⑥ CAR_CONTEXT_INFO 总表</strong></p>
+<figure class="highlight java"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> List&lt;CarAudioContextInfo&gt; CAR_CONTEXT_INFO = List.of(</span><br><span class="line">    <span class="comment">/* ... */</span></span><br><span class="line">    CAR_CONTEXT_INFO_ANNOUNCEMENT,</span><br><span class="line">    CAR_CONTEXT_INFO_MEDIA_FRONT,          <span class="comment">// 新增</span></span><br><span class="line">    CAR_CONTEXT_INFO_INVALID</span><br><span class="line">);</span><br></pre></td></tr></tbody></table></figure>
+
+<blockquote>
+<p><code>CONTEXT_NAMES</code>、<code>CONTEXT_TO_ATTRIBUTES</code> 等表由该信息列表在 static 块生成，无需另写手工映射。</p>
+</blockquote>
+<p><strong>⑦ getAllNonCarSystemContextsInfo()</strong></p>
+<figure class="highlight java"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> List&lt;CarAudioContextInfo&gt; <span class="title function_">getAllNonCarSystemContextsInfo</span><span class="params">()</span> {</span><br><span class="line">    <span class="keyword">return</span> List.of(</span><br><span class="line">        <span class="comment">/* ... */</span></span><br><span class="line">        CAR_CONTEXT_INFO_ANNOUNCEMENT,</span><br><span class="line">        CAR_CONTEXT_INFO_MEDIA_FRONT       <span class="comment">// 新增</span></span><br><span class="line">    );</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<p><strong>⑧ sContextsToDuck（ducking 策略表）</strong></p>
+<figure class="highlight java"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sContextsToDuck.append(MEDIA_FRONT, Collections.emptyList());   <span class="comment">// 新增</span></span><br></pre></td></tr></tbody></table></figure>
+
+<p><strong>⑨ isValidAudioAttributeUsage() switch</strong></p>
+<figure class="highlight java"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">case</span> AudioAttributes.USAGE_ASSISTANT:</span><br><span class="line"><span class="keyword">case</span> AudioAttributes.USAGE_MEDIA_FRONT:   <span class="comment">// 新增</span></span><br><span class="line"><span class="comment">/* ... */</span></span><br><span class="line">    <span class="keyword">return</span> <span class="literal">true</span>;</span><br></pre></td></tr></tbody></table></figure>
+
+<p><strong>⑩ AudioConextToString() switch</strong></p>
+<p>dump 日志可读性:</p>
+<figure class="highlight java"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">case</span> ANNOUNCEMENT:</span><br><span class="line">    <span class="keyword">return</span> <span class="string">"ANNOUNCEMENT"</span>;</span><br><span class="line"><span class="keyword">case</span> MEDIA_FRONT:                         <span class="comment">// 新增</span></span><br><span class="line">    <span class="keyword">return</span> <span class="string">"MEDIA_FRONT"</span>;</span><br></pre></td></tr></tbody></table></figure>
+
+<p><strong>context 未匹配的后果</strong>：非 core routing 模式下 <code>getContextForAudioAttribute()</code> 查不到返回 INVALID——表现为没有动态路由规则、查不到音量组、焦点矩阵无法仲裁。<strong>“AudioTrack 能创建”不能证明 CarAudio 层已完成</strong>。</p>
+<p><strong>context 名与 car_audio_configuration.xml 的对应</strong>：<code>CarAudioZonesHelper</code> 用 <code>info.getName().toLowerCase(ROOT)</code> 建查表，所以 XML 里写小写 <code>media_front</code>。</p>
+<h3 id="3-5-2-FocusInteraction"><a href="#3-5-2-FocusInteraction" class="headerlink" title="3.5.2. FocusInteraction"></a>3.5.2. FocusInteraction</h3><p>焦点仲裁的核心是一张二维矩阵：<strong>行 = 当前持有者的 context，列 = 请求者的 context</strong>，取值：</p>
+<table>
+<thead>
+<tr>
+<th>值</th>
+<th>语义</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>INTERACTION_REJECT</code> (0)</td>
+<td>拒绝请求（可延迟焦点时返回 DELAYED）</td>
+</tr>
+<tr>
+<td><code>INTERACTION_EXCLUSIVE</code> (1)</td>
+<td>批准请求，持有者失去焦点</td>
+</tr>
+<tr>
+<td><code>INTERACTION_CONCURRENT</code> (2)</td>
+<td>批准请求，持有者保留焦点（可配合 duck）</td>
+</tr>
+</tbody></table>
+<p>本树定制 context 的现成范例，后排媒体与自身互斥、不写与其他 context 的列：</p>
+<figure class="highlight java"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">INTERACTION_MATRIX.append(MEDIA_REAR, <span class="keyword">new</span> <span class="title class_">SparseArray</span>() {</span><br><span class="line">    {</span><br><span class="line">        append(<span class="comment">/* INVALID= */</span> <span class="number">0</span>, INTERACTION_REJECT); <span class="comment">// INVALID</span></span><br><span class="line">        append(MEDIA_REAR, INTERACTION_EXCLUSIVE);    <span class="comment">// MEDIA_REAR</span></span><br><span class="line">    }</span><br><span class="line">});</span><br></pre></td></tr></tbody></table></figure>
+
+
+
+<h3 id="3-5-3-car-audio-configuration-配置"><a href="#3-5-3-car-audio-configuration-配置" class="headerlink" title="3.5.3. car_audio_configuration 配置"></a>3.5.3. car_audio_configuration 配置</h3><p><strong>在 primary zone 内追加独立音量组</strong>，同 zone 独立 group 即独立音量，焦点仍归 zone 0 矩阵仲裁：</p>
+<figure class="highlight xml"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">&lt;!-- 追加到 primary zone 的 &lt;volumeGroups&gt; 末尾，保留其他组 --&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">group</span> <span class="attr">name</span>=<span class="string">"front_media"</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">device</span> <span class="attr">address</span>=<span class="string">"bus08_media_front_out"</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">context</span> <span class="attr">context</span>=<span class="string">"media_front"</span>/&gt;</span>     </span><br><span class="line">    <span class="tag">&lt;/<span class="name">device</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">group</span>&gt;</span></span><br></pre></td></tr></tbody></table></figure>
+
+<div class="markdown-alert markdown-alert-tip">
+<p class="markdown-alert-title"><svg class="octicon octicon-light-bulb mr-2" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M8 1.5c-2.363 0-4 1.69-4 3.75 0 .984.424 1.625.984 2.304l.214.253c.223.264.47.556.673.848.284.411.537.896.621 1.49a.75.75 0 0 1-1.484.211c-.04-.282-.163-.547-.37-.847a8.456 8.456 0 0 0-.542-.68c-.084-.1-.173-.205-.268-.32C3.201 7.75 2.5 6.766 2.5 5.25 2.5 2.31 4.863 0 8 0s5.5 2.31 5.5 5.25c0 1.516-.701 2.5-1.328 3.259-.095.115-.184.22-.268.319-.207.245-.383.453-.541.681-.208.3-.33.565-.37.847a.751.751 0 0 1-1.485-.212c.084-.593.337-1.078.621-1.489.203-.292.45-.584.673-.848.075-.088.147-.173.213-.253.561-.679.985-1.32.985-2.304 0-2.06-1.637-3.75-4-3.75ZM5.75 12h4.5a.75.75 0 0 1 0 1.5h-4.5a.75.75 0 0 1 0-1.5ZM6 15.25a.75.75 0 0 1 .75-.75h2.5a.75.75 0 0 1 0 1.5h-2.5a.75.75 0 0 1-.75-.75Z"></path></svg>Tip</p>
+<p>后面Car Audio的多音区、xml配置、焦点处理、动态路由会重新详细剖析梳理。</p>
+</div>
+<h2 id="3-6-第六层：Audio-Hal"><a href="#3-6-第六层：Audio-Hal" class="headerlink" title="3.6. 第六层：Audio Hal"></a>3.6. 第六层：Audio Hal</h2><h3 id="3-6-1-声明可用输出"><a href="#3-6-1-声明可用输出" class="headerlink" title="3.6.1 声明可用输出"></a>3.6.1 声明可用输出</h3><p> policy XML 的 primary module 中分别追加以下配置，保留已有项。</p>
+<p><strong>① attachedDevices：让 AudioPolicy 启动时枚举到新 BUS</strong></p>
+<figure class="highlight xml"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">module</span> <span class="attr">name</span>=<span class="string">"primary"</span> <span class="attr">halVersion</span>=<span class="string">"3.0"</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">attachedDevices</span>&gt;</span></span><br><span class="line">        <span class="comment">&lt;!-- ... --&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">item</span>&gt;</span>Media Front Bus<span class="tag">&lt;/<span class="name">item</span>&gt;</span></span><br><span class="line">        <span class="comment">&lt;!-- ... --&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">attachedDevices</span>&gt;</span></span><br><span class="line">    <span class="comment">&lt;!-- ... --&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">module</span>&gt;</span></span><br></pre></td></tr></tbody></table></figure>
+
+<p><strong>② mixPorts：新增普通 PCM 输出，不添加 PRIMARY、FAST、DIRECT 等 flags</strong></p>
+<figure class="highlight xml"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">mixPort</span> <span class="attr">name</span>=<span class="string">"media_front"</span> <span class="attr">role</span>=<span class="string">"source"</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">profile</span> <span class="attr">name</span>=<span class="string">""</span> <span class="attr">format</span>=<span class="string">"AUDIO_FORMAT_PCM_16_BIT"</span></span></span><br><span class="line"><span class="tag">             <span class="attr">samplingRates</span>=<span class="string">"48000"</span> <span class="attr">channelMasks</span>=<span class="string">"AUDIO_CHANNEL_OUT_STEREO"</span>/&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">mixPort</span>&gt;</span></span><br></pre></td></tr></tbody></table></figure>
+
+<p>本项目使用 CarAudio 动态路由，将 Usage/context 匹配到 BUS。此处沿用现有媒体 mixPort 的声明方式，实际实现没有新增 <code>preferredUsage</code>；不能把它当作这条动态路由的必要条件。</p>
+<p><strong>③ devicePorts：声明地址和 CarAudio 所需的 JOINT gain</strong></p>
+<figure class="highlight xml"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">devicePort</span> <span class="attr">tagName</span>=<span class="string">"Media Front Bus"</span> <span class="attr">role</span>=<span class="string">"sink"</span> <span class="attr">type</span>=<span class="string">"AUDIO_DEVICE_OUT_BUS"</span></span></span><br><span class="line"><span class="tag">        <span class="attr">address</span>=<span class="string">"bus08_media_front_out"</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">profile</span> <span class="attr">name</span>=<span class="string">""</span> <span class="attr">format</span>=<span class="string">"AUDIO_FORMAT_PCM_16_BIT"</span></span></span><br><span class="line"><span class="tag">             <span class="attr">samplingRates</span>=<span class="string">"48000"</span> <span class="attr">channelMasks</span>=<span class="string">"AUDIO_CHANNEL_OUT_STEREO"</span>/&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">gains</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">gain</span> <span class="attr">name</span>=<span class="string">""</span> <span class="attr">mode</span>=<span class="string">"AUDIO_GAIN_MODE_JOINT"</span></span></span><br><span class="line"><span class="tag">                <span class="attr">minValueMB</span>=<span class="string">"-3000"</span> <span class="attr">maxValueMB</span>=<span class="string">"0"</span> <span class="attr">defaultValueMB</span>=<span class="string">"-1500"</span> <span class="attr">stepValueMB</span>=<span class="string">"100"</span>/&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">gains</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">devicePort</span>&gt;</span></span><br></pre></td></tr></tbody></table></figure>
+
+<p>gain 范围沿用当前车内媒体 BUS：-3000～0 mB，默认 -1500 mB，步进 100 mB。CarAudio 创建音量组时需要读取合法的 gain，因此不能只写一个没有 profile/gains 的空 devicePort。</p>
+<p><strong>④ routes：连接软件输出与设备</strong></p>
+<figure class="highlight xml"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">route</span> <span class="attr">type</span>=<span class="string">"mix"</span> <span class="attr">sink</span>=<span class="string">"Media Front Bus"</span></span></span><br><span class="line"><span class="tag">       <span class="attr">sources</span>=<span class="string">"media_front"</span>/&gt;</span></span><br></pre></td></tr></tbody></table></figure>
+
+<p><code>sink</code> 必须与 devicePort 的 <code>tagName</code> 一致，<code>sources</code> 必须与 mixPort 的 <code>name</code> 一致。</p>
+<h3 id="3-6-2-BUS-地址-→-PAL-播放流类型"><a href="#3-6-2-BUS-地址-→-PAL-播放流类型" class="headerlink" title="3.6.2 BUS 地址 → PAL 播放流类型"></a>3.6.2 BUS 地址 → PAL 播放流类型</h3><p>在现有播放 BUS 条件列表中追加新地址，关键代码如下：</p>
+<figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// vendor/qcom/opensource/audio-hal-ar/primary-hal/hal-pal/audio_extn/auto_hal.cpp</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">pal_stream_type_t</span> <span class="title">autohal_GetCarAudioPalStreamType</span><span class="params">(<span class="type">char</span> *address)</span> </span>{</span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">    <span class="type">pal_stream_type_t</span> palStreamType = PAL_STREAM_INVALID;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> ((<span class="built_in">strcmp</span>(address, <span class="string">"BUS00_MEDIA"</span>) == <span class="number">0</span>) ||</span><br><span class="line">        <span class="comment">// ... 其他已有播放 BUS 地址</span></span><br><span class="line">        (<span class="built_in">strcmp</span>(address, <span class="string">"bus08_media_front_out"</span>) == <span class="number">0</span>)) {</span><br><span class="line">        palStreamType = PAL_STREAM_PLAYBACK_BUS;</span><br><span class="line">    }</span><br><span class="line">    <span class="comment">// ... 录音 BUS 识别及未知地址错误日志</span></span><br><span class="line">    <span class="keyword">return</span> palStreamType;</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<p>调用链来自 <code>StreamOutPrimary::GetPalStreamType()</code>。新增 mixPort 没有设置输出 flags，因而走普通 BUS 识别流程。不加入此名单，地址会落入 <code>invalid address</code> 分支并返回 <code>PAL_STREAM_INVALID</code>，即使 Framework 已接受 Usage 也无法正常开流。</p>
+<p><code>StreamOutPrimary::Open()</code> 已有以下代码，会把完整地址继续交给 PAL，无需再增加 Usage 的 switch：</p>
+<figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// vendor/qcom/opensource/audio-hal-ar/primary-hal/hal-pal/AudioStream.cpp</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">StreamOutPrimary::Open</span><span class="params">()</span> </span>{</span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">    streamAttributes_.type = StreamOutPrimary::<span class="built_in">GetPalStreamType</span>(flags_, address_);</span><br><span class="line">    streamAttributes_.bus_addr = address_;</span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<h3 id="3-6-3-BUS-地址-→-PAL-输出设备"><a href="#3-6-3-BUS-地址-→-PAL-输出设备" class="headerlink" title="3.6.3 BUS 地址 → PAL 输出设备"></a>3.6.3 BUS 地址 → PAL 输出设备</h3><p>在 <code>AUDIO_DEVICE_OUT_BUS</code> 下现有车内媒体 A2B2 条件列表中追加新地址，关键代码如下：</p>
+<figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// vendor/qcom/opensource/audio-hal-ar/primary-hal/hal-pal/AudioDevice.cpp</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">AudioDevice::GetPalDeviceIds</span><span class="params">(<span class="type">const</span> std::set&lt;<span class="type">audio_devices_t</span>&gt; &amp;hal_device_ids,</span></span></span><br><span class="line"><span class="params"><span class="function">                                <span class="type">pal_device_id_t</span> *pal_device_id, <span class="type">const</span> <span class="type">char</span> *address)</span> </span>{</span><br><span class="line">    <span class="type">int</span> device_count = <span class="number">0</span>;</span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">auto</span> hal_device_id : hal_device_ids) {</span><br><span class="line">        <span class="keyword">if</span> (AUDIO_DEVICE_OUT_BUS == hal_device_id) {</span><br><span class="line">            <span class="keyword">if</span> ((<span class="built_in">strcmp</span>(address, <span class="string">"BUS00_MEDIA"</span>) == <span class="number">0</span>) ||</span><br><span class="line">                <span class="comment">// ... 其他已有公共 BUS 地址</span></span><br><span class="line">                (<span class="built_in">strcmp</span>(address, <span class="string">"BUS02_NAV_GUIDANCE"</span>) == <span class="number">0</span>)) {</span><br><span class="line">                <span class="comment">// ... 根据 is_ext_amp() 选择原有设备</span></span><br><span class="line">            } <span class="keyword">else</span> <span class="keyword">if</span> (<span class="built_in">strcmp</span>(address, <span class="string">"BUS100_MEDIA_PRIVATE"</span>) == <span class="number">0</span> ||</span><br><span class="line">                       <span class="comment">// ... 其他已有车内媒体地址</span></span><br><span class="line">                       <span class="built_in">strcmp</span>(address, <span class="string">"bus08_media_front_out"</span>) == <span class="number">0</span> ) {</span><br><span class="line">                pal_device_id[device_count] = PAL_DEVICE_OUT_A2B2_SPKR;</span><br><span class="line">            }</span><br><span class="line">            <span class="comment">// ... 其他设备映射分支</span></span><br><span class="line">            ++device_count;</span><br><span class="line">            <span class="keyword">continue</span>;</span><br><span class="line">        }</span><br><span class="line">        <span class="comment">// ... 非输出 BUS 的设备处理</span></span><br><span class="line">    }</span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">    <span class="keyword">return</span> device_count;</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<p>它与 <code>bus00_media_out</code>、<code>bus07_media_rear_out</code> 等使用同类车内后端。缺少这个地址映射时，新 BUS 会落入默认的 <code>PAL_DEVICE_OUT_SPEAKER</code>，与预期的车内媒体后端不一致。</p>
+<p><strong>设备类型只确定后端类别，不能保证只从前排扬声器输出。</strong> 最终的前排声道分配仍由 DSP graph、通道处理和功放链路共同决定。</p>
+<h3 id="3-6-4-接通新-BUS-的音量控制"><a href="#3-6-4-接通新-BUS-的音量控制" class="headerlink" title="3.6.4 接通新 BUS 的音量控制"></a>3.6.4 接通新 BUS 的音量控制</h3><p>当前车内媒体通常通过 <code>bus_out_map[]</code> 将地址转换为功放事件；表中没有前排媒体专用事件。若只新增路由，设置新 BUS 音量时会出现 <code>needs not to set volume</code>，随后返回 0，实际没有调整增益。</p>
+<p>本次让前排媒体使用已有的 PAL 流音量路径：在功放分支的条件中排除新地址，再执行原有流音量换算。关键代码放在同一方法中展示：</p>
+<figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// vendor/qcom/opensource/audio-hal-ar/primary-hal/hal-pal/AudioDevice.cpp</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">adev_set_audio_port_config</span><span class="params">(<span class="keyword">struct</span> audio_hw_device *dev,</span></span></span><br><span class="line"><span class="params"><span class="function">                               <span class="type">const</span> <span class="keyword">struct</span> audio_port_config *config)</span> </span>{</span><br><span class="line">    <span class="comment">// ... 获取设备、config_address 及输出流列表</span></span><br><span class="line">    <span class="keyword">if</span> (config-&gt;type == AUDIO_PORT_TYPE_DEVICE &amp;&amp; config-&gt;role == AUDIO_PORT_ROLE_SINK) {</span><br><span class="line">        <span class="comment">// ...</span></span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">auto</span> iter = list.<span class="built_in">begin</span>(); iter != list.<span class="built_in">end</span>(); ++iter) {</span><br><span class="line">            <span class="comment">// ...</span></span><br><span class="line">            <span class="keyword">if</span> (<span class="built_in">strcmp</span>((*iter)-&gt;address_, config_address) == <span class="number">0</span> ||</span><br><span class="line">                <span class="built_in">isAddrGroupEqual</span>((*iter)-&gt;address_, config_address)) {</span><br><span class="line">                <span class="comment">// 使用下方 PAL 流音量。</span></span><br><span class="line">                <span class="keyword">if</span> ((<span class="built_in">strncmp</span>(config_address, <span class="string">"bus08_media_front_out"</span>, AUDIO_DEVICE_MAX_ADDRESS_LEN) != <span class="number">0</span>) &amp;&amp;</span><br><span class="line">                    (<span class="built_in">strncmp</span>(config_address, <span class="string">"bus09_media_outside_out"</span>, AUDIO_DEVICE_MAX_ADDRESS_LEN) != <span class="number">0</span>) &amp;&amp;</span><br><span class="line">                    (<span class="built_in">strncmp</span>(config_address, <span class="string">"bus10_tts_outside_out"</span>, AUDIO_DEVICE_MAX_ADDRESS_LEN) != <span class="number">0</span>)) {</span><br><span class="line">                    <span class="comment">// ... 原有功放事件查表与设置</span></span><br><span class="line">                    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">                }</span><br><span class="line"></span><br><span class="line">                <span class="keyword">if</span> (config-&gt;gain.values[<span class="number">0</span>] &lt;= MIN_VOLUME_VALUE_MB) {</span><br><span class="line">                    volume = MIN_VOLUME_GAIN;</span><br><span class="line">                } <span class="keyword">else</span> <span class="keyword">if</span> (config-&gt;gain.values[<span class="number">0</span>] &gt;= MAX_VOLUME_VALUE_MB) {</span><br><span class="line">                    volume = MAX_VOLUME_GAIN;</span><br><span class="line">                } <span class="keyword">else</span> {</span><br><span class="line">                    volume = <span class="number">1</span> - ((<span class="type">float</span>)config-&gt;gain.values[<span class="number">0</span>] / MIN_VOLUME_VALUE_MB);</span><br><span class="line">                }</span><br><span class="line">                <span class="comment">// ...</span></span><br><span class="line">                (*iter)-&gt;<span class="built_in">SetVolume</span>(volume, volume);</span><br><span class="line">                <span class="comment">// ...</span></span><br><span class="line">            }</span><br><span class="line">        }</span><br><span class="line">    }</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<p>沿用本项目现有换算：-3000 mB 及以下 → 0.0；-1500 mB → 0.5；0 mB 及以上 → 1.0。这个换算是项目已有的线性控制曲线，不是标准的 dB 到幅度指数换算。</p>
+<p><code>StreamOutPrimary::SetVolume()</code> 缓存流音量；流已打开时调用 <code>pal_stream_set_volume()</code>，尚未打开时在后续打开流程应用缓存。按完整地址匹配流，前排媒体不会复用后排媒体的功放事件。物理独立音量仍需确认 DSP graph 的 gain 模块和下游功放控制域。</p>
+<p>后续若功放协议增加了真正的前排媒体专用事件，应同步修改协议和接收端，再调整 HAL 的事件表和这里的分支；不能自行编造一个事件编号。</p>
+<h3 id="3-6-5-PCM-dump"><a href="#3-6-5-PCM-dump" class="headerlink" title="3.6.5 PCM dump"></a>3.6.5 PCM dump</h3><figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// vendor/qcom/opensource/audio-hal-ar/primary-hal/hal-pal/AudioStream.cpp</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">static</span> <span class="type">ssize_t</span> <span class="title">out_write</span><span class="params">(<span class="keyword">struct</span> audio_stream_out *stream, <span class="type">const</span> <span class="type">void</span> *buffer,</span></span></span><br><span class="line"><span class="params"><span class="function">                         <span class="type">size_t</span> bytes)</span> </span>{</span><br><span class="line">    <span class="comment">// ... 获取 astream_out</span></span><br><span class="line">    <span class="keyword">if</span> (astream_out) {</span><br><span class="line">        <span class="type">int</span> is_dump_value = <span class="built_in">property_get_int32</span>(<span class="string">"persist.is_dump_player"</span>, <span class="number">0</span>);</span><br><span class="line">        <span class="keyword">if</span> (is_dump_value) {</span><br><span class="line">            <span class="keyword">if</span> ((<span class="built_in">strcmp</span>(astream_out-&gt;address_, <span class="string">"bus00_media_out"</span>) == <span class="number">0</span>)) {</span><br><span class="line">                <span class="comment">// ... 原有媒体 BUS dump</span></span><br><span class="line">            }</span><br><span class="line">            <span class="comment">// ... 其他已有 BUS dump 分支</span></span><br><span class="line">            <span class="keyword">else</span> <span class="keyword">if</span> ((<span class="built_in">strcmp</span>(astream_out-&gt;address_, <span class="string">"bus08_media_front_out"</span>) == <span class="number">0</span>)) {</span><br><span class="line">                <span class="built_in">dump_pcm_data</span>(<span class="string">"/data/misc/audioserver/bus08_media_front_out.pcm"</span>, buffer, bytes);</span><br><span class="line">            }</span><br><span class="line">            <span class="comment">// ... 后续 BUS dump 分支</span></span><br><span class="line">        }</span><br><span class="line">        <span class="keyword">return</span> astream_out-&gt;<span class="built_in">write</span>(buffer, bytes);</span><br><span class="line">    }</span><br><span class="line">    <span class="comment">// ... 错误处理</span></span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<p>PCM 文件有数据说明音频进入了 HAL 输出路径，不能单凭它判断 DSP 成功开图或物理扬声器位置正确。</p>
+
       
     </div>
     
@@ -562,8 +854,17 @@
       
 
       
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
 
-      <section class="site-overview-wrap sidebar-panel sidebar-panel-active">
+      <section class="site-overview-wrap sidebar-panel">
         <div class="site-overview">
           <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
             
@@ -676,6 +977,22 @@
         </div>
       </section>
 
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#1-%E8%83%8C%E6%99%AF%E7%9F%A5%E8%AF%86"><span class="nav-text">1. 背景知识</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-1-AudioUsage-%E6%98%AF%E4%BB%80%E4%B9%88"><span class="nav-text">1.1 AudioUsage 是什么</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#1-2-Route-%E6%98%AF%E4%BB%80%E4%B9%88"><span class="nav-text">1.2 Route 是什么</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#1-3-%E4%B8%BA%E4%BB%80%E4%B9%88%E8%A6%81%E6%96%B0%E5%A2%9E"><span class="nav-text">1.3 为什么要新增</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#2-%E6%95%B4%E4%BD%93%E6%9E%B6%E6%9E%84%E4%B8%8E%E6%95%B0%E6%8D%AE%E6%B5%81"><span class="nav-text">2. 整体架构与数据流</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#2-1-%E5%85%AD%E5%B1%82%E4%BF%AE%E6%94%B9%E6%9E%B6%E6%9E%84"><span class="nav-text">2.1 六层修改架构</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-2-%E6%92%AD%E6%94%BE%E6%95%B0%E6%8D%AE%E6%B5%81%EF%BC%88MEDIA-FRONT-%E7%9A%84%E5%A3%B0%E9%9F%B3%E4%B9%8B%E8%B7%AF%EF%BC%89"><span class="nav-text">2.2 播放数据流（MEDIA_FRONT 的声音之路）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-3-%E7%84%A6%E7%82%B9%E6%8E%A7%E5%88%B6%E6%B5%81%EF%BC%88MEDIA-FRONT-%E6%8A%A2%E7%84%A6%E7%82%B9%E6%97%B6%E5%8F%91%E7%94%9F%E4%BB%80%E4%B9%88%EF%BC%89"><span class="nav-text">2.3 焦点控制流（MEDIA_FRONT 抢焦点时发生什么）</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#3-%E9%80%90%E5%B1%82%E8%AF%A6%E7%BB%86%E4%BF%AE%E6%94%B9"><span class="nav-text">3. 逐层详细修改</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#3-1-%E7%AC%AC%E4%B8%80%E5%B1%82%EF%BC%9A%E5%AE%9A%E4%B9%89"><span class="nav-text">3.1. 第一层：定义</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#3-1-1-XSD-Schema"><span class="nav-text">3.1.1 XSD Schema</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-1-2-C-C-%E6%9E%9A%E4%B8%BE%E5%AE%9A%E4%B9%89"><span class="nav-text">3.1.2 C&#x2F;C++ 枚举定义</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-1-3-AIDL-%E6%8E%A5%E5%8F%A3%E5%AE%9A%E4%B9%89"><span class="nav-text">3.1.3 AIDL 接口定义</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-1-4-Java-%E6%A1%86%E6%9E%B6%E5%B8%B8%E9%87%8F"><span class="nav-text">3.1.4 Java 框架常量</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-2-%E7%AC%AC%E4%BA%8C%E5%B1%82%EF%BC%9A%E8%BD%AC%E6%8D%A2"><span class="nav-text">3.2. 第二层：转换</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#3-2-1-AIDL-%E2%86%94-C-%E5%8F%8C%E5%90%91%E8%BD%AC%E6%8D%A2"><span class="nav-text">3.2.1 AIDL ↔ C++ 双向转换</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-3-%E7%AC%AC%E4%B8%89%E5%B1%82%EF%BC%9A%E6%A0%A1%E9%AA%8C%E4%B8%8E%E7%AD%96%E7%95%A5"><span class="nav-text">3.3 第三层：校验与策略</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#3-3-1-Usage-%E5%90%88%E6%B3%95%E6%80%A7%E6%A0%A1%E9%AA%8C"><span class="nav-text">3.3.1 Usage 合法性校验</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-3-2-%E7%AD%96%E7%95%A5%E6%98%A0%E5%B0%84%EF%BC%88%E6%A0%B8%E5%BF%83%EF%BC%81%E5%86%B3%E5%AE%9A%E8%B5%B0%E5%93%AA%E4%B8%AA-Route%EF%BC%89"><span class="nav-text">3.3.2 策略映射（核心！决定走哪个 Route）</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-4-%E7%AC%AC%E5%9B%9B%E5%B1%82%EF%BC%9A%E7%89%A9%E7%90%86%E8%B7%AF%E7%94%B1"><span class="nav-text">3.4. 第四层：物理路由</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#3-4-1-%E9%9F%B3%E9%A2%91%E7%AD%96%E7%95%A5%E9%85%8D%E7%BD%AE%EF%BC%88%E5%AE%9E%E9%99%85%E8%AE%BE%E5%A4%87%E9%85%8D%E7%BD%AE%EF%BC%89"><span class="nav-text">3.4.1 音频策略配置（实际设备配置）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-4-2-attachedDevices%EF%BC%88%E5%8F%AF%E9%80%89%EF%BC%89"><span class="nav-text">3.4.2 attachedDevices（可选）</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-5-%E7%AC%AC%E4%BA%94%E5%B1%82%EF%BC%9ACarAudio"><span class="nav-text">3.5 第五层：CarAudio</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#3-5-1-CarAudioContext"><span class="nav-text">3.5.1. CarAudioContext</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-5-2-FocusInteraction"><span class="nav-text">3.5.2. FocusInteraction</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-5-3-car-audio-configuration-%E9%85%8D%E7%BD%AE"><span class="nav-text">3.5.3. car_audio_configuration 配置</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-6-%E7%AC%AC%E5%85%AD%E5%B1%82%EF%BC%9AAudio-Hal"><span class="nav-text">3.6. 第六层：Audio Hal</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#3-6-1-%E5%A3%B0%E6%98%8E%E5%8F%AF%E7%94%A8%E8%BE%93%E5%87%BA"><span class="nav-text">3.6.1 声明可用输出</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-6-2-BUS-%E5%9C%B0%E5%9D%80-%E2%86%92-PAL-%E6%92%AD%E6%94%BE%E6%B5%81%E7%B1%BB%E5%9E%8B"><span class="nav-text">3.6.2 BUS 地址 → PAL 播放流类型</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-6-3-BUS-%E5%9C%B0%E5%9D%80-%E2%86%92-PAL-%E8%BE%93%E5%87%BA%E8%AE%BE%E5%A4%87"><span class="nav-text">3.6.3 BUS 地址 → PAL 输出设备</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-6-4-%E6%8E%A5%E9%80%9A%E6%96%B0-BUS-%E7%9A%84%E9%9F%B3%E9%87%8F%E6%8E%A7%E5%88%B6"><span class="nav-text">3.6.4 接通新 BUS 的音量控制</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-6-5-PCM-dump"><span class="nav-text">3.6.5 PCM dump</span></a></li></ol></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
       
 
       
