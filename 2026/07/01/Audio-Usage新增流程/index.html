@@ -99,18 +99,18 @@
 
 
 
-<meta name="description" content="title: Audio Usage 新增流程梳理date: 2026-07-01 21:34:23tags:   Audiocategory: Audio AudioUsagesummary_img: &#x2F;images&#x2F;AndroidAudioUsage新增流程.png   1. 背景知识1.1 AudioUsage 是什么AudioUsage 描述音频的用途&#x2F;场景，告诉系统”这个声音是干什么的">
+<meta name="description" content="1. 背景知识1.1 AudioUsage 是什么AudioUsage 描述音频的用途&#x2F;场景，告诉系统”这个声音是干什么的”。系统根据 Usage 决定：  音频焦点（Audio Focus）：导航语音来了是否压低媒体 路由决策（Routing）：声音从哪个物理设备输出 音量曲线（Volume Curve）：不同设备上的音量映射 音频处理（Processing）：是否开启 AEC、NS 等  1.">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Audio Usage 新增流程梳理">
 <meta property="og:url" content="https://zcorpius.github.io/2026/07/01/Audio-Usage%E6%96%B0%E5%A2%9E%E6%B5%81%E7%A8%8B/index.html">
 <meta property="og:site_name" content="Zcorpius&#39;s Blog">
-<meta property="og:description" content="title: Audio Usage 新增流程梳理date: 2026-07-01 21:34:23tags:   Audiocategory: Audio AudioUsagesummary_img: &#x2F;images&#x2F;AndroidAudioUsage新增流程.png   1. 背景知识1.1 AudioUsage 是什么AudioUsage 描述音频的用途&#x2F;场景，告诉系统”这个声音是干什么的">
+<meta property="og:description" content="1. 背景知识1.1 AudioUsage 是什么AudioUsage 描述音频的用途&#x2F;场景，告诉系统”这个声音是干什么的”。系统根据 Usage 决定：  音频焦点（Audio Focus）：导航语音来了是否压低媒体 路由决策（Routing）：声音从哪个物理设备输出 音量曲线（Volume Curve）：不同设备上的音量映射 音频处理（Processing）：是否开启 AEC、NS 等  1.">
 <meta property="og:locale">
 <meta property="og:image" content="https://zcorpius.github.io/2026/07/01/Audio-Usage%E6%96%B0%E5%A2%9E%E6%B5%81%E7%A8%8B/architecture-whale.png">
 <meta property="og:image" content="https://zcorpius.github.io/2026/07/01/Audio-Usage%E6%96%B0%E5%A2%9E%E6%B5%81%E7%A8%8B/playback-whale-v2.png">
 <meta property="og:image" content="https://zcorpius.github.io/2026/07/01/Audio-Usage%E6%96%B0%E5%A2%9E%E6%B5%81%E7%A8%8B/focus-whale.png">
 <meta property="article:published_time" content="2026-07-01T13:34:23.000Z">
-<meta property="article:modified_time" content="2026-10-15T07:02:36.619Z">
+<meta property="article:modified_time" content="2026-10-15T07:12:13.531Z">
 <meta property="article:author" content="Zcorpius">
 <meta property="article:tag" content="Audio">
 <meta name="twitter:card" content="summary">
@@ -453,7 +453,7 @@
                   <span class="post-meta-item-text">阅读时长 &asymp;</span>
                 
                 <span title="阅读时长">
-                  17
+                  16
                 </span>
               
             </div>
@@ -474,15 +474,7 @@
       
 
       
-        <hr>
-<p>title: Audio Usage 新增流程梳理<br>date: 2026-07-01 21:34:23<br>tags: </p>
-<ul>
-<li>Audio<br>category:</li>
-<li>Audio</li>
-<li>AudioUsage<br>summary_img: /images/AndroidAudioUsage新增流程.png</li>
-</ul>
-<hr>
-<h1 id="1-背景知识"><a href="#1-背景知识" class="headerlink" title="1. 背景知识"></a>1. 背景知识</h1><h2 id="1-1-AudioUsage-是什么"><a href="#1-1-AudioUsage-是什么" class="headerlink" title="1.1 AudioUsage 是什么"></a>1.1 AudioUsage 是什么</h2><p><code>AudioUsage</code> 描述音频的<strong>用途/场景</strong>，告诉系统”这个声音是干什么的”。系统根据 Usage 决定：</p>
+        <h1 id="1-背景知识"><a href="#1-背景知识" class="headerlink" title="1. 背景知识"></a>1. 背景知识</h1><h2 id="1-1-AudioUsage-是什么"><a href="#1-1-AudioUsage-是什么" class="headerlink" title="1.1 AudioUsage 是什么"></a>1.1 AudioUsage 是什么</h2><p><code>AudioUsage</code> 描述音频的<strong>用途/场景</strong>，告诉系统”这个声音是干什么的”。系统根据 Usage 决定：</p>
 <ul>
 <li><strong>音频焦点</strong>（Audio Focus）：导航语音来了是否压低媒体</li>
 <li><strong>路由决策</strong>（Routing）：声音从哪个物理设备输出</li>
