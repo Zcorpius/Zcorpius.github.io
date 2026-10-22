@@ -99,18 +99,21 @@
 
 
 
-<meta name="description" content="1. 前言 Note 源码与摘录约定：本系列以本地 LineageOS 22.2 &#x2F; Android 15 源码快照为准，具体实现可能与其他 AOSP 标签不同。代码块首行标出源码相对路径，保留函数或 rc section 及关键分支；... 表示省略的非关键实现，摘录不作为可独立编译的完整代码。   本章是《Android 系统启动》的总导航。源码基线见上方约定；它只建立端到端的进程、服务与权限">
+<meta name="description" content="1. 从按下电源，到能够打开一个应用如果只背“init → Zygote → SystemServer → Launcher”，遇到真实问题时仍然很难判断：动画已经出现，为什么还没有桌面？system_server 有 PID，为什么某个服务查不到？应用进程创建成功，为什么 Activity 还没有执行？ 这些问题来自同一个边界：进程出现、接口发布、业务准备完成、界面可用，并不是同一件事。 And">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Android 系统启动——概述">
 <meta property="og:url" content="https://zcorpius.github.io/2025/09/12/Android%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A81-%E6%A6%82%E8%BF%B0/index.html">
 <meta property="og:site_name" content="Zcorpius&#39;s Blog">
-<meta property="og:description" content="1. 前言 Note 源码与摘录约定：本系列以本地 LineageOS 22.2 &#x2F; Android 15 源码快照为准，具体实现可能与其他 AOSP 标签不同。代码块首行标出源码相对路径，保留函数或 rc section 及关键分支；... 表示省略的非关键实现，摘录不作为可独立编译的完整代码。   本章是《Android 系统启动》的总导航。源码基线见上方约定；它只建立端到端的进程、服务与权限">
+<meta property="og:description" content="1. 从按下电源，到能够打开一个应用如果只背“init → Zygote → SystemServer → Launcher”，遇到真实问题时仍然很难判断：动画已经出现，为什么还没有桌面？system_server 有 PID，为什么某个服务查不到？应用进程创建成功，为什么 Activity 还没有执行？ 这些问题来自同一个边界：进程出现、接口发布、业务准备完成、界面可用，并不是同一件事。 And">
 <meta property="og:locale">
+<meta property="og:image" content="https://zcorpius.github.io/2025/09/12/Android%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A81-%E6%A6%82%E8%BF%B0/boot-process-tree.png">
+<meta property="og:image" content="https://zcorpius.github.io/2025/09/12/Android%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A81-%E6%A6%82%E8%BF%B0/boot-milestones.png">
 <meta property="article:published_time" content="2025-09-12T15:35:12.000Z">
-<meta property="article:modified_time" content="2026-10-16T02:13:44.294Z">
+<meta property="article:modified_time" content="2026-10-22T15:54:00.038Z">
 <meta property="article:author" content="Zcorpius">
 <meta property="article:tag" content="startup">
 <meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://zcorpius.github.io/2025/09/12/Android%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A81-%E6%A6%82%E8%BF%B0/boot-process-tree.png">
 
 
 
@@ -433,7 +436,7 @@
                   <span class="post-meta-item-text">字数统计&#58;</span>
                 
                 <span title="字数统计">
-                  3.2k
+                  9.1k
                 </span>
               
 
@@ -449,7 +452,7 @@
                   <span class="post-meta-item-text">阅读时长 &asymp;</span>
                 
                 <span title="阅读时长">
-                  14
+                  34
                 </span>
               
             </div>
@@ -470,194 +473,549 @@
       
 
       
-        <h1 id="1-前言"><a href="#1-前言" class="headerlink" title="1. 前言"></a>1. 前言</h1><div class="markdown-alert markdown-alert-note">
-<p class="markdown-alert-title"><svg class="octicon octicon-info mr-2" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"></path></svg>Note</p>
-<p><strong>源码与摘录约定</strong>：本系列以本地 LineageOS 22.2 / Android 15 源码快照为准，具体实现可能与其他 AOSP 标签不同。代码块首行标出源码相对路径，保留函数或 rc section 及关键分支；<code>...</code> 表示省略的非关键实现，摘录不作为可独立编译的完整代码。</p>
-</div>
-<blockquote>
-<p>本章是《Android 系统启动》的总导航。源码基线见上方约定；它只建立端到端的进程、服务与权限边界，不替代后续章节的逐行分析。开机画面到桌面就绪的收尾链路见《07-开机界面与完成》。</p>
-</blockquote>
-<p>从 Linux 内核切入 Android 用户空间之后，启动不是一条“init 依次启动所有应用”的直线，而是两条彼此协作的主线：</p>
-<blockquote>
-<p><strong>native 基础设施线</strong>：<code>init</code> 启动并监管 native daemon（含 servicemanager）；</p>
-<p><strong>Java 运行时线</strong>：<code>init</code> 启动 Zygote → Zygote 预加载并 fork system_server → system_server 建立系统服务 → AMS 请求 Zygote 创建应用进程。</p>
-</blockquote>
-<p>显示侧还有一条并行路径：init 启动 SurfaceFlinger，SurfaceFlinger 请求启动开机动画；AMS/ATMS 发起 HOME 后，WMS 等待窗口就绪、退出动画并启用显示，AMS 随后推进 boot completed 阶段。详见 <a href="/2025/10/08/Android%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A87-%E5%BC%80%E6%9C%BA%E7%95%8C%E9%9D%A2%E4%B8%8E%E5%AE%8C%E6%88%90/" title="Android 系统启动——从开机动画到桌面就绪">07-开机界面与完成</a>。</p>
-<div class="markdown-alert markdown-alert-important">
-<p class="markdown-alert-title"><svg class="octicon octicon-report mr-2" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M0 1.75C0 .784.784 0 1.75 0h12.5C15.216 0 16 .784 16 1.75v9.5A1.75 1.75 0 0 1 14.25 13H8.06l-2.573 2.573A1.458 1.458 0 0 1 3 14.543V13H1.75A1.75 1.75 0 0 1 0 11.25Zm1.75-.25a.25.25 0 0 0-.25.25v9.5c0 .138.112.25.25.25h2a.75.75 0 0 1 .75.75v2.19l2.72-2.72a.749.749 0 0 1 .53-.22h6.5a.25.25 0 0 0 .25-.25v-9.5a.25.25 0 0 0-.25-.25Zm7 2.25v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 9a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"></path></svg>Important</p>
-<p><strong>创建进程、发布服务、完成初始化是不同阶段</strong>。拿到 PID 不代表应用已执行 <code>Application.onCreate()</code>；Binder 注册成功也不代表服务已经收到后续 boot phase。</p>
-</div>
-<p>其中 <code>servicemanager</code> 与 Zygote 并不是父子关系：二者通常都由 init 启动；system_server 虽然向 servicemanager 注册 Binder 服务，但它是 Zygote 的子进程；普通 Java app 也由相应 Zygote 创建（USAP 则是预先 fork 后再特化），而不是由 system_server <code>fork()</code>。</p>
-<p>完整调用链先看这一段，后续章节按入口展开：</p>
-<figure class="highlight text"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">// system/core/init/main.cpp；frameworks/base/core/java/com/android/internal/os/ZygoteInit.java；frameworks/base/services/java/com/android/server/SystemServer.java（调用链示意）</span><br><span class="line"></span><br><span class="line">Linux kernel → /init（PID 1）</span><br><span class="line">  ├─ rc service → servicemanager → 命名 Binder 服务注册与查找</span><br><span class="line">  ├─ rc service → SurfaceFlinger → ctl.start=bootanim → 开机动画</span><br><span class="line">  └─ rc service → app_process → AndroidRuntime::start()（创建 ART / JNI）</span><br><span class="line">       └─ ZygoteInit.main()：预加载、接管 socket</span><br><span class="line">            ├─ forkSystemServer() → SystemServer.main() → 启动系统服务</span><br><span class="line">            │    └─ AMS/ATMS 发起 HOME 或其他应用组件</span><br><span class="line">            │         └─ ProcessList → ZygoteProcess → Zygote / USAP</span><br><span class="line">            └─ 应用子进程 → ActivityThread.main() → attachApplication()</span><br><span class="line">                              → bindApplication() → Application / 待启动组件</span><br><span class="line"></span><br><span class="line">显示收尾：WMS 请求动画退出 → 启用显示 → AMS finishBooting() → 用户级开机广播</span><br></pre></td></tr></tbody></table></figure>
-
-<h1 id="2-进程、父子关系与职责"><a href="#2-进程、父子关系与职责" class="headerlink" title="2. 进程、父子关系与职责"></a>2. 进程、父子关系与职责</h1><table>
+        <h1 id="1-从按下电源，到能够打开一个应用"><a href="#1-从按下电源，到能够打开一个应用" class="headerlink" title="1. 从按下电源，到能够打开一个应用"></a>1. 从按下电源，到能够打开一个应用</h1><p>如果只背“init → Zygote → SystemServer → Launcher”，遇到真实问题时仍然很难判断：动画已经出现，为什么还没有桌面？system_server 有 PID，为什么某个服务查不到？应用进程创建成功，为什么 Activity 还没有执行？</p>
+<p>这些问题来自同一个边界：<strong>进程出现、接口发布、业务准备完成、界面可用，并不是同一件事。</strong> Android 启动是在逐步建立这些条件，同时保留一套常驻机制，用于之后启动应用、响应请求和处理进程死亡。</p>
+<p>本文用一条贯穿场景建立全局认识：一台普通手机冷启动，系统建立显示与 framework 服务，启动 HOME；用户首次解锁后，从桌面打开一个尚无进程的示例笔记应用。笔记应用只用于讲解，没有在本次设备上安装或启动。</p>
+<p>读完后应能回答：谁真正创建进程，谁只发请求；不同的“服务”由谁管理；启动顺序靠哪些条件推进；遇到卡点应去后续哪一篇查实现。这里保留决定边界的代码，不展开每个子系统的全部实现。</p>
+<h2 id="1-1-先看一张全局地图"><a href="#1-1-先看一张全局地图" class="headerlink" title="1.1 先看一张全局地图"></a>1.1 先看一张全局地图</h2><p><img src="/2025/09/12/Android%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A81-%E6%A6%82%E8%BF%B0/boot-process-tree.png" alt="init 管理 native 服务与 Zygote，主 Zygote 创建 system_server 和应用；创建请求与进程父子关系分开"></p>
+<p>图中绿线表示进程创建，橙色虚线表示 system_server 发给 Zygote 的应用创建请求。<strong>图是一张简化进程关系图，竖直位置不表示严格启动顺序。</strong> 例子选择 64 位主 Zygote；辅 Zygote、USAP 和专用 Zygote 是否存在，取决于产品 ABI、配置和实际用途。</p>
+<p>沿这张图，可以把一次启动读成三条互相协作的线：</p>
+<ul>
+<li><strong>native 基础设施</strong>：init 建立属性与服务调度，启动 servicemanager、SurfaceFlinger 等进程。它们为后续服务发现与显示提供基础。</li>
+<li><strong>Java 运行环境与 framework</strong>：init 运行 app_process 建立 Zygote，Zygote 创建 system_server；SystemServer 在这个进程中组织系统服务，随后由 AMS/ATMS 发起应用组件启动。</li>
+<li><strong>画面与完成状态</strong>：动画在独立进程里播放；HOME、锁屏和系统窗口陆续准备。WMS 协调显示交接，AMS 推进设备级完成，用户控制器继续处理按用户安排的广播。</li>
+</ul>
+<p>这三条线有依赖和等待，也存在重叠。启动性能分析要找到“当前哪项工作阻塞了下一项条件”，不能把各进程的耗时简单相加。</p>
+<h2 id="1-2-本文的版本边界"><a href="#1-2-本文的版本边界" class="headerlink" title="1.2 本文的版本边界"></a>1.2 本文的版本边界</h2><p>以下分析依据用户提供的本地 <code>LineageOS</code> 源码。manifest 默认分支为 <code>lineage-22.2</code>；Lineage 版本配置为 22.2，Android release 配置标识 15。主要仓库分别核对，不能把整个多仓库目录当成一个提交。</p>
+<table>
 <thead>
 <tr>
-<th>对象</th>
-<th>创建/监管者</th>
-<th>核心职责</th>
-<th>后续章节</th>
+<th>仓库</th>
+<th>本地提交</th>
+<th>主要用途</th>
 </tr>
 </thead>
 <tbody><tr>
-<td><code>init</code> (PID 1)</td>
-<td>kernel 首次执行 <code>/init</code></td>
-<td>rc action、属性、服务生命周期、SELinux、子进程回收</td>
-<td><a href="/2025/09/17/Android%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A82-init%E8%BF%9B%E7%A8%8B/" title="Android 系统启动——init进程">02-init进程</a></td>
+<td><code>system/core</code></td>
+<td><code>bcb8623207cf6e7a51876a891d8b7ad3d04fd8c2</code></td>
+<td>init、rc、属性与服务生命周期</td>
 </tr>
 <tr>
-<td><code>servicemanager</code></td>
-<td>init service</td>
-<td><code>/dev/binder</code> 的 context manager；命名服务注册、查找和访问控制</td>
-<td><a href="/2025/10/03/Android%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A85-Servicemanager%E8%BF%9B%E7%A8%8B/" title="Android 系统启动——Servicemanager进程">05-Servicemanager进程</a></td>
+<td><code>frameworks/native</code></td>
+<td><code>a73b37862118479e83dd99ead0b7e48f657d452b</code></td>
+<td>servicemanager、SurfaceFlinger</td>
 </tr>
 <tr>
-<td>Zygote</td>
-<td>init service，经 <code>app_process</code> 建立 ART</td>
-<td>预加载、Zygote socket、fork system_server / app / USAP</td>
-<td><a href="/2025/09/23/Android%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A83-Zygote%E8%BF%9B%E7%A8%8B/" title="Android 系统启动——Zygote进程">03-Zygote进程</a></td>
+<td><code>frameworks/base</code></td>
+<td><code>f8d852aaaa843b9d74db780bb11d4691b3ceebc0</code></td>
+<td>Zygote、SystemServer、应用与窗口管理</td>
+</tr>
+</tbody></table>
+<p>核对时三个仓库均为 detached HEAD。<code>frameworks/base</code> 中有显示容器相关的本地修改；本文摘录的 init、运行时、SystemServer、电源服务和应用入口文件不在修改列表中。构建目录的版本配置只用于识别系统系列，不代表所有设备镜像与这些提交完全一致。</p>
+<div class="markdown-alert markdown-alert-note">
+<p class="markdown-alert-title"><svg class="octicon octicon-info mr-2" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"></path></svg>Note</p>
+<p>下文代码均为源码节选，添加中文讲解注释；<code>...</code> 表示在原位置省略非关键内容，不是可独立编译的完整文件。首行路径相对于本地源码根。Bootloader 只作职责概述，不声称已审计本机厂商引导代码；本次设备只读观察见第 9 章。</p>
+</div>
+<h1 id="2-读启动源码，先把四种对象分开"><a href="#2-读启动源码，先把四种对象分开" class="headerlink" title="2. 读启动源码，先把四种对象分开"></a>2. 读启动源码，先把四种对象分开</h1><h2 id="2-1-进程、程序入口和-Java-对象"><a href="#2-1-进程、程序入口和-Java-对象" class="headerlink" title="2.1 进程、程序入口和 Java 对象"></a>2.1 进程、程序入口和 Java 对象</h2><p><strong>进程</strong>是 Linux 调度与资源隔离的容器，有 PID、UID、地址空间和线程。<strong>可执行文件</strong>是磁盘上的程序，例如 <code>/system/bin/app_process64</code>。<strong>入口函数或类</strong>决定进程开始执行哪些逻辑。一个进程内还可以创建许多 Java 服务对象。</p>
+<p>例如 init 启动 <code>app_process64</code>，这个 native 程序建立 ART 后进入 <code>ZygoteInit.main()</code>，运行中的进程被命名为 Zygote。它 fork 出另一个进程后，子进程再进入 <code>SystemServer.main()</code>。<code>ActivityManagerService</code>、<code>WindowManagerService</code> 等对象随后都在 system_server 的地址空间内创建，不能因为名字带 Service 就各画一个 Linux 进程。</p>
+<table>
+<thead>
+<tr>
+<th>容易混用的名称</th>
+<th>实际是什么</th>
+<th>读源码时该问什么</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>zygote</code></td>
+<td>init service 名；也常用来泛指 Zygote 进程</td>
+<td>rc 在什么条件下启动它？对应哪个 ABI？</td>
+</tr>
+<tr>
+<td><code>app_process64</code></td>
+<td>native 可执行文件</td>
+<td>哪个参数让它进入 Zygote 模式？</td>
+</tr>
+<tr>
+<td><code>SystemServer</code></td>
+<td>framework 启动编排类</td>
+<td>当前代码在 system_server 的哪个线程执行？</td>
 </tr>
 <tr>
 <td><code>system_server</code></td>
-<td>Zygote fork</td>
-<td>framework 系统服务宿主、SystemServer boot phase、AMS</td>
-<td><a href="/2025/09/30/Android%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A84-SystemServer%E8%BF%9B%E7%A8%8B/" title="Android 系统启动——SystemServer进程">04-SystemServer进程</a></td>
+<td>Linux 进程</td>
+<td>谁 fork 它？当前 UID、PID、PPID 是什么？</td>
 </tr>
 <tr>
-<td>app 进程</td>
-<td>Zygote / USAP / 专用 Zygote</td>
-<td>执行 <code>ActivityThread</code>，向 AMS attach，承载应用组件</td>
-<td><a href="/2025/10/06/Android%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A86-App%E8%BF%9B%E7%A8%8B/" title="Android 系统启动——App进程">06-App进程</a></td>
-</tr>
-<tr>
-<td>SurfaceFlinger / bootanimation</td>
-<td>init service</td>
-<td>合成显示图层、播放和退出开机动画</td>
-<td><a href="/2025/10/08/Android%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A87-%E5%BC%80%E6%9C%BA%E7%95%8C%E9%9D%A2%E4%B8%8E%E5%AE%8C%E6%88%90/" title="Android 系统启动——从开机动画到桌面就绪">07-开机界面与完成</a></td>
+<td><code>ActivityThread</code></td>
+<td>应用运行时入口与调度对象</td>
+<td>当前方法运行在主线程还是 Binder 线程？</td>
 </tr>
 </tbody></table>
-<p>常见但错误的两种画法：</p>
-<ul>
-<li>把所有 app 画成 system_server 的 Unix 子进程；实际上 app 的 fork 父进程是相应 Zygote。</li>
-<li>把 servicemanager 画在 system_server 内；它是独立 native 进程，system_server 只是其大客户与服务注册者之一。</li>
-</ul>
-<h1 id="3-从-kernel-到-init：用户空间的起点"><a href="#3-从-kernel-到-init：用户空间的起点" class="headerlink" title="3. 从 kernel 到 init：用户空间的起点"></a>3. 从 kernel 到 init：用户空间的起点</h1><p>Boot ROM、Bootloader、verified boot、kernel 驱动初始化属于更靠前的引导层。kernel 切入用户空间时启动 <code>/init</code>；init 的首次执行从 <code>FirstStageMain()</code> 开始，随后 init 会 <strong>两次自 exec</strong>：一次进入 SELinux setup，一次进入 second stage。不要写成“init 被 kernel 执行三次”。</p>
-<figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// system/core/init/main.cpp</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">main</span><span class="params">(<span class="type">int</span> argc, <span class="type">char</span>** argv)</span> </span>{</span><br><span class="line">    ... <span class="comment">// sanitizer 初始化略</span></span><br><span class="line">    <span class="built_in">setpriority</span>(PRIO_PROCESS, <span class="number">0</span>, <span class="number">-20</span>);</span><br><span class="line">    <span class="keyword">if</span> (!<span class="built_in">strcmp</span>(<span class="built_in">basename</span>(argv[<span class="number">0</span>]), <span class="string">"ueventd"</span>)) {</span><br><span class="line">        <span class="keyword">return</span> <span class="built_in">ueventd_main</span>(argc, argv);</span><br><span class="line">    }</span><br><span class="line">    <span class="keyword">if</span> (argc &gt; <span class="number">1</span>) {</span><br><span class="line">        <span class="keyword">if</span> (!<span class="built_in">strcmp</span>(argv[<span class="number">1</span>], <span class="string">"subcontext"</span>)) {</span><br><span class="line">            ... <span class="comment">// 日志与 BuiltinFunctionMap 准备</span></span><br><span class="line">            <span class="keyword">return</span> <span class="built_in">SubcontextMain</span>(argc, argv, &amp;function_map);</span><br><span class="line">        }</span><br><span class="line">        <span class="keyword">if</span> (!<span class="built_in">strcmp</span>(argv[<span class="number">1</span>], <span class="string">"selinux_setup"</span>)) <span class="keyword">return</span> <span class="built_in">SetupSelinux</span>(argv);</span><br><span class="line">        <span class="keyword">if</span> (!<span class="built_in">strcmp</span>(argv[<span class="number">1</span>], <span class="string">"second_stage"</span>)) <span class="keyword">return</span> <span class="built_in">SecondStageMain</span>(argc, argv);</span><br><span class="line">    }</span><br><span class="line">    <span class="keyword">return</span> <span class="built_in">FirstStageMain</span>(argc, argv);</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
-
-<p>second stage 才承担属性服务、rc 导入和 action/service 调度等常驻职责。它不是按一个固定顺序“读完 init.rc 后依次启动所有服务”：属性触发器、class、disabled/oneshot、依赖条件和 service state 都会参与调度。</p>
-<h1 id="4-init-分别拉起-servicemanager-与-Zygote"><a href="#4-init-分别拉起-servicemanager-与-Zygote" class="headerlink" title="4. init 分别拉起 servicemanager 与 Zygote"></a>4. init 分别拉起 servicemanager 与 Zygote</h1><h2 id="4-1-servicemanager：先有-Binder-服务目录"><a href="#4-1-servicemanager：先有-Binder-服务目录" class="headerlink" title="4.1 servicemanager：先有 Binder 服务目录"></a>4.1 servicemanager：先有 Binder 服务目录</h2><p>init 启动 <code>/system/bin/servicemanager</code>。它将自己设为 <code>/dev/binder</code> 的 context manager，才使后续 system_server 和 app 能按名字发现 framework Binder 服务。</p>
-<figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/native/cmds/servicemanager/main.cpp</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">main</span><span class="params">(<span class="type">int</span> argc, <span class="type">char</span>** argv)</span> </span>{</span><br><span class="line">    <span class="type">const</span> <span class="type">char</span>* driver = argc == <span class="number">2</span> ? argv[<span class="number">1</span>] : <span class="string">"/dev/binder"</span>;</span><br><span class="line">    sp&lt;ProcessState&gt; ps = ProcessState::<span class="built_in">initWithDriver</span>(driver);</span><br><span class="line">    ps-&gt;<span class="built_in">setThreadPoolMaxThreadCount</span>(<span class="number">0</span>);</span><br><span class="line">    ps-&gt;<span class="built_in">setCallRestriction</span>(ProcessState::CallRestriction::FATAL_IF_NOT_ONEWAY);</span><br><span class="line">    ...</span><br><span class="line">    sp&lt;ServiceManager&gt; manager = sp&lt;ServiceManager&gt;::<span class="built_in">make</span>(std::<span class="built_in">make_unique</span>&lt;Access&gt;());</span><br><span class="line">    manager-&gt;<span class="built_in">addService</span>(<span class="string">"manager"</span>, manager, <span class="literal">false</span>, ...);</span><br><span class="line">    IPCThreadState::<span class="built_in">self</span>()-&gt;<span class="built_in">setTheContextObject</span>(manager);</span><br><span class="line">    <span class="keyword">if</span> (!ps-&gt;<span class="built_in">becomeContextManager</span>()) <span class="built_in">LOG</span>(FATAL) &lt;&lt; <span class="string">"Could not become context manager"</span>;</span><br><span class="line">    ...</span><br><span class="line">    <span class="keyword">while</span> (<span class="literal">true</span>) looper-&gt;<span class="built_in">pollAll</span>(<span class="number">-1</span>);</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
-
-<p><code>setThreadPoolMaxThreadCount(0)</code> 并不表示不处理 Binder；本地实现将 Binder FD 接到 <code>Looper</code>，由 polling 回调接收命令。servicemanager 仅管理服务的命名、权限、死亡与懒启动协作，拿到目标 Binder 后的业务事务不会再经它转发。</p>
-<h2 id="4-2-Zygote：通过-rc-启动的-Java-父进程"><a href="#4-2-Zygote：通过-rc-启动的-Java-父进程" class="headerlink" title="4.2 Zygote：通过 rc 启动的 Java 父进程"></a>4.2 Zygote：通过 rc 启动的 Java 父进程</h2><p>init 的 <code>zygote-start</code> action 按设备 ABI 配置启动主/辅 Zygote 服务。以下是 64 位主 Zygote 的典型声明；实际设备可能有不同 rc 组合。</p>
-<figure class="highlight plaintext"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"># system/core/rootdir/init.zygote64.rc</span><br><span class="line"></span><br><span class="line">service zygote /system/bin/app_process64 -Xzygote /system/bin --zygote \</span><br><span class="line">        --start-system-server --socket-name=zygote</span><br><span class="line">    class main</span><br><span class="line">    priority -20</span><br><span class="line">    user root</span><br><span class="line">    group root readproc reserved_disk</span><br><span class="line">    socket zygote stream 660 root system</span><br><span class="line">    socket usap_pool_primary stream 660 root system</span><br><span class="line">    ...</span><br><span class="line">    critical window=${zygote.critical_window.minute:-off} target=zygote-fatal</span><br></pre></td></tr></tbody></table></figure>
-
-<p><code>app_process64</code> 不是 Zygote 逻辑本身；它是 native 启动器。它建立 ART/JNI 后反射进入 Java <code>ZygoteInit.main()</code>。</p>
-<figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/base/cmds/app_process/app_main.cpp</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">main</span><span class="params">(<span class="type">int</span> argc, <span class="type">char</span>* <span class="type">const</span> argv[])</span> </span>{</span><br><span class="line">    <span class="function">AppRuntime <span class="title">runtime</span><span class="params">(argv[<span class="number">0</span>], computeArgBlockSize(argc, argv))</span></span>;</span><br><span class="line">    ...</span><br><span class="line">    <span class="keyword">if</span> (zygote) {</span><br><span class="line">        runtime.<span class="built_in">start</span>(<span class="string">"com.android.internal.os.ZygoteInit"</span>, args, zygote);</span><br><span class="line">    } <span class="keyword">else</span> <span class="keyword">if</span> (!className.<span class="built_in">empty</span>()) {</span><br><span class="line">        runtime.<span class="built_in">start</span>(<span class="string">"com.android.internal.os.RuntimeInit"</span>, args, zygote);</span><br><span class="line">    }</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
-
-<h1 id="5-Zygote：把“昂贵初始化”变成可共享父进程"><a href="#5-Zygote：把“昂贵初始化”变成可共享父进程" class="headerlink" title="5. Zygote：把“昂贵初始化”变成可共享父进程"></a>5. Zygote：把“昂贵初始化”变成可共享父进程</h1><p>Zygote 在 fork 前预加载 framework 类、资源、图形相关对象等。fork 使用 Copy-on-Write：只读或未写入的页面可在父子间共享；子进程写入后才复制页面。因此预加载可降低冷启动耗时和内存总量，但也会把不适合共享的状态带入每一个 child，源码对此严格限制线程与 FD。</p>
-<figure class="highlight java"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/base/core/java/com/android/internal/os/ZygoteInit.java</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] argv)</span> {</span><br><span class="line">    ZygoteHooks.startZygoteNoThreadCreation();</span><br><span class="line">    ...</span><br><span class="line">    <span class="keyword">if</span> (!enableLazyPreload) {</span><br><span class="line">        preload(bootTimingsTraceLog);</span><br><span class="line">    }</span><br><span class="line">    ...</span><br><span class="line">    gcAndFinalize();</span><br><span class="line">    Zygote.initNativeState(isPrimaryZygote);</span><br><span class="line">    ZygoteHooks.stopZygoteNoThreadCreation();</span><br><span class="line">    zygoteServer = <span class="keyword">new</span> <span class="title class_">ZygoteServer</span>(isPrimaryZygote);</span><br><span class="line">    <span class="keyword">if</span> (startSystemServer) {</span><br><span class="line">        <span class="type">Runnable</span> <span class="variable">r</span> <span class="operator">=</span> forkSystemServer(abiList, zygoteSocketName, zygoteServer);</span><br><span class="line">        <span class="keyword">if</span> (r != <span class="literal">null</span>) {</span><br><span class="line">            r.run();</span><br><span class="line">            <span class="keyword">return</span>;</span><br><span class="line">        }</span><br><span class="line">    }</span><br><span class="line">    caller = zygoteServer.runSelectLoop(abiList);</span><br><span class="line">    ...</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
-
-<p><code>r != null</code> 只会出现在刚 fork 出的子进程；父 Zygote 留在 socket 的 select/poll 循环中，持续处理 app 创建、USAP pool、预加载及查询命令。</p>
-<h1 id="6-system-server：第一个关键-Java-子进程"><a href="#6-system-server：第一个关键-Java-子进程" class="headerlink" title="6. system_server：第一个关键 Java 子进程"></a>6. system_server：第一个关键 Java 子进程</h1><p>Zygote 以 system UID/GID、系统能力集和 <code>com.android.server.SystemServer</code> 为入口 fork system_server。native 子分支完成 FD 清理、UID/GID/capability、SELinux <code>u:r:system_server:s0</code>、seccomp、挂载与调度等 specialize；这不等价于简单的 <code>setuid(1000)</code>。</p>
-<figure class="highlight java"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/base/core/java/com/android/internal/os/ZygoteInit.java</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> Runnable <span class="title function_">forkSystemServer</span><span class="params">(String abiList, String socketName,</span></span><br><span class="line"><span class="params">        ZygoteServer zygoteServer)</span> {</span><br><span class="line">    ...</span><br><span class="line">    <span class="type">ZygoteCommandBuffer</span> <span class="variable">commandBuffer</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ZygoteCommandBuffer</span>(args);</span><br><span class="line">    <span class="type">ZygoteArguments</span> <span class="variable">parsedArgs</span> <span class="operator">=</span> ZygoteArguments.getInstance(commandBuffer);</span><br><span class="line">    commandBuffer.close();</span><br><span class="line">    ...</span><br><span class="line">    <span class="type">int</span> <span class="variable">pid</span> <span class="operator">=</span> Zygote.forkSystemServer(parsedArgs.mUid, parsedArgs.mGid,</span><br><span class="line">            parsedArgs.mGids, parsedArgs.mRuntimeFlags, <span class="literal">null</span>,</span><br><span class="line">            parsedArgs.mPermittedCapabilities, parsedArgs.mEffectiveCapabilities);</span><br><span class="line">    <span class="keyword">if</span> (pid == <span class="number">0</span>) {</span><br><span class="line">        <span class="keyword">if</span> (hasSecondZygote(abiList)) waitForSecondaryZygote(socketName);</span><br><span class="line">        zygoteServer.closeServerSocket();</span><br><span class="line">        <span class="keyword">return</span> handleSystemServerProcess(parsedArgs);</span><br><span class="line">    }</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">null</span>;</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
-
-<p>子进程经 <code>zygoteInit()</code>、<code>RuntimeInit.applicationInit()</code> 反射进入 <code>SystemServer.main()</code>。<code>SystemServer.run()</code> 先建立 system context、native server 库、主线程 Looper 和 <code>SystemServiceManager</code>，再按 bootstrap、core、other、APEX 四批启动服务，并推进 boot phase。</p>
-<figure class="highlight java"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/base/services/java/com/android/server/SystemServer.java</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title function_">run</span><span class="params">()</span> {</span><br><span class="line">    ...</span><br><span class="line">    Looper.prepareMainLooper();</span><br><span class="line">    System.loadLibrary(<span class="string">"android_servers"</span>);</span><br><span class="line">    createSystemContext();</span><br><span class="line">    mSystemServiceManager = <span class="keyword">new</span> <span class="title class_">SystemServiceManager</span>(mSystemContext);</span><br><span class="line">    ...</span><br><span class="line">    startBootstrapServices(t);</span><br><span class="line">    startCoreServices(t);</span><br><span class="line">    startOtherServices(t);</span><br><span class="line">    startApexServices(t);</span><br><span class="line">    ...</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
-
-<p>服务“构造并调用 <code>onStart()</code>”、服务“向 servicemanager 发布 Binder”、服务“在某 boot phase 真正就绪”是三件不同的事。AMS <code>systemReady()</code> 回调中推进 <code>PHASE_ACTIVITY_MANAGER_READY</code>，最终到 <code>PHASE_THIRD_PARTY_APPS_CAN_START</code>，才是三方代码可以实际运行的关键门槛。</p>
-<h1 id="7-App：由-AMS-决策，交给-Zygote-创建"><a href="#7-App：由-AMS-决策，交给-Zygote-创建" class="headerlink" title="7. App：由 AMS 决策，交给 Zygote 创建"></a>7. App：由 AMS 决策，交给 Zygote 创建</h1><p>当活动、服务、广播或 Provider 需要目标进程时，AMS 的 <code>ProcessList</code> 根据 <code>HostingRecord</code> 选择常规 Zygote、App Zygote 或 WebView Zygote；常规路径调用 <code>Process.start()</code>，不是 system_server 自己 fork。</p>
-<figure class="highlight java"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/base/services/core/java/com/android/server/am/ProcessList.java</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span> Process.ProcessStartResult <span class="title function_">startProcess</span><span class="params">(HostingRecord hostingRecord,</span></span><br><span class="line"><span class="params">        String entryPoint, ProcessRecord app, <span class="type">int</span> uid, <span class="type">int</span>[] gids, <span class="type">int</span> runtimeFlags,</span></span><br><span class="line"><span class="params">        <span class="type">int</span> zygotePolicyFlags, <span class="type">int</span> mountExternal, String seInfo, String requiredAbi, ...)</span> {</span><br><span class="line">    ...</span><br><span class="line">    <span class="keyword">final</span> Process.ProcessStartResult startResult;</span><br><span class="line">    <span class="keyword">if</span> (hostingRecord.usesWebviewZygote()) {</span><br><span class="line">        startResult = startWebView(entryPoint, app.processName, uid, uid, gids, ...);</span><br><span class="line">    } <span class="keyword">else</span> <span class="keyword">if</span> (hostingRecord.usesAppZygote()) {</span><br><span class="line">        <span class="type">AppZygote</span> <span class="variable">appZygote</span> <span class="operator">=</span> createAppZygoteForProcessIfNeeded(app);</span><br><span class="line">        startResult = appZygote.getProcess().start(entryPoint, app.processName,</span><br><span class="line">                uid, uid, gids, ...);</span><br><span class="line">    } <span class="keyword">else</span> {</span><br><span class="line">        startResult = Process.start(entryPoint, app.processName, uid, uid, gids,</span><br><span class="line">                runtimeFlags, mountExternal, app.info.targetSdkVersion, seInfo,</span><br><span class="line">                requiredAbi, instructionSet, app.info.dataDir, invokeWith,</span><br><span class="line">                app.info.packageName, zygotePolicyFlags, ...);</span><br><span class="line">        app.mProcessGroupCreated = <span class="literal">true</span>;</span><br><span class="line">    }</span><br><span class="line">    <span class="keyword">return</span> startResult;</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
-
-<p><code>ZygoteProcess</code> 根据请求 ABI 选择 primary/secondary Zygote socket；USAP pool 可用并满足策略时会优先尝试 USAP，通信失败才回退普通 Zygote。无论走哪条路径，fork 后 child 都需经过 native specialize，不能继承 Zygote 的控制 socket 和 root 身份。</p>
-<figure class="highlight java"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/base/core/java/com/android/internal/os/ZygoteConnection.java</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span> Runnable <span class="title function_">handleChildProc</span><span class="params">(ZygoteArguments parsedArgs,</span></span><br><span class="line"><span class="params">        FileDescriptor pipeFd, <span class="type">boolean</span> isZygote)</span> {</span><br><span class="line">    closeSocket();</span><br><span class="line">    Zygote.setAppProcessName(parsedArgs, TAG);</span><br><span class="line">    ...</span><br><span class="line">    <span class="keyword">if</span> (!isZygote) {</span><br><span class="line">        <span class="keyword">return</span> ZygoteInit.zygoteInit(parsedArgs.mTargetSdkVersion,</span><br><span class="line">                parsedArgs.mDisabledCompatChanges, parsedArgs.mRemainingArgs,</span><br><span class="line">                <span class="literal">null</span> <span class="comment">/* classLoader */</span>);</span><br><span class="line">    }</span><br><span class="line">    <span class="keyword">return</span> ZygoteInit.childZygoteInit(parsedArgs.mRemainingArgs);</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
-
-<p>常规应用入口是 <code>ActivityThread.main()</code>。它准备应用主线程 Looper，并通过 <code>attachApplication(mAppThread, startSeq)</code> 回连 AMS；AMS 验证 ProcessRecord 后异步调用 <code>bindApplication()</code>。此时才开始 <code>LoadedApk</code> / Context / Provider / Instrumentation / <code>Application.onCreate()</code> 等应用初始化，而不是 fork 的瞬间。</p>
-<figure class="highlight java"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/base/core/java/android/app/ActivityThread.java</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> {</span><br><span class="line">    ...</span><br><span class="line">    Looper.prepareMainLooper();</span><br><span class="line">    <span class="type">long</span> <span class="variable">startSeq</span> <span class="operator">=</span> ...;</span><br><span class="line">    <span class="type">ActivityThread</span> <span class="variable">thread</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ActivityThread</span>();</span><br><span class="line">    thread.attach(<span class="literal">false</span>, startSeq);</span><br><span class="line">    ...</span><br><span class="line">    Looper.loop();</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
-
-<h1 id="8-关键依赖关系：服务名、Binder-与启动顺序"><a href="#8-关键依赖关系：服务名、Binder-与启动顺序" class="headerlink" title="8. 关键依赖关系：服务名、Binder 与启动顺序"></a>8. 关键依赖关系：服务名、Binder 与启动顺序</h1><p>可以用以下关系理解启动的“横向依赖”：</p>
-<blockquote>
-<p><code>init</code> 负责 <strong>创建/重启进程</strong>；<br>servicemanager 负责 <strong>让 Binder 服务按名称被发现</strong>；<br>system_server 负责 <strong>创建多数 framework 服务并协调其 boot phase</strong>；<br>AMS 负责 <strong>决定何时需要 app 进程并追踪其状态</strong>；<br>Zygote 负责 <strong>实际创建 Java 子进程</strong>。</p>
-</blockquote>
-<p>一个 framework 服务典型会经历：</p>
-<blockquote>
-<p>SystemServer / SystemServiceManager 创建 → <code>onStart()</code> → <code>ServiceManager.addService(name, binder)</code>（若它是对外 Binder 服务）→ 后续 <code>onBootPhase()</code> / <code>systemReady()</code> → 客户端通过 <code>ServiceManager.getService(name)</code> 获取 Binder。</p>
-</blockquote>
-<p>不要把 <code>service list</code> 的结果误解为“SystemServiceManager 已启动的全部服务”：前者只显示 servicemanager 中已发布且可列出的 Binder 名称，后者的 Java 生命周期服务列表更大。</p>
-<h1 id="9-失败传播与-runtime-restart"><a href="#9-失败传播与-runtime-restart" class="headerlink" title="9. 失败传播与 runtime restart"></a>9. 失败传播与 runtime restart</h1><table>
+<p><code>ActivityThread</code> 的名字尤其容易误导：它不是通过 <code>new ActivityThread()</code> 就新建的一条 Java Thread。普通应用的主线程早已作为进程执行流存在，<code>main()</code> 再在这条线程上准备 Looper、创建对象并回连系统。</p>
+<h2 id="2-2-同一个“服务”，可能属于不同管理体系"><a href="#2-2-同一个“服务”，可能属于不同管理体系" class="headerlink" title="2.2 同一个“服务”，可能属于不同管理体系"></a>2.2 同一个“服务”，可能属于不同管理体系</h2><table>
 <thead>
 <tr>
-<th>失败对象</th>
-<th>直接后果</th>
-<th>典型恢复链</th>
+<th>管理者</th>
+<th>管理的对象</th>
+<th>代表入口</th>
 </tr>
 </thead>
 <tbody><tr>
-<td>app 进程</td>
-<td>进程死亡，Binder death 通知相关方</td>
-<td>AMS 依据组件/重要性/崩溃策略决定是否再次启动</td>
-</tr>
-<tr>
-<td>system_server</td>
-<td>Zygote 的 SIGCHLD 逻辑检测到 system_server PID 死亡</td>
-<td>Zygote 自杀 → init 重启 Zygote → 重新 fork system_server</td>
-</tr>
-<tr>
-<td>Zygote</td>
-<td>Java 父进程消失，子进程通常随之失去生命周期基础</td>
-<td>init 根据 service 规则重启，并执行 rc <code>onrestart</code> 联动</td>
+<td>init</td>
+<td>rc 中声明的 service 进程</td>
+<td><code>start</code>、<code>class_start</code>、进程回收与重启</td>
 </tr>
 <tr>
 <td>servicemanager</td>
-<td>Binder 命名服务目录丢失</td>
-<td>init 重启它，并按 rc 重启依赖服务 class</td>
+<td>名称到 Binder 对象的映射与访问控制</td>
+<td><code>addService</code>、查询、通知</td>
+</tr>
+<tr>
+<td>SystemServiceManager</td>
+<td>system_server 内的 SystemService 生命周期</td>
+<td><code>onStart()</code>、<code>onBootPhase()</code></td>
+</tr>
+<tr>
+<td>AMS</td>
+<td>应用进程记录、组件运行与生命周期协调</td>
+<td>进程创建请求、attach、Service/广播等调度</td>
 </tr>
 </tbody></table>
-<p>“system_server 死亡后 init 直接重启 system_server”是不准确的。init 监管的是 Zygote service；Zygote 特意将 system_server 死亡升级为自身退出，进而触发完整 runtime restart。<code>critical</code> 只是 init 服务的额外崩溃保护策略，并非每次死亡都立即重启整机。</p>
-<h1 id="10-推荐阅读顺序与排障入口"><a href="#10-推荐阅读顺序与排障入口" class="headerlink" title="10. 推荐阅读顺序与排障入口"></a>10. 推荐阅读顺序与排障入口</h1><ol>
-<li><a href="/2025/09/17/Android%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A82-init%E8%BF%9B%E7%A8%8B/" title="Android 系统启动——init进程">02-init进程</a>：先理解 rc、property、service state、SIGCHLD，才能解释进程为何被拉起或重启。</li>
-<li><a href="/2025/10/03/Android%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A85-Servicemanager%E8%BF%9B%E7%A8%8B/" title="Android 系统启动——Servicemanager进程">05-Servicemanager进程</a>：理解 Binder 服务发现、SELinux `add/find`、lazy AIDL，避免把“服务不存在”误判为“进程没启动”。</li>
-<li><a href="/2025/09/23/Android%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A83-Zygote%E8%BF%9B%E7%A8%8B/" title="Android 系统启动——Zygote进程">03-Zygote进程</a>：理解 app_process、ART 预加载、socket、普通 fork 与 USAP。</li>
-<li><a href="/2025/09/30/Android%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A84-SystemServer%E8%BF%9B%E7%A8%8B/" title="Android 系统启动——SystemServer进程">04-SystemServer进程</a>：理解 system_server 特化、服务批次、boot phase 与 AMS `systemReady()`。</li>
-<li><a href="/2025/10/06/Android%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A86-App%E8%BF%9B%E7%A8%8B/" title="Android 系统启动——App进程">06-App进程</a>：从 ProcessList 到 `ActivityThread.bindApplication()`，串起真正的应用进程启动。</li>
-<li><a href="/2025/10/08/Android%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A87-%E5%BC%80%E6%9C%BA%E7%95%8C%E9%9D%A2%E4%B8%8E%E5%AE%8C%E6%88%90/" title="Android 系统启动——从开机动画到桌面就绪">07-开机界面与完成</a>：沿显示线与应用线追踪 HOME、开机动画退出、显示启用和开机广播。</li>
-</ol>
-<p>排障时建议先定位故障落在哪个边界：</p>
-<ul>
-<li><strong>进程根本没出现</strong>：看 init service/rc/property 与 Zygote socket；</li>
-<li><strong>进程出现又退出</strong>：看 Zygote specialize、SELinux、崩溃栈和 <code>SIGCHLD</code>；</li>
-<li><strong>服务找不到</strong>：看 servicemanager 注册、SELinux <code>add/find</code>、lazy service 声明；</li>
-<li><strong>app fork 后卡住</strong>：看 <code>attachApplication</code>、<code>bindApplication</code>、Provider、主线程初始化和启动超时。</li>
-</ul>
-<p>Perfetto/atrace 中可按 <code>StartServices</code>、<code>StartService *</code>、<code>OnBootPhase_*</code>、<code>Start proc:*</code>、<code>PostFork</code>、<code>ActivityThreadMain</code> 串时间线；日志可从 <code>init</code>、<code>servicemanager</code>、<code>Zygote</code>、<code>SystemServer</code>、<code>ActivityManager</code> 五个 tag/进程边界分段查看。</p>
-<h1 id="11-记忆与检验"><a href="#11-记忆与检验" class="headerlink" title="11. 记忆与检验"></a>11. 记忆与检验</h1><h2 id="11-1-记忆总结"><a href="#11-1-记忆总结" class="headerlink" title="11.1 记忆总结"></a>11.1 记忆总结</h2><ol>
-<li>init 是用户空间 PID 1 和生命周期监管者；servicemanager、Zygote 多为 init 直接启动的同级服务。</li>
-<li>Zygote 是 Java 进程父体：预加载后 fork system_server 和 app；system_server 不是 init 直接启动的服务。</li>
-<li>servicemanager 管命名 Binder 服务，system_server 管 framework 服务生命周期，AMS 管 app 进程记录与调度；三者职责互补而不重叠。</li>
-<li>fork 只创建进程；app 还必须 attach AMS 并收到 <code>bindApplication()</code>，系统服务也还要经过 Binder 发布和 boot phase。</li>
-<li>后续六章按上述边界展开，遇到启动/重启/服务发现或开机画面卡住的问题，应先判断它跨越了哪一个边界。</li>
-</ol>
-<h2 id="11-2-自测问题"><a href="#11-2-自测问题" class="headerlink" title="11.2 自测问题"></a>11.2 自测问题</h2><table>
+<p>此外，Java <code>android.os.ServiceManager</code> 是访问 Binder 服务目录的工具类；<code>LocalServices</code> 保存同一进程内按 Java 类型索引的对象。它们都不能与独立的 servicemanager 进程混为一谈。</p>
+<p>后面的 <code>power</code> 例子会贯穿这几层：init 没有为每个 PowerManagerService 对象单独创建进程；SystemServiceManager 管它的生命周期；它自行发布名为 <code>power</code> 的 Binder 接口；客户端经 servicemanager 找到接口后，向真正的服务宿主发起调用。</p>
+<h1 id="3-init：把一次引导变成长期运行的系统"><a href="#3-init：把一次引导变成长期运行的系统" class="headerlink" title="3. init：把一次引导变成长期运行的系统"></a>3. init：把一次引导变成长期运行的系统</h1><h2 id="3-1-从引导层进入-PID-1"><a href="#3-1-从引导层进入-PID-1" class="headerlink" title="3.1 从引导层进入 PID 1"></a>3.1 从引导层进入 PID 1</h2><p>更早的 Boot ROM、Bootloader 与内核负责把硬件从复位状态带到能运行用户空间程序的状态。Bootloader 的典型工作包含内存准备、启动镜像与完整性检查、选择启动目标并加载内核和 ramdisk；具体阶段与分区布局由设备决定，可参照 <a target="_blank" rel="noopener" href="https://source.android.com/docs/core/architecture/bootloader">AOSP Bootloader 概述</a>。</p>
+<p>进入本文的普通 Android 启动路径后，内核将执行权交给用户空间的 <code>/init</code>，其主进程为 PID 1。本地 init 使用三段主入口：first stage 准备早期文件系统等条件，SELinux setup 准备安全策略与域切换，second stage 建立长期运行的服务管理机制。</p>
+<figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// system/core/init/main.cpp</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">main</span><span class="params">(<span class="type">int</span> argc, <span class="type">char</span>** argv)</span> </span>{</span><br><span class="line">    ... <span class="comment">// sanitizer 与优先级准备</span></span><br><span class="line">    <span class="keyword">if</span> (!<span class="built_in">strcmp</span>(<span class="built_in">basename</span>(argv[<span class="number">0</span>]), <span class="string">"ueventd"</span>)) {</span><br><span class="line">        <span class="keyword">return</span> <span class="built_in">ueventd_main</span>(argc, argv);</span><br><span class="line">    }</span><br><span class="line">    <span class="keyword">if</span> (argc &gt; <span class="number">1</span>) {</span><br><span class="line">        <span class="keyword">if</span> (!<span class="built_in">strcmp</span>(argv[<span class="number">1</span>], <span class="string">"subcontext"</span>)) {</span><br><span class="line">            ... <span class="comment">// 日志与命令表准备</span></span><br><span class="line">            <span class="keyword">return</span> <span class="built_in">SubcontextMain</span>(argc, argv, &amp;function_map);</span><br><span class="line">        }</span><br><span class="line">        <span class="keyword">if</span> (!<span class="built_in">strcmp</span>(argv[<span class="number">1</span>], <span class="string">"selinux_setup"</span>)) {</span><br><span class="line">            <span class="keyword">return</span> <span class="built_in">SetupSelinux</span>(argv);</span><br><span class="line">        }</span><br><span class="line">        <span class="keyword">if</span> (!<span class="built_in">strcmp</span>(argv[<span class="number">1</span>], <span class="string">"second_stage"</span>)) {</span><br><span class="line">            <span class="keyword">return</span> <span class="built_in">SecondStageMain</span>(argc, argv);</span><br><span class="line">        }</span><br><span class="line">    }</span><br><span class="line">    <span class="comment">// 无上述模式参数时，进入 first stage。</span></span><br><span class="line">    <span class="keyword">return</span> <span class="built_in">FirstStageMain</span>(argc, argv);</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<p><code>FirstStageMain()</code> 最后执行 <code>/system/bin/init selinux_setup</code>，<code>SetupSelinux()</code> 再执行 <code>/system/bin/init second_stage</code>。这两次使用的是 <strong>exec</strong>：在同一个进程里替换程序映像，成功后不会回到旧调用点，PID 不因此变成三个。与此同时，init 也可以另外创建 subcontext 等辅助进程；不能把“主路径保持 PID 1”误读为系统中只能有一个名字包含 init 的进程。</p>
+<table>
 <thead>
 <tr>
-<th>问题</th>
-<th>回答要点</th>
+<th>操作</th>
+<th>是否创建新进程</th>
+<th>启动中的例子</th>
 </tr>
 </thead>
 <tbody><tr>
-<td>system_server 与 app 谁负责 fork？</td>
-<td>相应 Zygote；USAP 是预 fork 后再特化，不由 AMS 自己 fork。</td>
+<td>普通函数调用</td>
+<td>否</td>
+<td><code>SystemServer.run()</code> 调服务启动方法</td>
 </tr>
 <tr>
-<td>服务能查到，是否表示系统已启动完成？</td>
-<td>不能。Binder 可发现性、boot phase、应用初始化与用户广播分别判断。</td>
+<td><code>exec</code></td>
+<td>否，替换当前进程的程序映像</td>
+<td>init 自身切换阶段；service 子进程执行目标程序</td>
 </tr>
 <tr>
-<td>动画还在转，应从哪里分段？</td>
-<td>分别查看 HOME/窗口就绪、动画退出属性、WMS 启用显示与 AMS finishBooting。</td>
+<td><code>fork</code> / 相应 clone 路径</td>
+<td>是，产生新的进程执行流</td>
+<td>init 创建服务进程，Zygote 创建 Java 子进程</td>
+</tr>
+<tr>
+<td>Handler <code>post</code></td>
+<td>否，把工作交给消息队列</td>
+<td>应用绑定任务从 Binder 接收侧转到主线程</td>
 </tr>
 </tbody></table>
+<h2 id="3-2-rc-是调度规则，不是一份从头执行到尾的脚本"><a href="#3-2-rc-是调度规则，不是一份从头执行到尾的脚本" class="headerlink" title="3.2 rc 是调度规则，不是一份从头执行到尾的脚本"></a>3.2 rc 是调度规则，不是一份从头执行到尾的脚本</h2><p>second stage 通过 <code>LoadBootScripts()</code> 解析主 rc 与分区中的配置，分别保存 action 和 service：action 回答“什么事件下执行哪些命令”，service 回答“用什么程序、身份和选项运行一个服务”。</p>
+<p>随后，<code>QueueEventTrigger()</code> 将事件放入队列，主循环在未被属性等待或同步 exec service 阻塞时，调用 <code>ActionManager::ExecuteOneCommand()</code> 消费工作。这意味着 <code>trigger</code> 入队与对应命令执行之间存在调度过程。</p>
+<p>下面两处入口体现了不同依赖：</p>
+<figure class="highlight plaintext"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"># system/core/rootdir/init.rc</span><br><span class="line"></span><br><span class="line">on init</span><br><span class="line">    ...</span><br><span class="line">    # 尽早建立 Binder 服务目录，不必等到某次 class_start core。</span><br><span class="line">    start servicemanager</span><br><span class="line">    start hwservicemanager</span><br><span class="line">    start vndservicemanager</span><br><span class="line">    ...</span><br><span class="line"></span><br><span class="line">...</span><br><span class="line"></span><br><span class="line">on zygote-start</span><br><span class="line">    # 等待验证属性；同步 exec_start 完成后才继续后面的命令。</span><br><span class="line">    wait_for_prop odsign.verification.done 1</span><br><span class="line">    exec_start update_verifier</span><br><span class="line">    start statsd</span><br><span class="line">    start zygote</span><br><span class="line">    start zygote_secondary</span><br></pre></td></tr></tbody></table></figure>
+
+<p><code>late-init</code> action 会按本地顺序排队文件系统、数据准备等事件，再排入 <code>zygote-start</code>。但这不代表到了该事件就立刻获得 Zygote PID；上面还有属性等待和同步服务执行。<code>start zygote</code> 则查找已经解析的 service 定义，再由 <code>Service::Start()</code> 创建子进程、准备身份与 FD，并在子进程里执行目标文件。</p>
+<p>init 把服务记为 <code>running</code>，只是生命周期状态，不能保证目标进程已经发布 Binder 或完成业务初始化。开机之后，这个事件循环还要处理属性变化、服务控制、子进程退出与重启，并不会在“启动完所有服务”后退出。</p>
+<p>要进一步解释 action 排队、属性等待、class、disabled/oneshot 与回收机制，阅读 <a href="/2025/09/17/Android%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A82-init%E8%BF%9B%E7%A8%8B/" title="Android 系统启动——init进程">《init 进程》</a>。</p>
+<h1 id="4-servicemanager：让跨进程接口能够按名字被找到"><a href="#4-servicemanager：让跨进程接口能够按名字被找到" class="headerlink" title="4. servicemanager：让跨进程接口能够按名字被找到"></a>4. servicemanager：让跨进程接口能够按名字被找到</h1><p>建立系统服务不仅需要进程，还需要一种发现接口的方法。客户端不知道 <code>power</code> 当前对应的 Binder 对象在哪里，服务端则需要把可供访问的引用登记出去。servicemanager 就管理这种命名关系。</p>
+<p>本地入口选择 <code>/dev/binder</code> 作为默认驱动，将自身设为这个 Binder 域的 context manager，再通过 Looper 处理 Binder 工作：</p>
+<figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/native/cmds/servicemanager/main.cpp</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">main</span><span class="params">(<span class="type">int</span> argc, <span class="type">char</span>** argv)</span> </span>{</span><br><span class="line">    ...</span><br><span class="line">    <span class="type">const</span> <span class="type">char</span>* driver = argc == <span class="number">2</span> ? argv[<span class="number">1</span>] : <span class="string">"/dev/binder"</span>;</span><br><span class="line">    sp&lt;ProcessState&gt; ps = ProcessState::<span class="built_in">initWithDriver</span>(driver);</span><br><span class="line">    ps-&gt;<span class="built_in">setThreadPoolMaxThreadCount</span>(<span class="number">0</span>);</span><br><span class="line">    ...</span><br><span class="line">    sp&lt;ServiceManager&gt; manager = sp&lt;ServiceManager&gt;::<span class="built_in">make</span>(std::<span class="built_in">make_unique</span>&lt;Access&gt;());</span><br><span class="line">    ... <span class="comment">// 自注册、访问控制等准备</span></span><br><span class="line">    IPCThreadState::<span class="built_in">self</span>()-&gt;<span class="built_in">setTheContextObject</span>(manager);</span><br><span class="line">    <span class="keyword">if</span> (!ps-&gt;<span class="built_in">becomeContextManager</span>()) {</span><br><span class="line">        <span class="built_in">LOG</span>(FATAL) &lt;&lt; <span class="string">"Could not become context manager"</span>;</span><br><span class="line">    }</span><br><span class="line">    sp&lt;Looper&gt; looper = Looper::<span class="built_in">prepare</span>(<span class="literal">false</span> <span class="comment">/*allowNonCallbacks*/</span>);</span><br><span class="line">    <span class="comment">// 不依赖普通工作线程池，而是把 Binder FD 接入事件循环。</span></span><br><span class="line">    sp&lt;BinderCallback&gt; binderCallback = BinderCallback::<span class="built_in">setupTo</span>(looper);</span><br><span class="line">    ClientCallbackCallback::<span class="built_in">setupTo</span>(looper, manager, binderCallback);</span><br><span class="line">    ... <span class="comment">// 发布 servicemanager.ready</span></span><br><span class="line">    <span class="keyword">while</span> (<span class="literal">true</span>) {</span><br><span class="line">        looper-&gt;<span class="built_in">pollAll</span>(<span class="number">-1</span>);</span><br><span class="line">    }</span><br><span class="line">    ...</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<p>context manager 为客户端提供一个约定的初始入口，通常以 handle 0 表达。之后服务端注册名称，客户端取得目标 Binder 引用；<strong>业务事务由 Binder 驱动送到目标服务进程，不需要 servicemanager 逐次转发业务调用。</strong></p>
+<p>它解决“怎样找到接口”，没有替目标服务完成所有初始化。即使 <code>service check power</code> 返回 found，电源服务也可能尚未执行后续阶段逻辑。反过来，进程存在而服务名不存在，也可能是尚未注册、注册失败或客户端没有访问条件，需要继续查对应证据。</p>
+<p>这里讨论 <code>/dev/binder</code> 域；HIDL 的 hwservicemanager、vendor Binder 域及 AIDL HAL 的具体归属不能拼成一张无差别服务表。完整注册、查找、访问控制和懒启动流程见 <a href="/2025/10/03/Android%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A85-Servicemanager%E8%BF%9B%E7%A8%8B/" title="Android 系统启动——Servicemanager进程">《Servicemanager 进程》</a>。</p>
+<h1 id="5-Zygote：把运行环境准备与应用身份分开"><a href="#5-Zygote：把运行环境准备与应用身份分开" class="headerlink" title="5. Zygote：把运行环境准备与应用身份分开"></a>5. Zygote：把运行环境准备与应用身份分开</h1><h2 id="5-1-从-native-启动器进入-Java-父进程"><a href="#5-1-从-native-启动器进入-Java-父进程" class="headerlink" title="5.1 从 native 启动器进入 Java 父进程"></a>5.1 从 native 启动器进入 Java 父进程</h2><p>init 依据 <code>ro.zygote</code> 选择相应 rc。以 64 位主 Zygote 为例，service 命令执行 <code>/system/bin/app_process64</code>，带上 <code>--zygote</code>、<code>--start-system-server</code> 和 socket 参数。主辅 Zygote 的含义是支持的 ABI 和启动职责，不是“主线程与子线程”。</p>
+<p><code>frameworks/base/cmds/app_process/app_main.cpp</code> 解析参数，创建 <code>AppRuntime</code> 并调用 <code>AndroidRuntime::start()</code>。后者在 <code>frameworks/base/core/jni/AndroidRuntime.cpp</code> 中创建虚拟机、注册 JNI，再经 JNI 调入 <code>ZygoteInit.main()</code>。到这一步，仍然是在 init 创建的那个进程里执行，并没有因 native 进入 Java 而再创建一个进程。</p>
+<p>Zygote 预先加载一部分公共类、资源等内容，随后 fork 子进程。Copy-on-Write 让可共享且未被写入的页面暂时由父子共享；写入相关页面后才发生必要的复制。它减少重复准备的成本，但不是让所有应用共享同一份可随意修改的 Java 对象状态，也不是把所有应用业务代码都提前执行一遍。</p>
+<h2 id="5-2-fork-之后，同一份代码开始走父子分支"><a href="#5-2-fork-之后，同一份代码开始走父子分支" class="headerlink" title="5.2 fork 之后，同一份代码开始走父子分支"></a>5.2 fork 之后，同一份代码开始走父子分支</h2><figure class="highlight java"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/base/core/java/com/android/internal/os/ZygoteInit.java</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] argv)</span> {</span><br><span class="line">    ZygoteHooks.startZygoteNoThreadCreation();</span><br><span class="line">    ...</span><br><span class="line">    <span class="keyword">try</span> {</span><br><span class="line">        ... <span class="comment">// 参数与 ABI 等检查</span></span><br><span class="line">        <span class="keyword">if</span> (!enableLazyPreload) {</span><br><span class="line">            ...</span><br><span class="line">            preload(bootTimingsTraceLog);</span><br><span class="line">            ...</span><br><span class="line">        }</span><br><span class="line">        ...</span><br><span class="line">        gcAndFinalize();</span><br><span class="line">        ...</span><br><span class="line">        Zygote.initNativeState(isPrimaryZygote);</span><br><span class="line">        ZygoteHooks.stopZygoteNoThreadCreation();</span><br><span class="line">        zygoteServer = <span class="keyword">new</span> <span class="title class_">ZygoteServer</span>(isPrimaryZygote);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (startSystemServer) {</span><br><span class="line">            <span class="type">Runnable</span> <span class="variable">r</span> <span class="operator">=</span> forkSystemServer(abiList, zygoteSocketName, zygoteServer);</span><br><span class="line">            <span class="keyword">if</span> (r != <span class="literal">null</span>) {</span><br><span class="line">                r.run(); <span class="comment">// system_server 子进程执行自己的入口</span></span><br><span class="line">                <span class="keyword">return</span>;</span><br><span class="line">            }</span><br><span class="line">        }</span><br><span class="line">        ...</span><br><span class="line">        <span class="comment">// 父 Zygote 留在循环中；相应子进程可携带入口返回。</span></span><br><span class="line">        caller = zygoteServer.runSelectLoop(abiList);</span><br><span class="line">    } <span class="keyword">catch</span> (Throwable ex) {</span><br><span class="line">        ...</span><br><span class="line">        <span class="keyword">throw</span> ex;</span><br><span class="line">    } <span class="keyword">finally</span> {</span><br><span class="line">        <span class="keyword">if</span> (zygoteServer != <span class="literal">null</span>) zygoteServer.closeServerSocket();</span><br><span class="line">    }</span><br><span class="line">    <span class="keyword">if</span> (caller != <span class="literal">null</span>) caller.run();</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<p><code>forkSystemServer()</code> 内部通过 <code>Zygote.forkSystemServer()</code> 进入 native 创建路径。父分支返回 <code>null</code>，子分支关闭不该保留的服务 socket，再由 <code>handleSystemServerProcess()</code> 准备入口。这里的 <code>Runnable</code> 是可执行入口包装，直接 <code>run()</code> 不会自动再起一条线程。</p>
+<p>子进程还要特化 UID/GID、能力、SELinux 身份、FD 与其他运行环境。普通应用不会因为继承了 Zygote 的运行时，就拥有 Zygote 的 root 身份。创建新地址空间与赋予正确身份是同一条启动链上的不同责任。</p>
+<p>父 Zygote 留在请求循环中，为之后的应用创建、查询、预加载和池管理服务。开启且允许使用 USAP 时，可以提前 fork 出尚未绑定具体应用身份的进程，收到请求后再特化；它提前了 fork 的时间，并未让 AMS 变成应用的 fork 父进程。App Zygote、WebView Zygote 等专用分支按实际用途选择，细节见 <a href="/2025/09/23/Android%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A83-Zygote%E8%BF%9B%E7%A8%8B/" title="Android 系统启动——Zygote进程">《Zygote 进程》</a>。</p>
+<h1 id="6-system-server：把对象创建变成分阶段可用的服务"><a href="#6-system-server：把对象创建变成分阶段可用的服务" class="headerlink" title="6. system_server：把对象创建变成分阶段可用的服务"></a>6. system_server：把对象创建变成分阶段可用的服务</h1><h2 id="6-1-SystemServer-编排服务，主线程最终进入长期循环"><a href="#6-1-SystemServer-编排服务，主线程最终进入长期循环" class="headerlink" title="6.1 SystemServer 编排服务，主线程最终进入长期循环"></a>6.1 SystemServer 编排服务，主线程最终进入长期循环</h2><p>system_server 子进程经运行时入口包装进入 <code>SystemServer.main()</code>，再执行 <code>run()</code>。主线程先准备 Looper、native 服务库、系统 Context 与生命周期管理器，然后组织四批服务启动。</p>
+<figure class="highlight java"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/base/services/java/com/android/server/SystemServer.java</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title function_">run</span><span class="params">()</span> {</span><br><span class="line">    ...</span><br><span class="line">    Looper.prepareMainLooper();</span><br><span class="line">    ...</span><br><span class="line">    System.loadLibrary(<span class="string">"android_servers"</span>);</span><br><span class="line">    ...</span><br><span class="line">    createSystemContext();</span><br><span class="line">    ...</span><br><span class="line">    mSystemServiceManager = <span class="keyword">new</span> <span class="title class_">SystemServiceManager</span>(mSystemContext);</span><br><span class="line">    ...</span><br><span class="line">    <span class="keyword">try</span> {</span><br><span class="line">        t.traceBegin(<span class="string">"StartServices"</span>);</span><br><span class="line">        startBootstrapServices(t);</span><br><span class="line">        startCoreServices(t);</span><br><span class="line">        startOtherServices(t);</span><br><span class="line">        startApexServices(t);</span><br><span class="line">        ...</span><br><span class="line">    } <span class="keyword">catch</span> (Throwable ex) {</span><br><span class="line">        ...</span><br><span class="line">        <span class="keyword">throw</span> ex;</span><br><span class="line">    } <span class="keyword">finally</span> {</span><br><span class="line">        t.traceEnd();</span><br><span class="line">    }</span><br><span class="line">    ...</span><br><span class="line">    <span class="comment">// 启动编排之后继续处理消息，不是退出 system_server。</span></span><br><span class="line">    Looper.loop();</span><br><span class="line">    <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">RuntimeException</span>(<span class="string">"Main thread loop unexpectedly exited"</span>);</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<p>这四个方法是组织服务创建的批次，不是四个独立线程，也不是四个公开的就绪状态。boot phase 则是 SystemServiceManager 向当时已登记的服务发送的阶段回调，两者交错发生。</p>
+<p>本地代码中，等待默认显示的 phase 100 就发生在 bootstrap 内；500、550、600 等阶段嵌在 other 的后半程，APEX 服务随后才启动。不能画成“四批服务全部创建后，再从 100 一路广播到 1000”。</p>
+<h2 id="6-2-用-power-看清“有对象”与“可查接口”"><a href="#6-2-用-power-看清“有对象”与“可查接口”" class="headerlink" title="6.2 用 power 看清“有对象”与“可查接口”"></a>6.2 用 power 看清“有对象”与“可查接口”</h2><p>SystemServiceManager 负责把服务加入列表并调用 <code>onStart()</code>，但不会替每个服务自动发布 Binder。是否发布、以什么名称发布，由具体服务决定。PowerManagerService 就在自己的 <code>onStart()</code> 中发布两种不同接口：</p>
+<figure class="highlight java"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/base/services/core/java/com/android/server/power/PowerManagerService.java</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">onStart</span><span class="params">()</span> {</span><br><span class="line">    <span class="comment">// 对外的 Binder 接口，名称是 power，服务对象仍留在 system_server。</span></span><br><span class="line">    publishBinderService(Context.POWER_SERVICE, mBinderService, <span class="comment">/* allowIsolated= */</span> <span class="literal">false</span>,</span><br><span class="line">            DUMP_FLAG_PRIORITY_CRITICAL);</span><br><span class="line">    <span class="comment">// 同进程内部使用的 Java 接口，不进入 servicemanager 的名字表。</span></span><br><span class="line">    publishLocalService(PowerManagerInternal.class, mLocalService);</span><br><span class="line">    ... <span class="comment">// Watchdog 登记</span></span><br><span class="line">}</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">onBootPhase</span><span class="params">(<span class="type">int</span> phase)</span> {</span><br><span class="line">    <span class="keyword">if</span> (phase == PHASE_SYSTEM_SERVICES_READY) {</span><br><span class="line">        systemReady(); <span class="comment">// phase 500，继续连接本服务所需的依赖</span></span><br><span class="line">    } <span class="keyword">else</span> <span class="keyword">if</span> (phase == PHASE_THIRD_PARTY_APPS_CAN_START) {</span><br><span class="line">        incrementBootCount();</span><br><span class="line">    } <span class="keyword">else</span> <span class="keyword">if</span> (phase == PHASE_BOOT_COMPLETED) {</span><br><span class="line">        <span class="keyword">synchronized</span> (mLock) {</span><br><span class="line">            <span class="keyword">final</span> <span class="type">long</span> <span class="variable">now</span> <span class="operator">=</span> mClock.uptimeMillis();</span><br><span class="line">            mBootCompleted = <span class="literal">true</span>; <span class="comment">// phase 1000 的本服务状态更新</span></span><br><span class="line">            mDirty |= DIRTY_BOOT_COMPLETED;</span><br><span class="line">            ... <span class="comment">// 更新电源状态及其他后续工作</span></span><br><span class="line">        }</span><br><span class="line">    }</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<p><img src="/2025/09/12/Android%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A81-%E6%A6%82%E8%BF%B0/boot-milestones.png" alt="以电源服务为例区分 system_server 存在、power 发布、phase 500 与 phase 1000"></p>
+<p>蓝线表示这个具体服务在正常启动中的推进顺序，不是所有服务都必须采用的固定模板。图中 PID 为示意值，真实设备采样见第 9.1 节。服务对象始终在 system_server 内；发布接口没有把它搬到 servicemanager 进程。</p>
+<p>这张图也给排障提供了四层问题：进程存在吗？接口已经发布吗？服务进入了需要的 ready 阶段吗？完成阶段是否已处理？即使某个 <code>mSystemReady</code> 字段为真，也要核对它在方法中的写入位置，不能忽略同一方法后面的工作或异常。</p>
+<h2 id="6-3-systemReady、600-和-1000，分别放在哪里"><a href="#6-3-systemReady、600-和-1000，分别放在哪里" class="headerlink" title="6.3 systemReady、600 和 1000，分别放在哪里"></a>6.3 systemReady、600 和 1000，分别放在哪里</h2><p>SystemServer 在 <code>startOtherServices()</code> 后段调用 AMS 的 <code>systemReady(goingCallback, t)</code>。AMS 准备自身状态后，<strong>直接执行</strong>这个 Runnable，再继续初始应用相关工作。这里的回调是同步方法调用，不是向另一个“AMS 进程”发消息。</p>
+<table>
+<thead>
+<tr>
+<th>阶段或入口</th>
+<th>本地实现中的作用</th>
+<th>不代表什么</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>phase 100</td>
+<td>等待默认显示等早期依赖</td>
+<td>所有窗口已绘制</td>
+</tr>
+<tr>
+<td>phase 500</td>
+<td>让已登记服务处理 system services ready</td>
+<td>所有应用可任意运行</td>
+</tr>
+<tr>
+<td>AMS 回调内的 phase 550</td>
+<td>推进 ActivityManager ready 阶段</td>
+<td>HOME 已经可见</td>
+</tr>
+<tr>
+<td>同一回调内的 phase 600</td>
+<td>在应用数据、必要的 WebView 准备等依赖之后，通知可启动第三方应用</td>
+<td>用户已解锁、应用业务已完成</td>
+</tr>
+<tr>
+<td>后续 AMS <code>finishBooting()</code> 的 phase 1000</td>
+<td>处理 framework 完成阶段</td>
+<td>所有用户的开机广播都处理完毕</td>
+</tr>
+</tbody></table>
+<p>这张表只列主线节点，省略其他阶段，不应据此推导所有服务都经历完全相同的回调历史。阶段回调本身也可能等待、抛异常或安排异步工作；一个服务的慢回调会影响后面的编排。</p>
+<p>本地版本在 AMS <code>systemReady()</code> 返回后才请求启动 SystemUI；创建 SystemUI 所用 Context 与真正启动 SystemUI 组件是两件事。随后 APEX 批次完成、主线程进入 Looper，后面的窗口与完成事件继续在系统中推进。详细时序和服务登记规则见 <a href="/2025/09/30/Android%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A84-SystemServer%E8%BF%9B%E7%A8%8B/" title="Android 系统启动——SystemServer进程">《SystemServer 进程》</a>。</p>
+<h1 id="7-从-HOME-到笔记应用：系统怎样交付一个能运行组件的进程"><a href="#7-从-HOME-到笔记应用：系统怎样交付一个能运行组件的进程" class="headerlink" title="7. 从 HOME 到笔记应用：系统怎样交付一个能运行组件的进程"></a>7. 从 HOME 到笔记应用：系统怎样交付一个能运行组件的进程</h1><h2 id="7-1-AMS-发请求，Zygote-执行创建"><a href="#7-1-AMS-发请求，Zygote-执行创建" class="headerlink" title="7.1 AMS 发请求，Zygote 执行创建"></a>7.1 AMS 发请求，Zygote 执行创建</h2><p>AMS/ATMS 发起 HOME 后，会先解析组件、寻找任务和可用宿主进程。有合适进程就复用；没有时，AMS 的 ProcessList 才准备创建请求。用户之后打开笔记应用，也会复用这套按需创建机制，区别是触发的组件和相关策略。</p>
+<p>普通路径经过 <code>Process.start()</code>、<code>ZygoteProcess</code>，按 ABI 连接相应 Zygote socket；特定用途可选择 App Zygote 或 WebView Zygote，USAP 也有独立准入条件。<strong>system_server 决定需要什么进程并追踪记录，Zygote 一侧实际产生或特化子进程。</strong></p>
+<p>不要把进程当成包名的同义词：一个包可以按配置使用多个进程，服务或 Provider 也可以在没有 Activity 界面的情况下拉起进程。我们的笔记例子仅假设主进程尚不存在，并要启动一个 Activity。</p>
+<h2 id="7-2-PID-返回之后，还有应用绑定与组件派发"><a href="#7-2-PID-返回之后，还有应用绑定与组件派发" class="headerlink" title="7.2 PID 返回之后，还有应用绑定与组件派发"></a>7.2 PID 返回之后，还有应用绑定与组件派发</h2><p>普通应用入口是 <code>ActivityThread.main()</code>：</p>
+<figure class="highlight java"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/base/core/java/android/app/ActivityThread.java</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> {</span><br><span class="line">    ...</span><br><span class="line">    Looper.prepareMainLooper();</span><br><span class="line">    ...</span><br><span class="line">    <span class="type">long</span> <span class="variable">startSeq</span> <span class="operator">=</span> <span class="number">0</span>;</span><br><span class="line">    ... <span class="comment">// 从启动参数读取本次 startSeq</span></span><br><span class="line">    <span class="type">ActivityThread</span> <span class="variable">thread</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ActivityThread</span>();</span><br><span class="line">    thread.attach(<span class="literal">false</span>, startSeq); <span class="comment">// 带着应用 Binder 接口和启动序号回连 AMS</span></span><br><span class="line">    ...</span><br><span class="line">    Looper.loop();</span><br><span class="line">    ...</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<p><code>startSeq</code> 用于关联一次具体的创建请求，不能仅凭 PID 猜测回连身份。Zygote 向系统返回 PID，与子进程执行 <code>main()</code> 并回连，可以并发推进；系统侧需要核对这两份信息，处理先后竞态。</p>
+<table>
+<thead>
+<tr>
+<th>阶段</th>
+<th>谁做什么</th>
+<th>笔记应用此时获得了什么</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>创建与特化</td>
+<td>Zygote 一侧建立进程身份和运行环境</td>
+<td>能执行应用运行时入口；尚不等于 Application 已初始化</td>
+</tr>
+<tr>
+<td>attach</td>
+<td>ActivityThread 向 AMS 提供应用侧 Binder 接口和 <code>startSeq</code></td>
+<td>系统能关联 ProcessRecord 并联系该进程</td>
+</tr>
+<tr>
+<td>bindApplication</td>
+<td>AMS 发绑定请求，应用 Binder 接收侧转交主线程 Handler</td>
+<td>开始准备包、Context、Application、Provider 等</td>
+</tr>
+<tr>
+<td>同步应用初始化</td>
+<td>主线程安装适用的 Provider，执行 Instrumentation 与 Application 回调等</td>
+<td>逐步形成应用运行环境；后台工作仍可能未结束</td>
+</tr>
+<tr>
+<td>finishAttachApplication</td>
+<td>应用回报绑定阶段完成，系统按配置继续派发</td>
+<td>默认等待路径可接回此前待启动的组件</td>
+</tr>
+<tr>
+<td>Activity 生命周期与绘制</td>
+<td>客户端处理事务，创建与恢复 Activity，再推进窗口和帧</td>
+<td>才逐步获得界面，而不是 fork 时立即显示</td>
+</tr>
+</tbody></table>
+<p>本地版本里，<code>ActivityThread.handleBindApplication()</code> 在相应条件下先安装 Provider，随后调用 <code>Application.onCreate()</code>；完成这段同步绑定及后续准备后，再调用 <code>finishAttachApplication()</code>。因此“Application 回调一定早于所有 Provider 初始化”也不成立。</p>
+<p>AMS 的 <code>mEnableWaitForFinishAttachApplication</code> 默认是 <code>true</code>，可由 DeviceConfig 更新。开启时，后续组件派发要等完成回报；关闭时，系统侧较早进入继续处理分支，但应用侧的绑定与生命周期消息仍由自己的线程机制执行。这个开关改变等待点，不会让 Application 初始化自动换到 Binder 线程。</p>
+<p>如果笔记应用在 Provider 初始化里做耗时工作，PID 可以早已存在，绑定与 Activity 派发却仍未完成。分析应从最早缺失的阶段证据往前追。请求身份、线程交接、Provider 顺序和 Activity 创建见 <a href="/2025/10/06/Android%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A86-App%E8%BF%9B%E7%A8%8B/" title="Android 系统启动——App进程">《App 进程》</a>。</p>
+<h1 id="8-启动画面与故障恢复，把整张地图接起来"><a href="#8-启动画面与故障恢复，把整张地图接起来" class="headerlink" title="8. 启动画面与故障恢复，把整张地图接起来"></a>8. 启动画面与故障恢复，把整张地图接起来</h1><h2 id="8-1-动画、桌面和完成广播各有条件"><a href="#8-1-动画、桌面和完成广播各有条件" class="headerlink" title="8.1 动画、桌面和完成广播各有条件"></a>8.1 动画、桌面和完成广播各有条件</h2><p>SurfaceFlinger 和 bootanimation 是 init 管理的 native 进程。SurfaceFlinger 设置 <code>ctl.start=bootanim</code>，请求 init 启动动画；动画通过自己的 Surface 生产画面，所以不必等 Launcher 的 Activity 初始化完成。</p>
+<p>应用启动侧促成收尾请求后，WMS 仍独立检查显示策略和应等待的窗口，再设置 <code>service.bootanim.exit=1</code>。正常路径还要等动画服务不再运行，并成功通知 SurfaceFlinger，才继续显示启用与输入协作。WMS 的 <code>mDisplayEnabled</code> 是自己的启动显示状态，不能理解为物理面板此时才第一次亮起。</p>
+<p>AMS 的 <code>finishBooting()</code> 若先于显示完成通知到达，就记录待续办状态并返回。之后收到 <code>bootAnimationComplete()</code> 再继续：推进 phase 1000，设置设备级属性，再由 UserController 处理用户解锁与广播。这些状态共同组成后半程，但不能压缩成一个“桌面出现”时间戳。</p>
+<p>因此在有锁屏凭据的冷启动场景里，设备完成属性已为 <code>1</code>、锁屏已经可见、前台用户 CE 存储却尚未解锁，是可能同时成立的状态。<code>BOOT_COMPLETED</code> 还有相应用户的条件；首次解锁与之后普通亮灭屏锁定也不能混同。窗口门槛、超时边界和广播流程详见 <a href="/2025/10/08/Android%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A87-%E5%BC%80%E6%9C%BA%E7%95%8C%E9%9D%A2%E4%B8%8E%E5%AE%8C%E6%88%90/" title="Android 系统启动——从开机动画到桌面就绪">《开机界面与完成》</a>。</p>
+<h2 id="8-2-启动后继续运行，死亡也沿这些边界传播"><a href="#8-2-启动后继续运行，死亡也沿这些边界传播" class="headerlink" title="8.2 启动后继续运行，死亡也沿这些边界传播"></a>8.2 启动后继续运行，死亡也沿这些边界传播</h2><p>init、Zygote、servicemanager 和 system_server 在开机后都还有长期循环。init 管 service 生命周期，Zygote 接受后续创建请求，servicemanager 处理名字与引用管理，system_server 的主线程、Binder 线程与专用线程继续提供系统功能。</p>
+<p>“创建者是谁”也决定了恢复链。system_server 不是 init rc 中一项独立的普通 service；本地 Zygote 的子进程回收逻辑明确检查 system_server 的死亡：</p>
+<figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/base/core/jni/com_android_internal_os_Zygote.cpp</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">static</span> <span class="type">void</span> <span class="title">SigChldHandler</span><span class="params">(<span class="type">int</span> <span class="comment">/*signal_number*/</span>, <span class="type">siginfo_t</span>* info, <span class="type">void</span>* <span class="comment">/*ucontext*/</span>)</span> </span>{</span><br><span class="line">    ...</span><br><span class="line">    <span class="keyword">while</span> ((pid = <span class="built_in">waitpid</span>(<span class="number">-1</span>, &amp;status, WNOHANG)) &gt; <span class="number">0</span>) {</span><br><span class="line">        ...</span><br><span class="line">        <span class="keyword">if</span> (pid == gSystemServerPid) {</span><br><span class="line">            ...</span><br><span class="line">            <span class="comment">// 让 init 看到 Zygote service 退出，再沿其服务规则恢复运行时。</span></span><br><span class="line">            <span class="built_in">kill</span>(<span class="built_in">getpid</span>(), SIGKILL);</span><br><span class="line">        }</span><br><span class="line">    }</span><br><span class="line">    ...</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<p>对应的典型恢复链是：system_server 终止，父 Zygote 检测到后退出，init 回收 Zygote service 并按配置重启，新 Zygote 再创建 system_server。它可以属于 Android runtime 的重启过程，不能只凭动画重新出现就断言 Linux 内核也重新启动了。</p>
+<table>
+<thead>
+<tr>
+<th>出问题的位置</th>
+<th>优先追踪的责任方</th>
+<th>不应直接推断</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>普通应用死亡</td>
+<td>AMS 的进程与组件策略、应用崩溃记录</td>
+<td>所有应用死亡都会重启整个系统</td>
+</tr>
+<tr>
+<td>system_server 死亡</td>
+<td>Zygote 子进程回收、init 的 Zygote service 恢复</td>
+<td>init 直接执行一个名为 system_server 的 service</td>
+</tr>
+<tr>
+<td>Zygote 反复退出</td>
+<td>init service 状态、crash 计数、rc <code>onrestart</code></td>
+<td>每次退出都会触发整机重启</td>
+</tr>
+<tr>
+<td>servicemanager 退出</td>
+<td>其 rc 的重启和依赖 class 联动、Binder 发现错误</td>
+<td>只重建进程就能保留所有旧引用的有效性</td>
+</tr>
+</tbody></table>
+<p>不要把所有子进程的命运都归因于“父进程死亡”：Linux 父子关系、进程组清理和 Android 服务联动是不同机制，需要各自的证据。本地 Zygote rc 的 <code>critical window=${zygote.critical_window.minute:-off}</code> 默认还可能关闭该保护；critical、重启节流与 <code>onrestart</code> 不能靠一个关键字概括。</p>
+<h1 id="9-验证：把全局关系落实到可观察事实"><a href="#9-验证：把全局关系落实到可观察事实" class="headerlink" title="9. 验证：把全局关系落实到可观察事实"></a>9. 验证：把全局关系落实到可观察事实</h1><h2 id="9-1-已执行：比较-PID-与-PPID"><a href="#9-1-已执行：比较-PID-与-PPID" class="headerlink" title="9.1 已执行：比较 PID 与 PPID"></a>9.1 已执行：比较 PID 与 PPID</h2><p>本次于 2026-10-22 在已连接设备上只读采样。设备报告 Android 15、<code>userdebug</code>、LineageOS <code>22.2-20261014_113352-UNOFFICIAL-grus</code>，<code>ro.zygote=zygote64_32</code>。设备与源码属于同一系列，未验证镜像与提交逐文件一致。</p>
+<figure class="highlight bash"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">adb shell getprop ro.build.version.release</span><br><span class="line">adb shell getprop ro.lineage.version</span><br><span class="line">adb shell getprop ro.zygote</span><br><span class="line">adb shell ps -A -o USER,PID,PPID,NAME</span><br></pre></td></tr></tbody></table></figure>
+
+<p>下面是该次 <code>ps</code> 的相关行摘记，省略了其他进程；PID 只是这一时刻的值，不能写成其他设备的固定编号。</p>
+<table>
+<thead>
+<tr>
+<th>进程</th>
+<th>PID</th>
+<th>PPID</th>
+<th>这次观察支持什么</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>init 主进程</td>
+<td>1</td>
+<td>0</td>
+<td>用户空间主监管进程</td>
+</tr>
+<tr>
+<td>servicemanager</td>
+<td>661</td>
+<td>1</td>
+<td>此刻由 init 作为父进程</td>
+</tr>
+<tr>
+<td>zygote64</td>
+<td>940</td>
+<td>1</td>
+<td>64 位主 Zygote</td>
+</tr>
+<tr>
+<td>zygote</td>
+<td>941</td>
+<td>1</td>
+<td>此配置还有另一 ABI 的 Zygote</td>
+</tr>
+<tr>
+<td>surfaceflinger</td>
+<td>1099</td>
+<td>1</td>
+<td>与 system_server 分属不同进程分支</td>
+</tr>
+<tr>
+<td>system_server</td>
+<td>1595</td>
+<td>940</td>
+<td>父进程是主 Zygote</td>
+</tr>
+<tr>
+<td>com.android.launcher3</td>
+<td>2687</td>
+<td>940</td>
+<td>Launcher 与 system_server 同属主 Zygote 的子进程</td>
+</tr>
+</tbody></table>
+<p>进程快照印证了第 1 章的简化关系，但没有给出创建时间与历史分支。它不能证明某个应用是本次请求时才 fork，还是来自预创建池；也不能证明没有发生过 runtime restart。</p>
+<h2 id="9-2-已执行：接口存在与服务内部状态分别查询"><a href="#9-2-已执行：接口存在与服务内部状态分别查询" class="headerlink" title="9.2 已执行：接口存在与服务内部状态分别查询"></a>9.2 已执行：接口存在与服务内部状态分别查询</h2><figure class="highlight bash"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 只查询 Binder 名字是否可取得，不是完整业务健康检查。</span></span><br><span class="line">adb shell service check power</span><br><span class="line"></span><br><span class="line"><span class="comment"># 查看电源服务自身状态，按输出所属小节辨认同名字段。</span></span><br><span class="line">adb shell dumpsys power</span><br><span class="line"></span><br><span class="line"><span class="comment"># 查看设备级完成与用户状态。</span></span><br><span class="line">adb shell getprop sys.boot_completed</span><br><span class="line">adb shell dumpsys activity <span class="built_in">users</span></span><br></pre></td></tr></tbody></table></figure>
+
+<p>本次 <code>service check power</code> 返回 <code>Service power: found</code>；电源服务 dump 可见 <code>mSystemReady=true</code> 与 <code>mBootCompleted=true</code>。设备级属性 <code>sys.boot_completed=1</code>，用户 0 为 <code>RUNNING_UNLOCKED</code>。这些是启动完成后的状态观察，不能据此恢复 phase 500、1000 以及广播的精确发生时刻。</p>
+<p><code>dumpsys power</code> 含有多个对象的小节，同名字段可能重复出现，要结合上下文判断归属。查询失败或字段缺失时，应保留结果并核对镜像、权限和 dump 格式，而不是照着源码给它补一个“应该如此”的值。</p>
+<h2 id="9-3-未执行：按最早缺失的证据分段追踪"><a href="#9-3-未执行：按最早缺失的证据分段追踪" class="headerlink" title="9.3 未执行：按最早缺失的证据分段追踪"></a>9.3 未执行：按最早缺失的证据分段追踪</h2><p>本次没有录制完整冷启动或笔记应用的启动 trace。下面是后续验证入口，不是伪造的运行结果：</p>
+<table>
+<thead>
+<tr>
+<th>现象</th>
+<th>先观察什么</th>
+<th>能缩小到的阶段</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Zygote 没出现</td>
+<td><code>init.svc.zygote</code>、<code>ro.zygote</code>、init 的事件与服务日志</td>
+<td>rc 选择、属性等待、服务创建或执行失败</td>
+</tr>
+<tr>
+<td>system_server 存在，power 查不到</td>
+<td><code>service check power</code>、SystemServer 服务启动异常、servicemanager 的 add/find 错误</td>
+<td>对象启动、接口发布或访问条件</td>
+</tr>
+<tr>
+<td>power 已发布，后续阶段迟迟不前进</td>
+<td>服务 dump、SystemServer <code>OnBootPhase_*</code> trace、阻塞线程</td>
+<td>服务依赖、阶段回调与异步任务等待</td>
+</tr>
+<tr>
+<td>应用已有 PID，界面未出现</td>
+<td><code>Start proc</code>、attach/bind、<code>finishAttachApplication</code>、Provider 和主线程工作</td>
+<td>创建后的应用初始化与组件派发</td>
+</tr>
+<tr>
+<td>动画不退出</td>
+<td>动画服务状态、WMS 策略和窗口绘制、退出属性可见性</td>
+<td>显示交接条件或动画收尾</td>
+</tr>
+<tr>
+<td>完成属性为 1，应用没收到广播</td>
+<td>目标用户状态、接收器条件、广播日志</td>
+<td>用户级流程与投递处理</td>
+</tr>
+</tbody></table>
+<p>日志缓冲区可能覆盖早期记录，部分 trace/ProtoLog 需要测试镜像或事先配置。Perfetto 中出现 <code>StartServices</code>、<code>OnBootPhase_*</code>、<code>ActivityThreadMain</code> 等标记时，应结合线程、调度与等待关系解释；缺少一个标记并不能自动证明对应机制没有运行。</p>
+<p>要比较首次解锁前后或 runtime restart，必须安排专门实验、记录同一次过程的版本和时间基准。本次没有重启设备、停止服务、改属性或触发崩溃。</p>
+<h1 id="10-两个场景，检验是否真正读懂全局关系"><a href="#10-两个场景，检验是否真正读懂全局关系" class="headerlink" title="10. 两个场景，检验是否真正读懂全局关系"></a>10. 两个场景，检验是否真正读懂全局关系</h1><h2 id="10-1-“服务查得到，界面没出来”为什么没有矛盾"><a href="#10-1-“服务查得到，界面没出来”为什么没有矛盾" class="headerlink" title="10.1 “服务查得到，界面没出来”为什么没有矛盾"></a>10.1 “服务查得到，界面没出来”为什么没有矛盾</h2><p>假设 <code>power</code> 已发布，笔记应用的 PID 也已出现，但其 Provider 在主线程初始化时长时间阻塞。第 6 章只能告诉我们电源接口已登记，不能替应用完成第 7 章的绑定工作。</p>
+<p>此时继续搜 servicemanager 的业务转发没有帮助，因为它不负责把每一次应用启动事务串到界面。应检查应用是否已 attach、主线程停在哪里、是否完成 <code>finishAttachApplication()</code>，再查待派发 Activity 和窗口绘制。观察入口之所以这样排序，是因为它们分别对应前文的创建、绑定、组件和显示边界。</p>
+<h2 id="10-2-“又看到开机动画”为什么还需要确认重启范围"><a href="#10-2-“又看到开机动画”为什么还需要确认重启范围" class="headerlink" title="10.2 “又看到开机动画”为什么还需要确认重启范围"></a>10.2 “又看到开机动画”为什么还需要确认重启范围</h2><p>假设 system_server 因异常退出，Zygote 与相关运行时服务随后重建。显示侧再次进入启动画面，并不直接证明内核重启。</p>
+<p>应对照系统 uptime、boot ID、相关进程 PID 的变化和 init/Zygote 日志，区分内核启动与 runtime 恢复；同一次采样的单个 PID 或一张屏幕照片不够。只读入口可使用 <code>adb shell cat /proc/uptime</code>、<code>adb shell cat /proc/sys/kernel/random/boot_id</code>，但本次未采集一组故障前后的对照数据。</p>
+<p>恢复过程中，旧的 Binder 引用、应用进程和窗口还涉及各自的死亡通知与清理，不能用“父进程没了”概括全部后果。沿实际 service 配置与系统管理记录继续追踪，才能说明这台设备为什么恢复或持续重启。</p>
+<h1 id="11-系列导航与分层记忆"><a href="#11-系列导航与分层记忆" class="headerlink" title="11. 系列导航与分层记忆"></a>11. 系列导航与分层记忆</h1><h2 id="11-1-按问题选择后续篇目"><a href="#11-1-按问题选择后续篇目" class="headerlink" title="11.1 按问题选择后续篇目"></a>11.1 按问题选择后续篇目</h2><p>建议首次阅读按“init → servicemanager → Zygote → SystemServer → App → 开机界面与完成”组织依赖；已有具体问题时直接进入对应篇目。篇名编号保留系列原约定，不用编号强行推断实际启动顺序。</p>
+<table>
+<thead>
+<tr>
+<th>你想解释的问题</th>
+<th>继续阅读</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>事件为什么没有执行？服务为什么启动、等待或重启？</td>
+<td><a href="/2025/09/17/Android%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A82-init%E8%BF%9B%E7%A8%8B/" title="Android 系统启动——init进程">第 2 篇：init 进程</a></td>
+</tr>
+<tr>
+<td>Binder 名字怎样注册、查询？进程存在为什么服务仍不可查？</td>
+<td><a href="/2025/10/03/Android%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A85-Servicemanager%E8%BF%9B%E7%A8%8B/" title="Android 系统启动——Servicemanager进程">第 5 篇：Servicemanager 进程</a></td>
+</tr>
+<tr>
+<td>ART、预加载、fork、USAP 与身份特化怎样连接？</td>
+<td><a href="/2025/09/23/Android%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A83-Zygote%E8%BF%9B%E7%A8%8B/" title="Android 系统启动——Zygote进程">第 3 篇：Zygote 进程</a></td>
+</tr>
+<tr>
+<td>服务批次、生命周期、boot phase 与 AMS ready 怎样交错？</td>
+<td><a href="/2025/09/30/Android%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A84-SystemServer%E8%BF%9B%E7%A8%8B/" title="Android 系统启动——SystemServer进程">第 4 篇：SystemServer 进程</a></td>
+</tr>
+<tr>
+<td>PID、attach、应用绑定与 Activity 创建之间还差什么？</td>
+<td><a href="/2025/10/06/Android%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A86-App%E8%BF%9B%E7%A8%8B/" title="Android 系统启动——App进程">第 6 篇：App 进程</a></td>
+</tr>
+<tr>
+<td>动画何时退出？显示和用户广播何时算完成？</td>
+<td><a href="/2025/10/08/Android%E7%B3%BB%E7%BB%9F%E5%90%AF%E5%8A%A87-%E5%BC%80%E6%9C%BA%E7%95%8C%E9%9D%A2%E4%B8%8E%E5%AE%8C%E6%88%90/" title="Android 系统启动——从开机动画到桌面就绪">第 7 篇：开机界面与完成</a></td>
+</tr>
+</tbody></table>
+<h2 id="11-2-L0：先保留一幅图和四个问题"><a href="#11-2-L0：先保留一幅图和四个问题" class="headerlink" title="11.2 L0：先保留一幅图和四个问题"></a>11.2 L0：先保留一幅图和四个问题</h2><p>init 管原生服务与 Zygote，Zygote 创建 system_server 和应用，system_server 组织 framework 服务与组件运行。servicemanager 提供名字发现，显示线并行推进，完成状态再按系统与用户分开。</p>
+<p>看到一个启动现象，先问：<strong>进程在哪？接口在哪？当前在等什么条件？手里的证据能证明哪一层？</strong></p>
+<h2 id="11-3-L1：能自己展开的主干"><a href="#11-3-L1：能自己展开的主干" class="headerlink" title="11.3 L1：能自己展开的主干"></a>11.3 L1：能自己展开的主干</h2><ol>
+<li>init 的两次自 exec 保持主进程身份，second stage 常驻调度 action 与 service。</li>
+<li>servicemanager 启动并建立名字目录，发布接口与服务业务就绪分开。</li>
+<li>app_process 在同一进程里建立 ART/JNI，进入 Zygote；父子分支由 fork 结果区分。</li>
+<li>system_server 准备运行环境，交错创建服务和推进阶段，最终进入长期消息循环。</li>
+<li>应用经过创建、attach、bind、完成回报和组件事务，才逐步形成可用界面。</li>
+<li>WMS 显示交接、AMS 设备完成、用户广播各有门槛；故障恢复沿真实的创建与监管关系传播。</li>
+</ol>
+<h2 id="11-4-L2：按需定位源码，不背全部类名"><a href="#11-4-L2：按需定位源码，不背全部类名" class="headerlink" title="11.4 L2：按需定位源码，不背全部类名"></a>11.4 L2：按需定位源码，不背全部类名</h2><table>
+<thead>
+<tr>
+<th>定位目标</th>
+<th>源码入口</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>init 阶段与常驻调度</td>
+<td><code>system/core/init/main.cpp</code>、<code>first_stage_init.cpp</code>、<code>selinux.cpp</code>、<code>init.cpp</code>、<code>action_manager.cpp</code>、<code>service.cpp</code></td>
+</tr>
+<tr>
+<td>rc 的 Zygote 触发与定义</td>
+<td><code>system/core/rootdir/init.rc</code>、<code>init.zygote64.rc</code> 等 ABI 配置</td>
+</tr>
+<tr>
+<td>Binder 名字目录入口</td>
+<td><code>frameworks/native/cmds/servicemanager/main.cpp</code>、<code>ServiceManager.cpp</code></td>
+</tr>
+<tr>
+<td>从 native 到 Zygote</td>
+<td><code>frameworks/base/cmds/app_process/app_main.cpp</code>、<code>frameworks/base/core/jni/AndroidRuntime.cpp</code></td>
+</tr>
+<tr>
+<td>fork 与入口包装</td>
+<td><code>frameworks/base/core/java/com/android/internal/os/ZygoteInit.java</code>、<code>RuntimeInit.java</code>；<code>frameworks/base/core/jni/com_android_internal_os_Zygote.cpp</code></td>
+</tr>
+<tr>
+<td>framework 服务编排</td>
+<td><code>frameworks/base/services/java/com/android/server/SystemServer.java</code>；<code>services/core/java/com/android/server/SystemServiceManager.java</code></td>
+</tr>
+<tr>
+<td>应用创建与绑定</td>
+<td><code>frameworks/base/services/core/java/com/android/server/am/ProcessList.java</code>、<code>ActivityManagerService.java</code>；<code>frameworks/base/core/java/android/app/ActivityThread.java</code></td>
+</tr>
+<tr>
+<td>显示与完成</td>
+<td><code>WindowManagerService.performEnableScreen()</code>、<code>ActivityManagerService.finishBooting()</code>、<code>UserController.onBootComplete()</code>；完整路径见第 7 篇</td>
+</tr>
+</tbody></table>
+<h1 id="12-折叠自测"><a href="#12-折叠自测" class="headerlink" title="12. 折叠自测"></a>12. 折叠自测</h1><h2 id="12-1-基础关系"><a href="#12-1-基础关系" class="headerlink" title="12.1 基础关系"></a>12.1 基础关系</h2><p><strong>问题 1：为什么 system_server 要求启动应用，应用的 PPID 却通常指向某个 Zygote？</strong></p>
+<details>
+<summary>展开参考答案</summary>
+
+<p>system_server 做创建决策并发送请求，真正 fork 的一方是相应 Zygote。USAP 只是把 fork 提前，应用请求与父子关系仍不是一回事。回看第 1.1、5.2、7.1 节。</p>
+</details>
+
+<p><strong>问题 2：init 的三段入口意味着创建了三个 PID 1 吗？</strong></p>
+<details>
+<summary>展开参考答案</summary>
+
+<p>不是。主路径通过两次 exec 替换同一个进程的程序映像，PID 保持不变；另外创建的辅助进程需要独立分析。回看第 3.1 节。</p>
+</details>
+
+<p><strong>问题 3：SystemServiceManager 和 servicemanager 各管理什么？发布 Binder 会把对象搬到注册中心吗？</strong></p>
+<details>
+<summary>展开参考答案</summary>
+
+<p>前者管理 system_server 内 SystemService 的生命周期，后者管理 Binder 名字与对象引用。发布接口后，服务实现仍留在原宿主进程。回看第 2.2、4、6.2 节。</p>
+</details>
+
+<p><strong>问题 4：SystemServer 四批服务启动与 boot phase，是前后分开的两个完整阶段吗？</strong></p>
+<details>
+<summary>展开参考答案</summary>
+
+<p>不是，二者交错。phase 100 在 bootstrap 内，500～600 等节点位于 other 后段，APEX 批次随后才启动，1000 由后续 AMS 收尾推进。回看第 6.1、6.3 节；表中并未列全所有阶段。</p>
+</details>
+
+<h2 id="12-2-场景推理"><a href="#12-2-场景推理" class="headerlink" title="12.2 场景推理"></a>12.2 场景推理</h2><p><strong>问题 5：笔记应用已有 PID，但 Provider 初始化很慢。下一步应优先看 servicemanager，还是应用主线程与绑定阶段？</strong></p>
+<details>
+<summary>展开参考答案</summary>
+
+<p>优先看后者。PID 只证明创建阶段，Provider 的同步初始化可以阻塞应用绑定以及默认等待路径上的后续组件派发。需要 attach、主线程堆栈、finishAttachApplication 和组件事务等证据。回看第 7.2、10.1 节。</p>
+</details>
+
+<p><strong>问题 6：sys.boot_completed 为 1，但用户仍在首次解锁前，普通开机广播没到，能判定系统启动失败吗？</strong></p>
+<details>
+<summary>展开参考答案</summary>
+
+<p>不能。设备级完成与用户 CE 解锁、广播投递有不同条件。先确认目标用户状态及接收器条件，再查广播。回看第 8.1、9.3 节，并继续阅读第 7 篇。</p>
+</details>
+
+<p><strong>问题 7：系统重新出现开机动画，怎样判断是内核重启还是运行时恢复？</strong></p>
+<details>
+<summary>展开参考答案</summary>
+
+<p>比较故障前后的 uptime、boot ID、进程身份与 init/Zygote 日志。system_server 死亡可以经 Zygote 退出触发 runtime 恢复；仅凭动画或一次 PID 快照不足以判断。回看第 8.2、10.2 节。本次没有实际触发这类故障实验。</p>
+</details>
 
       
     </div>
@@ -885,7 +1243,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#1-%E5%89%8D%E8%A8%80"><span class="nav-text">1. 前言</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#2-%E8%BF%9B%E7%A8%8B%E3%80%81%E7%88%B6%E5%AD%90%E5%85%B3%E7%B3%BB%E4%B8%8E%E8%81%8C%E8%B4%A3"><span class="nav-text">2. 进程、父子关系与职责</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#3-%E4%BB%8E-kernel-%E5%88%B0-init%EF%BC%9A%E7%94%A8%E6%88%B7%E7%A9%BA%E9%97%B4%E7%9A%84%E8%B5%B7%E7%82%B9"><span class="nav-text">3. 从 kernel 到 init：用户空间的起点</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#4-init-%E5%88%86%E5%88%AB%E6%8B%89%E8%B5%B7-servicemanager-%E4%B8%8E-Zygote"><span class="nav-text">4. init 分别拉起 servicemanager 与 Zygote</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#4-1-servicemanager%EF%BC%9A%E5%85%88%E6%9C%89-Binder-%E6%9C%8D%E5%8A%A1%E7%9B%AE%E5%BD%95"><span class="nav-text">4.1 servicemanager：先有 Binder 服务目录</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-2-Zygote%EF%BC%9A%E9%80%9A%E8%BF%87-rc-%E5%90%AF%E5%8A%A8%E7%9A%84-Java-%E7%88%B6%E8%BF%9B%E7%A8%8B"><span class="nav-text">4.2 Zygote：通过 rc 启动的 Java 父进程</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#5-Zygote%EF%BC%9A%E6%8A%8A%E2%80%9C%E6%98%82%E8%B4%B5%E5%88%9D%E5%A7%8B%E5%8C%96%E2%80%9D%E5%8F%98%E6%88%90%E5%8F%AF%E5%85%B1%E4%BA%AB%E7%88%B6%E8%BF%9B%E7%A8%8B"><span class="nav-text">5. Zygote：把“昂贵初始化”变成可共享父进程</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#6-system-server%EF%BC%9A%E7%AC%AC%E4%B8%80%E4%B8%AA%E5%85%B3%E9%94%AE-Java-%E5%AD%90%E8%BF%9B%E7%A8%8B"><span class="nav-text">6. system_server：第一个关键 Java 子进程</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#7-App%EF%BC%9A%E7%94%B1-AMS-%E5%86%B3%E7%AD%96%EF%BC%8C%E4%BA%A4%E7%BB%99-Zygote-%E5%88%9B%E5%BB%BA"><span class="nav-text">7. App：由 AMS 决策，交给 Zygote 创建</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#8-%E5%85%B3%E9%94%AE%E4%BE%9D%E8%B5%96%E5%85%B3%E7%B3%BB%EF%BC%9A%E6%9C%8D%E5%8A%A1%E5%90%8D%E3%80%81Binder-%E4%B8%8E%E5%90%AF%E5%8A%A8%E9%A1%BA%E5%BA%8F"><span class="nav-text">8. 关键依赖关系：服务名、Binder 与启动顺序</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#9-%E5%A4%B1%E8%B4%A5%E4%BC%A0%E6%92%AD%E4%B8%8E-runtime-restart"><span class="nav-text">9. 失败传播与 runtime restart</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#10-%E6%8E%A8%E8%8D%90%E9%98%85%E8%AF%BB%E9%A1%BA%E5%BA%8F%E4%B8%8E%E6%8E%92%E9%9A%9C%E5%85%A5%E5%8F%A3"><span class="nav-text">10. 推荐阅读顺序与排障入口</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#11-%E8%AE%B0%E5%BF%86%E4%B8%8E%E6%A3%80%E9%AA%8C"><span class="nav-text">11. 记忆与检验</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#11-1-%E8%AE%B0%E5%BF%86%E6%80%BB%E7%BB%93"><span class="nav-text">11.1 记忆总结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#11-2-%E8%87%AA%E6%B5%8B%E9%97%AE%E9%A2%98"><span class="nav-text">11.2 自测问题</span></a></li></ol></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#1-%E4%BB%8E%E6%8C%89%E4%B8%8B%E7%94%B5%E6%BA%90%EF%BC%8C%E5%88%B0%E8%83%BD%E5%A4%9F%E6%89%93%E5%BC%80%E4%B8%80%E4%B8%AA%E5%BA%94%E7%94%A8"><span class="nav-text">1. 从按下电源，到能够打开一个应用</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-1-%E5%85%88%E7%9C%8B%E4%B8%80%E5%BC%A0%E5%85%A8%E5%B1%80%E5%9C%B0%E5%9B%BE"><span class="nav-text">1.1 先看一张全局地图</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#1-2-%E6%9C%AC%E6%96%87%E7%9A%84%E7%89%88%E6%9C%AC%E8%BE%B9%E7%95%8C"><span class="nav-text">1.2 本文的版本边界</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#2-%E8%AF%BB%E5%90%AF%E5%8A%A8%E6%BA%90%E7%A0%81%EF%BC%8C%E5%85%88%E6%8A%8A%E5%9B%9B%E7%A7%8D%E5%AF%B9%E8%B1%A1%E5%88%86%E5%BC%80"><span class="nav-text">2. 读启动源码，先把四种对象分开</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#2-1-%E8%BF%9B%E7%A8%8B%E3%80%81%E7%A8%8B%E5%BA%8F%E5%85%A5%E5%8F%A3%E5%92%8C-Java-%E5%AF%B9%E8%B1%A1"><span class="nav-text">2.1 进程、程序入口和 Java 对象</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-2-%E5%90%8C%E4%B8%80%E4%B8%AA%E2%80%9C%E6%9C%8D%E5%8A%A1%E2%80%9D%EF%BC%8C%E5%8F%AF%E8%83%BD%E5%B1%9E%E4%BA%8E%E4%B8%8D%E5%90%8C%E7%AE%A1%E7%90%86%E4%BD%93%E7%B3%BB"><span class="nav-text">2.2 同一个“服务”，可能属于不同管理体系</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#3-init%EF%BC%9A%E6%8A%8A%E4%B8%80%E6%AC%A1%E5%BC%95%E5%AF%BC%E5%8F%98%E6%88%90%E9%95%BF%E6%9C%9F%E8%BF%90%E8%A1%8C%E7%9A%84%E7%B3%BB%E7%BB%9F"><span class="nav-text">3. init：把一次引导变成长期运行的系统</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#3-1-%E4%BB%8E%E5%BC%95%E5%AF%BC%E5%B1%82%E8%BF%9B%E5%85%A5-PID-1"><span class="nav-text">3.1 从引导层进入 PID 1</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-2-rc-%E6%98%AF%E8%B0%83%E5%BA%A6%E8%A7%84%E5%88%99%EF%BC%8C%E4%B8%8D%E6%98%AF%E4%B8%80%E4%BB%BD%E4%BB%8E%E5%A4%B4%E6%89%A7%E8%A1%8C%E5%88%B0%E5%B0%BE%E7%9A%84%E8%84%9A%E6%9C%AC"><span class="nav-text">3.2 rc 是调度规则，不是一份从头执行到尾的脚本</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#4-servicemanager%EF%BC%9A%E8%AE%A9%E8%B7%A8%E8%BF%9B%E7%A8%8B%E6%8E%A5%E5%8F%A3%E8%83%BD%E5%A4%9F%E6%8C%89%E5%90%8D%E5%AD%97%E8%A2%AB%E6%89%BE%E5%88%B0"><span class="nav-text">4. servicemanager：让跨进程接口能够按名字被找到</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#5-Zygote%EF%BC%9A%E6%8A%8A%E8%BF%90%E8%A1%8C%E7%8E%AF%E5%A2%83%E5%87%86%E5%A4%87%E4%B8%8E%E5%BA%94%E7%94%A8%E8%BA%AB%E4%BB%BD%E5%88%86%E5%BC%80"><span class="nav-text">5. Zygote：把运行环境准备与应用身份分开</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#5-1-%E4%BB%8E-native-%E5%90%AF%E5%8A%A8%E5%99%A8%E8%BF%9B%E5%85%A5-Java-%E7%88%B6%E8%BF%9B%E7%A8%8B"><span class="nav-text">5.1 从 native 启动器进入 Java 父进程</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-2-fork-%E4%B9%8B%E5%90%8E%EF%BC%8C%E5%90%8C%E4%B8%80%E4%BB%BD%E4%BB%A3%E7%A0%81%E5%BC%80%E5%A7%8B%E8%B5%B0%E7%88%B6%E5%AD%90%E5%88%86%E6%94%AF"><span class="nav-text">5.2 fork 之后，同一份代码开始走父子分支</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#6-system-server%EF%BC%9A%E6%8A%8A%E5%AF%B9%E8%B1%A1%E5%88%9B%E5%BB%BA%E5%8F%98%E6%88%90%E5%88%86%E9%98%B6%E6%AE%B5%E5%8F%AF%E7%94%A8%E7%9A%84%E6%9C%8D%E5%8A%A1"><span class="nav-text">6. system_server：把对象创建变成分阶段可用的服务</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#6-1-SystemServer-%E7%BC%96%E6%8E%92%E6%9C%8D%E5%8A%A1%EF%BC%8C%E4%B8%BB%E7%BA%BF%E7%A8%8B%E6%9C%80%E7%BB%88%E8%BF%9B%E5%85%A5%E9%95%BF%E6%9C%9F%E5%BE%AA%E7%8E%AF"><span class="nav-text">6.1 SystemServer 编排服务，主线程最终进入长期循环</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-2-%E7%94%A8-power-%E7%9C%8B%E6%B8%85%E2%80%9C%E6%9C%89%E5%AF%B9%E8%B1%A1%E2%80%9D%E4%B8%8E%E2%80%9C%E5%8F%AF%E6%9F%A5%E6%8E%A5%E5%8F%A3%E2%80%9D"><span class="nav-text">6.2 用 power 看清“有对象”与“可查接口”</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-3-systemReady%E3%80%81600-%E5%92%8C-1000%EF%BC%8C%E5%88%86%E5%88%AB%E6%94%BE%E5%9C%A8%E5%93%AA%E9%87%8C"><span class="nav-text">6.3 systemReady、600 和 1000，分别放在哪里</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#7-%E4%BB%8E-HOME-%E5%88%B0%E7%AC%94%E8%AE%B0%E5%BA%94%E7%94%A8%EF%BC%9A%E7%B3%BB%E7%BB%9F%E6%80%8E%E6%A0%B7%E4%BA%A4%E4%BB%98%E4%B8%80%E4%B8%AA%E8%83%BD%E8%BF%90%E8%A1%8C%E7%BB%84%E4%BB%B6%E7%9A%84%E8%BF%9B%E7%A8%8B"><span class="nav-text">7. 从 HOME 到笔记应用：系统怎样交付一个能运行组件的进程</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#7-1-AMS-%E5%8F%91%E8%AF%B7%E6%B1%82%EF%BC%8CZygote-%E6%89%A7%E8%A1%8C%E5%88%9B%E5%BB%BA"><span class="nav-text">7.1 AMS 发请求，Zygote 执行创建</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-2-PID-%E8%BF%94%E5%9B%9E%E4%B9%8B%E5%90%8E%EF%BC%8C%E8%BF%98%E6%9C%89%E5%BA%94%E7%94%A8%E7%BB%91%E5%AE%9A%E4%B8%8E%E7%BB%84%E4%BB%B6%E6%B4%BE%E5%8F%91"><span class="nav-text">7.2 PID 返回之后，还有应用绑定与组件派发</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#8-%E5%90%AF%E5%8A%A8%E7%94%BB%E9%9D%A2%E4%B8%8E%E6%95%85%E9%9A%9C%E6%81%A2%E5%A4%8D%EF%BC%8C%E6%8A%8A%E6%95%B4%E5%BC%A0%E5%9C%B0%E5%9B%BE%E6%8E%A5%E8%B5%B7%E6%9D%A5"><span class="nav-text">8. 启动画面与故障恢复，把整张地图接起来</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#8-1-%E5%8A%A8%E7%94%BB%E3%80%81%E6%A1%8C%E9%9D%A2%E5%92%8C%E5%AE%8C%E6%88%90%E5%B9%BF%E6%92%AD%E5%90%84%E6%9C%89%E6%9D%A1%E4%BB%B6"><span class="nav-text">8.1 动画、桌面和完成广播各有条件</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#8-2-%E5%90%AF%E5%8A%A8%E5%90%8E%E7%BB%A7%E7%BB%AD%E8%BF%90%E8%A1%8C%EF%BC%8C%E6%AD%BB%E4%BA%A1%E4%B9%9F%E6%B2%BF%E8%BF%99%E4%BA%9B%E8%BE%B9%E7%95%8C%E4%BC%A0%E6%92%AD"><span class="nav-text">8.2 启动后继续运行，死亡也沿这些边界传播</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#9-%E9%AA%8C%E8%AF%81%EF%BC%9A%E6%8A%8A%E5%85%A8%E5%B1%80%E5%85%B3%E7%B3%BB%E8%90%BD%E5%AE%9E%E5%88%B0%E5%8F%AF%E8%A7%82%E5%AF%9F%E4%BA%8B%E5%AE%9E"><span class="nav-text">9. 验证：把全局关系落实到可观察事实</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#9-1-%E5%B7%B2%E6%89%A7%E8%A1%8C%EF%BC%9A%E6%AF%94%E8%BE%83-PID-%E4%B8%8E-PPID"><span class="nav-text">9.1 已执行：比较 PID 与 PPID</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#9-2-%E5%B7%B2%E6%89%A7%E8%A1%8C%EF%BC%9A%E6%8E%A5%E5%8F%A3%E5%AD%98%E5%9C%A8%E4%B8%8E%E6%9C%8D%E5%8A%A1%E5%86%85%E9%83%A8%E7%8A%B6%E6%80%81%E5%88%86%E5%88%AB%E6%9F%A5%E8%AF%A2"><span class="nav-text">9.2 已执行：接口存在与服务内部状态分别查询</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#9-3-%E6%9C%AA%E6%89%A7%E8%A1%8C%EF%BC%9A%E6%8C%89%E6%9C%80%E6%97%A9%E7%BC%BA%E5%A4%B1%E7%9A%84%E8%AF%81%E6%8D%AE%E5%88%86%E6%AE%B5%E8%BF%BD%E8%B8%AA"><span class="nav-text">9.3 未执行：按最早缺失的证据分段追踪</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#10-%E4%B8%A4%E4%B8%AA%E5%9C%BA%E6%99%AF%EF%BC%8C%E6%A3%80%E9%AA%8C%E6%98%AF%E5%90%A6%E7%9C%9F%E6%AD%A3%E8%AF%BB%E6%87%82%E5%85%A8%E5%B1%80%E5%85%B3%E7%B3%BB"><span class="nav-text">10. 两个场景，检验是否真正读懂全局关系</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#10-1-%E2%80%9C%E6%9C%8D%E5%8A%A1%E6%9F%A5%E5%BE%97%E5%88%B0%EF%BC%8C%E7%95%8C%E9%9D%A2%E6%B2%A1%E5%87%BA%E6%9D%A5%E2%80%9D%E4%B8%BA%E4%BB%80%E4%B9%88%E6%B2%A1%E6%9C%89%E7%9F%9B%E7%9B%BE"><span class="nav-text">10.1 “服务查得到，界面没出来”为什么没有矛盾</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#10-2-%E2%80%9C%E5%8F%88%E7%9C%8B%E5%88%B0%E5%BC%80%E6%9C%BA%E5%8A%A8%E7%94%BB%E2%80%9D%E4%B8%BA%E4%BB%80%E4%B9%88%E8%BF%98%E9%9C%80%E8%A6%81%E7%A1%AE%E8%AE%A4%E9%87%8D%E5%90%AF%E8%8C%83%E5%9B%B4"><span class="nav-text">10.2 “又看到开机动画”为什么还需要确认重启范围</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#11-%E7%B3%BB%E5%88%97%E5%AF%BC%E8%88%AA%E4%B8%8E%E5%88%86%E5%B1%82%E8%AE%B0%E5%BF%86"><span class="nav-text">11. 系列导航与分层记忆</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#11-1-%E6%8C%89%E9%97%AE%E9%A2%98%E9%80%89%E6%8B%A9%E5%90%8E%E7%BB%AD%E7%AF%87%E7%9B%AE"><span class="nav-text">11.1 按问题选择后续篇目</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#11-2-L0%EF%BC%9A%E5%85%88%E4%BF%9D%E7%95%99%E4%B8%80%E5%B9%85%E5%9B%BE%E5%92%8C%E5%9B%9B%E4%B8%AA%E9%97%AE%E9%A2%98"><span class="nav-text">11.2 L0：先保留一幅图和四个问题</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#11-3-L1%EF%BC%9A%E8%83%BD%E8%87%AA%E5%B7%B1%E5%B1%95%E5%BC%80%E7%9A%84%E4%B8%BB%E5%B9%B2"><span class="nav-text">11.3 L1：能自己展开的主干</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#11-4-L2%EF%BC%9A%E6%8C%89%E9%9C%80%E5%AE%9A%E4%BD%8D%E6%BA%90%E7%A0%81%EF%BC%8C%E4%B8%8D%E8%83%8C%E5%85%A8%E9%83%A8%E7%B1%BB%E5%90%8D"><span class="nav-text">11.4 L2：按需定位源码，不背全部类名</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#12-%E6%8A%98%E5%8F%A0%E8%87%AA%E6%B5%8B"><span class="nav-text">12. 折叠自测</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#12-1-%E5%9F%BA%E7%A1%80%E5%85%B3%E7%B3%BB"><span class="nav-text">12.1 基础关系</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#12-2-%E5%9C%BA%E6%99%AF%E6%8E%A8%E7%90%86"><span class="nav-text">12.2 场景推理</span></a></li></ol></li></ol></div>
             
 
           </div>
