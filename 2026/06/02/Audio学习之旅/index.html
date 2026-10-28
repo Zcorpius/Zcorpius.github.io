@@ -99,20 +99,20 @@
 
 
 
-<meta name="description" content="1. 系统架构Android 音频架构定义了音频功能的实现方式，并指出实现中所涉及的相关源代码。   1.1. 应用框架：应用框架包含应用代码，该代码使用 android.media API 与音频硬件进行交互。在内部，此代码会调用相应的 JNI 粘合类来访问与音频硬件互动的原生代码。 1.2. JNI与 android.media 关联的 JNI 代码会调用较低级别的原生代码来访问音频硬件。 J">
+<meta name="description" content="1. 从一次听歌与录音，建立音频系统的全局认识音乐已经 write() 进去，为什么扬声器还没有出声？导航开始播报，为什么音乐变小了，但播放线程仍在运行？耳机刚被识别到，为什么声音还没切过去？录音对象显示 RECORDING，为什么读到的样本却全是零？ 这些现象分别发生在数据供给、播放控制、设备选路和采集授权的不同环节。学习 Android Audio，首先要建立的能力是：把一个用户可感知的现象，">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Android Audio 学习之旅">
 <meta property="og:url" content="https://zcorpius.github.io/2026/06/02/Audio%E5%AD%A6%E4%B9%A0%E4%B9%8B%E6%97%85/index.html">
 <meta property="og:site_name" content="Zcorpius&#39;s Blog">
-<meta property="og:description" content="1. 系统架构Android 音频架构定义了音频功能的实现方式，并指出实现中所涉及的相关源代码。   1.1. 应用框架：应用框架包含应用代码，该代码使用 android.media API 与音频硬件进行交互。在内部，此代码会调用相应的 JNI 粘合类来访问与音频硬件互动的原生代码。 1.2. JNI与 android.media 关联的 JNI 代码会调用较低级别的原生代码来访问音频硬件。 J">
+<meta property="og:description" content="1. 从一次听歌与录音，建立音频系统的全局认识音乐已经 write() 进去，为什么扬声器还没有出声？导航开始播报，为什么音乐变小了，但播放线程仍在运行？耳机刚被识别到，为什么声音还没切过去？录音对象显示 RECORDING，为什么读到的样本却全是零？ 这些现象分别发生在数据供给、播放控制、设备选路和采集授权的不同环节。学习 Android Audio，首先要建立的能力是：把一个用户可感知的现象，">
 <meta property="og:locale">
-<meta property="og:image" content="https://zcorpius.github.io/2026/06/02/Audio%E5%AD%A6%E4%B9%A0%E4%B9%8B%E6%97%85/Audio%E6%9E%B6%E6%9E%84.png">
+<meta property="og:image" content="https://zcorpius.github.io/2026/06/02/Audio%E5%AD%A6%E4%B9%A0%E4%B9%8B%E6%97%85/audio-overview.png">
 <meta property="article:published_time" content="2026-06-02T14:54:56.000Z">
-<meta property="article:modified_time" content="2026-06-02T15:07:56.719Z">
+<meta property="article:modified_time" content="2026-10-28T10:32:55.503Z">
 <meta property="article:author" content="Zcorpius">
 <meta property="article:tag" content="Audio">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://zcorpius.github.io/2026/06/02/Audio%E5%AD%A6%E4%B9%A0%E4%B9%8B%E6%97%85/Audio%E6%9E%B6%E6%9E%84.png">
+<meta name="twitter:image" content="https://zcorpius.github.io/2026/06/02/Audio%E5%AD%A6%E4%B9%A0%E4%B9%8B%E6%97%85/audio-overview.png">
 
 
 
@@ -424,7 +424,7 @@
                   <span class="post-meta-item-text">字数统计&#58;</span>
                 
                 <span title="字数统计">
-                  999
+                  10.8k
                 </span>
               
 
@@ -440,7 +440,7 @@
                   <span class="post-meta-item-text">阅读时长 &asymp;</span>
                 
                 <span title="阅读时长">
-                  3
+                  39
                 </span>
               
             </div>
@@ -461,106 +461,653 @@
       
 
       
-        <h1 id="1-系统架构"><a href="#1-系统架构" class="headerlink" title="1. 系统架构"></a>1. 系统架构</h1><p>Android 音频架构定义了音频功能的实现方式，并指出实现中所涉及的相关源代码。</p>
-<img src="/2026/06/02/Audio%E5%AD%A6%E4%B9%A0%E4%B9%8B%E6%97%85/Audio架构.png" alt=" " width="420px">
-
-<h2 id="1-1-应用框架："><a href="#1-1-应用框架：" class="headerlink" title="1.1. 应用框架："></a>1.1. 应用框架：</h2><p>应用框架包含应用代码，该代码使用 android.media API 与音频硬件进行交互。在内部，此代码会调用相应的 JNI 粘合类来访问与音频硬件互动的原生代码。</p>
-<h2 id="1-2-JNI"><a href="#1-2-JNI" class="headerlink" title="1.2. JNI"></a>1.2. JNI</h2><p>与 android.media 关联的 JNI 代码会调用较低级别的原生代码来访问音频硬件。</p>
-<p>JNI 位于 <code>frameworks/base/core/jni/</code> 和 <code>frameworks/base/media/jni</code> 中。</p>
-<h2 id="1-3-原生框架"><a href="#1-3-原生框架" class="headerlink" title="1.3. 原生框架"></a>1.3. 原生框架</h2><p>原生框架提供相当于 android.media 软件包的原生软件包，它调用 Binder IPC 代理来访问媒体服务器的音频专属服务。 原生框架代码位于 <code>frameworks/av/media/libmedia</code> 中。</p>
-<h2 id="1-4-Binder"><a href="#1-4-Binder" class="headerlink" title="1.4. Binder"></a>1.4. Binder</h2><p>IPCBinder IPC 代理用于促进跨越进程边界的通信。</p>
-<p>代理位于 <code>frameworks/av/media/libmedia</code> 中，并以字母<code>I</code> 开头。</p>
-<h2 id="1-5-媒体服务器"><a href="#1-5-媒体服务器" class="headerlink" title="1.5. 媒体服务器"></a>1.5. 媒体服务器</h2><p>媒体服务器包含音频服务，这些音频服务是与 HAL 实现进行交互的实际代码。</p>
-<p>媒体服务器位于 <code>frameworks/av/services/audioflinger</code> 中。</p>
-<h2 id="1-6-HAL"><a href="#1-6-HAL" class="headerlink" title="1.6. HAL"></a>1.6. HAL</h2><p>HAL 定义了音频服务会调用且必须实现才能使音频硬件正常运行的标准接口。</p>
-<h2 id="1-7-内核驱动程序"><a href="#1-7-内核驱动程序" class="headerlink" title="1.7. 内核驱动程序"></a>1.7. 内核驱动程序</h2><p>音频驱动程序用于硬件和 HAL 实现进行交互。可以使用高级 Linux 声音架构 (ALSA)、开放声音系统 (OSS) 或自定义驱动程序（HAL 与驱动程序无关）。</p>
-<div class="markdown-alert markdown-alert-note">
-<p class="markdown-alert-title"><svg class="octicon octicon-info mr-2" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"></path></svg>Note</p>
-<p>上述为Android官方的描述，个人觉得描述得并不好，不如直接看架构图自己理解。</p>
-</div>
-<p>个人觉得 Audio 的学习与总结可以按照 <strong>数据流</strong>（PCM 往下走）和<strong>控制流</strong>（路由/策略往下发）两条并行逻辑链路进行整理。</p>
-<h1 id="2-全景链路"><a href="#2-全景链路" class="headerlink" title="2. 全景链路"></a>2. 全景链路</h1><h2 id="2-1-链路图"><a href="#2-1-链路图" class="headerlink" title="2.1. 链路图"></a>2.1. 链路图</h2><pre class="mermaid">sequenceDiagram
-    participant App as App渲染线程
-    participant FW as Framework层<br>android.media.AudioTrack
-    participant Native as Native层<br>libaudioclient::AudioTrack
-    participant SHM as 共享缓冲<br>ClientProxy / ServerProxy
-    participant AF as AudioFlinger<br>PlaybackThread
-    participant AP as AudioPolicy
-    participant HAL as Audio HAL<br>stream_out.write
-    participant Kernel as Kernel Driver<br>PCM RingBuffer + DMA
-    participant Codec as Codec / 功放<br>蓝牙协议栈
-    participant Out as Speaker / Headset<br>Bluetooth
-
-    App-&gt;&gt;FW: AudioTrack.write()
-    FW-&gt;&gt;Native: JNI 调用
-    Native-&gt;&gt;SHM: 写入 ClientProxy
-    SHM-&gt;&gt;AF: ServerProxy 传递数据
-
-    AP--&gt;&gt;AF: 设备选路与策略裁决
-    AP--&gt;&gt;HAL: 路由变化时重连路
-
-    AF-&gt;&gt;HAL: stream_out.write()
-    HAL-&gt;&gt;Kernel: 写入 PCM RingBuffer
-    Kernel-&gt;&gt;Kernel: DMA 传输
-    Kernel-&gt;&gt;Codec: 音频数据
-    Codec-&gt;&gt;Out: 模拟信号 / 蓝牙传输</pre>
-
-<p>这条链路里有两条并行逻辑：<strong>数据流</strong>（PCM 往下走）和<strong>控制流</strong>（路由/策略往下发）。</p>
+        <h1 id="1-从一次听歌与录音，建立音频系统的全局认识"><a href="#1-从一次听歌与录音，建立音频系统的全局认识" class="headerlink" title="1. 从一次听歌与录音，建立音频系统的全局认识"></a>1. 从一次听歌与录音，建立音频系统的全局认识</h1><p>音乐已经 <code>write()</code> 进去，为什么扬声器还没有出声？导航开始播报，为什么音乐变小了，但播放线程仍在运行？耳机刚被识别到，为什么声音还没切过去？录音对象显示 <code>RECORDING</code>，为什么读到的样本却全是零？</p>
+<p>这些现象分别发生在数据供给、播放控制、设备选路和采集授权的不同环节。学习 Android Audio，首先要建立的能力是：<strong>把一个用户可感知的现象，拆成可定位的对象、状态、数据流和控制关系。</strong> 只背一条从 App 到 HAL 的箭头链，无法解释这些差异。</p>
+<p>本篇是整个音频系列的入口，也是一份读完各篇后可以回来复盘的地图。我们沿一个场景展开：</p>
+<blockquote>
+<p>应用 A 播放一段音乐；用户调音量，导航 B 加入；随后插拔耳机；A 又开启麦克风采集。最后，把同样的问题放到低延迟乐器和前后排独立播放的车载系统中。</p>
+</blockquote>
+<p>主线先采用普通 PCM 流：A 的播放参数为 <strong>44.1 kHz、双声道、PCM 32 位整数</strong>，假设被分配到一个 <strong>48 kHz 的普通混音输出</strong>；录音请求为 <strong>16 kHz、单声道、PCM16</strong>，假设输入流为 <strong>48 kHz、双声道</strong>。这些是教学条件，用来观察格式转换与对象关系，不是 Android 的统一硬件配置，也不是实测结果。</p>
+<p>读完本文，应能完成四件事：</p>
 <ul>
-<li>数据流决定“有没有声音”</li>
-<li>控制流决定“从哪里出来、走哪种输出路径”。</li>
+<li>画出应用、system_server、audioserver、HAL/设备的边界，说清每个区域负责什么。</li>
+<li>分别追踪一段播放 PCM、一段采集 PCM，以及一次音量、焦点或路由请求。</li>
+<li>根据自己的问题，选择适合的专栏与源码入口，知道读完后应该验证什么。</li>
+<li>把“API 成功、对象活跃、路由选定、数据流动、用户听见”当作不同的证据层次。</li>
 </ul>
-<h2 id="2-1-各层职责"><a href="#2-1-各层职责" class="headerlink" title="2.1. 各层职责"></a>2.1. 各层职责</h2><table>
+<span id="more"></span>
+
+<p><span class="audio-journey-column" hidden=""></span></p>
+<style>
+/* 保持本篇图文可见；只影响带此文标记的页面。 */
+body:has(.audio-journey-column) #live2d-widget { display: none !important; }
+</style>
+
+<h2 id="1-1-怎样使用这篇学习地图"><a href="#1-1-怎样使用这篇学习地图" class="headerlink" title="1.1. 怎样使用这篇学习地图"></a>1.1. 怎样使用这篇学习地图</h2><p>第一次接触音频系统，可以按第 2—6 章建立基础，再进入第 8 章的阅读路线。已经读过单篇源码分析，可以从第 7 章比较不同路径，再用第 9 章组织实验。排查具体问题，直接看第 9.4 节的现象索引。</p>
+<p>本篇保留足以解释全局关系的关键实现；完整的缓冲协议、线程循环、策略条件和特殊分支，分别交给对应专栏。各篇之间的阅读箭头表示知识依赖，不能当成实际函数调用顺序。窄屏下可横向滚动表格与阅读路线图；点击架构插图可查看大图。</p>
+<details>
+<summary>源码基线、版本与范围</summary>
+
+<p>本文核对使用 <code>/Users/zhangyongbin/Desktop/Learn/Framework/LineageOS</code>，核对日期为 <strong>2026-10-28</strong>。路径均相对于此源码根。</p>
+<div class="audio-journey-table" style="max-width: 100%; overflow-x: auto;">
+<div style="min-width: 640px;">
+
+<table>
 <thead>
 <tr>
-<th>层级</th>
-<th>典型组件</th>
-<th>核心职责</th>
-<th>工程速记</th>
+<th>仓库</th>
+<th>核对提交</th>
+<th>在本篇中的用途</th>
 </tr>
 </thead>
 <tbody><tr>
-<td>App 层</td>
-<td>播放内核渲染线程</td>
-<td>按节拍把 PCM 写入 AudioTrack，处理短写与错误码</td>
-<td>负责“持续喂数据”，不直接驱动硬件</td>
+<td><code>frameworks/base</code></td>
+<td><code>f8d852aaaa843b9d74db780bb11d4691b3ceebc0</code></td>
+<td>Java API、AudioService、焦点与设备管理</td>
 </tr>
 <tr>
-<td>Framework/Native</td>
-<td>Java AudioTrack +  libaudioclient::AudioTrack</td>
-<td>建链、参数校验、把数据写入共享缓冲</td>
-<td>是应用和系统音频服务的桥接层</td>
+<td><code>frameworks/av</code></td>
+<td><code>b848cc86cfe225d1b6d375629cf3d10980c13e1e</code></td>
+<td>audioserver、AudioFlinger、AudioPolicy、native 客户端、AAudio</td>
 </tr>
 <tr>
-<td>AudioFlinger</td>
-<td>PlaybackThread / Track</td>
-<td>按线程周期消费轨道，做混音/重采样/音量处理</td>
-<td>是系统真正执行播放调度的核心</td>
+<td><code>packages/services/Car</code></td>
+<td><code>590d3cefb2a99c3206ac15f589f7d55fd0833a09</code></td>
+<td>CarAudio 的分区、策略注册与车辆音频控制</td>
 </tr>
 <tr>
-<td>AudioPolicy</td>
-<td>AudioPolicyService/Manager</td>
-<td>选择输出设备与输出 profile，处理路由变化</td>
-<td>负责“选路与裁决”，不是搬运 PCM</td>
+<td><code>hardware/interfaces</code></td>
+<td><code>0f11bbb00c80aa93714b4a04d1c4f41a59687a51</code></td>
+<td>Audio HAL 接口与配置边界</td>
 </tr>
 <tr>
-<td>Audio HAL</td>
-<td>audio_stream_out.write</td>
-<td>把系统音频帧送到厂商驱动/设备链路</td>
-<td>是 Android 音频框架到硬件的标准接口</td>
-</tr>
-<tr>
-<td>Kernel/Device</td>
-<td>ALSA 驱动、DMA、Codec、蓝牙链路</td>
-<td>完成硬件搬运与电声转换，最终发声</td>
-<td>最后一公里，决定最终听感稳定性</td>
+<td><code>system/media</code></td>
+<td><code>980ffac6f31ee97fa45aec24d5cddbd8365afe1e</code></td>
+<td>音频类型、格式与公共定义</td>
 </tr>
 </tbody></table>
-<div class="markdown-alert markdown-alert-tip">
-<p class="markdown-alert-title"><svg class="octicon octicon-light-bulb mr-2" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M8 1.5c-2.363 0-4 1.69-4 3.75 0 .984.424 1.625.984 2.304l.214.253c.223.264.47.556.673.848.284.411.537.896.621 1.49a.75.75 0 0 1-1.484.211c-.04-.282-.163-.547-.37-.847a8.456 8.456 0 0 0-.542-.68c-.084-.1-.173-.205-.268-.32C3.201 7.75 2.5 6.766 2.5 5.25 2.5 2.31 4.863 0 8 0s5.5 2.31 5.5 5.25c0 1.516-.701 2.5-1.328 3.259-.095.115-.184.22-.268.319-.207.245-.383.453-.541.681-.208.3-.33.565-.37.847a.751.751 0 0 1-1.485-.212c.084-.593.337-1.078.621-1.489.203-.292.45-.584.673-.848.075-.088.147-.173.213-.253.561-.679.985-1.32.985-2.304 0-2.06-1.637-3.75-4-3.75ZM5.75 12h4.5a.75.75 0 0 1 0 1.5h-4.5a.75.75 0 0 1 0-1.5ZM6 15.25a.75.75 0 0 1 .75-.75h2.5a.75.75 0 0 1 0 1.5h-2.5a.75.75 0 0 1-.75-.75Z"></path></svg>Tip</p>
-<p>记忆技巧：<code>App 喂数 -&gt; Flinger 调度 -&gt; Policy 选路 -&gt; HAL 下发 -&gt; Driver 出声</code>。</p>
 </div>
-<p>后面先按照各个层级模块进行分析，结束后再分析从开机到应用使用 Audio 工作的流程。基本也就算是入门Audio了吧。</p>
+</div>
+
+<p>这些仓库按各自提交定位，不把目录名或 manifest 分支名等同于所有文件所属的单一 AOSP 发布标签。base 的已有本地修改位于 WMS；本篇涉及的音频文件没有已跟踪的未提交修改。源码树也可能包含产品扩展，不能把本地实现全部当成未定制的上游行为。</p>
+<p>下面的源码节选增加中文讲解注释，<code>...</code> 明确表示省略；它们不是独立可编译程序。本文讨论普通 PCM 主线，并比较 FAST、direct、offload、MMAP 与 AAOS 扩展。厂商 DSP、驱动、蓝牙协议栈和完整媒体解码管线不在本篇逐层展开。</p>
+<p>本文没有执行真机实验。第 9 章给出操作、观察与判断边界；设备是否采用特定 HAL、配置和 feature flag，需要在对应构建上确认。</p>
+</details>
+
+<h1 id="2-全景架构：两个数据方向，多条控制关系"><a href="#2-全景架构：两个数据方向，多条控制关系" class="headerlink" title="2. 全景架构：两个数据方向，多条控制关系"></a>2. 全景架构：两个数据方向，多条控制关系</h1><p><img src="/2026/06/02/Audio%E5%AD%A6%E4%B9%A0%E4%B9%8B%E6%97%85/audio-overview.png" alt="应用播放与采集的双向 PCM 路径，以及 system_server 和 audioserver 的控制协作"></p>
+<p>绿色箭头只表示 PCM 的主要流向，橙色箭头表示控制协作。图中的两份共享缓冲分别服务播放与采集；客户端和服务端映射同一份缓冲，不是通过两个独立副本“遥传”每个采样点。HAL/设备位于 audioserver 边界之外，具体部署和底层通路由产品实现决定。</p>
+<p>上方只抽取 AudioManager、AudioService 和 AudioPolicy 的部分管理关系。<strong>焦点在 AudioService/MediaFocusControl 体系中仲裁；图中 AudioService 到 APS 的设备/音量状态箭头不表示把焦点栈搬到了 audioserver。</strong> 创建轨道、启停等客户端控制调用另见第 4、5 章。</p>
+<h2 id="2-1-先分清四个区域"><a href="#2-1-先分清四个区域" class="headerlink" title="2.1. 先分清四个区域"></a>2.1. 先分清四个区域</h2><div class="audio-journey-table" style="max-width: 100%; overflow-x: auto;">
+<div style="min-width: 640px;">
+
+<table>
+<thead>
+<tr>
+<th>区域</th>
+<th>典型对象</th>
+<th>主要职责</th>
+<th>不应从名字推导出的结论</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>应用进程</td>
+<td>AudioManager、Java/JNI/native AudioTrack 与 AudioRecord、AAudio 客户端</td>
+<td>发起管理请求；生产或消费音频数据；维护应用侧状态与回调</td>
+<td>Java 到 JNI 不等于跨进程；一个 App 不等于一条 Track</td>
+</tr>
+<tr>
+<td>system_server</td>
+<td>AudioService、MediaFocusControl、AudioDeviceBroker、播放/录音监控</td>
+<td>协调用户音量、焦点、模式、设备状态与系统音频管理</td>
+<td>PCM 不需要逐块经过 AudioService</td>
+</tr>
+<tr>
+<td>audioserver</td>
+<td>AudioFlinger、AudioPolicyService/APM；按条件启用的 AAudioService</td>
+<td>建立音频通道、组织数据处理、选择输入输出与设备、执行策略</td>
+<td>AudioFlinger 与 APS 是不同服务，但同处一个进程</td>
+</tr>
+<tr>
+<td>HAL 与后续设备链路</td>
+<td>Audio HAL、驱动、DSP、编解码器、USB/蓝牙设备等</td>
+<td>暴露音频能力，处理硬件或虚拟端点的数据与控制</td>
+<td>不存在适用于所有设备的唯一“ALSA → DMA → Codec”实现链</td>
+</tr>
+</tbody></table>
+</div>
+</div>
+
+<p>这里的 Codec 若指硬件 codec，是模拟/数字转换等设备部件；媒体层的压缩音频编解码器则负责 AAC、MP3 等内容的编码/解码。两者不能只凭同名合并成一个对象。</p>
+<p>AudioPolicyManager 是 AudioPolicyService 使用的策略实现。Java <code>android.media.audiopolicy.AudioPolicy</code> 又是另一种对象：特权组件用它向系统注册动态 mix、焦点或音量策略。源码里都叫“AudioPolicy”，并不代表它们位于同一层、承担同一职责。</p>
+<h2 id="2-2-Binder、共享内存与线程分别解决什么"><a href="#2-2-Binder、共享内存与线程分别解决什么" class="headerlink" title="2.2. Binder、共享内存与线程分别解决什么"></a>2.2. Binder、共享内存与线程分别解决什么</h2><p><strong>Binder 负责控制关系和对象能力的交接。</strong> 客户端申请创建轨道，服务端检查参数、选择资源、返回控制接口和共享内存描述；之后客户端通过控制接口启停轨道。Binder 也承载设备事件、状态通知等操作。</p>
+<p><strong>共享内存负责让两端访问音频数据和进度。</strong> 普通流的 PCM 不需要每一块都封装成 Binder 事务。播放时应用发布已写入帧，服务端消费；录音时服务端发布采集帧，应用消费。共享状态还需要原子操作、读写位置和等待/唤醒协议，单有一块映射内存并不能保证数据正确。</p>
+<p><strong>线程负责在合适的时机继续工作。</strong> Binder 线程处理一次请求，MixerThread、RecordThread 等工作线程维持长期的数据流。<code>start()</code> 改了状态或唤醒了工作线程，不代表这一调用栈已经完成从用户输入到硬件发声的全过程。</p>
+<p>这也解释了为什么“共享内存”不能直接翻译为“端到端零拷贝”：应用写入、格式转换、混音、HAL 传输和应用读取仍可能搬运数据。AAudio MMAP 的映射对象与普通 Track 共享环形缓冲也不同，需要单独分析。</p>
+<h2 id="2-3-用启动入口确认服务归属"><a href="#2-3-用启动入口确认服务归属" class="headerlink" title="2.3. 用启动入口确认服务归属"></a>2.3. 用启动入口确认服务归属</h2><p>与其沿用笼统的“媒体服务器”称呼，不如直接看当前源码怎样创建和发布音频服务。<code>audioserver.rc</code> 将 <code>/system/bin/audioserver</code> 定义为 init 管理的服务；程序入口在 <code>frameworks/av/media/audioserver/main_audioserver.cpp</code>。</p>
+<p>下面保留创建 AudioFlinger、APS 和对外发布的先后关系。<code>doLog</code> 分支是该入口的辅助日志进程逻辑，不是音频数据流中的一个处理层：</p>
+<figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/av/media/audioserver/main_audioserver.cpp</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">main</span><span class="params">(<span class="type">int</span> argc __unused, <span class="type">char</span> **argv)</span></span></span><br><span class="line"><span class="function"></span>{</span><br><span class="line">    ...</span><br><span class="line">    <span class="keyword">if</span> (doLog &amp;&amp; (childPid = fork()) != <span class="number">0</span>) {</span><br><span class="line">        ...</span><br><span class="line">    } <span class="keyword">else</span> {</span><br><span class="line">        ...</span><br><span class="line">        <span class="comment">// 先在本进程建立 AF / APS 及本地访问关系。</span></span><br><span class="line">        <span class="type">const</span> <span class="keyword">auto</span> af = sp&lt;AudioFlinger&gt;::<span class="built_in">make</span>();</span><br><span class="line">        <span class="type">const</span> <span class="keyword">auto</span> afAdapter = sp&lt;AudioFlingerServerAdapter&gt;::<span class="built_in">make</span>(af);</span><br><span class="line">        ...</span><br><span class="line">        <span class="built_in">ALOGW_IF</span>(AudioSystem::<span class="built_in">setLocalAudioFlinger</span>(af) != OK,</span><br><span class="line">                <span class="string">"%s: AudioSystem already has an AudioFlinger instance!"</span>, __func__);</span><br><span class="line">        <span class="type">const</span> <span class="keyword">auto</span> aps = sp&lt;AudioPolicyService&gt;::<span class="built_in">make</span>();</span><br><span class="line">        af-&gt;<span class="built_in">initAudioPolicyLocal</span>(aps);</span><br><span class="line">        ...</span><br><span class="line">        <span class="built_in">ALOGW_IF</span>(AudioSystem::<span class="built_in">setLocalAudioPolicyService</span>(aps) != OK,</span><br><span class="line">                 <span class="string">"%s: AudioSystem already has an AudioPolicyService instance!"</span>, __func__);</span><br><span class="line">        aps-&gt;<span class="built_in">onAudioSystemReady</span>();</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 本地初始化完成后，再把两个服务发布给客户端。</span></span><br><span class="line">        sp&lt;IServiceManager&gt; sm = <span class="built_in">defaultServiceManager</span>();</span><br><span class="line">        sm-&gt;<span class="built_in">addService</span>(<span class="built_in">String16</span>(IAudioFlinger::DEFAULT_SERVICE_NAME), afAdapter,</span><br><span class="line">                <span class="literal">false</span> <span class="comment">/* allowIsolated */</span>, IServiceManager::DUMP_FLAG_PRIORITY_DEFAULT);</span><br><span class="line">        sm-&gt;<span class="built_in">addService</span>(<span class="built_in">String16</span>(AudioPolicyService::<span class="built_in">getServiceName</span>()), aps,</span><br><span class="line">                <span class="literal">false</span> <span class="comment">/* allowIsolated */</span>, IServiceManager::DUMP_FLAG_PRIORITY_DEFAULT);</span><br><span class="line">        ...</span><br><span class="line">    }</span><br><span class="line">    ...</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<p>这段代码证明 AF 与 APS 在本进程中相互协作，也说明“创建对象”和“让外部客户端发现服务”是两个阶段。它不能证明全部输入输出流已经打开，更不能证明设备此时正在播放。</p>
+<p>另一边，SystemServer 在普通设备路径启动 <code>AudioService.Lifecycle</code>。其生命周期类明确区分发布 Binder 服务和进入系统就绪阶段：</p>
+<figure class="highlight java"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/base/services/core/java/com/android/server/audio/AudioService.java</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">class</span> <span class="title class_">Lifecycle</span> <span class="keyword">extends</span> <span class="title class_">SystemService</span> {</span><br><span class="line">    <span class="keyword">private</span> AudioService mService;</span><br><span class="line">    ...</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">onStart</span><span class="params">()</span> {</span><br><span class="line">        <span class="comment">// 发布 system_server 中的 audio 管理服务。</span></span><br><span class="line">        publishBinderService(Context.AUDIO_SERVICE, mService);</span><br><span class="line">    }</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">onBootPhase</span><span class="params">(<span class="type">int</span> phase)</span> {</span><br><span class="line">        <span class="keyword">if</span> (phase == SystemService.PHASE_ACTIVITY_MANAGER_READY) {</span><br><span class="line">            <span class="comment">// 系统启动到相应阶段，再执行依赖系统就绪的工作。</span></span><br><span class="line">            mService.systemReady();</span><br><span class="line">        }</span><br><span class="line">    }</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<p>因此，<code>audio</code>、<code>media.audio_flinger</code>、<code>media.audio_policy</code> 是不同服务视角。排查“服务存在但没声音”，还要继续查看轨道、路由、活跃状态、数据和设备，不能止步于服务注册。</p>
+<h1 id="3-先统一词汇：数据规格、用途、对象和位置"><a href="#3-先统一词汇：数据规格、用途、对象和位置" class="headerlink" title="3. 先统一词汇：数据规格、用途、对象和位置"></a>3. 先统一词汇：数据规格、用途、对象和位置</h1><h2 id="3-1-PCM、帧与字节：任何缓冲讨论都要带单位"><a href="#3-1-PCM、帧与字节：任何缓冲讨论都要带单位" class="headerlink" title="3.1. PCM、帧与字节：任何缓冲讨论都要带单位"></a>3.1. PCM、帧与字节：任何缓冲讨论都要带单位</h2><p>PCM 描述的是采样值。采样率表示每秒每个声道的采样时刻数；一个 frame 包含同一时刻所有声道的采样值。对于普通线性 PCM：</p>
+<figure class="highlight text"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">每帧字节数 = 声道数 × 每个采样值的字节数</span><br><span class="line">数据字节数 = 帧数 × 每帧字节数</span><br><span class="line">时长（毫秒）= 帧数 × 1000 / 采样率</span><br></pre></td></tr></tbody></table></figure>
+
+<p>例如，48 kHz、双声道、PCM16 的一帧为 4 byte，10 ms 是 480 帧、1920 byte，每秒数据量为 192000 byte。这个计算只说明数据规模，不包含协议开销，也不能据此算出扬声器端到端延迟。</p>
+<p>A 播放的 PCM32 整数与 PCM float 即使都占 4 byte，数值表示也不同。<code>read(short[])</code> 的长度是 short 元素数，双声道时两个元素才是一帧；不能拿数组长度直接套入毫秒公式。压缩 offload 数据也不能套用固定“声道数 × 位深”的字节到播放时长换算。</p>
+<h2 id="3-2-音频规格与声音用途是两个维度"><a href="#3-2-音频规格与声音用途是两个维度" class="headerlink" title="3.2. 音频规格与声音用途是两个维度"></a>3.2. 音频规格与声音用途是两个维度</h2><div class="audio-journey-table" style="max-width: 100%; overflow-x: auto;">
+<div style="min-width: 640px;">
+
+<table>
+<thead>
+<tr>
+<th>概念</th>
+<th>回答的问题</th>
+<th>在贯穿场景中的例子</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>AudioFormat</td>
+<td>数据怎样表示</td>
+<td>44.1 kHz、stereo、PCM32 整数</td>
+</tr>
+<tr>
+<td>AudioAttributes / usage</td>
+<td>播放内容用来做什么</td>
+<td>音乐 MEDIA，导航 ASSISTANCE_NAVIGATION_GUIDANCE</td>
+</tr>
+<tr>
+<td>content type</td>
+<td>内容性质是什么</td>
+<td>MUSIC、SPEECH 等，参与相应控制规则</td>
+</tr>
+<tr>
+<td>AudioSource / capture preset</td>
+<td>录音希望采用哪种用途与调校</td>
+<td>MIC、VOICE_COMMUNICATION 等</td>
+</tr>
+<tr>
+<td>device type / address</td>
+<td>候选或实际端点是什么</td>
+<td>扬声器、USB 输入、车载 BUS 地址</td>
+</tr>
+<tr>
+<td>flags / performance mode</td>
+<td>希望或获准采用什么能力路径</td>
+<td>FAST、direct、MMAP、LOW_LATENCY 等</td>
+</tr>
+</tbody></table>
+</div>
+</div>
+
+<p>usage 会成为策略输入，但“声明导航用途”不等于“自动获得焦点并保证媒体 duck”。同样，MIC 不等于某个固定麦克风编号，VOICE_COMMUNICATION 也不保证所有设备都按同一套 DSP 算法处理。</p>
+<p>必须把<strong>应用请求值、系统协商值和设备实际行为</strong>分别记录。客户端要求 44.1 kHz，不代表输出线程和 HAL 都是 44.1 kHz；请求 LOW_LATENCY，不代表一定获得 MMAP。</p>
+<h2 id="3-3-Track、线程、流和设备不能一一画等号"><a href="#3-3-Track、线程、流和设备不能一一画等号" class="headerlink" title="3.3. Track、线程、流和设备不能一一画等号"></a>3.3. Track、线程、流和设备不能一一画等号</h2><p>一条应用播放对象通常对应一条服务端 Track；多条 Track 可以共享一个 PlaybackThread。线程管理的输出流又可能路由到某个或某组设备。录音侧的一条 RecordThread 也可以服务多条 RecordTrack，但每条轨道的格式、缓冲、消费进度和静音状态可以不同。</p>
+<p>在本文假设下，A 的 44.1 kHz 音乐与 B 的 48 kHz 导航可以进入同一个普通混音输出。AudioMixer 对各轨道作必要处理，形成输出时间轴上的结果。它们共享输出资源，不代表两个应用共享一个可随意相互读写的客户端缓冲。</p>
+<div class="audio-journey-table" style="max-width: 100%; overflow-x: auto;">
+<div style="min-width: 640px;">
+
+<table>
+<thead>
+<tr>
+<th>标识</th>
+<th>主要定位对象</th>
+<th>不要混淆的对象</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>sessionId</td>
+<td>音效会话等关联关系</td>
+<td>设备编号、进程 PID</td>
+</tr>
+<tr>
+<td>client portId</td>
+<td>策略注册的播放/录音 client</td>
+<td>所选 device port ID</td>
+</tr>
+<tr>
+<td>I/O handle</td>
+<td>一个输入或输出流及相关线程</td>
+<td>一条 App Track、物理声卡编号</td>
+</tr>
+<tr>
+<td>device ID / address</td>
+<td>设备端口及可寻址端点</td>
+<td>播放 session、车载 zone ID</td>
+</tr>
+<tr>
+<td>UID / PID</td>
+<td>应用身份与进程</td>
+<td>用户 userId、车载音频 zone</td>
+</tr>
+<tr>
+<td>录音 riid</td>
+<td>录音活动监控身份</td>
+<td>每次重建后都固定不变的 portId</td>
+</tr>
+</tbody></table>
+</div>
+</div>
+
+<p>一条逻辑录音在恢复后可以继续沿用同一个 Java 对象，但底层 portId 已经换代。因此对比两次 dump，先确认是否仍是同一代通道，再解释字段变化。</p>
+<h2 id="3-4-容量、占用、批次和延迟必须分别理解"><a href="#3-4-容量、占用、批次和延迟必须分别理解" class="headerlink" title="3.4. 容量、占用、批次和延迟必须分别理解"></a>3.4. 容量、占用、批次和延迟必须分别理解</h2><p>缓冲容量表示最多能存多少帧；当前占用表示现在积压了多少；一次 read/write 或 callback 的块长表示应用本轮处理多少；启动阈值、通知量和 HAL burst 又属于其他约束。</p>
+<p>以 48 kHz 为例，960 帧容量对应可容纳 20 ms 数据，但里面只有 240 帧时，该队列当前占用量约为 5 ms。这个 5 ms 仍只是一个队列的驻留量估算，后面可能还有混音周期、HAL、DSP、传输和设备缓冲。</p>
+<p>增大容量可能提高抗调度抖动能力，也可能容许更多积压；缩小缓冲可能减少排队，也可能增加 underrun/overrun。应该同时观察实际占用、应用调度和错误，而不是把“越小越快”当作独立于设备的公式。</p>
+<h1 id="4-追一次播放：创建、起播和供数是三个动作"><a href="#4-追一次播放：创建、起播和供数是三个动作" class="headerlink" title="4. 追一次播放：创建、起播和供数是三个动作"></a>4. 追一次播放：创建、起播和供数是三个动作</h1><h2 id="4-1-创建先把需求变成资源"><a href="#4-1-创建先把需求变成资源" class="headerlink" title="4.1. 创建先把需求变成资源"></a>4.1. 创建先把需求变成资源</h2><p>A 在创建 AudioTrack 时提供 format、attributes、容量等要求。Java/JNI/native 客户端完成相应校验与转换，通过 AudioFlinger 的创建接口申请服务端对象。AudioFlinger 调用策略侧的 <code>getOutputForAttr()</code> 取得适合的 output、设备与 client 注册信息，再在相应输出线程上建立 Track，返回控制接口和数据通道。</p>
+<p>这里不是简单的“AudioTrack → AudioFlinger → AudioPolicy → HAL”永久串行管道。策略先参与资源选择，工作线程随后持续处理 PCM；当设备或系统状态改变，控制关系又会重新介入。</p>
+<p>创建成功说明本轮资源协商和对象建立已经成功，不说明 A 已被激活、数据已经填好，或者用户此刻可以听到声音。</p>
+<h2 id="4-2-play-激活轨道，write-持续发布数据"><a href="#4-2-play-激活轨道，write-持续发布数据" class="headerlink" title="4.2. play 激活轨道，write 持续发布数据"></a>4.2. play 激活轨道，write 持续发布数据</h2><p><code>play()</code> 沿客户端控制对象把启动请求交给服务端；服务端将轨道纳入活跃处理。普通流仍要经过就绪判断，包括数据是否达到相应启动要求。<code>write()</code> 则取得可写区域，把数据放入共享缓冲并发布写入进度。</p>
+<p>写入返回的正数只说明接受了相应数量的数据。阻塞写可能等空位；非阻塞写可能只接受一部分。应用必须按实际返回值推进偏移，不能假定每次都写满，也不能把返回时刻等同于声学播放时刻。</p>
+<p>对于本篇普通 PCM 同步写入，源码里的核心动作就是 <code>obtainBuffer → memcpy → releaseBuffer</code>；其完整循环与短写行为见 <a href="/2026/06/04/AudioTrack%E5%89%96%E6%9E%90/">AudioTrack 播放链路剖析</a> 第 5、6 章。</p>
+<h2 id="4-3-工作线程按输出节拍消费"><a href="#4-3-工作线程按输出节拍消费" class="headerlink" title="4.3. 工作线程按输出节拍消费"></a>4.3. 工作线程按输出节拍消费</h2><p>MixerThread 在自己的循环中检查活跃轨道是否可处理，向 AudioMixer 提供数据、音量与格式条件，再将结果交给下游 sink。若配置了 FastMixer，普通混音结果可能通过中间通道交给 FastMixer；不能把每个普通输出都简化成 MixerThread 直接调用一次 HAL write。</p>
+<p>在 A、B 共用 48 kHz 输出的假设下，A 的 44.1 kHz 数据需要转换到输出时间轴；B 是否仍需格式或声道处理，取决于其实际参数。某个应用缺数时，系统要处理这条轨道的 underrun，不能为了等它而无限阻塞所有正常供数的轨道。</p>
+<p><code>HAL write</code> 或底层写入完成后，数据还可能驻留在设备链路。判断播放完成，需要明确是“写入完成”“系统消费完成”还是“可闻声音结束”。暂停、停止、flush、release 对待数据和对象的方式也不同，不能当成四个同义按钮。</p>
+<h2 id="4-4-回到-A：数据写完但没声音，先拆哪几层"><a href="#4-4-回到-A：数据写完但没声音，先拆哪几层" class="headerlink" title="4.4. 回到 A：数据写完但没声音，先拆哪几层"></a>4.4. 回到 A：数据写完但没声音，先拆哪几层</h2><p>先确认对象初始化与 play 状态，再确认写入返回值和服务端 Track 的活跃/就绪状态；随后看选中了哪个输出、实际设备是什么、音量或 duck/mute 是否生效。若上层证据均正常，再沿 HAL 与设备继续定位。</p>
+<p>这条排查顺序分别落到 <a href="/2026/06/04/AudioTrack%E5%89%96%E6%9E%90/">AudioTrack</a>、<a href="/2026/10/27/AudioFlinger%E5%89%96%E6%9E%90/">AudioFlinger</a>、<a href="/2026/10/27/AudioPolicy%E5%89%96%E6%9E%90/">AudioPolicy</a> 和 <a href="/2026/10/27/AudioService%E5%89%96%E6%9E%90/">AudioService</a>。它们回答的是同一次播放的不同问题。</p>
+<h1 id="5-追一次录音：方向反转，规则并不完全对称"><a href="#5-追一次录音：方向反转，规则并不完全对称" class="headerlink" title="5. 追一次录音：方向反转，规则并不完全对称"></a>5. 追一次录音：方向反转，规则并不完全对称</h1><h2 id="5-1-创建输入与激活采集各有检查"><a href="#5-1-创建输入与激活采集各有检查" class="headerlink" title="5.1. 创建输入与激活采集各有检查"></a>5.1. 创建输入与激活采集各有检查</h2><p>A 创建 AudioRecord 时声明 source、采样率、格式、声道和容量。native 客户端向 AudioFlinger 申请录音轨道，策略侧通过 <code>getInputForAttr()</code> 选择输入、设备和资源，并结合身份、source、flags 与 mix 等条件检查资格。服务端建立 RecordTrack，客户端接入返回的共享缓冲。</p>
+<p><code>startRecording()</code> 进一步激活采集。服务端的启动需要与 APS 的 <code>startInput()</code> 协作，处理数据交付权限、AppOps、活跃状态、并发采集与路由。构造成功、native 启动成功、Java 进入 RECORDING、得到真实声音，是几个相关但不同的判断。</p>
+<p>普通应用的播放焦点与麦克风采集并发属于不同机制。不能用“我已经拿到 audio focus”替代 RECORD_AUDIO 权限，也不能据此推断自己会成为唯一真实采集者。</p>
+<h2 id="5-2-生产者变成服务端，应用负责及时消费"><a href="#5-2-生产者变成服务端，应用负责及时消费" class="headerlink" title="5.2. 生产者变成服务端，应用负责及时消费"></a>5.2. 生产者变成服务端，应用负责及时消费</h2><p>普通采集路径由 RecordThread 持续取得输入数据；存在 FastCapture 时，RecordThread 可能改从 pipe 读入。线程输入缓冲与每条客户端轨道的共享缓冲是两个层次。</p>
+<p>在本文假设下，输入是 48 kHz stereo，A 要 16 kHz mono。A 的 RecordTrack 使用自己的 Converter 和 Provider 消费输入并完成必要转换；另一个要 48 kHz stereo 的轨道可以保留不同的处理需求。<strong>共享原始输入，不等于先做一次全局重采样再把同一结果分给所有应用。</strong></p>
+<p>服务端发布录音数据后，应用的 <code>read()</code> 在本地映射中取得可读区域，并拷贝到目标数组或缓冲。每次 read 不会重新发一条 Binder 命令，要求麦克风“现在采这一块”。阻塞读可能继续等待凑足本次请求，非阻塞读则可能暂时返回 0 或只返回一部分。</p>
+<h2 id="5-3-对照播放，找出不能照搬的规则"><a href="#5-3-对照播放，找出不能照搬的规则" class="headerlink" title="5.3. 对照播放，找出不能照搬的规则"></a>5.3. 对照播放，找出不能照搬的规则</h2><div class="audio-journey-table" style="max-width: 100%; overflow-x: auto;">
+<div style="min-width: 640px;">
+
+<table>
+<thead>
+<tr>
+<th>维度</th>
+<th>普通流播放</th>
+<th>普通录音</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>客户端角色</td>
+<td>向共享缓冲生产数据</td>
+<td>从共享缓冲消费数据</td>
+</tr>
+<tr>
+<td>服务端角色</td>
+<td>消费轨道数据并向输出推进</td>
+<td>取得输入并向各轨道交付数据</td>
+</tr>
+<tr>
+<td>应用跟不上节拍的主要风险</td>
+<td>数据供应不足，发生 underrun</td>
+<td>消费落后，发生 overrun 或历史数据被覆盖</td>
+</tr>
+<tr>
+<td>已激活是否等于可用结果</td>
+<td>可能尚未达到启动要求、被静音或路由不符</td>
+<td>可能尚无可读帧，或策略交付静音数据</td>
+</tr>
+<tr>
+<td>缓冲规则</td>
+<td>容量、有效大小、启动阈值等各有用途</td>
+<td>最小容量、通知量、read 块长不是同一个数</td>
+</tr>
+<tr>
+<td>等待与唤醒</td>
+<td>需要看播放方向的条件与水位</td>
+<td>不能直接照搬播放的 minimum 阈值解释</td>
+</tr>
+</tbody></table>
+</div>
+</div>
+
+<p>尤其是 <code>ServerProxy::releaseBuffer()</code>：录音方向的 <code>!mIsOut</code> 会直接满足唤醒分支条件；<code>mMinimum</code> 不能被解释成“录音必须攒够这么多帧才唤醒”。唤醒位合并、实际 futex 调用和应用 read 是否返回，又是不同层次。</p>
+<h2 id="5-4-A-录到全零，与-A-没有读到数据如何区分"><a href="#5-4-A-录到全零，与-A-没有读到数据如何区分" class="headerlink" title="5.4. A 录到全零，与 A 没有读到数据如何区分"></a>5.4. A 录到全零，与 A 没有读到数据如何区分</h2><p>read 返回 0，表示本次没有交付样本；返回正数但样本值为零，表示交付了数据，其内容为零。后者可能来自策略静音，也可能来自音源或下游处理，不能仅凭 RMS 为零判定权限原因。</p>
+<p>应同时查看录音状态、<code>AudioRecordingConfiguration.isClientSilenced()</code>、实际路由、client/device format 和读取结果。慢消费者可能丢失部分声音，即使累计返回帧数看起来连续；通道恢复也可能维持逻辑位置而留下 PCM 内容缺口。</p>
+<p>这些差异在 <a href="/2026/10/27/AudioRecord%E5%89%96%E6%9E%90/">AudioRecord 采集链路剖析</a> 中展开，尤其是第 5 章的数据/overrun/时间戳、第 7 章的并发策略、第 8 章的恢复。开始录音实验时，可以使用该篇提供的观测类，先固定一种 source 和格式。</p>
+<h1 id="6-控制场景：音乐仍在流动，系统状态已经改变"><a href="#6-控制场景：音乐仍在流动，系统状态已经改变" class="headerlink" title="6. 控制场景：音乐仍在流动，系统状态已经改变"></a>6. 控制场景：音乐仍在流动，系统状态已经改变</h1><h2 id="6-1-调音量：用户档位经过多层映射"><a href="#6-1-调音量：用户档位经过多层映射" class="headerlink" title="6.1. 调音量：用户档位经过多层映射"></a>6.1. 调音量：用户档位经过多层映射</h2><p>用户按音量加时，系统先判断调哪个 stream 或 volume group、哪个设备，以及是否受到静音、固定音量、用户限制等规则影响。AudioService 管理相关上层状态，向 native 体系应用音量；策略侧再结合 volume group、设备类别、曲线和当前条件计算相应结果。</p>
+<p>最终执行可以落在轨道/流增益、硬件设备 gain 或其他产品路径。一次音量键事件不等于“AudioService 把每个 PCM 样本乘一个系数”；用户看到的 index、曲线计算的 dB、硬件 gain 和 App 自身音量也不是一个变量。</p>
+<p>回到 A：扬声器媒体音量从 5 调到 6，切到耳机后不一定继续显示同样的数字或产生同样的响度。要分别看音量对象、设备关联、保存状态及实际执行路径。完整过程见 <a href="/2026/10/27/AudioService%E5%89%96%E6%9E%90/">AudioService 剖析</a> 第 4、5 章与 <a href="/2026/10/27/AudioPolicy%E5%89%96%E6%9E%90/">AudioPolicy 剖析</a> 第 9 章。</p>
+<h2 id="6-2-导航插播：焦点结果与播放器行为分开追"><a href="#6-2-导航插播：焦点结果与播放器行为分开追" class="headerlink" title="6.2. 导航插播：焦点结果与播放器行为分开追"></a>6.2. 导航插播：焦点结果与播放器行为分开追</h2><p>B 声明导航用途并请求合适的音频焦点。普通 Android 路径由 AudioService/MediaFocusControl 体系处理焦点请求；请求的 gain 类型、持有者属性、应用状态、系统版本及策略设置会影响结果。</p>
+<p>请求结果可能是获准、延迟或拒绝。A 的响应也可能是应用自行暂停、应用自行降低音量，或者系统在符合条件时执行 duck/fade。<strong>没有收到应用层 duck 回调，不足以证明音乐没有被系统压低。</strong> 反过来，拿到焦点也不保证 Track 已经建好或正确供数。</p>
+<p>读者应把这段过程拆为：焦点请求与返回 → 仲裁/回调或系统处理 → 播放器状态与增益 → 最终音量。公共应用的焦点使用还受 API 与 target SDK 条件影响，应按目标版本核对 <a target="_blank" rel="noopener" href="https://developer.android.com/media/optimize/audio-focus">Android 音频焦点文档</a>，不能把某个源码分支的准入条件推广到所有版本。</p>
+<p>车载系统可能注册外部焦点策略，由 CarAudio 按 zone 组织仲裁；控制仍通过 framework 的注册与分发关系协作。后文的车载分支会说明为什么“导航压低音乐”不能只靠两个 usage 名称决定。</p>
+<h2 id="6-3-插拔耳机：连接事实、选择结果与实际数据路径"><a href="#6-3-插拔耳机：连接事实、选择结果与实际数据路径" class="headerlink" title="6.3. 插拔耳机：连接事实、选择结果与实际数据路径"></a>6.3. 插拔耳机：连接事实、选择结果与实际数据路径</h2><p>设备连接后，系统先接收到连接事实并维护设备状态，再由策略决定对当前流是否选用该设备、能否复用现有 output、是否要改变路由或让客户端重建。某个设备已经连接，不等于所有活跃流都应该切过去。</p>
+<p>拔耳机还可能涉及 <code>AUDIO_BECOMING_NOISY</code> 通知、应用暂停、设备状态更新和路由变化。它们发生在不同执行位置，不能用一次同步方法返回概括全部完成时刻。</p>
+<p>分析 A 的耳机切换时，至少对照四类信息：设备是否可用、A 的偏好是什么、策略为 A 选择了什么、当前 Track 实际属于哪个输出与设备。如果记录到旧 output 消失、新 portId 出现，应先判断是否发生了重建，不要把它当成 dump 自相矛盾。</p>
+<h2 id="6-4-通话与服务恢复：状态可以重放，内容未必无缝"><a href="#6-4-通话与服务恢复：状态可以重放，内容未必无缝" class="headerlink" title="6.4. 通话与服务恢复：状态可以重放，内容未必无缝"></a>6.4. 通话与服务恢复：状态可以重放，内容未必无缝</h2><p><code>setMode()</code> 表达系统音频模式及其拥有者，<code>setCommunicationDevice()</code> 表达通信设备偏好；焦点表达播放协作。它们彼此相关，但不能互相代替。VoIP 应用还需要独立处理 AudioRecord 输入和播放输出，完整的双工延迟与回声消除也需要额外验证。</p>
+<p>audioserver 死亡或通道失效后，AudioService 可以恢复相关系统状态，AudioTrack/AudioRecord 或 AAudio 客户端则按照各自机制恢复、重建或上报断开。服务重新可用不等于原始 PCM 无缺口；新通道的格式、容量、设备和 ID 也应重新读取。</p>
+<p>学习控制面时，不只追“怎样设进去”，还要追“谁保存状态、谁清理死亡对象、恢复时谁重放”。这三个问题能把音量、模式、动态策略和设备管理串起来。</p>
+<h1 id="7-从普通路径分叉：低延迟、特殊输出与车载音频"><a href="#7-从普通路径分叉：低延迟、特殊输出与车载音频" class="headerlink" title="7. 从普通路径分叉：低延迟、特殊输出与车载音频"></a>7. 从普通路径分叉：低延迟、特殊输出与车载音频</h1><h2 id="7-1-先问处理路线，再问哪个-API-更快"><a href="#7-1-先问处理路线，再问哪个-API-更快" class="headerlink" title="7.1. 先问处理路线，再问哪个 API 更快"></a>7.1. 先问处理路线，再问哪个 API 更快</h2><div class="audio-journey-table" style="max-width: 100%; overflow-x: auto;">
+<div style="min-width: 640px;">
+
+<table>
+<thead>
+<tr>
+<th>路线</th>
+<th>主要变化</th>
+<th>必须保留的边界</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>普通 PCM 混音</td>
+<td>多条轨道按输出节拍转换、混音并交给 sink</td>
+<td>App 规格可以不同于线程/HAL；客户端共享缓冲仍有容量和调度约束</td>
+</tr>
+<tr>
+<td>FAST 播放 / FastCapture</td>
+<td>用专门的快速处理路径减少普通链路中的部分工作</td>
+<td>接受条件、格式、可用槽位和设备能力有限；请求 flag 不保证获准</td>
+</tr>
+<tr>
+<td>direct 输出</td>
+<td>采用专门的直接输出线程与适合的输出配置</td>
+<td>仍有框架控制和下游处理；不能等同于 AAudio MMAP</td>
+</tr>
+<tr>
+<td>压缩 offload</td>
+<td>将部分压缩音频处理交给下游能力</td>
+<td>数据可能不是 PCM；字节数不再按固定帧宽直接换成播放时长</td>
+</tr>
+<tr>
+<td>AAudio MMAP</td>
+<td>使用 MMAP endpoint、缓冲映射与时间戳模型；分共享/独占</td>
+<td>仍要建链、选路、授权和处理断开；独占的是对应资源，不是整台设备</td>
+</tr>
+<tr>
+<td>AAudio Legacy</td>
+<td>通过 AudioTrack/AudioRecord 等后端工作</td>
+<td>回退不自动意味着“不能低延迟”，也不能据 API 名称认定实际走 MMAP</td>
+</tr>
+</tbody></table>
+</div>
+</div>
+
+<p>所以，“所有声音都经过普通 AudioMixer”“FAST 就是 MMAP”“使用 AAudio 就绕过全部 AudioFlinger 管理”都不能作为全局模型。</p>
+<p>对于电子琴场景，要先定义延迟从哪里量到哪里：按键事件、合成开始、数据提交、设备消费、声学输出是不同时间点。再记录实际 backend、共享模式、burst、buffer size、callback 块长和 xrun，并分析计算耗时与调度。完整路线见 <a href="/2026/10/27/AAudio%E4%BD%8E%E5%BB%B6%E8%BF%9F%E5%AE%9E%E7%8E%B0%E5%89%96%E6%9E%90/">AAudio / MMAP / 低延迟路径实现剖析</a>。</p>
+<h2 id="7-2-AAOS-增加了分区与车辆控制关系"><a href="#7-2-AAOS-增加了分区与车辆控制关系" class="headerlink" title="7.2. AAOS 增加了分区与车辆控制关系"></a>7.2. AAOS 增加了分区与车辆控制关系</h2><p>把场景搬到车内：司机听音乐与导航，后排乘客播放电影。此时还要说明这些声音属于哪个 user/UID、哪个 occupant/zone，以及对应哪些设备和音量组。</p>
+<p>CarAudioService 根据启用的模式和配置，把这些关系组织为路由、音量与焦点策略。传统动态路由会构建 AudioMix，经 AudioService 注册到 native policy；每个 zone 的焦点由相应对象仲裁。对于 duck/mute 等车辆控制，还可能通过 AudioControl HAL 通知车辆音频域。</p>
+<p><strong>Audio HAL 和 AudioControl HAL 是两种不同接口角色。</strong> 前者承担音频流及相关配置，后者协作车辆音频控制；不能把每块 PCM 画成从 CarAudioFocus 流经 AudioControl HAL 后再到扬声器。core routing/core volume 等模式也会改变部分管理和执行路径，应先查开关，再追具体调用。</p>
+<p>在主区导航压低主区音乐的例子中，若希望后排电影不受影响，需要同时检查 zone/UID 归属、focus 规则、设备地址与实际混音位置。不同 zone 名称不能单独证明底层增益完全隔离；多个用途落到同一个 BUS 后，某些硬件控制的粒度可能覆盖整个设备端点。</p>
+<h2 id="7-3-两份配置解决两个层次的问题"><a href="#7-3-两份配置解决两个层次的问题" class="headerlink" title="7.3. 两份配置解决两个层次的问题"></a>7.3. 两份配置解决两个层次的问题</h2><div class="audio-journey-table" style="max-width: 100%; overflow-x: auto;">
+<div style="min-width: 640px;">
+
+<table>
+<thead>
+<tr>
+<th>配置或对象</th>
+<th>主要表达</th>
+<th>不能单独证明什么</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>audio_policy_configuration.xml</code> 及实际 HAL 配置</td>
+<td>模块、mixPort、profile、devicePort、允许连接等能力与拓扑</td>
+<td>某应用此刻正在走哪条 route</td>
+</tr>
+<tr>
+<td><code>car_audio_configuration.xml</code></td>
+<td>zone、context、设备地址、音量组等车载组织</td>
+<td>某 BUS 必然对应唯一物理扬声器，或 HAL 已正确接通</td>
+</tr>
+<tr>
+<td>运行时 AudioMix / policy 选择</td>
+<td>给定 attributes、身份、设备状态下的匹配与选路</td>
+<td>声音已经成功经过 DSP/功放并可闻</td>
+</tr>
+</tbody></table>
+</div>
+</div>
+
+<p>配置中的 <code>source</code>/<code>sink</code> 是连接角色；AudioRecord 的 AudioSource 是采集用途。这两个 source 不能混读。输出时 mixPort 常是连接的 source、devicePort 是 sink；输入方向则要重新按连接方向判断。</p>
+<p>BUS 地址是跨配置与实现关联端点的重要标识，不是可以脱离 HAL 随意改写的注释。源码文件名、构建安装后的路径和运行时实际加载的文件也要分别确认。学习配置时可进入 <a href="/2026/10/14/Audio%E8%BD%A6%E8%BD%BD%E9%9F%B3%E9%A2%91policy%E9%85%8D%E7%BD%AE%E5%89%96%E6%9E%90/">Audio车载音频policy配置剖析</a>，再与 <a href="/2026/10/26/CarAudio%E5%89%96%E6%9E%90/">CarAudio 车载音频架构剖析</a> 的初始化、路由和音量章节交叉阅读。</p>
+<h2 id="7-4-Usage-扩展放在理解现有模型之后"><a href="#7-4-Usage-扩展放在理解现有模型之后" class="headerlink" title="7.4. Usage 扩展放在理解现有模型之后"></a>7.4. Usage 扩展放在理解现有模型之后</h2><p>前后排独立播放不天然要求新增 usage。已有 usage、user/zone 映射、设备亲和和动态路由是否已经足够，应先结合产品需求确认。否则，新增一个枚举可能只是把应由身份和分区表达的问题硬塞进用途字段。</p>
+<p>确实需要项目定制时，再沿 <a href="/2026/07/01/Audio-Usage%E6%96%B0%E5%A2%9E%E6%B5%81%E7%A8%8B/">Audio Usage 新增流程梳理</a> 检查定义、转换、校验、策略映射、车载 context/focus、配置和 HAL 的衔接。该篇的 MEDIA_FRONT/MEDIA_REAR、XSD 路径、BUS/PAL 处理属于具体项目的扩展示例；不能当作所有 Android 分支的固定修改清单。</p>
+<p>尤其不能只加 Java 常量就认为整条链路已接通。还要确认 native/AIDL 表达是否一致、系统校验是否接受、策略是否匹配、配置是否被加载、HAL 是否识别地址，以及实际设备是否表现为预期结果。</p>
+<h1 id="8-把系列文章排成可完成的学习路线"><a href="#8-把系列文章排成可完成的学习路线" class="headerlink" title="8. 把系列文章排成可完成的学习路线"></a>8. 把系列文章排成可完成的学习路线</h1><h2 id="8-1-建议先跑通普通主线，再选专题分支"><a href="#8-1-建议先跑通普通主线，再选专题分支" class="headerlink" title="8.1. 建议先跑通普通主线，再选专题分支"></a>8.1. 建议先跑通普通主线，再选专题分支</h2><p>下面的箭头表示建议阅读顺序或知识依赖，<strong>不表示调用、进程切换或继承</strong>。音量/焦点与采集可以在掌握普通播放后按兴趣交叉阅读。</p>
+<div style="max-width: 100%; overflow-x: auto;">
+<div style="min-width: 680px;">
+
+<pre class="mermaid">flowchart TD
+    Intro["本篇：全局模型与基本单位"] --&gt; Track["AudioTrack：客户端与共享缓冲"]
+    Track --&gt; Flinger["AudioFlinger：线程与数据处理"]
+    Flinger --&gt; Policy["AudioPolicy：选路与资源"]
+    Policy --&gt; Service["AudioService：音量、焦点与设备"]
+    Flinger --&gt; Record["AudioRecord：采集与权限"]
+    Policy --&gt; Record
+    Track --&gt; LowLatency["AAudio：MMAP 与低延迟"]
+    Flinger --&gt; LowLatency
+    Policy --&gt; Car["CarAudio：分区与车辆控制"]
+    Service --&gt; Car
+    Car --&gt; Config["车载 policy：配置与端点"]
+    Config --&gt; Usage["Usage 扩展：项目集成"]</pre>
+
+</div>
+</div>
+
+<p>不必第一次就读完每篇所有源码。第一轮的目标是建立主干关系，第二轮沿一个问题补齐分支，第三轮才用设备证据检验自己的解释。</p>
+<h2 id="8-2-每篇带着一个问题进去，带着一份结果出来"><a href="#8-2-每篇带着一个问题进去，带着一份结果出来" class="headerlink" title="8.2. 每篇带着一个问题进去，带着一份结果出来"></a>8.2. 每篇带着一个问题进去，带着一份结果出来</h2><div class="audio-journey-table" style="max-width: 100%; overflow-x: auto;">
+<div style="min-width: 640px;">
+
+<table>
+<thead>
+<tr>
+<th>专栏</th>
+<th>进入前最好已理解</th>
+<th>本轮重点</th>
+<th>读完后应能独立完成</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><a href="/2026/06/04/AudioTrack%E5%89%96%E6%9E%90/">AudioTrack 播放链路剖析</a></td>
+<td>frame、format、共享内存角色</td>
+<td>第 2 章单位；第 4—6 章创建、播放与缓冲；第 7 章验证</td>
+<td>解释 write 成功为何不等于出声，区分容量、有效大小和启动阈值</td>
+</tr>
+<tr>
+<td><a href="/2026/10/27/AudioFlinger%E5%89%96%E6%9E%90/">AudioFlinger 剖析</a></td>
+<td>Track 与客户端供数</td>
+<td>服务启动、轨道创建、MixerThread、AudioMixer、HAL sink 及特殊线程</td>
+<td>从一条 Track 追到所属线程和输出，说明转换、混音、效果与缺数处理在哪发生</td>
+</tr>
+<tr>
+<td><a href="/2026/10/27/AudioPolicy%E5%89%96%E6%9E%90/">AudioPolicy 剖析</a></td>
+<td>Track、I/O、设备的区别</td>
+<td>对象/配置模型、getOutputForAttr、设备选择、音量与动态 mix</td>
+<td>对一组 attributes 和设备状态，列出选路所需条件及运行时证据</td>
+</tr>
+<tr>
+<td><a href="/2026/10/27/AudioService%E5%89%96%E6%9E%90/">AudioService 剖析</a></td>
+<td>system_server 与 audioserver 边界</td>
+<td>音量、焦点、设备切换、mode/通信设备、服务恢复</td>
+<td>把一次音量键或导航插播拆成请求、状态、执行与观察</td>
+</tr>
+<tr>
+<td><a href="/2026/10/27/AudioRecord%E5%89%96%E6%9E%90/">AudioRecord 采集链路剖析</a></td>
+<td>播放缓冲与策略申请的基本关系</td>
+<td>每轨道转换、read、overrun、并发静音、重建</td>
+<td>区分没数据、零内容、策略静音与内容缺口，制定对应观测</td>
+</tr>
+<tr>
+<td><a href="/2026/10/27/AAudio%E4%BD%8E%E5%BB%B6%E8%BF%9F%E5%AE%9E%E7%8E%B0%E5%89%96%E6%9E%90/">AAudio / MMAP / 低延迟路径实现剖析</a></td>
+<td>普通流节拍、容量/占用、时间戳</td>
+<td>选路与回退、共享/独占、时钟模型、burst 与调度</td>
+<td>记录实际路径，并说明一次低延迟测量覆盖了哪个区间</td>
+</tr>
+<tr>
+<td><a href="/2026/10/26/CarAudio%E5%89%96%E6%9E%90/">CarAudio 车载音频架构剖析</a></td>
+<td>AudioService、AudioPolicy 与动态策略</td>
+<td>zone/context/group、路由、分区焦点、duck/mute、AudioControl HAL</td>
+<td>从某个 UID/usage 追到 zone、音量组和设备地址，分析前后排是否互相影响</td>
+</tr>
+<tr>
+<td><a href="/2026/10/14/Audio%E8%BD%A6%E8%BD%BD%E9%9F%B3%E9%A2%91policy%E9%85%8D%E7%BD%AE%E5%89%96%E6%9E%90/">Audio车载音频policy配置剖析</a></td>
+<td>设备拓扑及 CarAudio 配置用途</td>
+<td>profile、port、role、route、address、gain</td>
+<td>画出一条合法输入/输出连接，并区分声明能力与当前选路</td>
+</tr>
+<tr>
+<td><a href="/2026/07/01/Audio-Usage%E6%96%B0%E5%A2%9E%E6%B5%81%E7%A8%8B/">Audio Usage 新增流程梳理</a></td>
+<td>现有用途、分区、配置与 HAL 边界</td>
+<td>项目扩展的多层定义、转换、匹配和执行</td>
+<td>为定制用途列出一致性检查和实际验证点，而不是只修改一处枚举</td>
+</tr>
+</tbody></table>
+</div>
+</div>
+
+<p>学习 AudioPolicy 时，焦点的进程归属仍以本篇第 2、6 章及 AudioService 的具体实现为准；“策略”一词既可指 native 选路，也可指 Java 外部焦点策略，读到同名术语应先辨认对象。</p>
+<h2 id="8-3-根据工作目标选择入口"><a href="#8-3-根据工作目标选择入口" class="headerlink" title="8.3. 根据工作目标选择入口"></a>8.3. 根据工作目标选择入口</h2><ul>
+<li><strong>做播放器或录音应用</strong>：先读 AudioTrack/AudioRecord 的参数、生命周期和验证章节，再按问题补 AudioFlinger 与 AudioService。第一份产出应是稳定的观测程序和参数记录。</li>
+<li><strong>做 Framework 排障</strong>：先串起 AudioTrack → AudioFlinger → AudioPolicy → AudioService，然后选一条录音或重路由流程，练习跨三份 dump 关联对象。</li>
+<li><strong>做实时音频</strong>：先掌握普通流和时间单位，再读 AAudio。第一轮只改变一个缓冲或调度条件，同时记录实际后端及 xrun，避免把设备差异归因于 API 名称。</li>
+<li><strong>做 AAOS 集成</strong>：先补齐 AudioService/AudioPolicy，再读 CarAudio 与配置篇，最后考虑 Usage 扩展。第一份产出是 usage、UID/user/zone、context、group、address、HAL 端点的映射表。</li>
+</ul>
+<p>不同路线最终会汇合到同一个要求：能把一次行为解释到具体对象与证据，而不是只知道应搜索哪个类名。</p>
+<h1 id="9-把学习变成验证：用同一个场景关联三层证据"><a href="#9-把学习变成验证：用同一个场景关联三层证据" class="headerlink" title="9. 把学习变成验证：用同一个场景关联三层证据"></a>9. 把学习变成验证：用同一个场景关联三层证据</h1><p>以下实验均为<strong>待在目标设备执行的方案</strong>。先确认调试权限、系统构建和测试应用状态；只读快照不需要修改系统音频属性。每轮固定音源、参数与应用身份，只改变一个条件。</p>
+<h2 id="9-1-第一份实验记录应该包含什么"><a href="#9-1-第一份实验记录应该包含什么" class="headerlink" title="9.1. 第一份实验记录应该包含什么"></a>9.1. 第一份实验记录应该包含什么</h2><p>先记录构建指纹、应用版本/UID/PID、播放或录音参数、设备连接状态，以及应用保持前台等运行条件。应用日志使用可比较的单调时间，保存关键 API 返回值、实际格式、缓冲大小、session 和路由回调；不要每个采样都打印日志。</p>
+<p>可以先保存服务清单和一组基线快照，命令在开发机终端执行：</p>
+<figure class="highlight bash"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">mkdir</span> -p audio-observation/01-baseline</span><br><span class="line">adb shell getprop ro.build.fingerprint &gt; audio-observation/01-baseline/build.txt</span><br><span class="line">adb shell dumpsys -l &gt; audio-observation/01-baseline/services.txt</span><br><span class="line">adb shell dumpsys audio &gt; audio-observation/01-baseline/audio-service.txt</span><br><span class="line">adb shell dumpsys media.audio_policy &gt; audio-observation/01-baseline/audio-policy.txt</span><br><span class="line">adb shell dumpsys media.audio_flinger &gt; audio-observation/01-baseline/audio-flinger.txt</span><br></pre></td></tr></tbody></table></figure>
+
+<p>触发一次操作后，再把结果保存在 <code>02-during</code>；恢复到原状态后保存在 <code>03-after</code>。这些 dump 是先后读取的快照，并不共享一个原子采样时刻。不要把几毫秒到几百毫秒内变化的中间状态，误判为三个服务彼此不一致。</p>
+<div class="audio-journey-table" style="max-width: 100%; overflow-x: auto;">
+<div style="min-width: 640px;">
+
+<table>
+<thead>
+<tr>
+<th>观察入口</th>
+<th>重点看什么</th>
+<th>能帮助回答什么</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>应用日志/API</td>
+<td>初始化、启停、读写返回值、实际参数、路由/配置回调</td>
+<td>应用提出了什么，系统回给了什么</td>
+</tr>
+<tr>
+<td><code>dumpsys audio</code></td>
+<td>焦点、音量、mode owner、设备管理与播放/录音监控等</td>
+<td>上层管理状态是否符合预期</td>
+</tr>
+<tr>
+<td><code>dumpsys media.audio_policy</code></td>
+<td>clients、I/O、设备、mix、策略与 patch 等</td>
+<td>本次请求被分配到了哪些资源和路径</td>
+</tr>
+<tr>
+<td><code>dumpsys media.audio_flinger</code></td>
+<td>线程、Track/RecordTrack、格式、活跃状态与缓冲相关字段</td>
+<td>数据处理对象是否存在，当前如何工作</td>
+</tr>
+<tr>
+<td>trace、受控音源与输出测量</td>
+<td>线程调度、耗时、数据缺口、实际延迟</td>
+<td>上层状态无法直接证明的时间和内容结果</td>
+</tr>
+</tbody></table>
+</div>
+</div>
+
+<p>字段名称与可见范围随版本和构建变化。先用 UID/PID、session、client portId 和 I/O handle 关联对象，再解释其状态。服务不可访问与服务不存在也要分开判断。</p>
+<p>AAudio 设备先从服务清单确认 <code>media.aaudio</code>，再查看对应 dump；AAOS 可以使用 <code>adb shell dumpsys car_service --services CarAudioService</code>，具体选项先查该构建的帮助。服务名或选项不支持时，不能据一条命令失败断言功能未实现。</p>
+<h2 id="9-2-四轮入门实验，把主线接起来"><a href="#9-2-四轮入门实验，把主线接起来" class="headerlink" title="9.2. 四轮入门实验，把主线接起来"></a>9.2. 四轮入门实验，把主线接起来</h2><p><strong>实验一：播放参数与输出参数。</strong> 用固定参数播放 A，记录实际写入量、session、Track 所属线程、线程和输出格式。若 A 为 44.1 kHz、输出为 48 kHz，结合对象关系追到转换位置；若设备直接选了 44.1 kHz 输出，则记录“本轮未触发假设的采样率转换”，不要为了符合教材而改写观察。</p>
+<p><strong>实验二：导航插播与音量变化。</strong> 让 B 使用明确的 attributes 和焦点请求，记录请求返回值、A 的回调/播放器状态、焦点状态和可能的 duck/fade 信息。比较播放是否暂停、数据是否继续消费、声音是否变轻。该实验可区分几种执行机制；仅凭听感无法确定是谁改了增益。</p>
+<p><strong>实验三：设备切换。</strong> 保持 A 播放，连接再移除一个受控输出设备。记录连接事件、应用路由回调、policy 中设备和 output、Flinger 中 Track/线程的前后变化。若底层对象换代，应重新关联 ID，并记录可能的短暂缺口；接口返回成功不作为“所有后续切换完成”的唯一时刻。</p>
+<p><strong>实验四：录音数据与静音状态。</strong> 在权限和前台条件满足时启动 A 的 AudioRecord，记录返回元素数、RMS/零样本比例、silenced、client/device format 和实际路由。再选择一个已知会影响录音资格或并发状态的受控条件，观察是否拒绝启动、配置变化或交付静音。不同系统的结果可能不同，应先记录条件，再回查策略分支。</p>
+<p>第一轮不必同时打开两个录音应用、改 source、切设备又修改缓冲。把变量拆开后，才有可能判断变化由哪个机制引起。AudioRecord 篇的 <code>CaptureProbe.java</code> 可作为采集观测入口，其编译状态与未执行的设备验证已在该篇说明。</p>
+<h2 id="9-3-进阶实验：慢线程、低延迟与车载分区"><a href="#9-3-进阶实验：慢线程、低延迟与车载分区" class="headerlink" title="9.3. 进阶实验：慢线程、低延迟与车载分区"></a>9.3. 进阶实验：慢线程、低延迟与车载分区</h2><div class="audio-journey-table" style="max-width: 100%; overflow-x: auto;">
+<div style="min-width: 640px;">
+
+<table>
+<thead>
+<tr>
+<th>目标</th>
+<th>改变的条件</th>
+<th>应观察的差异</th>
+<th>结论边界</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>播放 underrun</td>
+<td>在测试供数线程中安排一次明确的延迟</td>
+<td>实际写入节奏、缺数信息、Track 状态、听感/输出样本</td>
+<td>不能只因某次 write 很快就认定此前未缺数</td>
+</tr>
+<tr>
+<td>录音 overrun</td>
+<td>对同一录音做一次可控停读</td>
+<td>内容连续性、输入/轨道状态、读回结果与相关日志</td>
+<td>累计返回帧数连续不证明 PCM 无丢失</td>
+</tr>
+<tr>
+<td>AAudio 低延迟</td>
+<td>固定实际 backend 与设备，单独改变 buffer size 或回调负载</td>
+<td>xrun、callback 时间、调度、时间戳及测量延迟</td>
+<td>不同 backend/设备之间的差异不能只归因于一个缓冲参数</td>
+</tr>
+<tr>
+<td>AAOS 分区隔离</td>
+<td>保持后排电影，主区启动/停止导航</td>
+<td>各区焦点、UID/user/zone 映射、duck 地址、gain 与实际输出</td>
+<td>zone 名称和 XML 存在都不能单独证明物理隔离</td>
+</tr>
+</tbody></table>
+</div>
+</div>
+
+<p>trace 用来回答“线程在哪里耗时、何时可运行、何时真正被调度”等问题。时间戳估算要注明 clock/timebase 和位置所在层级；端到端可闻延迟仍需要明确的测量基准或 loopback。不要把应用 <code>write()</code> 的执行耗时当成全部音频延迟。</p>
+<h2 id="9-4-根据现象选择下一篇，而不是盲目翻整棵源码"><a href="#9-4-根据现象选择下一篇，而不是盲目翻整棵源码" class="headerlink" title="9.4. 根据现象选择下一篇，而不是盲目翻整棵源码"></a>9.4. 根据现象选择下一篇，而不是盲目翻整棵源码</h2><div class="audio-journey-table" style="max-width: 100%; overflow-x: auto;">
+<div style="min-width: 640px;">
+
+<table>
+<thead>
+<tr>
+<th>现象</th>
+<th>优先分辨</th>
+<th>主要入口</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>初始化失败</td>
+<td>参数、资格、输入输出能力、资源及实际错误码</td>
+<td>AudioTrack / AudioRecord → AudioPolicy</td>
+</tr>
+<tr>
+<td>write 返回正数但没声音</td>
+<td>是否起播/就绪、实际 route、增益、下游状态</td>
+<td>AudioTrack → AudioFlinger；随后 AudioPolicy / AudioService</td>
+</tr>
+<tr>
+<td>read 正数且全零</td>
+<td>音源、silenced、AppOps/并发、设备/处理</td>
+<td>AudioRecord → AudioService 监控 → AudioPolicy</td>
+</tr>
+<tr>
+<td>导航没压低音乐，或后排也变小</td>
+<td>focus 请求/结果、duck 执行者、zone 与设备粒度</td>
+<td>AudioService；AAOS 再看 CarAudio</td>
+</tr>
+<tr>
+<td>切设备后仍在旧端点或出现断流</td>
+<td>连接、偏好、策略选择、对象换代与恢复</td>
+<td>AudioService → AudioPolicy → 对应客户端</td>
+</tr>
+<tr>
+<td>周期性卡顿或缺口</td>
+<td>供数/消费速度、实际缓冲、线程调度与下游节拍</td>
+<td>AudioTrack / AudioRecord → AudioFlinger；AAudio 看时钟模型</td>
+</tr>
+<tr>
+<td>新 BUS 或自定义 usage 不生效</td>
+<td>定义转换、规则匹配、安装/加载配置、HAL 地址实现</td>
+<td>CarAudio + 配置篇 + Usage 扩展篇</td>
+</tr>
+<tr>
+<td>普通路径正常，低延迟模式异常</td>
+<td>实际 FAST/MMAP/Legacy 路线、格式与能力准入、xrun</td>
+<td>AAudio + AudioFlinger</td>
+</tr>
+</tbody></table>
+</div>
+</div>
 
       
     </div>
@@ -684,7 +1231,7 @@
               
                 <a href="/archives/%7C%7C%20archive">
               
-                  <span class="site-state-item-count">57</span>
+                  <span class="site-state-item-count">59</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
@@ -695,7 +1242,7 @@
               
               <div class="site-state-item site-state-categories">
                 <a href="/categories/index.html">
-                  <span class="site-state-item-count">21</span>
+                  <span class="site-state-item-count">23</span>
                   <span class="site-state-item-name">分类</span>
                 </a>
               </div>
@@ -706,7 +1253,7 @@
               
               <div class="site-state-item site-state-tags">
                 <a href="/tags/index.html">
-                  <span class="site-state-item-count">36</span>
+                  <span class="site-state-item-count">38</span>
                   <span class="site-state-item-name">标签</span>
                 </a>
               </div>
@@ -788,7 +1335,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#1-%E7%B3%BB%E7%BB%9F%E6%9E%B6%E6%9E%84"><span class="nav-text">1. 系统架构</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-1-%E5%BA%94%E7%94%A8%E6%A1%86%E6%9E%B6%EF%BC%9A"><span class="nav-text">1.1. 应用框架：</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#1-2-JNI"><span class="nav-text">1.2. JNI</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#1-3-%E5%8E%9F%E7%94%9F%E6%A1%86%E6%9E%B6"><span class="nav-text">1.3. 原生框架</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#1-4-Binder"><span class="nav-text">1.4. Binder</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#1-5-%E5%AA%92%E4%BD%93%E6%9C%8D%E5%8A%A1%E5%99%A8"><span class="nav-text">1.5. 媒体服务器</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#1-6-HAL"><span class="nav-text">1.6. HAL</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#1-7-%E5%86%85%E6%A0%B8%E9%A9%B1%E5%8A%A8%E7%A8%8B%E5%BA%8F"><span class="nav-text">1.7. 内核驱动程序</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#2-%E5%85%A8%E6%99%AF%E9%93%BE%E8%B7%AF"><span class="nav-text">2. 全景链路</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#2-1-%E9%93%BE%E8%B7%AF%E5%9B%BE"><span class="nav-text">2.1. 链路图</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-1-%E5%90%84%E5%B1%82%E8%81%8C%E8%B4%A3"><span class="nav-text">2.1. 各层职责</span></a></li></ol></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#1-%E4%BB%8E%E4%B8%80%E6%AC%A1%E5%90%AC%E6%AD%8C%E4%B8%8E%E5%BD%95%E9%9F%B3%EF%BC%8C%E5%BB%BA%E7%AB%8B%E9%9F%B3%E9%A2%91%E7%B3%BB%E7%BB%9F%E7%9A%84%E5%85%A8%E5%B1%80%E8%AE%A4%E8%AF%86"><span class="nav-text">1. 从一次听歌与录音，建立音频系统的全局认识</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-1-%E6%80%8E%E6%A0%B7%E4%BD%BF%E7%94%A8%E8%BF%99%E7%AF%87%E5%AD%A6%E4%B9%A0%E5%9C%B0%E5%9B%BE"><span class="nav-text">1.1. 怎样使用这篇学习地图</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#2-%E5%85%A8%E6%99%AF%E6%9E%B6%E6%9E%84%EF%BC%9A%E4%B8%A4%E4%B8%AA%E6%95%B0%E6%8D%AE%E6%96%B9%E5%90%91%EF%BC%8C%E5%A4%9A%E6%9D%A1%E6%8E%A7%E5%88%B6%E5%85%B3%E7%B3%BB"><span class="nav-text">2. 全景架构：两个数据方向，多条控制关系</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#2-1-%E5%85%88%E5%88%86%E6%B8%85%E5%9B%9B%E4%B8%AA%E5%8C%BA%E5%9F%9F"><span class="nav-text">2.1. 先分清四个区域</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-2-Binder%E3%80%81%E5%85%B1%E4%BA%AB%E5%86%85%E5%AD%98%E4%B8%8E%E7%BA%BF%E7%A8%8B%E5%88%86%E5%88%AB%E8%A7%A3%E5%86%B3%E4%BB%80%E4%B9%88"><span class="nav-text">2.2. Binder、共享内存与线程分别解决什么</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-3-%E7%94%A8%E5%90%AF%E5%8A%A8%E5%85%A5%E5%8F%A3%E7%A1%AE%E8%AE%A4%E6%9C%8D%E5%8A%A1%E5%BD%92%E5%B1%9E"><span class="nav-text">2.3. 用启动入口确认服务归属</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#3-%E5%85%88%E7%BB%9F%E4%B8%80%E8%AF%8D%E6%B1%87%EF%BC%9A%E6%95%B0%E6%8D%AE%E8%A7%84%E6%A0%BC%E3%80%81%E7%94%A8%E9%80%94%E3%80%81%E5%AF%B9%E8%B1%A1%E5%92%8C%E4%BD%8D%E7%BD%AE"><span class="nav-text">3. 先统一词汇：数据规格、用途、对象和位置</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#3-1-PCM%E3%80%81%E5%B8%A7%E4%B8%8E%E5%AD%97%E8%8A%82%EF%BC%9A%E4%BB%BB%E4%BD%95%E7%BC%93%E5%86%B2%E8%AE%A8%E8%AE%BA%E9%83%BD%E8%A6%81%E5%B8%A6%E5%8D%95%E4%BD%8D"><span class="nav-text">3.1. PCM、帧与字节：任何缓冲讨论都要带单位</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-2-%E9%9F%B3%E9%A2%91%E8%A7%84%E6%A0%BC%E4%B8%8E%E5%A3%B0%E9%9F%B3%E7%94%A8%E9%80%94%E6%98%AF%E4%B8%A4%E4%B8%AA%E7%BB%B4%E5%BA%A6"><span class="nav-text">3.2. 音频规格与声音用途是两个维度</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-3-Track%E3%80%81%E7%BA%BF%E7%A8%8B%E3%80%81%E6%B5%81%E5%92%8C%E8%AE%BE%E5%A4%87%E4%B8%8D%E8%83%BD%E4%B8%80%E4%B8%80%E7%94%BB%E7%AD%89%E5%8F%B7"><span class="nav-text">3.3. Track、线程、流和设备不能一一画等号</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-4-%E5%AE%B9%E9%87%8F%E3%80%81%E5%8D%A0%E7%94%A8%E3%80%81%E6%89%B9%E6%AC%A1%E5%92%8C%E5%BB%B6%E8%BF%9F%E5%BF%85%E9%A1%BB%E5%88%86%E5%88%AB%E7%90%86%E8%A7%A3"><span class="nav-text">3.4. 容量、占用、批次和延迟必须分别理解</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#4-%E8%BF%BD%E4%B8%80%E6%AC%A1%E6%92%AD%E6%94%BE%EF%BC%9A%E5%88%9B%E5%BB%BA%E3%80%81%E8%B5%B7%E6%92%AD%E5%92%8C%E4%BE%9B%E6%95%B0%E6%98%AF%E4%B8%89%E4%B8%AA%E5%8A%A8%E4%BD%9C"><span class="nav-text">4. 追一次播放：创建、起播和供数是三个动作</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#4-1-%E5%88%9B%E5%BB%BA%E5%85%88%E6%8A%8A%E9%9C%80%E6%B1%82%E5%8F%98%E6%88%90%E8%B5%84%E6%BA%90"><span class="nav-text">4.1. 创建先把需求变成资源</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-2-play-%E6%BF%80%E6%B4%BB%E8%BD%A8%E9%81%93%EF%BC%8Cwrite-%E6%8C%81%E7%BB%AD%E5%8F%91%E5%B8%83%E6%95%B0%E6%8D%AE"><span class="nav-text">4.2. play 激活轨道，write 持续发布数据</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-3-%E5%B7%A5%E4%BD%9C%E7%BA%BF%E7%A8%8B%E6%8C%89%E8%BE%93%E5%87%BA%E8%8A%82%E6%8B%8D%E6%B6%88%E8%B4%B9"><span class="nav-text">4.3. 工作线程按输出节拍消费</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-4-%E5%9B%9E%E5%88%B0-A%EF%BC%9A%E6%95%B0%E6%8D%AE%E5%86%99%E5%AE%8C%E4%BD%86%E6%B2%A1%E5%A3%B0%E9%9F%B3%EF%BC%8C%E5%85%88%E6%8B%86%E5%93%AA%E5%87%A0%E5%B1%82"><span class="nav-text">4.4. 回到 A：数据写完但没声音，先拆哪几层</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#5-%E8%BF%BD%E4%B8%80%E6%AC%A1%E5%BD%95%E9%9F%B3%EF%BC%9A%E6%96%B9%E5%90%91%E5%8F%8D%E8%BD%AC%EF%BC%8C%E8%A7%84%E5%88%99%E5%B9%B6%E4%B8%8D%E5%AE%8C%E5%85%A8%E5%AF%B9%E7%A7%B0"><span class="nav-text">5. 追一次录音：方向反转，规则并不完全对称</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#5-1-%E5%88%9B%E5%BB%BA%E8%BE%93%E5%85%A5%E4%B8%8E%E6%BF%80%E6%B4%BB%E9%87%87%E9%9B%86%E5%90%84%E6%9C%89%E6%A3%80%E6%9F%A5"><span class="nav-text">5.1. 创建输入与激活采集各有检查</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-2-%E7%94%9F%E4%BA%A7%E8%80%85%E5%8F%98%E6%88%90%E6%9C%8D%E5%8A%A1%E7%AB%AF%EF%BC%8C%E5%BA%94%E7%94%A8%E8%B4%9F%E8%B4%A3%E5%8F%8A%E6%97%B6%E6%B6%88%E8%B4%B9"><span class="nav-text">5.2. 生产者变成服务端，应用负责及时消费</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-3-%E5%AF%B9%E7%85%A7%E6%92%AD%E6%94%BE%EF%BC%8C%E6%89%BE%E5%87%BA%E4%B8%8D%E8%83%BD%E7%85%A7%E6%90%AC%E7%9A%84%E8%A7%84%E5%88%99"><span class="nav-text">5.3. 对照播放，找出不能照搬的规则</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-4-A-%E5%BD%95%E5%88%B0%E5%85%A8%E9%9B%B6%EF%BC%8C%E4%B8%8E-A-%E6%B2%A1%E6%9C%89%E8%AF%BB%E5%88%B0%E6%95%B0%E6%8D%AE%E5%A6%82%E4%BD%95%E5%8C%BA%E5%88%86"><span class="nav-text">5.4. A 录到全零，与 A 没有读到数据如何区分</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#6-%E6%8E%A7%E5%88%B6%E5%9C%BA%E6%99%AF%EF%BC%9A%E9%9F%B3%E4%B9%90%E4%BB%8D%E5%9C%A8%E6%B5%81%E5%8A%A8%EF%BC%8C%E7%B3%BB%E7%BB%9F%E7%8A%B6%E6%80%81%E5%B7%B2%E7%BB%8F%E6%94%B9%E5%8F%98"><span class="nav-text">6. 控制场景：音乐仍在流动，系统状态已经改变</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#6-1-%E8%B0%83%E9%9F%B3%E9%87%8F%EF%BC%9A%E7%94%A8%E6%88%B7%E6%A1%A3%E4%BD%8D%E7%BB%8F%E8%BF%87%E5%A4%9A%E5%B1%82%E6%98%A0%E5%B0%84"><span class="nav-text">6.1. 调音量：用户档位经过多层映射</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-2-%E5%AF%BC%E8%88%AA%E6%8F%92%E6%92%AD%EF%BC%9A%E7%84%A6%E7%82%B9%E7%BB%93%E6%9E%9C%E4%B8%8E%E6%92%AD%E6%94%BE%E5%99%A8%E8%A1%8C%E4%B8%BA%E5%88%86%E5%BC%80%E8%BF%BD"><span class="nav-text">6.2. 导航插播：焦点结果与播放器行为分开追</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-3-%E6%8F%92%E6%8B%94%E8%80%B3%E6%9C%BA%EF%BC%9A%E8%BF%9E%E6%8E%A5%E4%BA%8B%E5%AE%9E%E3%80%81%E9%80%89%E6%8B%A9%E7%BB%93%E6%9E%9C%E4%B8%8E%E5%AE%9E%E9%99%85%E6%95%B0%E6%8D%AE%E8%B7%AF%E5%BE%84"><span class="nav-text">6.3. 插拔耳机：连接事实、选择结果与实际数据路径</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-4-%E9%80%9A%E8%AF%9D%E4%B8%8E%E6%9C%8D%E5%8A%A1%E6%81%A2%E5%A4%8D%EF%BC%9A%E7%8A%B6%E6%80%81%E5%8F%AF%E4%BB%A5%E9%87%8D%E6%94%BE%EF%BC%8C%E5%86%85%E5%AE%B9%E6%9C%AA%E5%BF%85%E6%97%A0%E7%BC%9D"><span class="nav-text">6.4. 通话与服务恢复：状态可以重放，内容未必无缝</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#7-%E4%BB%8E%E6%99%AE%E9%80%9A%E8%B7%AF%E5%BE%84%E5%88%86%E5%8F%89%EF%BC%9A%E4%BD%8E%E5%BB%B6%E8%BF%9F%E3%80%81%E7%89%B9%E6%AE%8A%E8%BE%93%E5%87%BA%E4%B8%8E%E8%BD%A6%E8%BD%BD%E9%9F%B3%E9%A2%91"><span class="nav-text">7. 从普通路径分叉：低延迟、特殊输出与车载音频</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#7-1-%E5%85%88%E9%97%AE%E5%A4%84%E7%90%86%E8%B7%AF%E7%BA%BF%EF%BC%8C%E5%86%8D%E9%97%AE%E5%93%AA%E4%B8%AA-API-%E6%9B%B4%E5%BF%AB"><span class="nav-text">7.1. 先问处理路线，再问哪个 API 更快</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-2-AAOS-%E5%A2%9E%E5%8A%A0%E4%BA%86%E5%88%86%E5%8C%BA%E4%B8%8E%E8%BD%A6%E8%BE%86%E6%8E%A7%E5%88%B6%E5%85%B3%E7%B3%BB"><span class="nav-text">7.2. AAOS 增加了分区与车辆控制关系</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-3-%E4%B8%A4%E4%BB%BD%E9%85%8D%E7%BD%AE%E8%A7%A3%E5%86%B3%E4%B8%A4%E4%B8%AA%E5%B1%82%E6%AC%A1%E7%9A%84%E9%97%AE%E9%A2%98"><span class="nav-text">7.3. 两份配置解决两个层次的问题</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-4-Usage-%E6%89%A9%E5%B1%95%E6%94%BE%E5%9C%A8%E7%90%86%E8%A7%A3%E7%8E%B0%E6%9C%89%E6%A8%A1%E5%9E%8B%E4%B9%8B%E5%90%8E"><span class="nav-text">7.4. Usage 扩展放在理解现有模型之后</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#8-%E6%8A%8A%E7%B3%BB%E5%88%97%E6%96%87%E7%AB%A0%E6%8E%92%E6%88%90%E5%8F%AF%E5%AE%8C%E6%88%90%E7%9A%84%E5%AD%A6%E4%B9%A0%E8%B7%AF%E7%BA%BF"><span class="nav-text">8. 把系列文章排成可完成的学习路线</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#8-1-%E5%BB%BA%E8%AE%AE%E5%85%88%E8%B7%91%E9%80%9A%E6%99%AE%E9%80%9A%E4%B8%BB%E7%BA%BF%EF%BC%8C%E5%86%8D%E9%80%89%E4%B8%93%E9%A2%98%E5%88%86%E6%94%AF"><span class="nav-text">8.1. 建议先跑通普通主线，再选专题分支</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#8-2-%E6%AF%8F%E7%AF%87%E5%B8%A6%E7%9D%80%E4%B8%80%E4%B8%AA%E9%97%AE%E9%A2%98%E8%BF%9B%E5%8E%BB%EF%BC%8C%E5%B8%A6%E7%9D%80%E4%B8%80%E4%BB%BD%E7%BB%93%E6%9E%9C%E5%87%BA%E6%9D%A5"><span class="nav-text">8.2. 每篇带着一个问题进去，带着一份结果出来</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#8-3-%E6%A0%B9%E6%8D%AE%E5%B7%A5%E4%BD%9C%E7%9B%AE%E6%A0%87%E9%80%89%E6%8B%A9%E5%85%A5%E5%8F%A3"><span class="nav-text">8.3. 根据工作目标选择入口</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#9-%E6%8A%8A%E5%AD%A6%E4%B9%A0%E5%8F%98%E6%88%90%E9%AA%8C%E8%AF%81%EF%BC%9A%E7%94%A8%E5%90%8C%E4%B8%80%E4%B8%AA%E5%9C%BA%E6%99%AF%E5%85%B3%E8%81%94%E4%B8%89%E5%B1%82%E8%AF%81%E6%8D%AE"><span class="nav-text">9. 把学习变成验证：用同一个场景关联三层证据</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#9-1-%E7%AC%AC%E4%B8%80%E4%BB%BD%E5%AE%9E%E9%AA%8C%E8%AE%B0%E5%BD%95%E5%BA%94%E8%AF%A5%E5%8C%85%E5%90%AB%E4%BB%80%E4%B9%88"><span class="nav-text">9.1. 第一份实验记录应该包含什么</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#9-2-%E5%9B%9B%E8%BD%AE%E5%85%A5%E9%97%A8%E5%AE%9E%E9%AA%8C%EF%BC%8C%E6%8A%8A%E4%B8%BB%E7%BA%BF%E6%8E%A5%E8%B5%B7%E6%9D%A5"><span class="nav-text">9.2. 四轮入门实验，把主线接起来</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#9-3-%E8%BF%9B%E9%98%B6%E5%AE%9E%E9%AA%8C%EF%BC%9A%E6%85%A2%E7%BA%BF%E7%A8%8B%E3%80%81%E4%BD%8E%E5%BB%B6%E8%BF%9F%E4%B8%8E%E8%BD%A6%E8%BD%BD%E5%88%86%E5%8C%BA"><span class="nav-text">9.3. 进阶实验：慢线程、低延迟与车载分区</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#9-4-%E6%A0%B9%E6%8D%AE%E7%8E%B0%E8%B1%A1%E9%80%89%E6%8B%A9%E4%B8%8B%E4%B8%80%E7%AF%87%EF%BC%8C%E8%80%8C%E4%B8%8D%E6%98%AF%E7%9B%B2%E7%9B%AE%E7%BF%BB%E6%95%B4%E6%A3%B5%E6%BA%90%E7%A0%81"><span class="nav-text">9.4. 根据现象选择下一篇，而不是盲目翻整棵源码</span></a></li></ol></li></ol></div>
             
 
           </div>

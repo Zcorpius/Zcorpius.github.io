@@ -1,0 +1,2050 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next muse use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+<script>
+    (function(){
+        if(''){
+            if (prompt('请输入密码') !== ''){
+                alert('密码错误');
+                history.back();
+            }
+        }
+    })();
+</script>
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/head.jpg?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/head.jpg?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/head.jpg?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/head.jpg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="Audio,AAudio,MMAP," />
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="Zcorpius's Blog" type="application/atom+xml" />
+
+
+
+
+
+
+<meta name="description" content="1. 从一次电子琴按键开始：低延迟究竟优化什么假设我们正在实现一架 Android 电子琴：手指按下琴键，应用生成一段 PCM，用户希望几乎立即听到声音。把 AudioTrack 换成 AAudio、设置 LOW_LATENCY，是否就完成了低延迟优化？如果再请求 EXCLUSIVE，数据是不是直接交给声卡，系统再也不参与？ 这两个问题都不能只从 API 名称回答。AAudio 是应用接口；MMA">
+<meta property="og:type" content="article">
+<meta property="og:title" content="AAudio &#x2F; MMAP &#x2F; 低延迟路径实现剖析">
+<meta property="og:url" content="https://zcorpius.github.io/2026/10/27/AAudio%E4%BD%8E%E5%BB%B6%E8%BF%9F%E5%AE%9E%E7%8E%B0%E5%89%96%E6%9E%90/index.html">
+<meta property="og:site_name" content="Zcorpius&#39;s Blog">
+<meta property="og:description" content="1. 从一次电子琴按键开始：低延迟究竟优化什么假设我们正在实现一架 Android 电子琴：手指按下琴键，应用生成一段 PCM，用户希望几乎立即听到声音。把 AudioTrack 换成 AAudio、设置 LOW_LATENCY，是否就完成了低延迟优化？如果再请求 EXCLUSIVE，数据是不是直接交给声卡，系统再也不参与？ 这两个问题都不能只从 API 名称回答。AAudio 是应用接口；MMA">
+<meta property="og:locale">
+<meta property="og:image" content="https://zcorpius.github.io/2026/10/27/AAudio%E4%BD%8E%E5%BB%B6%E8%BF%9F%E5%AE%9E%E7%8E%B0%E5%89%96%E6%9E%90/data-paths.png">
+<meta property="og:image" content="https://zcorpius.github.io/2026/10/27/AAudio%E4%BD%8E%E5%BB%B6%E8%BF%9F%E5%AE%9E%E7%8E%B0%E5%89%96%E6%9E%90/clock-model.png">
+<meta property="article:published_time" content="2026-10-27T15:30:00.000Z">
+<meta property="article:modified_time" content="2026-10-27T15:55:17.394Z">
+<meta property="article:author" content="Zcorpius">
+<meta property="article:tag" content="Audio">
+<meta property="article:tag" content="AAudio">
+<meta property="article:tag" content="MMAP">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://zcorpius.github.io/2026/10/27/AAudio%E4%BD%8E%E5%BB%B6%E8%BF%9F%E5%AE%9E%E7%8E%B0%E5%89%96%E6%9E%90/data-paths.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Muse',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":true,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://Zcorpius.github.io/2026/10/27/AAudio低延迟实现剖析/"/>
+
+
+
+
+
+  <title>AAudio / MMAP / 低延迟路径实现剖析 | Zcorpius's Blog</title>
+  
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 7.3.0">
+<style>.github-emoji { position: relative; display: inline-block; width: 1.2em; min-height: 1.2em; overflow: hidden; vertical-align: top; color: transparent; }  .github-emoji > span { position: relative; z-index: 10; }  .github-emoji img, .github-emoji .fancybox { margin: 0 !important; padding: 0 !important; border: none !important; outline: none !important; text-decoration: none !important; user-select: none !important; cursor: auto !important; }  .github-emoji img { height: 1.2em !important; width: 1.2em !important; position: absolute !important; left: 50% !important; top: 50% !important; transform: translate(-50%, -50%) !important; user-select: none !important; cursor: auto !important; } .github-emoji-fallback { color: inherit; } .github-emoji-fallback img { opacity: 0 !important; }</style>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Zcorpius's Blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">追寻自我的崎岖路上从不缺勇敢。</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-阅读">
+          <a href="/top/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-book"></i> <br />
+            
+            阅读
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-健身">
+          <a href="/fitness/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-heartbeat"></i> <br />
+            
+            健身
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://Zcorpius.github.io/2026/10/27/AAudio%E4%BD%8E%E5%BB%B6%E8%BF%9F%E5%AE%9E%E7%8E%B0%E5%89%96%E6%9E%90/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/head.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Zcorpius's Blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">AAudio / MMAP / 低延迟路径实现剖析</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2026-10-27T23:30:00+08:00">
+                2026-10-27
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Audio/" itemprop="url" rel="index">
+                    <span itemprop="name">Audio</span>
+                  </a>
+                </span>
+
+                
+                
+                  ， 
+                
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Audio/AAudio/" itemprop="url" rel="index">
+                    <span itemprop="name">AAudio</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+            <div class="post-wordcount">
+              
+                
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-file-word-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">字数统计&#58;</span>
+                
+                <span title="字数统计">
+                  16.8k
+                </span>
+              
+
+              
+                <span class="post-meta-divider">|</span>
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-clock-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">阅读时长 &asymp;</span>
+                
+                <span title="阅读时长">
+                  63
+                </span>
+              
+            </div>
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="1-从一次电子琴按键开始：低延迟究竟优化什么"><a href="#1-从一次电子琴按键开始：低延迟究竟优化什么" class="headerlink" title="1. 从一次电子琴按键开始：低延迟究竟优化什么"></a>1. 从一次电子琴按键开始：低延迟究竟优化什么</h1><p>假设我们正在实现一架 Android 电子琴：手指按下琴键，应用生成一段 PCM，用户希望几乎立即听到声音。把 AudioTrack 换成 AAudio、设置 <code>LOW_LATENCY</code>，是否就完成了低延迟优化？如果再请求 <code>EXCLUSIVE</code>，数据是不是直接交给声卡，系统再也不参与？</p>
+<p>这两个问题都不能只从 API 名称回答。<strong>AAudio 是应用接口；MMAP 是一种数据通路；低延迟是整条链路在设备、配置、调度和负载共同约束下的结果。</strong> AAudio 可以使用 MMAP，也可以退回 AudioTrack / AudioRecord。MMAP 又分独占与共享：前者让应用进程中的音频库访问硬件共享缓冲，后者由 audioserver 中的 AAudioService 汇合多路应用数据后访问它。</p>
+<p>本文以“电子琴打开低延迟输出流 → 回调合成 PCM → 连续播放 → 第二个应用竞争设备 → 路由切换后重建”为主线，回答以下问题：</p>
+<ul>
+<li>Builder 的请求经过哪些判断，才真正落到 MMAP、共享 MMAP 或 Legacy？</li>
+<li>PCM、控制命令、时间戳分别走哪里，AudioFlinger 到底被绕过了哪一部分？</li>
+<li>没有逐 burst 的设备中断来催促应用时，软件如何知道何时读写环形缓冲？</li>
+<li>burst、callback、capacity、buffer size 各自约束什么，为什么越小不一定越好？</li>
+<li>怎样区分选路失败、供数不足、调度抖动、时间戳异常和下游设备固有延迟？</li>
+</ul>
+<p><img src="/2026/10/27/AAudio%E4%BD%8E%E5%BB%B6%E8%BF%9F%E5%AE%9E%E7%8E%B0%E5%89%96%E6%9E%90/data-paths.png" alt="AAudio 的 Legacy、MMAP 共享和 MMAP 独占三种 PCM 主路径"></p>
+<p>图中绿色实线只表示 PCM 的主要流向。Legacy 一行概括 AudioFlinger 的普通/快速混音路线，不能据此认定回退一定经过普通 MixerThread；MMAP 两行省略客户端转换过程及控制接口。<strong>应用独占的是所分配的 MMAP endpoint 资源，不是整台设备的全部音频系统。</strong></p>
+<details>
+<summary>源码基线、范围与阅读约定</summary>
+
+<p>本地源码根为 <code>/Users/zhangyongbin/Desktop/Learn/Framework/LineageOS</code>。manifest 默认 revision 为 <code>refs/heads/lineage-22.2</code>，但本文以实际仓库提交为准，不把 manifest 名称直接当作所有文件所属的 Android 发布版本。</p>
+<table>
+<thead>
+<tr>
+<th>仓库</th>
+<th>本次核对提交</th>
+<th>主要用途</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>frameworks/av</code></td>
+<td><code>b848cc86cfe225d1b6d375629cf3d10980c13e1e</code></td>
+<td>libaaudio、AAudioService、AudioFlinger、AudioPolicy、HAL 适配层</td>
+</tr>
+<tr>
+<td><code>hardware/interfaces</code></td>
+<td><code>0f11bbb00c80aa93714b4a04d1c4f41a59687a51</code></td>
+<td>AIDL/HIDL 音频 HAL 接口边界</td>
+</tr>
+</tbody></table>
+<p><code>frameworks/av</code> 的已跟踪文件未见本地修改。本文分析 PCM 低延迟主链；不展开压缩 offload、空间音频全链、厂商 DSP 算法或所有设备的内核驱动。硬件相关结论止于已核对的接口，不把“存在 HAL 接口”写成“当前手机已启用”。</p>
+<p>源码块首行路径均相对于上述源码根。<strong>源码节选添加中文讲解注释，<code>...</code> 表示省略；不声称节选可以直接编译。</strong> 为解释原理而重写的内容明确标成示意。实验数字是计算例子，不是实测数据。第 11 章的设备实验尚未执行。</p>
+<p>快速阅读可先看第 2、3、6、9 章；追源码按第 4 → 5 → 6 → 7 章；排查问题从第 11 章返回相应机制。AudioTrack 的一般播放基础可参照同系列 <a href="/2026/06/04/AudioTrack%E5%89%96%E6%9E%90/">AudioTrack 播放链路剖析</a>，系统线程与策略背景见 <a href="/2026/10/27/AudioFlinger%E5%89%96%E6%9E%90/">AudioFlinger 剖析</a> 和 <a href="/2026/10/27/AudioPolicy%E5%89%96%E6%9E%90/">AudioPolicy 剖析</a>。</p>
+</details>
+
+<h1 id="2-先把六个容易混淆的概念拆开"><a href="#2-先把六个容易混淆的概念拆开" class="headerlink" title="2. 先把六个容易混淆的概念拆开"></a>2. 先把六个容易混淆的概念拆开</h1><h2 id="2-1-AAudio：统一的流接口，不是唯一的实现路线"><a href="#2-1-AAudio：统一的流接口，不是唯一的实现路线" class="headerlink" title="2.1 AAudio：统一的流接口，不是唯一的实现路线"></a>2.1 AAudio：统一的流接口，不是唯一的实现路线</h2><p>应用使用 <code>AAudioStreamBuilder</code> 描述希望得到的流，调用 <code>AAudioStreamBuilder_openStream()</code> 建立 <code>AAudioStream</code>，再通过 callback 或 <code>read()</code> / <code>write()</code> 传输 PCM。Builder 保存的是请求；open 后的 stream 保存协商结果。</p>
+<p>接口的便利之处在于，应用不必自行绑定 AudioFlinger、分配 Binder 共享内存、申请硬件映射并维护时钟模型。但这也意味着应用不能仅凭“我调用了 AAudio”判断底层用了什么。</p>
+<table>
+<thead>
+<tr>
+<th>维度</th>
+<th>典型值</th>
+<th>它回答的问题</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>方向</td>
+<td>OUTPUT / INPUT</td>
+<td>生成声音还是采集声音</td>
+</tr>
+<tr>
+<td>性能模式</td>
+<td>NONE / LOW_LATENCY / POWER_SAVING</td>
+<td>延迟与功耗如何取舍</td>
+</tr>
+<tr>
+<td>共享模式</td>
+<td>SHARED / EXCLUSIVE</td>
+<td>endpoint 能否按独占方式分配给当前流</td>
+</tr>
+<tr>
+<td>数据方式</td>
+<td>callback / read-write</td>
+<td>由库调度应用供数，还是应用自己安排读写</td>
+</tr>
+<tr>
+<td>后端</td>
+<td>MMAP / Legacy</td>
+<td>PCM 最终走哪条系统路径</td>
+</tr>
+<tr>
+<td>实际参数</td>
+<td>采样率、格式、声道、burst 等</td>
+<td>本次打开真正协商到了什么</td>
+</tr>
+</tbody></table>
+<p>这些维度彼此相关，但不是同一个开关。例如 SHARED 可以是 MMAP SHARED，也可以是 Legacy；LOW_LATENCY 可以是 MMAP，也可以是 Legacy FAST。</p>
+<h2 id="2-2-MMAP：映射的是哪一块内存"><a href="#2-2-MMAP：映射的是哪一块内存" class="headerlink" title="2.2 MMAP：映射的是哪一块内存"></a>2.2 MMAP：映射的是哪一块内存</h2><p>Linux 的 <code>mmap()</code> 把一个可映射的文件描述符所代表的内存区域接入进程虚拟地址空间。两个参与者可以有不同的虚拟地址，却访问同一段共享存储。Binder 在建流时传递 FD 和描述信息，不需要为每个音频采样发送一次 IPC。</p>
+<p>但 <strong>“用了共享内存”不等于“用了 AAudio MMAP”</strong>。AudioTrack 的客户端和 AudioFlinger 之间也有共享缓冲；MMAP 低延迟路径的关键是硬件/DSP/驱动所使用的数据区域能够通过 HAL 提供给相应软件端，从而减少中间软件搬运和排队环节。</p>
+<p>应用拿到的是受框架管理的 AAudio 流，不是 ALSA 设备节点或任意 DMA 内存访问权。FD 是否可以安全交给应用，有单独的 <code>AUDIO_MMAP_APPLICATION_SHAREABLE</code> 条件，第 5 章会追到检查点。</p>
+<h2 id="2-3-NOIRQ：少一类唤醒来源，多一份时间责任"><a href="#2-3-NOIRQ：少一类唤醒来源，多一份时间责任" class="headerlink" title="2.3 NOIRQ：少一类唤醒来源，多一份时间责任"></a>2.3 NOIRQ：少一类唤醒来源，多一份时间责任</h2><p>传统周期式音频设备可以通过 period interrupt 通知软件“又消费/采集了一段数据”。MMAP/NOIRQ 路径不依赖这种逐周期通知驱动应用搬运，设备侧持续推进，软件依据时间戳估算位置并安排下一次醒来。</p>
+<p>NOIRQ 不表示整个系统没有硬件中断，也不表示应用永远不用睡眠或系统调用。它把持续供数的核心问题变成：<strong>硬件此刻大约走到哪里，我最晚应该在什么时候填好下一批数据？</strong></p>
+<p>因此，MMAP 不是只做一次 <code>mmap()</code> 就结束。准确的时间戳、正确的帧计数、合理的提前量和可预测的线程调度缺一不可。</p>
+<h2 id="2-4-FAST-与-MMAP：两条不同的低延迟路线"><a href="#2-4-FAST-与-MMAP：两条不同的低延迟路线" class="headerlink" title="2.4 FAST 与 MMAP：两条不同的低延迟路线"></a>2.4 FAST 与 MMAP：两条不同的低延迟路线</h2><p>FAST track 属于 AudioTrack / AudioFlinger 体系，符合条件的轨道可由 FastMixer 路径处理。MMAP 使用 <code>MmapThread</code> 管理 HAL 流和控制关系，PCM 不按普通 MixerThread 的软件混音循环传输。</p>
+<p>两者都追求更短的排队与更及时的处理，但对象、缓冲协议和准入条件不同。不能把 <code>AUDIO_OUTPUT_FLAG_FAST</code> 与 <code>AUDIO_OUTPUT_FLAG_MMAP_NOIRQ</code> 混为一谈，也不能把 MMAP SHARED 中的 <code>AAudioMixer</code> 当成 AudioFlinger 的 <code>FastMixer</code>。</p>
+<h2 id="2-5-低延迟：必须先说测量区间"><a href="#2-5-低延迟：必须先说测量区间" class="headerlink" title="2.5 低延迟：必须先说测量区间"></a>2.5 低延迟：必须先说测量区间</h2><p>电子琴“按下去多久出声”至少涉及输入事件分发、应用参数更新、等待下一次合成、音频排队、HAL/DSP、DAC 与声学传播。</p>
+<p>为了避免重复相加，可以把一次触发到出声的延迟概念性拆成：</p>
+<blockquote>
+<p>事件到达与合成等待 + 本次计算时间 + 生成帧之后沿各级队列的驻留时间 + 未被前述队列覆盖的下游处理与输出时间。</p>
+</blockquote>
+<p><code>队列帧数 / 采样率</code> 只描述相应队列的音频时长。它不自动包含所有下游延迟，也不等于从手指触屏开始计时的总延迟。双向监听的 round-trip latency 则还包含输入链、应用处理以及输出链；不能拿单向 buffer size 冒充往返结果。</p>
+<h2 id="2-6-frame、sample-与-burst"><a href="#2-6-frame、sample-与-burst" class="headerlink" title="2.6 frame、sample 与 burst"></a>2.6 frame、sample 与 burst</h2><p>PCM 的一个 sample 是某个声道在某一采样时刻的数值；一个 frame 包含该时刻所有声道的 sample。48 kHz、双声道 float 的每个 frame 是 8 字节，每秒有 48,000 frame，而不是 96,000 frame。</p>
+<p>burst 是底层或软件一次推进/处理的基本批次。假设实际报告 192 frame/burst、48 kHz，则一个 burst 对应 <code>192 / 48000 = 4 ms</code>。这只是例子，不能把 192 当成 Android 统一常量。第 8 章还会说明 API 报告的 burst 可以经过软件放大和采样率换算，并不一定就是驱动原始 period。</p>
+<h1 id="3-总体架构：三条数据路径，三类通信"><a href="#3-总体架构：三条数据路径，三类通信" class="headerlink" title="3. 总体架构：三条数据路径，三类通信"></a>3. 总体架构：三条数据路径，三类通信</h1><h2 id="3-1-谁负责什么"><a href="#3-1-谁负责什么" class="headerlink" title="3.1 谁负责什么"></a>3.1 谁负责什么</h2><table>
+<thead>
+<tr>
+<th>位置</th>
+<th>对象</th>
+<th>责任与边界</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>应用进程</td>
+<td><code>AudioStreamBuilder</code></td>
+<td>校验请求，决定是否尝试 MMAP，失败时是否允许 Legacy</td>
+</tr>
+<tr>
+<td>应用进程或服务内部</td>
+<td><code>AudioStreamInternalPlay/Capture</code></td>
+<td>MMAP 家族客户端；映射 endpoint、转换数据、维护时钟与回调</td>
+</tr>
+<tr>
+<td>应用进程</td>
+<td><code>AudioStreamTrack/Record</code></td>
+<td>Legacy 适配，内部使用 AudioTrack / AudioRecord</td>
+</tr>
+<tr>
+<td>audioserver</td>
+<td><code>AAudioServiceStreamMMAP/Shared</code></td>
+<td>单条服务端流的身份、状态、事件、时间戳和资源关系</td>
+</tr>
+<tr>
+<td>audioserver</td>
+<td><code>AAudioServiceEndpointMMAP</code></td>
+<td>连接一个 MMAP 硬件 endpoint，取得缓冲和位置，接收路由/音量事件</td>
+</tr>
+<tr>
+<td>audioserver</td>
+<td><code>AAudioServiceEndpointPlay/Capture</code></td>
+<td>共享流的混音或采集分发，持有服务内部 MMAP 流</td>
+</tr>
+<tr>
+<td>audioserver</td>
+<td><code>MmapThread</code>（AudioFlinger 内）</td>
+<td>管理 HAL 流、启停、客户端和控制；不是普通 PCM 混音循环</td>
+</tr>
+<tr>
+<td>audioserver</td>
+<td>AudioPolicy</td>
+<td>根据属性、设备、profile 和资源约束选择输入输出</td>
+</tr>
+<tr>
+<td>HAL / 驱动 / 硬件</td>
+<td>MMAP 接口及实际实现</td>
+<td>提供映射资源、设备推进与位置报告；性能取决于产品实现</td>
+</tr>
+</tbody></table>
+<p>注意服务代码目录叫 <code>services/oboeservice</code>，其实现是平台的 AAudioService；<strong>不能因为目录包含 oboe，就把它当成应用侧 Oboe C++ 库。</strong></p>
+<p><code>Stream</code> 与 <code>Endpoint</code> 也不要混用：前者描述一条客户端连接，后者描述它接入的实际资源。多个 shared stream 可以注册到同一个共享 endpoint，endpoint 再共同持有内部 MMAP 流。流数与硬件 endpoint 数不必相等。</p>
+<h2 id="3-2-控制、PCM、事件各走一条路"><a href="#3-2-控制、PCM、事件各走一条路" class="headerlink" title="3.2 控制、PCM、事件各走一条路"></a>3.2 控制、PCM、事件各走一条路</h2><p>一次 MMAP 播放至少存在三类通信：</p>
+<ol>
+<li><strong>控制面</strong>：应用通过 Binder 调用 AAudioService 的 open、start、stop、close 等；服务再经 AudioFlinger / AudioPolicy / HAL 建链和管理设备。某些服务操作还要进入命令线程，并等待其结果，不能把 Binder 接收线程画成所有工作的唯一执行者。</li>
+<li><strong>数据面</strong>：PCM 放进共享 FIFO 或硬件 MMAP 区域。应用每次产生一批 PCM，不需要把这批 PCM 放进 Binder Parcel。</li>
+<li><strong>服务到客户端的消息面</strong>：共享的 up message queue 承载开始/停止/断开/音量/XRun 事件，以及时间戳。客户端在 <code>processCommands()</code> 等入口消费这些消息。</li>
+</ol>
+<p>这解释了为什么“数据不经过普通 AudioFlinger mixer”与“系统仍能控制设备、音量、权限和路由”可以同时成立。被缩短的是 PCM 主路径，不是把整个音频策略系统删除。</p>
+<h2 id="3-3-独占与共享到底差在哪"><a href="#3-3-独占与共享到底差在哪" class="headerlink" title="3.3 独占与共享到底差在哪"></a>3.3 独占与共享到底差在哪</h2><p>在 MMAP EXCLUSIVE 下，应用进程中的 <code>AudioStreamInternalPlay</code> 写向硬件共享区域；AAudioService 仍负责创建资源、获取时间戳和转发事件。</p>
+<p>在 MMAP SHARED 下，应用写的是自己的共享 FIFO。AAudioService 的共享线程从多个 FIFO 取数据，用 <code>AAudioMixer</code> 混成一份，再通过服务内部的 <code>AudioStreamInternalPlay</code> 写入硬件 MMAP 区域。因此它多了客户端 FIFO、共享线程调度和混音，但仍可以保留 MMAP 的底层通路。</p>
+<p>这也是“请求独占失败”不一定等于“MMAP 失败”的原因：服务端可能先从独占改为共享，只有整个 MMAP 家族打开失败，Builder 才考虑 Legacy。</p>
+<h1 id="4-openStream：低延迟请求怎样变成实际路径"><a href="#4-openStream：低延迟请求怎样变成实际路径" class="headerlink" title="4. openStream：低延迟请求怎样变成实际路径"></a>4. openStream：低延迟请求怎样变成实际路径</h1><h2 id="4-1-第一层判断：系统到底允许尝试-MMAP-吗"><a href="#4-1-第一层判断：系统到底允许尝试-MMAP-吗" class="headerlink" title="4.1 第一层判断：系统到底允许尝试 MMAP 吗"></a>4.1 第一层判断：系统到底允许尝试 MMAP 吗</h2><p><code>AAudioStreamBuilder_openStream()</code> 最终进入 <code>AudioStreamBuilder::build()</code>。这版代码不是简单读一个属性就构造 MMAP 对象，而是先结合进程级策略与 <code>AudioSystem::getMmapPolicyInfos(DEFAULT)</code> 的查询结果。</p>
+<table>
+<thead>
+<tr>
+<th>策略</th>
+<th>数值</th>
+<th>Builder 层的含义</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>UNSPECIFIED</td>
+<td>0</td>
+<td>未指定，由系统策略与默认值补足</td>
+</tr>
+<tr>
+<td>NEVER</td>
+<td>1</td>
+<td>不尝试 MMAP</td>
+</tr>
+<tr>
+<td>AUTO</td>
+<td>2</td>
+<td>可以尝试 MMAP，打开失败可退 Legacy</td>
+</tr>
+<tr>
+<td>ALWAYS</td>
+<td>3</td>
+<td>要求 MMAP，不能退 Legacy</td>
+</tr>
+</tbody></table>
+<p>还有一组 EXCLUSIVE 策略，用来控制能否请求应用独占。两组策略不能混为一个开关。<code>ALWAYS</code> 要求的是 MMAP 后端，不自动要求 EXCLUSIVE。</p>
+<p>当前 <code>AAudio_getAAudioPolicy()</code> 对系统返回的策略列表做聚合：只要有 AUTO 或 ALWAYS 项，就返回 <code>AAUDIO_POLICY_AUTO</code>。这表示“存在可尝试的设备能力”，并不是“所有设备都支持”，也不是直接把某个设备的 ALWAYS 提升成整个进程的强制策略。</p>
+<p>若系统明确 NEVER，进程级请求不能凭空启动不受支持的服务；查询失败时当前实现也会禁止普通 MMAP 尝试，强制 MMAP 的情况返回错误。<code>media/audioserver/main_audioserver.cpp</code> 则在成功查到至少一个 AUTO/ALWAYS 项时才实例化 AAudioService。<strong>客户端选择与服务是否存在必须配套。</strong></p>
+<h2 id="4-2-第二层判断：当前流的要求是否适合-MMAP"><a href="#4-2-第二层判断：当前流的要求是否适合-MMAP" class="headerlink" title="4.2 第二层判断：当前流的要求是否适合 MMAP"></a>4.2 第二层判断：当前流的要求是否适合 MMAP</h2><p>下面是 <code>build()</code> 中的准入片段。它发生在系统策略和独占策略处理之后：</p>
+<figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/av/media/libaaudio/src/core/AudioStreamBuilder.cpp</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">aaudio_result_t</span> <span class="title">AudioStreamBuilder::build</span><span class="params">(AudioStream **streamPtr)</span> </span>{</span><br><span class="line">    ...</span><br><span class="line">    <span class="type">bool</span> allowMMap = mmapPolicy != AAUDIO_POLICY_NEVER;</span><br><span class="line">    <span class="type">bool</span> allowLegacy = mmapPolicy != AAUDIO_POLICY_ALWAYS;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 本分支只有 LOW_LATENCY 请求才继续尝试 MMAP。</span></span><br><span class="line">    <span class="keyword">if</span> (<span class="built_in">getPerformanceMode</span>() != AAUDIO_PERFORMANCE_MODE_LOW_LATENCY) {</span><br><span class="line">        ...</span><br><span class="line">        allowMMap = <span class="literal">false</span>;</span><br><span class="line">    }</span><br><span class="line">    <span class="keyword">if</span> (!<span class="built_in">audio_is_linear_pcm</span>(<span class="built_in">getFormat</span>())) {</span><br><span class="line">        ...</span><br><span class="line">        allowMMap = <span class="literal">false</span>;</span><br><span class="line">    }</span><br><span class="line"></span><br><span class="line">    <span class="comment">// session/effect 使用 Legacy；申请 session 会改变选路。</span></span><br><span class="line">    <span class="keyword">if</span> (<span class="built_in">getSessionId</span>() != AAUDIO_SESSION_ID_NONE) {</span><br><span class="line">        ...</span><br><span class="line">        allowMMap = <span class="literal">false</span>;</span><br><span class="line">    }</span><br><span class="line">    <span class="keyword">if</span> (<span class="built_in">getFormat</span>() == AUDIO_FORMAT_IEC61937) {</span><br><span class="line">        ...</span><br><span class="line">        allowMMap = <span class="literal">false</span>;</span><br><span class="line">    }</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 强制 MMAP 却又不满足准入条件，会直接失败。</span></span><br><span class="line">    <span class="keyword">if</span> (!allowMMap &amp;&amp; !allowLegacy) {</span><br><span class="line">        ...</span><br><span class="line">        <span class="keyword">return</span> AAUDIO_ERROR_ILLEGAL_ARGUMENT;</span><br><span class="line">    }</span><br><span class="line">    ...</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<p>这里最容易漏掉的是 session。若电子琴为了挂接基于 session 的效果而请求 <code>AAUDIO_SESSION_ID_ALLOCATE</code>，这版 Builder 就不会走 MMAP。可以把效果实现在应用 DSP 链里，但那又增加了回调计算成本，必须放回实时预算中评估。</p>
+<p>反过来，也不能把“未使用 session”说成“整条设备路径上没有任何 DSP 或音量处理”。它只排除了这里对应的 session 选路要求。</p>
+<h2 id="4-3-第三层判断：选择实现类，打开失败再决定回退"><a href="#4-3-第三层判断：选择实现类，打开失败再决定回退" class="headerlink" title="4.3 第三层判断：选择实现类，打开失败再决定回退"></a>4.3 第三层判断：选择实现类，打开失败再决定回退</h2><p>方向决定 Play 还是 Capture；<code>tryMMap</code> 决定 Internal 还是 Legacy。输出对应 <code>AudioStreamInternalPlay</code> 或 <code>AudioStreamTrack</code>，输入对应 <code>AudioStreamInternalCapture</code> 或 <code>AudioStreamRecord</code>。</p>
+<figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/av/media/libaaudio/src/core/AudioStreamBuilder.cpp</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">aaudio_result_t</span> <span class="title">AudioStreamBuilder::build</span><span class="params">(AudioStream **streamPtr)</span> </span>{</span><br><span class="line">    ...</span><br><span class="line">    android::sp&lt;AudioStream&gt; audioStream;</span><br><span class="line">    result = <span class="built_in">builder_createStream</span>(<span class="built_in">getDirection</span>(), sharingMode, allowMMap, audioStream);</span><br><span class="line">    <span class="keyword">if</span> (result == AAUDIO_OK) {</span><br><span class="line">        result = audioStream-&gt;<span class="built_in">open</span>(*<span class="keyword">this</span>);</span><br><span class="line">        <span class="keyword">if</span> (result != AAUDIO_OK) {</span><br><span class="line">            <span class="type">bool</span> isMMap = audioStream-&gt;<span class="built_in">isMMap</span>();</span><br><span class="line">            <span class="comment">// 这是 MMAP 家族到 Legacy 的回退，不是独占到共享。</span></span><br><span class="line">            <span class="keyword">if</span> (isMMap &amp;&amp; allowLegacy) {</span><br><span class="line">                ...</span><br><span class="line">                result = <span class="built_in">builder_createStream</span>(<span class="built_in">getDirection</span>(), sharingMode,</span><br><span class="line">                                              <span class="literal">false</span>, audioStream);</span><br><span class="line">                <span class="keyword">if</span> (result == AAUDIO_OK) {</span><br><span class="line">                    result = audioStream-&gt;<span class="built_in">open</span>(*<span class="keyword">this</span>);</span><br><span class="line">                }</span><br><span class="line">            }</span><br><span class="line">        }</span><br><span class="line">        <span class="keyword">if</span> (result == AAUDIO_OK) {</span><br><span class="line">            audioStream-&gt;<span class="built_in">registerPlayerBase</span>();</span><br><span class="line">            audioStream-&gt;<span class="built_in">logOpenActual</span>();</span><br><span class="line">            *streamPtr = <span class="built_in">startUsingStream</span>(audioStream);</span><br><span class="line">        }</span><br><span class="line">    }</span><br><span class="line">    <span class="keyword">return</span> result;</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<p>因此，open 成功仅说明至少一个允许的后端成功，并不能证明初始愿望全部实现。必须读取 actual sharing mode、performance mode、sample rate、format、channel count、burst、capacity；支持对应 API 的系统还应读 <code>AAudioStream_isMMapUsed()</code>。</p>
+<h2 id="4-4-第四层判断：服务端从-EXCLUSIVE-退到-SHARED"><a href="#4-4-第四层判断：服务端从-EXCLUSIVE-退到-SHARED" class="headerlink" title="4.4 第四层判断：服务端从 EXCLUSIVE 退到 SHARED"></a>4.4 第四层判断：服务端从 EXCLUSIVE 退到 SHARED</h2><p><code>AAudioService::openStream()</code> 先校正调用者身份并检查资源限制，再尝试相应服务端流。关键分支如下：</p>
+<figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/av/services/oboeservice/AAudioService.cpp</span></span><br><span class="line"></span><br><span class="line"><span class="function">Status <span class="title">AAudioService::openStream</span><span class="params">(<span class="type">const</span> StreamRequest &amp;_request,</span></span></span><br><span class="line"><span class="params"><span class="function">        StreamParameters* _paramsOut, <span class="type">int32_t</span> *_aidl_return)</span> </span>{</span><br><span class="line">    ...</span><br><span class="line">    <span class="keyword">if</span> (sharingMode == AAUDIO_SHARING_MODE_EXCLUSIVE</span><br><span class="line">        &amp;&amp; AAudioClientTracker::<span class="built_in">getInstance</span>().<span class="built_in">isExclusiveEnabled</span>(pid)) {</span><br><span class="line">        <span class="type">bool</span> inService = <span class="literal">false</span>;</span><br><span class="line">        <span class="keyword">if</span> (<span class="built_in">isCallerInService</span>()) {</span><br><span class="line">            inService = request.<span class="built_in">isInService</span>();</span><br><span class="line">        }</span><br><span class="line">        serviceStream = <span class="keyword">new</span> <span class="built_in">AAudioServiceStreamMMAP</span>(*<span class="keyword">this</span>, inService);</span><br><span class="line">        result = serviceStream-&gt;<span class="built_in">open</span>(request);</span><br><span class="line">        <span class="keyword">if</span> (result != AAUDIO_OK) {</span><br><span class="line">            ...</span><br><span class="line">            serviceStream.<span class="built_in">clear</span>();</span><br><span class="line">        }</span><br><span class="line">    }</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (sharingMode == AAUDIO_SHARING_MODE_SHARED) {</span><br><span class="line">        serviceStream = <span class="keyword">new</span> <span class="built_in">AAudioServiceStreamShared</span>(*<span class="keyword">this</span>);</span><br><span class="line">        result = serviceStream-&gt;<span class="built_in">open</span>(request);</span><br><span class="line">    } <span class="keyword">else</span> <span class="keyword">if</span> (serviceStream.<span class="built_in">get</span>() == <span class="literal">nullptr</span> &amp;&amp; !sharingModeMatchRequired) {</span><br><span class="line">        <span class="comment">// 独占没有建立，且不要求严格匹配时，仍在 MMAP 服务内尝试共享。</span></span><br><span class="line">        aaudio::AAudioStreamRequest modifiedRequest = request;</span><br><span class="line">        modifiedRequest.<span class="built_in">getConfiguration</span>().<span class="built_in">setSharingMode</span>(AAUDIO_SHARING_MODE_SHARED);</span><br><span class="line">        serviceStream = <span class="keyword">new</span> <span class="built_in">AAudioServiceStreamShared</span>(*<span class="keyword">this</span>);</span><br><span class="line">        result = serviceStream-&gt;<span class="built_in">open</span>(modifiedRequest);</span><br><span class="line">    }</span><br><span class="line">    ...</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<p><code>sharingModeMatchRequired</code> 是内部约束，尤其用于防止共享 endpoint 打开底层独占流失败后又递归创建共享 endpoint。它不是要求普通应用自己设置的常规 NDK Builder 项。</p>
+<p>把两级回退按发生地点记住，就不会误读日志：</p>
+<table>
+<thead>
+<tr>
+<th>所在层</th>
+<th>原本尝试</th>
+<th>后续选择</th>
+<th>结果说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>AAudioService</td>
+<td>MMAP EXCLUSIVE</td>
+<td>MMAP SHARED</td>
+<td>仍可能使用 MMAP</td>
+</tr>
+<tr>
+<td>应用 Builder</td>
+<td>MMAP 家族打开失败</td>
+<td>Legacy Track / Record</td>
+<td>已离开 MMAP 家族</td>
+</tr>
+<tr>
+<td>Legacy AudioTrack</td>
+<td>请求 FAST</td>
+<td>实际 flags 未获 FAST</td>
+<td>可能不再是 LOW_LATENCY</td>
+</tr>
+</tbody></table>
+<p>最后一行甚至可能不表现为 open 失败，只表现为实际 performance mode 降级。</p>
+<h1 id="5-MMAP-建链：从服务端请求到应用可用的地址"><a href="#5-MMAP-建链：从服务端请求到应用可用的地址" class="headerlink" title="5. MMAP 建链：从服务端请求到应用可用的地址"></a>5. MMAP 建链：从服务端请求到应用可用的地址</h1><h2 id="5-1-open-不只是分配一个对象"><a href="#5-1-open-不只是分配一个对象" class="headerlink" title="5.1 open 不只是分配一个对象"></a>5.1 open 不只是分配一个对象</h2><p><code>AudioStreamInternal::open()</code> 先拷贝应用请求，再构建 <code>AAudioStreamRequest</code>，通过服务接口打开流。服务返回实际配置后，客户端获取 endpoint description，将其中的共享内存映射到本进程，再配置数据队列、消息队列、burst、时钟模型和回调缓冲。</p>
+<p>关键顺序是：</p>
+<blockquote>
+<p><code>openStream(request, configurationOutput)</code> → 保存 actual 配置 → <code>getStreamDescription()</code> → <code>resolve()</code> → <code>AudioEndpoint::configure()</code> → <code>configureDataInformation()</code> → 状态 OPEN。</p>
+</blockquote>
+<p>这里传回的 description 是内存协议：它包含共享区域、偏移、容量、每 frame 字节数、计数器位置等。它不是 PCM 文件，也不是让应用任意解释的裸指针。</p>
+<p>应用地址在本进程通过 <code>mmap()</code> 获得，因此不能把服务端虚拟地址原封不动传给应用使用。<code>SharedMemoryParcelable</code> 做了 FD 复制、区域范围检查和映射生命周期管理。</p>
+<h2 id="5-2-AudioFlinger-没有消失：它为-MMAP-建立专门的线程对象"><a href="#5-2-AudioFlinger-没有消失：它为-MMAP-建立专门的线程对象" class="headerlink" title="5.2 AudioFlinger 没有消失：它为 MMAP 建立专门的线程对象"></a>5.2 AudioFlinger 没有消失：它为 MMAP 建立专门的线程对象</h2><p>服务端的 <code>AAudioServiceEndpointMMAP::openWithConfig()</code> 调用 <code>MmapStreamInterface::openMmapStream()</code>，再进入 <code>AudioFlinger::openMmapStream()</code>。</p>
+<p>对于输出，AudioFlinger 调用 <code>AudioSystem::getOutputForAttr()</code> 时带上 <code>MMAP_NOIRQ | DIRECT</code>；对于输入，调用 <code>getInputForAttr()</code> 时使用 <code>AUDIO_INPUT_FLAG_MMAP_NOIRQ</code>。AudioPolicy 根据设备、属性与 profile 选择或打开相应 I/O。AudioFlinger 再从 <code>mMmapThreads</code> 取回已经建立的线程对象，包装成 <code>MmapStreamInterface</code>。</p>
+<p>这里的 DIRECT 表示该输出选择中的直接路径标志，<strong>不等于应用 EXCLUSIVE 共享模式</strong>。MMAP SHARED 也要依托服务内部的 MMAP endpoint，因此可以关联同样的底层 MMAP/DIRECT 输出资源。</p>
+<p>普通播放中，MixerThread 要周期取 Track 数据并混音；这里 <code>MmapPlaybackThread</code> 主要承担 HAL 管理、客户端、音量、路由和状态等工作。名字里都有 Thread，但不能据此假设二者运行同一种 PCM 循环。</p>
+<h2 id="5-3-createMmapBuffer：最小需求由软件提出，实际容量由底层返回"><a href="#5-3-createMmapBuffer：最小需求由软件提出，实际容量由底层返回" class="headerlink" title="5.3 createMmapBuffer：最小需求由软件提出，实际容量由底层返回"></a>5.3 createMmapBuffer：最小需求由软件提出，实际容量由底层返回</h2><p>endpoint 调用 <code>createMmapBuffer()</code> 请求缓冲。经 <code>MmapThread</code> 转发到 HAL 适配层后，得到包括共享 FD、容量、burst 和标志的信息。</p>
+<figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/av/services/oboeservice/AAudioServiceEndpointMMAP.cpp</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">aaudio_result_t</span> <span class="title">AAudioServiceEndpointMMAP::createMmapBuffer_l</span><span class="params">()</span> </span>{</span><br><span class="line">    <span class="built_in">memset</span>(&amp;mMmapBufferinfo, <span class="number">0</span>, <span class="built_in">sizeof</span>(<span class="keyword">struct</span> audio_mmap_buffer_info));</span><br><span class="line">    <span class="type">int32_t</span> minSizeFrames = <span class="built_in">getBufferCapacity</span>();</span><br><span class="line">    <span class="keyword">if</span> (minSizeFrames &lt;= <span class="number">0</span>) {</span><br><span class="line">        minSizeFrames = AAUDIO_BUFFER_CAPACITY_MIN;</span><br><span class="line">    }</span><br><span class="line">    <span class="keyword">if</span> (mMmapStream == <span class="literal">nullptr</span>) {</span><br><span class="line">        ...</span><br><span class="line">        <span class="keyword">return</span> AAUDIO_ERROR_NULL;</span><br><span class="line">    }</span><br><span class="line"></span><br><span class="line">    <span class="type">const</span> <span class="type">status_t</span> status = mMmapStream-&gt;<span class="built_in">createMmapBuffer</span>(minSizeFrames, &amp;mMmapBufferinfo);</span><br><span class="line">    <span class="type">const</span> <span class="type">bool</span> isBufferShareable = mMmapBufferinfo.flags &amp; AUDIO_MMAP_APPLICATION_SHAREABLE;</span><br><span class="line">    <span class="keyword">if</span> (status != OK) {</span><br><span class="line">        ...</span><br><span class="line">        <span class="keyword">return</span> AAUDIO_ERROR_UNAVAILABLE;</span><br><span class="line">    } <span class="keyword">else</span> {</span><br><span class="line">        ...</span><br><span class="line">    }</span><br><span class="line">    <span class="built_in">setBufferCapacity</span>(mMmapBufferinfo.buffer_size_frames);</span><br><span class="line">    <span class="keyword">if</span> (!isBufferShareable) {</span><br><span class="line">        <span class="type">const</span> <span class="type">int32_t</span> audioServiceUid =</span><br><span class="line">            <span class="built_in">VALUE_OR_FATAL</span>(<span class="built_in">legacy2aidl_uid_t_int32_t</span>(<span class="built_in">getuid</span>()));</span><br><span class="line">        <span class="comment">// 不能交给普通应用的 FD，仍可由服务自身使用。</span></span><br><span class="line">        <span class="keyword">if</span> ((mMmapClient.attributionSource.uid != audioServiceUid) &amp;&amp;</span><br><span class="line">            <span class="built_in">getSharingMode</span>() == AAUDIO_SHARING_MODE_EXCLUSIVE) {</span><br><span class="line">            ...</span><br><span class="line">            <span class="keyword">return</span> AAUDIO_ERROR_UNAVAILABLE;</span><br><span class="line">        }</span><br><span class="line">    }</span><br><span class="line">    ...</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<p>这段逻辑给出一个很实用的诊断：<strong>设备可以支持 MMAP SHARED，却不支持普通应用的 MMAP EXCLUSIVE。</strong> 例如底层缓冲不允许跨到应用 UID，共享服务仍可能自己持有 MMAP，再用普通共享 FIFO 面向应用。</p>
+<p>FD 可映射不代表可以暴露完整硬件控制权。驱动和 HAL 必须保证交给应用的映射范围与访问能力满足隔离要求；应用不能靠增加权限或手工打开声卡绕过框架契约。</p>
+<h2 id="5-4-客户端映射：零-IPC-搬运不等于零复制"><a href="#5-4-客户端映射：零-IPC-搬运不等于零复制" class="headerlink" title="5.4 客户端映射：零 IPC 搬运不等于零复制"></a>5.4 客户端映射：零 IPC 搬运不等于零复制</h2><figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/av/media/libaaudio/src/binding/SharedMemoryParcelable.cpp</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">aaudio_result_t</span> <span class="title">SharedMemoryParcelable::resolveSharedMemory</span><span class="params">(<span class="type">const</span> unique_fd&amp; fd)</span> </span>{</span><br><span class="line">    <span class="comment">// 同一个共享区域映射到当前进程；每个进程的虚拟地址可以不同。</span></span><br><span class="line">    mResolvedAddress = (<span class="type">uint8_t</span> *) <span class="built_in">mmap</span>(<span class="literal">nullptr</span>, mSizeInBytes, PROT_READ | PROT_WRITE,</span><br><span class="line">                                        MAP_SHARED, fd.<span class="built_in">get</span>(), <span class="number">0</span>);</span><br><span class="line">    <span class="keyword">if</span> (mResolvedAddress == MMAP_UNRESOLVED_ADDRESS) {</span><br><span class="line">        ...</span><br><span class="line">        <span class="keyword">return</span> AAUDIO_ERROR_INTERNAL;</span><br><span class="line">    }</span><br><span class="line">    <span class="keyword">return</span> AAUDIO_OK;</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<p><code>mmap()</code> 省掉的不是所有内存访问，而是避免为跨软件/硬件边界再采用另一套逐批传输。应用给 AAudio 的 buffer 仍可能经过格式转换、声道适配、采样率转换、音量渐变和写入。</p>
+<p>当前 <code>configureDataInformation()</code> 会为数据回调分配 <code>mCallbackBuffer</code>；<code>AudioStreamInternalPlay::callbackLoop()</code> 先把它交给应用，再调用 <code>write()</code>。所以“应用代码获得 DMA 地址并原地合成”并不符合这版标准 callback 路径。第 6 章会看到真实调用。</p>
+<h2 id="5-5-HAL-代际与产品配置：不要只看-XML-或一个属性"><a href="#5-5-HAL-代际与产品配置：不要只看-XML-或一个属性" class="headerlink" title="5.5 HAL 代际与产品配置：不要只看 XML 或一个属性"></a>5.5 HAL 代际与产品配置：不要只看 XML 或一个属性</h2><p>框架内部使用 <code>createMmapBuffer()</code> / <code>getMmapPosition()</code> 这样的统一接口，下面可以由 HIDL 或 AIDL 适配。AIDL 音频 HAL 的 MMAP 数据描述可定位到 <code>MmapBufferDescriptor.aidl</code> 与 <code>StreamDescriptor.aidl</code>；HIDL 可查 <code>audio/2.0/IStream.hal</code>。同名框架操作不意味着两代 HAL 传输协议完全一样。</p>
+<p>例如本地 <code>StreamHalAidl::createMmapBuffer()</code> 并不在这一刻重新分配一块缓冲，而是从已打开的 stream context 读取 <code>MmapBufferDescriptor</code>、buffer size 与 burst，填回框架结构；其 <code>minSizeFrames</code> 参数在此适配方法中标记为 unused。HIDL 的方法命名不能直接套成 AIDL 的调用时序。应用最终仍应信任实际返回的资源描述，而非请求容量。</p>
+<p>在产品侧，需要同时具备以下条件：支持的 MMAP 策略、能匹配的 input/output profile 与 route、HAL 缓冲与位置接口、真正可运行的设备通路。对于应用独占还需要可分享给应用的缓冲。</p>
+<p><code>AudioPolicyManager::updateMmapPolicyInfos()</code> 能识别“默认设备项表示属性来源”的情况，再根据 MMAP profile 的 supported devices 补充设备类型映射；也能接收逐设备的策略信息。因此，读取 <code>aaudio.mmap_policy</code> 是排查线索，但不是当前实现的完整能力查询。改成 AUTO 不会给缺失的驱动生成 MMAP 能力。</p>
+<p><a target="_blank" rel="noopener" href="https://source.android.com/docs/core/audio/aaudio">AOSP 的 AAudio/MMAP 说明</a>适合了解平台接入的总体要求；本文的具体策略查询和回退顺序以本地提交为准，尤其不要直接套用早期版本的属性判定伪代码。</p>
+<h1 id="6-连续播放：谁唤醒应用，谁推进缓冲"><a href="#6-连续播放：谁唤醒应用，谁推进缓冲" class="headerlink" title="6. 连续播放：谁唤醒应用，谁推进缓冲"></a>6. 连续播放：谁唤醒应用，谁推进缓冲</h1><h2 id="6-1-requestStart-返回不等于已经听到第一帧"><a href="#6-1-requestStart-返回不等于已经听到第一帧" class="headerlink" title="6.1 requestStart 返回不等于已经听到第一帧"></a>6.1 requestStart 返回不等于已经听到第一帧</h2><p><code>AudioStreamInternal::requestStart_l()</code> 先把客户端状态设成 STARTING，清理上次运行遗留的时间戳，准备缓冲，再调用服务端 start。若资源处于 standby，可能需要退出 standby、重新取得资源并再次 start。随后启动时钟模型，设置 catch-up 请求，并在配置了 callback 时启动回调线程。</p>
+<p>服务端 <code>AAudioServiceStreamBase::start()</code> 会把 START 命令交给命令线程，且 <code>waitForReply=true</code>。命令线程执行 <code>start_l()</code>，启动设备，向 up message queue 写入 STARTED 事件，再更新服务端状态。因此：</p>
+<ul>
+<li>API 的“请求型状态转换”不等于“内部每一步都完全异步、永不等待”；这个实现可能同步等待服务处理。</li>
+<li>客户端进入 STARTED 需要消费对应事件；OPEN、STARTING、STARTED 是不同阶段。</li>
+<li>STARTED 仍不能证明 DAC 已播放第一帧，更不能证明扬声器已经有可听声音。</li>
+</ul>
+<p>首启还涉及设备冷启动和时间模型同步，不能用稳定运行时的 4 ms burst 推断首次起音只要 4 ms。</p>
+<h2 id="6-2-callback-实际运行在应用进程，不是服务-Binder-线程"><a href="#6-2-callback-实际运行在应用进程，不是服务-Binder-线程" class="headerlink" title="6.2 callback 实际运行在应用进程，不是服务 Binder 线程"></a>6.2 callback 实际运行在应用进程，不是服务 Binder 线程</h2><p>MMAP 输出的回调循环由客户端库创建的线程运行。服务负责注册线程、校验关联并经 <code>requestPriority()</code> 请求音频优先级；不是普通应用自己任意获得实时调度权。优先级请求也可能失败，不能把“调用了 callback API”理解为硬实时承诺。</p>
+<p>以下片段保留了回调与写入的真实顺序：</p>
+<figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/av/media/libaaudio/src/client/AudioStreamInternalPlay.cpp</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">void</span> *<span class="title">AudioStreamInternalPlay::callbackLoop</span><span class="params">()</span> </span>{</span><br><span class="line">    ...</span><br><span class="line">    <span class="keyword">while</span> (mCallbackEnabled.<span class="built_in">load</span>() &amp;&amp; <span class="built_in">isActive</span>() &amp;&amp; (result &gt;= <span class="number">0</span>)) {</span><br><span class="line">        <span class="comment">// 应用填充客户端临时缓冲，通常在这里做合成或轻量 DSP。</span></span><br><span class="line">        callbackResult = <span class="built_in">maybeCallDataCallback</span>(mCallbackBuffer.<span class="built_in">get</span>(), mCallbackFrames);</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 库在回调返回后执行阻塞式供数，用它维持后续回调节奏。</span></span><br><span class="line">        result = <span class="built_in">write</span>(mCallbackBuffer.<span class="built_in">get</span>(), mCallbackFrames, timeoutNanos);</span><br><span class="line">        <span class="keyword">if</span> ((result != mCallbackFrames)) {</span><br><span class="line">            <span class="keyword">if</span> (result &gt;= <span class="number">0</span>) {</span><br><span class="line">                <span class="built_in">processCommands</span>();</span><br><span class="line">                result = <span class="built_in">isDisconnected</span>() ? AAUDIO_ERROR_DISCONNECTED : AAUDIO_ERROR_TIMEOUT;</span><br><span class="line">            }</span><br><span class="line">            <span class="built_in">maybeCallErrorCallback</span>(result);</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        }</span><br><span class="line">        <span class="keyword">if</span> (callbackResult == AAUDIO_CALLBACK_RESULT_STOP) {</span><br><span class="line">            ...</span><br><span class="line">            result = <span class="built_in">systemStopInternal</span>();</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        }</span><br><span class="line">    }</span><br><span class="line">    ...</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<p>这里有两个重要结果。第一，库的内部阻塞 write 与“应用 callback 不要阻塞”的要求并不矛盾：前者按音频队列的时序等待，后者要求应用不要在截止时间内引入不可控等待。第二，即使 callback 返回 STOP，这版循环仍会先提交本次缓冲。结束时要把未填充区域补零，不能留下未初始化内容。</p>
+<p>回调不是硬件中断处理函数。它是一条受操作系统调度的用户态线程，可能因为锁、缺页、CPU 竞争、降频、过重算法或其他原因晚于计划执行。</p>
+<h2 id="6-3-一次-write-如何拆成“能写多少”和“睡到何时”"><a href="#6-3-一次-write-如何拆成“能写多少”和“睡到何时”" class="headerlink" title="6.3 一次 write 如何拆成“能写多少”和“睡到何时”"></a>6.3 一次 write 如何拆成“能写多少”和“睡到何时”</h2><p><code>AudioStreamInternal::processData()</code> 是外层循环：调用不阻塞的 <code>processDataNow()</code>，推进已处理 frame 和应用 buffer 指针；必要时根据返回的绝对唤醒时间睡眠，直到全部完成、出错或超时。</p>
+<p>若 <code>timeoutNanoseconds == 0</code>，它完成当前可完成的部分就返回；不能假设一次非阻塞 write 一定提交全部数据。callback 内部的 write 也检查是否提交完整，部分写入会触发错误处理。</p>
+<p><code>processDataNow()</code> 先消费消息，再判断时钟是否尚处 STARTING。尚未收到有效时间戳时，它返回“当前没有写入、稍后重试”。建立时间锚点以后，才知道应当从正在推进的 MMAP 缓冲哪里开始。</p>
+<h2 id="6-4-谁推进硬件侧读指针：free-running-判定"><a href="#6-4-谁推进硬件侧读指针：free-running-判定" class="headerlink" title="6.4 谁推进硬件侧读指针：free-running 判定"></a>6.4 谁推进硬件侧读指针：free-running 判定</h2><p>普通软件共享 FIFO 可以让生产者推进 write counter、消费者推进 read counter。硬件 DMA/DSP 不会替客户端更新这份软件计数器，因此客户端要自己估计它。</p>
+<p><code>AudioEndpoint::configureDataQueue()</code> 根据远端计数器地址判断是不是 free-running：播放看远端 read counter，录音看远端 write counter；地址为空，意味着需要用本地计数器和时间模型模拟远端推进。</p>
+<figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/av/media/libaaudio/src/client/AudioEndpoint.cpp</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">aaudio_result_t</span> <span class="title">AudioEndpoint::configureDataQueue</span><span class="params">(<span class="type">const</span> RingBufferDescriptor&amp; descriptor,</span></span></span><br><span class="line"><span class="params"><span class="function">                                                  <span class="type">aaudio_direction_t</span> direction)</span> </span>{</span><br><span class="line">    ...</span><br><span class="line">    <span class="type">int64_t</span> *remoteCounter = (direction == AAUDIO_DIRECTION_OUTPUT)</span><br><span class="line">                             ? descriptor.readCounterAddress</span><br><span class="line">                             : descriptor.writeCounterAddress;</span><br><span class="line">    <span class="comment">// 缺少远端软件计数器，才进入硬件自由推进的处理方式。</span></span><br><span class="line">    mFreeRunning = (remoteCounter == <span class="literal">nullptr</span>);</span><br><span class="line">    ...</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<p>这是理解共享路径的关键：<strong>MMAP 家族客户端不一定直接面对 free-running 硬件。</strong> 共享应用面对服务端软件 FIFO，可以读取服务推进的计数器；服务内部的 MMAP 流才直接面对硬件时间模型。共享客户端也会使用服务时间信息安排供数，但不能把两个计数域当成同一个位置。</p>
+<h2 id="6-5-独占输出：预测消费位置，再把数据写到前面"><a href="#6-5-独占输出：预测消费位置，再把数据写到前面" class="headerlink" title="6.5 独占输出：预测消费位置，再把数据写到前面"></a>6.5 独占输出：预测消费位置，再把数据写到前面</h2><figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/av/media/libaaudio/src/client/AudioStreamInternalPlay.cpp</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">aaudio_result_t</span> <span class="title">AudioStreamInternalPlay::processDataNow</span><span class="params">(<span class="type">void</span> *buffer, <span class="type">int32_t</span> numFrames,</span></span></span><br><span class="line"><span class="params"><span class="function">        <span class="type">int64_t</span> currentNanoTime, <span class="type">int64_t</span> *wakeTimePtr)</span> </span>{</span><br><span class="line">    <span class="type">aaudio_result_t</span> result = <span class="built_in">processCommands</span>();</span><br><span class="line">    <span class="keyword">if</span> (result != AAUDIO_OK) {</span><br><span class="line">        <span class="keyword">return</span> result;</span><br><span class="line">    }</span><br><span class="line">    ...</span><br><span class="line">    <span class="keyword">if</span> (mClockModel.<span class="built_in">isStarting</span>()) {</span><br><span class="line">        ...</span><br><span class="line">        *wakeTimePtr = currentNanoTime + (<span class="number">2000</span> * AAUDIO_NANOS_PER_MICROSECOND);</span><br><span class="line">        ...</span><br><span class="line">        <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">    }</span><br><span class="line">    <span class="keyword">if</span> (mAudioEndpoint-&gt;<span class="built_in">isFreeRunning</span>()) {</span><br><span class="line">        <span class="comment">// 播放方向由时钟模型估计硬件已消费多少 frame。</span></span><br><span class="line">        <span class="type">int64_t</span> estimatedReadCounter = mClockModel.<span class="built_in">convertTimeToPosition</span>(currentNanoTime);</span><br><span class="line">        mAudioEndpoint-&gt;<span class="built_in">setDataReadCounter</span>(estimatedReadCounter);</span><br><span class="line">    }</span><br><span class="line">    <span class="keyword">if</span> (mNeedCatchUp.<span class="built_in">isRequested</span>()) {</span><br><span class="line">        <span class="comment">// 冷启动时追上已经前进的设备，再留一个 burst 的余量。</span></span><br><span class="line">        <span class="built_in">advanceClientToMatchServerPosition</span>(<span class="built_in">getFramesPerBurst</span>());</span><br><span class="line">        mNeedCatchUp.<span class="built_in">acknowledge</span>();</span><br><span class="line">    }</span><br><span class="line">    <span class="keyword">if</span> (mAudioEndpoint-&gt;<span class="built_in">isFreeRunning</span>() &amp;&amp; mAudioEndpoint-&gt;<span class="built_in">getFullFramesAvailable</span>() &lt; <span class="number">0</span>) {</span><br><span class="line">        mXRunCount++;</span><br><span class="line">        ...</span><br><span class="line">    }</span><br><span class="line">    <span class="type">int32_t</span> framesWritten = <span class="built_in">writeNowWithConversion</span>(buffer, numFrames);</span><br><span class="line">    ...</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<p>把软件逻辑位置记为 <code>W</code>（累计写入）和 <code>R</code>（累计读取或估计消费），则 <code>W - R</code> 是逻辑队列深度。物理数组下标则通常由累计位置对容量取模得到；逻辑位置应继续增长，不能在数组回绕时一起归零，否则无法区分第几圈。</p>
+<p>对独占播放，<code>R &gt; W</code> 意味着设备已经越过供数前沿。这里的 XRun 统计来自软件对这种条件的检测，不能直接等同于“硬件中断上报了几个 underrun”，也不能由计数精确推出丢了多少 sample。</p>
+<p><code>writeNowWithConversion()</code> 从环形队列取得一段或两段可写区域，再让 FlowGraph 做转换并写入；回绕时之所以是两段，是因为物理数组末尾与开头在地址上不连续。最后按设备 frame 数推进 endpoint 写指针，按应用 frame 数返回处理量。发生重采样时，两种 frame 数可能不同。</p>
+<h2 id="6-6-写完以后为什么不立刻再回调"><a href="#6-6-写完以后为什么不立刻再回调" class="headerlink" title="6.6 写完以后为什么不立刻再回调"></a>6.6 写完以后为什么不立刻再回调</h2><p>持续无节制地产生 PCM 会把缓冲填满，声音变得稳定却越来越迟。当前实现用有效 buffer size 控制排队深度。当队列达到相应目标时，计算需要等到硬件消费多少 frame，才值得再次供数。</p>
+<p>STARTED 分支中的关键关系是：</p>
+<blockquote>
+<p><code>targetReadPosition = writeCounter - bestBufferSize</code>，然后用 <code>convertPositionToTime(targetReadPosition)</code> 计算唤醒时间。</p>
+</blockquote>
+<p><code>bestBufferSize</code> 结合应用目标大小和 endpoint 剩余安全空间取值；外层还会应用最小睡眠时间、软件远端的附加等待和超时约束。它不是固定 <code>sleep(4ms)</code> 的永久循环。队列位置、时间模型和流状态都会影响下一次等待。</p>
+<p>假设采样率 48 kHz、每 burst 192 frame、当前 W=1920、估计 R=1536，那么已有 384 frame，即约 8 ms 的该级音频数据。设备继续读取一个 burst 后，R 变为 1728，若应用及时补入 192 frame，队列又回到相近深度。若应用晚了数个 burst，队列可能耗尽；若总是额外预存很多 burst，则排队时间会上升。</p>
+<p>这个例子只展示单个队列的节奏；不能把 8 ms 直接写成真实扬声器延迟，也不能把软件估计的 R 当成声学测量。</p>
+<h2 id="6-7-暂停、停止、清空与关闭是不同动作"><a href="#6-7-暂停、停止、清空与关闭是不同动作" class="headerlink" title="6.7 暂停、停止、清空与关闭是不同动作"></a>6.7 暂停、停止、清空与关闭是不同动作</h2><p>电子琴按键松开不一定要 stop 音频流：通常先让包络收尾，在持续回调中生成静音或其他音符。只有业务确实不再需要音频时才改变流生命周期，这样可以避免每次按键都承担冷启动。</p>
+<table>
+<thead>
+<tr>
+<th>操作</th>
+<th>输出主线中的语义</th>
+<th>当前 Internal 实现的相关动作</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>pause</td>
+<td>尽快暂停传输</td>
+<td>停止回调、停止时钟模型，进入 PAUSING，再请求服务暂停</td>
+</tr>
+<tr>
+<td>stop</td>
+<td>停止传输并完成相应收尾</td>
+<td>停止回调，准备输出缓冲收尾，再进入 STOPPING 并请求服务停止</td>
+</tr>
+<tr>
+<td>flush</td>
+<td>丢弃待处理的数据</td>
+<td>进入 FLUSHING；收到 FLUSHED 后对齐客户端与服务端位置</td>
+</tr>
+<tr>
+<td>close</td>
+<td>释放流与其资源</td>
+<td>结束相关活动、解除服务端关系、释放映射和对象；旧 handle 不再使用</td>
+</tr>
+</tbody></table>
+<p>pause/flush 不是所有方向都支持的通用操作，具体可用状态还需遵循 API 校验。不能在任意状态随意 flush，也不能把 DISCONNECTED 当作 PAUSED。</p>
+<p>这里值得特别看 <code>AudioStreamInternalPlay::prepareBuffersForStop()</code>：free-running 输出会根据模型等待已写数据被设备消费，擦除空闲区域并保留一个 burst 安全边界，最后清零缓冲，避免设备继续运行或回绕时重放旧内容。等待消费的部分有 200 ms 上限；若已有有效呈现时间戳，还会估算下游到 DAC 的时间并以 30 ms 为上限等待。它们是该提交收尾实现的限值，不是平台承诺的固定延迟。</p>
+<p>共享流不走这套直接面对 DSP 的清理逻辑，而由共享 mixer 的停止/暂停分支消耗已有 FIFO 数据。可见“调用 stop 后立刻绝对静音”“pause 后重新 start 必定保留所有未播数据”都不是可以跨后端随意套用的假设。实际控制语义与听感仍需结合缓冲、服务状态和设备测量。</p>
+<h1 id="7-时间戳与时钟模型：NOIRQ-路径的核心"><a href="#7-时间戳与时钟模型：NOIRQ-路径的核心" class="headerlink" title="7. 时间戳与时钟模型：NOIRQ 路径的核心"></a>7. 时间戳与时钟模型：NOIRQ 路径的核心</h1><h2 id="7-1-时间戳是一对值，不是“收到消息的时间”"><a href="#7-1-时间戳是一对值，不是“收到消息的时间”" class="headerlink" title="7.1 时间戳是一对值，不是“收到消息的时间”"></a>7.1 时间戳是一对值，不是“收到消息的时间”</h2><p>一个有效音频时间戳包含 frame position 和对应的时间，例如“位置 P 在时刻 T 被设备推进到”。消息到达客户端的时刻可能更晚。如果错误地用 Binder/队列接收时间替换 T，线程调度延迟就会被误认为设备运行变慢。</p>
+<p>服务端 MMAP endpoint 通过 <code>getMmapPosition()</code> 得到位置与时间；把底层 32 位位置扩展成累计 64 位位置后，向流的消息通道发送。停止后硬件位置可能复位，服务还需要修正累计计数与环形缓冲对齐，不能天真地把下一次 0 看成时间倒流。</p>
+<p><code>AAudioServiceStreamBase::run()</code> 中的命令线程同时安排周期性时间戳发送。周期来自 timestamp scheduler，<strong>不是应用每写一个 burst 就同步问 HAL 一次位置</strong>。</p>
+<h2 id="7-2-SERVICE-与-HARDWARE-时间戳不能混读"><a href="#7-2-SERVICE-与-HARDWARE-时间戳不能混读" class="headerlink" title="7.2 SERVICE 与 HARDWARE 时间戳不能混读"></a>7.2 SERVICE 与 HARDWARE 时间戳不能混读</h2><figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/av/services/oboeservice/AAudioServiceStreamBase.cpp</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">aaudio_result_t</span> <span class="title">AAudioServiceStreamBase::sendCurrentTimestamp_l</span><span class="params">()</span> </span>{</span><br><span class="line">    AAudioServiceMessage command;</span><br><span class="line">    <span class="comment">// 消息拥塞时允许略过本次时间戳，避免淹没重要事件。</span></span><br><span class="line">    <span class="keyword">if</span> (<span class="built_in">isUpMessageQueueBusy</span>()) {</span><br><span class="line">        <span class="keyword">return</span> AAUDIO_OK;</span><br><span class="line">    }</span><br><span class="line">    <span class="type">aaudio_result_t</span> result = <span class="built_in">getFreeRunningPosition_l</span>(&amp;command.timestamp.position,</span><br><span class="line">                                                      &amp;command.timestamp.timestamp);</span><br><span class="line">    <span class="keyword">if</span> (result == AAUDIO_OK) {</span><br><span class="line">        ...</span><br><span class="line">        command.what = AAudioServiceMessage::code::TIMESTAMP_SERVICE;</span><br><span class="line">        result = <span class="built_in">writeUpMessageQueue</span>(&amp;command);</span><br><span class="line">        <span class="keyword">if</span> (result == AAUDIO_OK) {</span><br><span class="line">            result = <span class="built_in">getHardwareTimestamp_l</span>(&amp;command.timestamp.position,</span><br><span class="line">                                            &amp;command.timestamp.timestamp);</span><br><span class="line">            <span class="keyword">if</span> (result == AAUDIO_OK) {</span><br><span class="line">                ...</span><br><span class="line">                command.what = AAudioServiceMessage::code::TIMESTAMP_HARDWARE;</span><br><span class="line">                result = <span class="built_in">writeUpMessageQueue</span>(&amp;command);</span><br><span class="line">            }</span><br><span class="line">        }</span><br><span class="line">    }</span><br><span class="line">    <span class="keyword">if</span> (result == AAUDIO_ERROR_UNAVAILABLE) {</span><br><span class="line">        result = AAUDIO_OK;</span><br><span class="line">    }</span><br><span class="line">    <span class="keyword">return</span> result;</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<p>客户端 <code>onTimestampService()</code> 把服务时间戳交给时钟模型；<code>onTimestampHardware()</code> 保存到原子时间戳对象，供呈现/采集位置查询等使用。</p>
+<p>对独占流，<code>getHardwareTimestamp_l()</code> 优先尝试 external position；失败后，可能使用已保存的流时间戳加上硬件时间偏移估计。因此 <strong>“API 返回了 timestamp”仍不等于拿到了理想的 DAC 声学时刻</strong>。HAL 的实现与可用精度决定它能支持多强的测量结论。</p>
+<p>对共享流，还需处理客户端 FIFO frame 域与底层 MMAP frame 域的偏移。混音线程记录当前 <code>mmapFramesWritten - clientFramesRead</code>，以便把底层时间关联回客户端流。若直接拿两个域的位置相减，得到的“延迟”可能根本没有物理意义。</p>
+<h2 id="7-3-IsochronousClockModel-怎样从时间预测位置"><a href="#7-3-IsochronousClockModel-怎样从时间预测位置" class="headerlink" title="7.3 IsochronousClockModel 怎样从时间预测位置"></a>7.3 IsochronousClockModel 怎样从时间预测位置</h2><p>先用连续模型理解：如果位置 P0 对应时刻 T0，采样率为 Fs，那么经过 Δt 后大致推进 <code>Fs × Δt</code> frame；反过来，要推进 ΔP frame，大致需要 <code>ΔP / Fs</code> 秒。</p>
+<p>实际设备通常以 burst 为粒度更新位置，所以代码不只是做一次直线插值，还会按 burst 边界取整。</p>
+<figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/av/media/libaaudio/src/client/IsochronousClockModel.cpp</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">int64_t</span> <span class="title">IsochronousClockModel::convertTimeToPosition</span><span class="params">(<span class="type">int64_t</span> nanoTime)</span> <span class="type">const</span> </span>{</span><br><span class="line">    <span class="keyword">if</span> (mState == STATE_STOPPED) {</span><br><span class="line">        <span class="keyword">return</span> mMarkerFramePosition;</span><br><span class="line">    }</span><br><span class="line">    <span class="type">int64_t</span> nanosDelta = nanoTime - mMarkerNanoTime;</span><br><span class="line">    <span class="type">int64_t</span> framesDelta = <span class="built_in">convertDeltaTimeToPosition</span>(nanosDelta);</span><br><span class="line">    <span class="type">int64_t</span> nextBurstPosition = mMarkerFramePosition + framesDelta;</span><br><span class="line">    <span class="comment">// 预测位置落到完整 burst 边界，而非返回任意 fractional frame。</span></span><br><span class="line">    <span class="type">int64_t</span> nextBurstIndex = nextBurstPosition / mFramesPerBurst;</span><br><span class="line">    <span class="type">int64_t</span> position = nextBurstIndex * mFramesPerBurst;</span><br><span class="line">    ...</span><br><span class="line">    <span class="keyword">return</span> position;</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<p>反向的 <code>convertPositionToTime()</code> 把目标位置向下一个 burst 边界取整后再求时间。这样得到的是与设备批次推进相匹配的调度点，而非“每个采样都有一个独立中断”。</p>
+<p><img src="/2026/10/27/AAudio%E4%BD%8E%E5%BB%B6%E8%BF%9F%E5%AE%9E%E7%8E%B0%E5%89%96%E6%9E%90/clock-model.png" alt="时间戳校准模型，播放在设备读取之前供数，采集在设备完成写入之后读取"></p>
+<p>图中橙色箭头表示调度顺序/时间关系，蓝色虚线表示时间戳校准与模型预测关系，不表示 PCM。上下两条时间线分别说明播放与采集原则；不按比例，也不代表某台设备的实测余量。</p>
+<h2 id="7-4-模型自身也有状态机"><a href="#7-4-模型自身也有状态机" class="headerlink" title="7.4 模型自身也有状态机"></a>7.4 模型自身也有状态机</h2><p>模型的 STOPPED / STARTING / SYNCING / RUNNING 与 AAudioStream 的 OPEN / STARTING / STARTED 是两套状态。流已开始，不代表时间估计已经稳定。</p>
+<table>
+<thead>
+<tr>
+<th>模型阶段</th>
+<th>触发与处理</th>
+<th>对读写的意义</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>STOPPED</td>
+<td>暂停模型推进，保留锚点</td>
+<td>不继续按运行中的时钟外推</td>
+</tr>
+<tr>
+<td>STARTING</td>
+<td>等第一个有效时间戳并建立位置/时间锚点</td>
+<td>客户端数据操作可能先等待</td>
+</tr>
+<tr>
+<td>SYNCING</td>
+<td>处理初始快速推进，必要时更新锚点</td>
+<td>冷启动阶段不宜当作稳定延迟样本</td>
+</tr>
+<tr>
+<td>RUNNING</td>
+<td>根据时间戳相对预期的早晚修正窗口</td>
+<td>支撑持续估计、唤醒与抖动余量</td>
+</tr>
+</tbody></table>
+<p>RUNNING 中，较早的时间戳会更新锚点；一般迟到可小幅漂移调整；连续非常迟的时间戳可能触发窗口跳转，并增加 DSP stall 相关计数。这里是从时间观察推断状态的实现，不应把每一次“late”直接定性为 CPU 调度故障或硬件坏了。</p>
+<p>固定的名义采样率也不意味着永远无需重新校准。硬件时钟误差、DSP 停顿、时间戳上报方式和线程调度，都可能让预测与新样本出现偏差。</p>
+<h2 id="7-5-播放怕写晚，采集怕读早"><a href="#7-5-播放怕写晚，采集怕读早" class="headerlink" title="7.5 播放怕写晚，采集怕读早"></a>7.5 播放怕写晚，采集怕读早</h2><p>播放时，要在设备可能读取该区域之前完成写入。若把一个迟到的上报简单当成“硬件还没读”，客户端可能覆盖设备正在使用的数据或来不及供数。</p>
+<p>采集时，硬件/DSP 是生产者，应用必须等到数据确实写好。<code>AudioStreamInternalCapture::processDataNow()</code> 使用 <code>convertLatestTimeToPosition()</code> 估计安全可读前沿，而不是直接照搬播放的 <code>convertTimeToPosition()</code>。</p>
+<p>后者考虑模型的 late offset：由观测到的迟到量和额外安全量形成。可读位置更保守，就能降低读到尚未完成数据的风险，但代价是多一点等待。<strong>输出提前写、输入稍晚读，都是为了避开硬件与软件对同一区域的访问冲突。</strong></p>
+<p>采集方向若积压数据超过环形容量，就发生 overrun：硬件继续写，旧数据可能已被覆盖。该方向的软件检测是 <code>fullFramesAvailable &gt; capacity</code>；播放则关注 <code>fullFramesAvailable &lt; 0</code>。二者都被归入 XRun，但原因与数据损失方式不同。</p>
+<h1 id="8-缓冲调优：四个数不能混成一个"><a href="#8-缓冲调优：四个数不能混成一个" class="headerlink" title="8. 缓冲调优：四个数不能混成一个"></a>8. 缓冲调优：四个数不能混成一个</h1><h2 id="8-1-capacity、size、burst、callback-的区别"><a href="#8-1-capacity、size、burst、callback-的区别" class="headerlink" title="8.1 capacity、size、burst、callback 的区别"></a>8.1 capacity、size、burst、callback 的区别</h2><table>
+<thead>
+<tr>
+<th>数量</th>
+<th>含义</th>
+<th>是否直接等于延迟</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Buffer capacity</td>
+<td>本次流可用的缓冲容量上限</td>
+<td>否，容量不等于当前占用</td>
+</tr>
+<tr>
+<td>Buffer size</td>
+<td>客户端用于调节队列深度/供数节奏的有效大小</td>
+<td>只能提示相应队列的目标音频时长</td>
+</tr>
+<tr>
+<td>Frames per burst</td>
+<td>流向应用报告的处理批次粒度</td>
+<td>只能换算该批次时长</td>
+</tr>
+<tr>
+<td>Frames per callback</td>
+<td>应用一次回调被要求处理的 frame 数</td>
+<td>影响计算和调用节奏，但不是总排队长度</td>
+</tr>
+</tbody></table>
+<p>应用请求的 capacity 是建流协商输入，底层可以返回不同值。调 <code>setBufferSizeInFrames()</code> 不意味着重新分配硬件 DMA 区，也不意味着改变驱动 period。</p>
+<p>当前 <code>configureDataInformation()</code> 会根据 <code>AudioSystem::getAAudioHardwareBurstMinUsec()</code> 将过小的硬件 burst 成倍放大，以免唤醒过密；再按应用采样率与设备采样率换算 API 报告的 burst。若 callback 大小未指定，内部 MMAP 实现默认取报告的 burst，但显式配置、Legacy 实现和重采样都会影响实际行为。应用始终按 callback 参数 <code>numFrames</code> 工作。</p>
+<h2 id="8-2-当前-setBufferSize-的真实作用"><a href="#8-2-当前-setBufferSize-的真实作用" class="headerlink" title="8.2 当前 setBufferSize 的真实作用"></a>8.2 当前 setBufferSize 的真实作用</h2><p><code>AudioStreamInternal::setBufferSize()</code> 会限制请求不超过 <code>capacity - burst</code>，按 burst 换算，至少保留一个 burst；使用采样率转换时还会施加额外最小 burst 数约束。它把 endpoint 允许写入的范围设得较大，而把 <code>mBufferSizeInFrames</code> / <code>mDeviceBufferSizeInFrames</code> 留作常态供数深度目标。</p>
+<p>这样做的效果是：有数据时可以适当多写以降低毛刺概率，但正常唤醒节奏仍按应用目标深度控制。<strong>有效 size 不是一堵绝对禁止写过的内存墙。</strong></p>
+<p>此提交还有一个容易影响调试的小细节：该方法最终返回 <code>adjustedFrames</code>，成员保存的却是按 burst 处理后的 <code>numBursts * getFramesPerBurst()</code>。因此不要只打印 setter 返回值就结束记录；还要读取 <code>AAudioStream_getBufferSizeInFrames()</code>。这里是本地实现的具体行为，不推广成所有 Android 版本的 API 契约。</p>
+<h2 id="8-3-从两个-burst-开始，是实验起点，不是平台定律"><a href="#8-3-从两个-burst-开始，是实验起点，不是平台定律" class="headerlink" title="8.3 从两个 burst 开始，是实验起点，不是平台定律"></a>8.3 从两个 burst 开始，是实验起点，不是平台定律</h2><p>对于支持低延迟的输出，可以把约两个 burst 作为初始测试目标，观察持续负载下 XRun 与回调耗时，再按 burst 增减。实际设定必须服从返回结果、容量和设备约束。默认值也不必已经是两个 burst：当前 Internal 初始化先设为容量的一半；共享服务底层流另有 mixer burst count 的配置与默认逻辑。</p>
+<p>仍以 48 kHz、192 frame 为例：</p>
+<ul>
+<li>192 frame 对应 4 ms；384 frame 对应 8 ms；768 frame 对应 16 ms。</li>
+<li>384 frame 的目标队列可以提供比 192 frame 更多的供数余量，但也可能让新生成的声音多等待。</li>
+<li>如果算法一次处理耗时 6 ms，而每 4 ms 就需要一批数据，仅靠“优先级更高”不能补足持续的计算吞吐缺口。</li>
+<li>如果平均计算只需 0.5 ms，却偶发等待锁 12 ms，平均值仍很好看，但小缓冲会暴露长尾停顿。</li>
+</ul>
+<p>应同时看耗时分布、最大连续晚到、调度间隙与 XRun 增量，不要只看平均 CPU 占用。目标是在可接受的延迟内找到稳定余量，而不是把 size 设到 API 允许的最小值就宣布成功。</p>
+<h2 id="8-4-重采样为什么要单独算账"><a href="#8-4-重采样为什么要单独算账" class="headerlink" title="8.4 重采样为什么要单独算账"></a>8.4 重采样为什么要单独算账</h2><p>应用可能按 44.1 kHz 生成数据，设备则以 48 kHz 工作。当前 Internal 实现区分应用参数与设备参数，通过 FlowGraph 处理所需转换，所以不能再用“采样率不一致必然无法 MMAP”概括这个提交。</p>
+<p>但不一致并非免费：转换增加计算与内部状态，读写两端的 frame 计数不同，buffer size 换算还要处理取整和最小余量。排查时要同时记录 app sample rate 与 hardware/device sample rate，不能把 441 frame 与设备的 480 frame 当成时长不同；它们在相应采样率下都可以代表 10 ms。</p>
+<p>电子琴若没有固定文件采样率的约束，可以让系统协商参数后按实际采样率合成。若业务必须固定采样率，则明确承担转换成本，并在该组合下重新测量。</p>
+<h1 id="9-共享、Legacy-与录音：三种分支怎样改变结论"><a href="#9-共享、Legacy-与录音：三种分支怎样改变结论" class="headerlink" title="9. 共享、Legacy 与录音：三种分支怎样改变结论"></a>9. 共享、Legacy 与录音：三种分支怎样改变结论</h1><h2 id="9-1-MMAP-SHARED-不是“多应用同时写同一-DMA-区”"><a href="#9-1-MMAP-SHARED-不是“多应用同时写同一-DMA-区”" class="headerlink" title="9.1 MMAP SHARED 不是“多应用同时写同一 DMA 区”"></a>9.1 MMAP SHARED 不是“多应用同时写同一 DMA 区”</h2><p>多个应用若直接往同一硬件区域任意写入，会互相覆盖；共享路径通过服务端汇合解决这个问题。</p>
+<p><code>AAudioServiceEndpointShared::open()</code> 创建服务内部的流时，把 sharing mode 设成 EXCLUSIVE，并设置 <code>sharingModeMatchRequired=true</code>。这个“独占”属于服务内部：服务是底层 MMAP 区的单一软件使用者，应用则分别连接到它管理的 FIFO。若底层也允许退 SHARED，就会形成“共享 endpoint 为自己再创建共享 endpoint”的递归，所以必须严格匹配。</p>
+<p>共享输出运行时，<code>AAudioServiceEndpointPlay::callbackLoop()</code> 每轮先清空混音输出，再遍历活跃的客户端流，取得各自 FIFO，建立 frame 位置偏移并混音。最后经服务内部 <code>AudioStreamInternalPlay::write()</code> 写入一个 burst，并由这个阻塞式写入约束共享线程节奏。</p>
+<p>混音器没有为每个应用单独同步调用硬件 write；硬件消费的是合成后的一份输出。每个客户端自己的 FlowGraph 可负责必要的格式/采样率转换，共享服务的混音输入则要求匹配的 float 数据。</p>
+<h2 id="9-2-某个共享应用来不及供数，会不会拖住全部应用"><a href="#9-2-某个共享应用来不及供数，会不会拖住全部应用" class="headerlink" title="9.2 某个共享应用来不及供数，会不会拖住全部应用"></a>9.2 某个共享应用来不及供数，会不会拖住全部应用</h2><p><code>AAudioMixer::mix()</code> 默认按一个 burst 推进消费位置。某路数据不够时，能取得多少就混多少；混音输出预先清零，该路缺失部分不会凭空产生样本。正常运行允许 underflow 时，读指针仍按期望批次推进，避免该客户端的时间轴因每次缺数不断漂移。</p>
+<figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/av/services/oboeservice/AAudioMixer.cpp</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">int32_t</span> <span class="title">AAudioMixer::mix</span><span class="params">(</span></span></span><br><span class="line"><span class="params"><span class="function">        <span class="type">int</span> streamIndex, <span class="type">const</span> std::shared_ptr&lt;FifoBuffer&gt;&amp; fifo, <span class="type">bool</span> allowUnderflow)</span> </span>{</span><br><span class="line">    ...</span><br><span class="line">    <span class="type">fifo_frames_t</span> fullFrames = fifo-&gt;<span class="built_in">getFullDataAvailable</span>(&amp;wrappingBuffer);</span><br><span class="line">    ...</span><br><span class="line">    <span class="type">fifo_frames_t</span> framesDesired = mFramesPerBurst;</span><br><span class="line">    <span class="comment">// 停止/暂停收尾时不再强行按整 burst 消耗不存在的数据。</span></span><br><span class="line">    <span class="keyword">if</span> (!allowUnderflow &amp;&amp; fullFrames &lt; framesDesired) {</span><br><span class="line">        framesDesired = fullFrames;</span><br><span class="line">    }</span><br><span class="line">    ...</span><br><span class="line">    <span class="comment">// 中间循环只混合实际存在的数据；这里推进逻辑消费时刻。</span></span><br><span class="line">    fifo-&gt;<span class="built_in">advanceReadIndex</span>(framesDesired);</span><br><span class="line">    ...</span><br><span class="line">    <span class="keyword">return</span> (framesDesired - framesLeft);</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<p>共享线程因此可以继续服务其他客户端，而不是无限等待一个应用补齐。对应流已经开始供数后，若实际混入量不足一个 burst，服务增加该流 XRun，再通过事件通知客户端。</p>
+<p>不过，“不等待某个应用补齐”不代表共享路径没有任何锁或调度风险。该循环本身有流列表与 FIFO 生命周期保护；共享线程或底层 MMAP 流一旦受阻，仍可能影响多个客户端。排查时要区分“单个客户端缺数”和“公共下游不及时”。</p>
+<h2 id="9-3-Legacy-回退后仍可能低延迟"><a href="#9-3-Legacy-回退后仍可能低延迟" class="headerlink" title="9.3 Legacy 回退后仍可能低延迟"></a>9.3 Legacy 回退后仍可能低延迟</h2><p><code>AudioStreamTrack::open()</code> 对 LOW_LATENCY 请求设置 FAST；在没有 session 且 usage 是 GAME/MEDIA 时，还会请求 RAW。配置了数据回调则使用 <code>TRANSFER_CALLBACK</code>，否则使用 <code>TRANSFER_SYNC</code>。本地代码明确指出同步传输不允许 FAST track。</p>
+<p>打开后再检查 AudioTrack 实际 flags：只有实际拿到 FAST，才把 performance mode 报为 LOW_LATENCY；Legacy sharing mode 则设为 SHARED。</p>
+<p>所以，下面几种观察都可能成立：</p>
+<table>
+<thead>
+<tr>
+<th>观察结果</th>
+<th>正确解释</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>isMMapUsed=false</code>，performance=LOW_LATENCY</td>
+<td>可能是 Legacy FAST，不能说低延迟请求完全失败</td>
+</tr>
+<tr>
+<td><code>isMMapUsed=true</code>，sharing=SHARED</td>
+<td>MMAP 共享路径，不是普通 AudioTrack 共享混音的同义词</td>
+</tr>
+<tr>
+<td>请求 LOW_LATENCY，actual=NONE</td>
+<td>后端没有实现所请求的低延迟模式，应继续看 flags、参数与资源</td>
+</tr>
+<tr>
+<td>请求 EXCLUSIVE，actual=SHARED</td>
+<td>可能在独占策略处理或服务端建流时降级，也可能已经 Legacy 回退</td>
+</tr>
+</tbody></table>
+<p>这也是为何低延迟应用优先采用数据回调：它不仅方便库控制周期，还会影响 Legacy 后端是否具备 FAST 的传输条件。对于回退兼容性，callback 与普通阻塞 write 不能只当作两种语法风格。</p>
+<h2 id="9-4-录音的主干相似，风险方向相反"><a href="#9-4-录音的主干相似，风险方向相反" class="headerlink" title="9.4 录音的主干相似，风险方向相反"></a>9.4 录音的主干相似，风险方向相反</h2><p>独占采集由硬件向 MMAP 区写入，客户端按安全位置读取，再转换为应用要求的格式，调用输入 callback。共享采集则由服务内部 <code>AudioStreamInternalCapture</code> 读取一个 burst 到分发缓冲，遍历运行中的客户端，把数据分发到各自 FIFO。</p>
+<p>因此共享输入的核心是<strong>分发</strong>，不是把多个应用“混音成麦克风”。<code>AAudioServiceEndpointCapture::callbackLoop()</code> 与共享输出循环的顺序正好不同：先从公共源读，再写给客户端。</p>
+<p>录音权限、隐私限制、input preset、设备选择和静音状态仍受系统约束。MMAP 不绕过 RECORD_AUDIO 或系统采集策略。对于实时监听，低延迟输入和低延迟输出必须分别确认；拿到一个好的输出流，不能证明麦克风输入同样走 MMAP。</p>
+<p>全双工还要处理输入/输出时钟可能不完全一致：长期看即使名义采样率都为 48 kHz，两端速度也可能有差异。应用通常需要有界的中间队列、输入不足时的补零策略，以及必要的速率匹配；不要在输出 callback 里无限阻塞等待输入“凑齐”，否则把采集停顿变成播放 underrun。</p>
+<h1 id="10-把实现放回电子琴场景"><a href="#10-把实现放回电子琴场景" class="headerlink" title="10. 把实现放回电子琴场景"></a>10. 把实现放回电子琴场景</h1><h2 id="10-1-一次正常的打开与持续合成"><a href="#10-1-一次正常的打开与持续合成" class="headerlink" title="10.1 一次正常的打开与持续合成"></a>10.1 一次正常的打开与持续合成</h2><p>为了让路径和业务对应起来，可以按以下过程设计电子琴音频引擎：</p>
+<ol>
+<li>在控制线程创建 Builder，请求 OUTPUT、LOW_LATENCY、EXCLUSIVE，配置数据与错误回调；没有业务必要时不强制采样率，也不申请 session。</li>
+<li>open 成功后读取实际参数；根据实际采样率建立振荡器、包络和滤波器状态；预分配所有回调所需内存。</li>
+<li>记录 burst、capacity、实际 size；在允许范围内选择初始供数深度。</li>
+<li>requestStart 后，回调按 <code>numFrames</code> 生成连续 PCM。UI 通过有界消息或经过审查的 lock-free 数据结构更新音符参数。</li>
+<li>控制线程采集统计，不在音频回调里持续打印日志或写文件。</li>
+<li>停止时协调线程生命周期，等待回调不再使用对象后关闭流并释放上下文。</li>
+</ol>
+<p>下面是<strong>应用侧示意代码</strong>，只展示配置与参数读取顺序，不是平台源码，也不是完整可运行 App。<code>renderCallback</code>、<code>errorCallback</code> 与 <code>engine</code> 由应用实现；错误回调的职责见 10.3。</p>
+<figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 示例：应用侧 AAudio 输出初始化，非 LineageOS 源码</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">aaudio_result_t</span> <span class="title">openOutput</span><span class="params">(Engine* engine, AAudioStream** output)</span> </span>{</span><br><span class="line">    *output = <span class="literal">nullptr</span>;</span><br><span class="line">    AAudioStreamBuilder* builder = <span class="literal">nullptr</span>;</span><br><span class="line">    <span class="type">aaudio_result_t</span> result = <span class="built_in">AAudio_createStreamBuilder</span>(&amp;builder);</span><br><span class="line">    <span class="keyword">if</span> (result != AAUDIO_OK) <span class="keyword">return</span> result;</span><br><span class="line"></span><br><span class="line">    <span class="built_in">AAudioStreamBuilder_setDirection</span>(builder, AAUDIO_DIRECTION_OUTPUT);</span><br><span class="line">    <span class="built_in">AAudioStreamBuilder_setPerformanceMode</span>(builder, AAUDIO_PERFORMANCE_MODE_LOW_LATENCY);</span><br><span class="line">    <span class="built_in">AAudioStreamBuilder_setSharingMode</span>(builder, AAUDIO_SHARING_MODE_EXCLUSIVE);</span><br><span class="line">    <span class="built_in">AAudioStreamBuilder_setFormat</span>(builder, AAUDIO_FORMAT_PCM_FLOAT);</span><br><span class="line">    <span class="built_in">AAudioStreamBuilder_setChannelCount</span>(builder, <span class="number">2</span>);</span><br><span class="line">    <span class="built_in">AAudioStreamBuilder_setDataCallback</span>(builder, renderCallback, engine);</span><br><span class="line">    <span class="built_in">AAudioStreamBuilder_setErrorCallback</span>(builder, errorCallback, engine);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 保留默认采样率与 session，由本次 open 协商。</span></span><br><span class="line">    result = <span class="built_in">AAudioStreamBuilder_openStream</span>(builder, output);</span><br><span class="line">    <span class="built_in">AAudioStreamBuilder_delete</span>(builder);</span><br><span class="line">    <span class="keyword">if</span> (result != AAUDIO_OK) <span class="keyword">return</span> result;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 此时还没 start：根据实际配置初始化回调要用的状态。</span></span><br><span class="line">    engine-&gt;<span class="built_in">prepare</span>(<span class="built_in">AAudioStream_getSampleRate</span>(*output),</span><br><span class="line">                    <span class="built_in">AAudioStream_getChannelCount</span>(*output));</span><br><span class="line">    <span class="type">const</span> <span class="type">int32_t</span> burst = <span class="built_in">AAudioStream_getFramesPerBurst</span>(*output);</span><br><span class="line">    <span class="type">const</span> <span class="type">int32_t</span> requested = <span class="number">2</span> * burst;  <span class="comment">// 实验起点，不是普遍最优值。</span></span><br><span class="line">    <span class="type">const</span> <span class="type">int32_t</span> setResult = <span class="built_in">AAudioStream_setBufferSizeInFrames</span>(*output, requested);</span><br><span class="line">    engine-&gt;<span class="built_in">recordBufferSetting</span>(setResult, <span class="built_in">AAudioStream_getBufferSizeInFrames</span>(*output));</span><br><span class="line">    engine-&gt;<span class="built_in">recordActualConfiguration</span>(*output);</span><br><span class="line">    <span class="keyword">return</span> AAUDIO_OK;</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<p>真实工程要为 <code>prepare()</code> 失败和不满足业务要求的 actual 参数补上关闭路径；音频数据类型必须与实际格式一致。初始化函数成功后再由控制线程发起 start，并检查结果。此处故意把 open 与 start 分开，使上下文在首次回调之前准备完毕。</p>
+<h2 id="10-2-回调的工作应该有明确上限"><a href="#10-2-回调的工作应该有明确上限" class="headerlink" title="10.2 回调的工作应该有明确上限"></a>10.2 回调的工作应该有明确上限</h2><p>回调可以做确定成本的合成、包络、滤波、短块处理，以及有界消息读取；应避免动态分配、文件/网络 I/O、睡眠、长时间锁等待和不可预测的跨线程同步。一个看似简单的“取 UI 最新状态”若需要等 UI 持有的互斥锁，也会把 UI 卡顿传入音频线程。</p>
+<p>数据共享必须满足 C++ 内存模型，不能为了避免锁而使用有数据竞争的普通变量。多字段参数需要一致快照，消息队列应有容量与满队列策略；单个 <code>atomic&lt;float&gt;</code> 是否 lock-free 也需按目标 ABI 检查。这里追求的是执行成本可界定，不是把所有对象名字都改成 atomic。</p>
+<p><a target="_blank" rel="noopener" href="https://developer.android.com/ndk/guides/audio/aaudio/aaudio">NDK AAudio 指南</a>对低延迟 callback 和回调中的限制给出了应用侧说明；实际禁止在回调中调用的 AAudio 操作还应对照目标 NDK 头文件。尤其不要在数据或错误回调里直接 close 正在回调的流。</p>
+<h2 id="10-3-第二个应用竞争：独占流可能被撤销"><a href="#10-3-第二个应用竞争：独占流可能被撤销" class="headerlink" title="10.3 第二个应用竞争：独占流可能被撤销"></a>10.3 第二个应用竞争：独占流可能被撤销</h2><p><code>AAudioEndpointManager::openExclusiveEndpoint()</code> 不只实现“资源忙就拒绝”。在找到已有匹配独占 endpoint、启用了 stealing、原 endpoint 不是共享服务专用且新请求不要求严格匹配等条件下，可以释放旧流资源，为共享使用腾出空间。</p>
+<p><code>AAudioService::openStream()</code> 的递归锁用于约束这个过程：避免旧应用在新应用切到共享之前抢先重新拿回独占。对应 tracker 还会限制竞争进程继续申请独占，减少双方重开时反复碰撞。</p>
+<p>这不意味着“任意第二个 App 一播放就抢走所有独占流”。匹配的 endpoint、配置和资源条件都重要。但它证明 <strong>EXCLUSIVE 不是永久租约</strong>，即使 open 成功，start 前后也可能失去资源。</p>
+<p>错误回调收到 DISCONNECTED 后，合理的处理是把重建请求交给独立控制线程：</p>
+<blockquote>
+<p>标记旧流不可继续使用 → 停止业务向旧流提交操作 → 按 API 生命周期协调关闭 → 重新建 Builder/open → 读取新 actual 配置 → 重配算法与缓冲 → start。</p>
+</blockquote>
+<p>错误回调本身不执行可能死锁的 stop/close 等操作。上下文也不能在通知控制线程后立刻销毁，因为回调可能尚未返回。应通过明确的所有权、流代次和线程同步避免旧流事件误伤新流。</p>
+<h2 id="10-4-扬声器切到耳机：不要沿用上一次的参数缓存"><a href="#10-4-扬声器切到耳机：不要沿用上一次的参数缓存" class="headerlink" title="10.4 扬声器切到耳机：不要沿用上一次的参数缓存"></a>10.4 扬声器切到耳机：不要沿用上一次的参数缓存</h2><p><code>AAudioServiceEndpointMMAP::onRoutingChanged()</code> 发现已连接设备发生变化时，会将 endpoint 标记为不再可连接，并异步释放已注册流；<code>onTearDown()</code> 也把拆除转移到独立线程，避免在控制回调链上形成死锁。</p>
+<p>客户端处理 DISCONNECTED 事件时，输出方向还会擦除数据内存，防止硬件循环播放旧数据形成持续杂音。之后旧流只能按生命周期释放，应用需要重新打开。</p>
+<p>新设备可能有不同采样率、声道、burst、容量和 MMAP 能力。此前“48 kHz、192 frame、EXCLUSIVE”的配置不能直接复用。切到某种蓝牙路由时，即使应用端供数很及时，传输、编码和耳机缓冲仍可能主导最终延迟，不能只靠缩小 AAudio buffer 解决。</p>
+<h2 id="10-5-五个场景的推演结果"><a href="#10-5-五个场景的推演结果" class="headerlink" title="10.5 五个场景的推演结果"></a>10.5 五个场景的推演结果</h2><table>
+<thead>
+<tr>
+<th>输入条件</th>
+<th>源码中的关键改变</th>
+<th>可预期的结果与验证点</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>LOW_LATENCY + 无 session + 支持共享 FD 的 endpoint</td>
+<td>Builder 放行，独占资源可建</td>
+<td>可能 MMAP EXCLUSIVE；读取 actual 与 MMAP 标记确认</td>
+</tr>
+<tr>
+<td>同样请求，但硬件 FD 不可交给应用</td>
+<td><code>createMmapBuffer_l()</code> 拒绝普通应用独占</td>
+<td>可能 MMAP SHARED；不是立刻判定 Legacy</td>
+</tr>
+<tr>
+<td>请求 ALLOCATE session</td>
+<td>Builder 关闭 allowMMap</td>
+<td>AUTO 时尝试 Legacy；强制 MMAP 时无可用后端</td>
+</tr>
+<tr>
+<td>请求低延迟但不设 callback，且 MMAP 失败</td>
+<td>Legacy 使用 TRANSFER_SYNC</td>
+<td>此实现不满足 FAST 传输条件，检查 actual performance</td>
+</tr>
+<tr>
+<td>原独占流遇到匹配资源竞争或路由改变</td>
+<td>endpoint 释放、断开消息</td>
+<td>原流不能无条件继续用，重开并重新读参数</td>
+</tr>
+</tbody></table>
+<h1 id="11-怎样验证：从“请求是什么”追到“声音什么时候出来”"><a href="#11-怎样验证：从“请求是什么”追到“声音什么时候出来”" class="headerlink" title="11. 怎样验证：从“请求是什么”追到“声音什么时候出来”"></a>11. 怎样验证：从“请求是什么”追到“声音什么时候出来”</h1><p>本章是<strong>尚未执行的设备验证方案</strong>。本文已核对源码与文章结构，但没有本次设备的原始 dump、trace 或 loopback 记录；以下预期不能当作实测结论。</p>
+<h2 id="11-1-先建立一条可关联的记录"><a href="#11-1-先建立一条可关联的记录" class="headerlink" title="11.1 先建立一条可关联的记录"></a>11.1 先建立一条可关联的记录</h2><p>每次 open 分配一个应用侧递增 stream generation，记录 PID、方向、请求参数、open 返回值、actual 参数、启动/停止/断开时刻，以及设备构建版本。系统 dump 中的 handle、port ID、PID 与应用侧标识联合使用，避免把 audioserver 内部共享流错认成另一个应用。</p>
+<p>至少记录以下字段：</p>
+<table>
+<thead>
+<tr>
+<th>记录</th>
+<th>用途</th>
+<th>不能单独证明什么</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>sharing/performance actual 值</td>
+<td>发现独占或性能降级</td>
+<td>SHARED 不能区分 MMAP 与 Legacy</td>
+</tr>
+<tr>
+<td>sample rate、format、channel count</td>
+<td>校验算法数据格式与流协商</td>
+<td>应用采样率不一定等于硬件采样率</td>
+</tr>
+<tr>
+<td>framesPerBurst、capacity、size</td>
+<td>解释批次和供数深度</td>
+<td>capacity/Fs 不等于实际延迟</td>
+</tr>
+<tr>
+<td>framesWritten/read、timestamp</td>
+<td>建立相同 frame 域中的时间关系</td>
+<td>不天然等于声学出声时刻</td>
+</tr>
+<tr>
+<td>XRun 的初值与增量</td>
+<td>关联哪段运行发生异常</td>
+<td>0 XRun 不保证无音质问题，也不保证低延迟</td>
+</tr>
+<tr>
+<td>callback 开始、结束、numFrames</td>
+<td>观察计算与周期抖动</td>
+<td>平均耗时小不保证最大耗时小</td>
+</tr>
+</tbody></table>
+<p>统计可放进预分配的有界缓冲，由非实时线程汇总。为了观察问题而在每次 callback 打印几十行日志，可能反过来制造问题。</p>
+<h2 id="11-2-API-可用性必须按目标系统判断"><a href="#11-2-API-可用性必须按目标系统判断" class="headerlink" title="11.2 API 可用性必须按目标系统判断"></a>11.2 API 可用性必须按目标系统判断</h2><p>本地 <code>AAudio.h</code> 将 <code>AAudioStream_isMMapUsed()</code>、<code>AAudio_setMMapPolicy()</code>、平台 MMAP 策略查询标为 <code>__INTRODUCED_IN(36)</code>。因此，本文源码中“函数存在”不代表所有 API 26+ 设备上的应用都能直接静态链接这些公开接口。</p>
+<ul>
+<li>使用 API 36 及匹配 NDK 时，可按运行时可用性使用公开 MMAP 查询。</li>
+<li>兼容较低版本时，使用该版本可用的诊断方法、系统 dump 与日志；不要把内部/测试符号未经说明当作稳定公共 API。</li>
+<li>进程级 NEVER/AUTO/ALWAYS 对照实验只在接口受支持时做，影响后续 open；不要假设能改造已经打开的流。</li>
+</ul>
+<p>同理，硬件采样率/格式等较新 getter 应按实际 NDK 与运行系统做 API guard。本例初始化只使用基础接口；较新的诊断接口不应无条件塞进旧版兼容代码。</p>
+<h2 id="11-3-只读系统观察"><a href="#11-3-只读系统观察" class="headerlink" title="11.3 只读系统观察"></a>11.3 只读系统观察</h2><p>可先在测试设备执行以下命令。它们是待执行命令，不包含本文伪造的输出：</p>
+<figure class="highlight bash"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">adb shell getprop ro.build.fingerprint</span><br><span class="line">adb shell getprop aaudio.mmap_policy</span><br><span class="line">adb shell getprop aaudio.mmap_exclusive_policy</span><br><span class="line">adb shell dumpsys -l</span><br><span class="line">adb shell dumpsys media.aaudio</span><br><span class="line">adb shell dumpsys media.audio_flinger</span><br><span class="line">adb shell dumpsys media.audio_policy</span><br></pre></td></tr></tbody></table></figure>
+
+<p>先用 <code>dumpsys -l</code> 确认该构建的服务名与可访问性。若 <code>media.aaudio</code> 不存在，检查服务初始化策略与设备能力；若权限拒绝，应区分权限问题与服务不存在。user 构建可能缺少调试信息，厂商输出格式也可能不同。</p>
+<p><code>AAudioService::dump()</code> 会输出 stream tracker、client tracker 和 endpoint manager。共享 endpoint 的 dump 还会出现其内部 exclusive stream handle、XRuns 和运行流数。这些信息可以连接“多个应用 FIFO”与“共同底层 endpoint”。AudioFlinger 中则关注对应 MMAP I/O/线程与设备；AudioPolicy 中关注 profile、flags、route 和客户端。</p>
+<p>日志可围绕 AAudioStreamBuilder、AudioStreamInternal、AAudioService、AAudioServiceEndpointMMAP 等 tag 筛选，但具体级别与编译选项会影响可见性。没看到某条日志，不足以否定该路径执行。</p>
+<p>不要为了试验直接在主用设备改属性、重启 audioserver 或替换 policy 文件。此类测试应在可恢复的工程设备上单独设计；本文的只读观察不需要这些动作。</p>
+<h2 id="11-4-用单变量矩阵验证选路，而不是一次改五个设置"><a href="#11-4-用单变量矩阵验证选路，而不是一次改五个设置" class="headerlink" title="11.4 用单变量矩阵验证选路，而不是一次改五个设置"></a>11.4 用单变量矩阵验证选路，而不是一次改五个设置</h2><table>
+<thead>
+<tr>
+<th>实验</th>
+<th>仅改变什么</th>
+<th>观察与预期</th>
+<th>结论边界</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>A：基础低延迟</td>
+<td>OUTPUT、callback、LOW_LATENCY、无 session</td>
+<td>记录 actual 后端和参数</td>
+<td>是本机当前路由的基线</td>
+</tr>
+<tr>
+<td>B：共享对照</td>
+<td>EXCLUSIVE 改为 SHARED</td>
+<td>若仍 MMAP，出现共享 endpoint/混音活动</td>
+<td>证明共享模式不等于 Legacy</td>
+</tr>
+<tr>
+<td>C：session 对照</td>
+<td>申请 session</td>
+<td>本源码 Builder 禁止 MMAP</td>
+<td>不能把变化仅归因于效果计算量</td>
+</tr>
+<tr>
+<td>D：后端对照</td>
+<td>支持时以进程级策略设 NEVER</td>
+<td>MMAP 标记应消失，检查 Legacy FAST</td>
+<td>需 API 支持，不能移植到不匹配系统硬调</td>
+</tr>
+<tr>
+<td>E：缓冲阶梯</td>
+<td>每次按 burst 增减目标 size</td>
+<td>比较 getter、XRun 增量、延迟与耗时尾部</td>
+<td>增大 size 改善稳定性只是相关线索</td>
+</tr>
+<tr>
+<td>F：竞争/切路由</td>
+<td>引入第二流或换设备</td>
+<td>观察断开、重开、参数改变</td>
+<td>单次未断开不证明独占永不撤销</td>
+</tr>
+</tbody></table>
+<p>每组实验应固定设备路由、音量、算法、测试内容与负载，分开记录冷启动和稳定运行；重复多轮才能看到尾部。一次几秒无毛刺，无法说明后台负载或热状态改变后仍稳定。</p>
+<h2 id="11-5-用-trace-区分“算得慢”和“没被调度”"><a href="#11-5-用-trace-区分“算得慢”和“没被调度”" class="headerlink" title="11.5 用 trace 区分“算得慢”和“没被调度”"></a>11.5 用 trace 区分“算得慢”和“没被调度”</h2><p>当前源码包含 <code>aaProc</code>、<code>aaWrNow</code>、<code>aaRdy</code>、<code>aaSlpNs</code>、<code>aaUnderRuns</code>，共享 mixer 中包含 <code>aaMix</code> 和 <code>aaMixRdy#</code> 等 ATrace 点。录音对应 <code>aaRdNow</code>、<code>aaRead</code>、<code>aaOverRuns</code>。在允许采集的测试构建上，可用 Perfetto 配置音频 atrace 类别和调度事件，对齐应用回调的自定义 trace。</p>
+<p>需要关注的是同一时间窗口中的因果关系：</p>
+<ul>
+<li>回调线程持续 Running 且执行过长，优先检查算法、数据规模与缓存行为。</li>
+<li>线程已经 Runnable，却很久没有被调度，检查 CPU 竞争、优先级与系统负载。</li>
+<li>线程阻塞在应用锁或 I/O，回到 callback 的工作边界，不能仅增大缓冲掩盖。</li>
+<li>应用按时完成，共享 mixer 或硬件位置却长时间不推进，再检查服务线程和 HAL 时间戳。</li>
+<li>缺数计数与 <code>aaRdy</code> 下探对应，可支持供数/排队不足的判断；仍需结合具体后端和 frame 域。</li>
+</ul>
+<p>需要的调度事件和内核数据依构建权限而定，某个 trace 点没显示也可能是类别未启用。不能把没有采集到的区间画成“线程没有运行”。</p>
+<h2 id="11-6-时间戳估算与真实-loopback-各能证明什么"><a href="#11-6-时间戳估算与真实-loopback-各能证明什么" class="headerlink" title="11.6 时间戳估算与真实 loopback 各能证明什么"></a>11.6 时间戳估算与真实 loopback 各能证明什么</h2><p>若已知一个待播放 frame 的逻辑位置 F，且 API 给出同一流、同一坐标系中的 <code>(P, T)</code>，可用 <code>T + (F-P)/Fs</code> 估算它的呈现时间。计算时还要统一纳秒/秒单位、时钟域与采样率，检查 timestamp 是否有效、是否跨越了重建/停止边界。</p>
+<p>这种估算依赖 HAL timestamp 语义，不能消除 HAL 下游未知缓冲。不要跨 stream generation 复用时间锚点，也不要把 shared FIFO transfer timestamp 当作扬声器已经播放的位置。</p>
+<p>要测端到端或往返延迟，应设计 loopback：输出已知脉冲/相关序列，通过物理连线或受控声学路径采集，再做相关性分析。测试报告至少说明路由、设备、采样率、连接方式、是否包含应用处理和声学传播，以及多次样本的分布。</p>
+<p>电子琴触屏到出声则需要把输入触发时刻也放进同一测量方法，单纯音频 loopback 不含完整 UI 路径。蓝牙还要把编解码与传输缓冲算进测量范围；不能用扬声器上的结果替代耳机结果。</p>
+<h2 id="11-7-看到异常时的排查顺序"><a href="#11-7-看到异常时的排查顺序" class="headerlink" title="11.7 看到异常时的排查顺序"></a>11.7 看到异常时的排查顺序</h2><p>先问 open 是否成功，再问实际后端是什么；后端正确以后，核对 actual 参数与数据格式，确认 callback 在持续供数；然后看 XRun、队列与调度；最后用 timestamp/loopback 验证下游延迟。</p>
+<p>这个顺序可以避免几类无效优化：Legacy 回退却一直调 MMAP offset；SHARED 的公共下游出问题却只缩某个应用的 FIFO；算法耗时已超过周期却只提高线程优先级；蓝牙固有延迟占主导却把输出 size 调到不稳定。</p>
+<h1 id="12-分层复习：能解释到哪一层"><a href="#12-分层复习：能解释到哪一层" class="headerlink" title="12. 分层复习：能解释到哪一层"></a>12. 分层复习：能解释到哪一层</h1><h2 id="12-1-L0：先记住全局关系"><a href="#12-1-L0：先记住全局关系" class="headerlink" title="12.1 L0：先记住全局关系"></a>12.1 L0：先记住全局关系</h2><p>AAudio 把流接口与后端选择封装起来。MMAP 缩短 PCM 的软件传输路径，但控制仍由服务与策略系统管理。独占流由客户端库面对硬件共享区，共享流经 AAudioService 混音/分发。NOIRQ 依靠时间戳模型安排供数，低延迟依靠小而稳定的队列与及时执行共同成立。</p>
+<h2 id="12-2-L1：能够展开的主干"><a href="#12-2-L1：能够展开的主干" class="headerlink" title="12.2 L1：能够展开的主干"></a>12.2 L1：能够展开的主干</h2><ul>
+<li><strong>选路</strong>：系统/进程策略 → LOW_LATENCY、PCM、session 条件 → Internal 尝试 → 服务端独占/共享 → 必要时 Legacy → 读取 actual。</li>
+<li><strong>建链</strong>：服务 stream → endpoint → AudioFlinger/Policy → HAL MMAP 资源 → FD/description 返回 → 客户端映射与队列配置。</li>
+<li><strong>播放</strong>：start 请求与事件 → 时钟锚点 → callback 产数 → 转换写入 → 预测硬件消费 → 按目标队列深度等待。</li>
+<li><strong>共享</strong>：各应用 FIFO → AAudioMixer → 服务内部 MMAP 流；单路缺数不会无限阻塞所有应用。</li>
+<li><strong>恢复</strong>：资源或路由改变 → DISCONNECTED → 控制线程关闭旧流 → 重开、重读参数、重配算法。</li>
+<li><strong>验证</strong>：请求与 actual → dump 对象关联 → XRun/trace → 时间戳估算 → 需要时做端到端测量。</li>
+</ul>
+<h2 id="12-3-L2：按需定位的细节"><a href="#12-3-L2：按需定位的细节" class="headerlink" title="12.3 L2：按需定位的细节"></a>12.3 L2：按需定位的细节</h2><table>
+<thead>
+<tr>
+<th>要核对的细节</th>
+<th>相对 <code>frameworks/av</code> 的源码位置</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>MMAP 准入与 Legacy 回退</td>
+<td><code>media/libaaudio/src/core/AudioStreamBuilder.cpp::build</code></td>
+</tr>
+<tr>
+<td>公共 API 的引入版本</td>
+<td><code>media/libaaudio/include/aaudio/AAudio.h</code></td>
+</tr>
+<tr>
+<td>聚合系统策略列表</td>
+<td><code>media/libaaudio/src/utility/AAudioUtilities.cpp::AAudio_getAAudioPolicy</code></td>
+</tr>
+<tr>
+<td>服务端共享降级</td>
+<td><code>services/oboeservice/AAudioService.cpp::openStream</code></td>
+</tr>
+<tr>
+<td>endpoint 查找、复用与抢占</td>
+<td><code>services/oboeservice/AAudioEndpointManager.cpp</code></td>
+</tr>
+<tr>
+<td>MMAP 建链、FD 与设备位置</td>
+<td><code>services/oboeservice/AAudioServiceEndpointMMAP.cpp</code></td>
+</tr>
+<tr>
+<td>up message、命令线程与时间戳发送</td>
+<td><code>services/oboeservice/AAudioServiceStreamBase.cpp</code></td>
+</tr>
+<tr>
+<td>callback、转换、等待、size</td>
+<td><code>media/libaaudio/src/client/AudioStreamInternal*.cpp</code></td>
+</tr>
+<tr>
+<td>free-running 判定</td>
+<td><code>media/libaaudio/src/client/AudioEndpoint.cpp::configureDataQueue</code></td>
+</tr>
+<tr>
+<td>位置与时间换算及迟到修正</td>
+<td><code>media/libaaudio/src/client/IsochronousClockModel.cpp</code></td>
+</tr>
+<tr>
+<td>共享混音/分发</td>
+<td><code>services/oboeservice/AAudioServiceEndpointPlay.cpp</code>、<code>AAudioServiceEndpointCapture.cpp</code></td>
+</tr>
+<tr>
+<td>Legacy flags 与 actual 模式</td>
+<td><code>media/libaaudio/src/legacy/AudioStreamTrack.cpp::open</code></td>
+</tr>
+<tr>
+<td>MMAP I/O 与 HAL 适配</td>
+<td><code>services/audioflinger/AudioFlinger.cpp::openMmapStream</code>、<code>Threads.cpp</code>、<code>media/libaudiohal/impl/StreamHalAidl.cpp</code></td>
+</tr>
+<tr>
+<td>按设备策略与 profile</td>
+<td><code>services/audiopolicy/managerdefault/AudioPolicyManager.cpp::updateMmapPolicyInfos</code></td>
+</tr>
+</tbody></table>
+<h1 id="13-自测：先预测，再展开答案"><a href="#13-自测：先预测，再展开答案" class="headerlink" title="13. 自测：先预测，再展开答案"></a>13. 自测：先预测，再展开答案</h1><h2 id="13-1-基础题"><a href="#13-1-基础题" class="headerlink" title="13.1 基础题"></a>13.1 基础题</h2><p><strong>问题 1：open 成功，actual sharing mode 是 SHARED，能否判断已经回退 AudioTrack？</strong></p>
+<details>
+<summary>展开参考答案</summary>
+
+<p>不能。可能是 MMAP SHARED，也可能是 Legacy。先区分第 4 章的两层回退，再用受支持的 MMAP 查询、AAudioService endpoint 与 AudioFlinger 信息确认。sharing mode 只描述共享模式，不唯一标识后端。</p>
+</details>
+
+<p><strong>问题 2：MMAP EXCLUSIVE 是否意味着 AudioFlinger、AudioPolicy、音量和路由管理都被绕过？</strong></p>
+<details>
+<summary>展开参考答案</summary>
+
+<p>不是。PCM 主路径绕过普通 mixer，但 AudioFlinger 仍通过 MmapThread 管理 HAL，AudioPolicy 仍参与选路，音量和断开事件仍能到达客户端。回看第 3、5 章，分别画数据、控制和消息三类关系。</p>
+</details>
+
+<p><strong>问题 3：为什么 callback 收到的地址不能直接称为 DMA 地址？</strong></p>
+<details>
+<summary>展开参考答案</summary>
+
+<p>这版 Internal 输出先把 <code>mCallbackBuffer</code> 交给应用，再调用 <code>write()</code>，经 FlowGraph 处理后写到 endpoint。MMAP 减少中间通路，不保证 API 层零复制。回看 5.4 与 6.2。</p>
+</details>
+
+<p><strong>问题 4：capacity=1920 frame、48 kHz，是否说明当前输出延迟是 40 ms？</strong></p>
+<details>
+<summary>展开参考答案</summary>
+
+<p>只能说容量可容纳 40 ms 的该采样率数据。实际占用和有效 size 可能更小，下游又可能有额外延迟。必须分别检查队列深度、时间戳和测量区间。回看 2.5 与第 8 章。</p>
+</details>
+
+<h2 id="13-2-场景推理题"><a href="#13-2-场景推理题" class="headerlink" title="13.2 场景推理题"></a>13.2 场景推理题</h2><p><strong>问题 5：设备支持 MMAP，但日志提示 FD 不可分享给应用。电子琴请求 EXCLUSIVE，应该预期什么？怎样验证？</strong></p>
+<details>
+<summary>展开参考答案</summary>
+
+<p>普通应用的独占建流会在共享能力检查处失败；若允许共享降级，服务可尝试用自身身份持有底层 MMAP，再向应用暴露共享 FIFO，因此仍可能成功使用 MMAP SHARED。检查 actual sharing、MMAP 标记和共享 endpoint 的内部流关系。若整个 MMAP 家族仍打不开，AUTO 才会允许 Builder 继续 Legacy。依据见 4.4、5.3、9.1。</p>
+</details>
+
+<p><strong>问题 6：为了接效果申请了 session，发现 MMAP 消失。应先怀疑 CPU 性能不足吗？</strong></p>
+<details>
+<summary>展开参考答案</summary>
+
+<p>先看选路条件。此提交只要 session 不为 NONE，Builder 就关闭 MMAP 尝试；即使效果没有消耗明显 CPU，也会发生路径变化。保持其他变量不变做 session 对照实验，检查 actual 后端。性能分析应在确认后端后继续。依据见 4.2 与 11.4。</p>
+</details>
+
+<p><strong>问题 7：输出回调平均耗时 0.5 ms，每 4 ms 需要一批数据，却偶尔有 12 ms 的锁等待。把 buffer 缩到一个 burst 会怎样？</strong></p>
+<details>
+<summary>展开参考答案</summary>
+
+<p>更可能暴露缺数：平均值不能覆盖长尾等待，队列余量也不足以承受长停顿。应先去掉不受控锁等待，再用 burst 阶梯与 trace 观察稳定余量；不能仅用高优先级替代并发设计。依据见 8.3、10.2、11.5。</p>
+</details>
+
+<p><strong>问题 8：共享输出中，一个应用停止供数，其他应用是否必须等它？</strong></p>
+<details>
+<summary>展开参考答案</summary>
+
+<p>正常运行的共享 mixer 不无限等待单个应用补齐；混入可用部分，按批次推进该路时间轴，并在满足条件时统计缺数。其他应用仍可混入。但公共共享线程或下游 MMAP 故障会影响多路。要通过各流 XRun 与公共线程 trace 区分。依据见 9.2。</p>
+</details>
+
+<p><strong>问题 9：耳机切换后，旧流返回 DISCONNECTED，但原来的采样率和 callback size 缓存还在。能直接对旧流再 start 吗？</strong></p>
+<details>
+<summary>展开参考答案</summary>
+
+<p>不能按普通暂停恢复处理。把重建交给控制线程，协调关闭旧流，重新 open 并读取 actual 参数，再重建依赖采样率与批次的算法状态。新路由可能改变后端与设备能力，旧参数不能当作契约。依据见 10.3–10.4。</p>
+</details>
+
+<p><strong>问题 10：为什么输入不能直接复用输出的硬件位置预测方式？</strong></p>
+<details>
+<summary>展开参考答案</summary>
+
+<p>输出需要赶在硬件读取前写好；输入需要确认硬件已经写完后再读。采集用带 late offset 的保守位置估计，避免把 DSP 尚未完成的区域当成有效数据。两者的安全方向相反；出问题分别表现为 underrun 与 overrun 等情况。依据见 7.5。</p>
+</details>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/Audio/" rel="tag"># Audio</a>
+          
+            <a href="/tags/AAudio/" rel="tag"># AAudio</a>
+          
+            <a href="/tags/MMAP/" rel="tag"># MMAP</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2026/10/27/AudioService%E5%89%96%E6%9E%90/" rel="next" title="AudioService 剖析">
+                <i class="fa fa-chevron-left"></i> AudioService 剖析
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="/images/head.jpg"
+                alt="" />
+            
+              <p class="site-author-name" itemprop="name"></p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/%7C%7C%20archive">
+              
+                  <span class="site-state-item-count">59</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">23</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">38</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+            <div class="feed-link motion-element">
+              <a href="/atom.xml" rel="alternate">
+                <i class="fa fa-rss"></i>
+                RSS
+              </a>
+            </div>
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/Zcorpius" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-github"></i>GitHub</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://www.zhihu.com/people/lin-li-yike-cao/activities" target="_blank" title="ZhiHu">
+                      
+                        <i class="fa fa-fw fa-globe"></i>ZhiHu</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+            <div class="links-of-blogroll motion-element links-of-blogroll-block">
+              <div class="links-of-blogroll-title">
+                <i class="fa  fa-fw fa-link"></i>
+                Links
+              </div>
+              <ul class="links-of-blogroll-list">
+                
+                  <li class="links-of-blogroll-item">
+                    <a href="https://blog.schwarzeni.com/" title="Schwarzeni" target="_blank">Schwarzeni</a>
+                  </li>
+                
+                  <li class="links-of-blogroll-item">
+                    <a href="https://www.qcmoke.cn/" title="qcmoke" target="_blank">qcmoke</a>
+                  </li>
+                
+                  <li class="links-of-blogroll-item">
+                    <a href="https://www.zhoujianguo.ltd/" title="ZhouJianGuo" target="_blank">ZhouJianGuo</a>
+                  </li>
+                
+                  <li class="links-of-blogroll-item">
+                    <a href="https://hishiro-xiao.github.io/" title="hishiro-xiao" target="_blank">hishiro-xiao</a>
+                  </li>
+                
+              </ul>
+            </div>
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#1-%E4%BB%8E%E4%B8%80%E6%AC%A1%E7%94%B5%E5%AD%90%E7%90%B4%E6%8C%89%E9%94%AE%E5%BC%80%E5%A7%8B%EF%BC%9A%E4%BD%8E%E5%BB%B6%E8%BF%9F%E7%A9%B6%E7%AB%9F%E4%BC%98%E5%8C%96%E4%BB%80%E4%B9%88"><span class="nav-text">1. 从一次电子琴按键开始：低延迟究竟优化什么</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#2-%E5%85%88%E6%8A%8A%E5%85%AD%E4%B8%AA%E5%AE%B9%E6%98%93%E6%B7%B7%E6%B7%86%E7%9A%84%E6%A6%82%E5%BF%B5%E6%8B%86%E5%BC%80"><span class="nav-text">2. 先把六个容易混淆的概念拆开</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#2-1-AAudio%EF%BC%9A%E7%BB%9F%E4%B8%80%E7%9A%84%E6%B5%81%E6%8E%A5%E5%8F%A3%EF%BC%8C%E4%B8%8D%E6%98%AF%E5%94%AF%E4%B8%80%E7%9A%84%E5%AE%9E%E7%8E%B0%E8%B7%AF%E7%BA%BF"><span class="nav-text">2.1 AAudio：统一的流接口，不是唯一的实现路线</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-2-MMAP%EF%BC%9A%E6%98%A0%E5%B0%84%E7%9A%84%E6%98%AF%E5%93%AA%E4%B8%80%E5%9D%97%E5%86%85%E5%AD%98"><span class="nav-text">2.2 MMAP：映射的是哪一块内存</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-3-NOIRQ%EF%BC%9A%E5%B0%91%E4%B8%80%E7%B1%BB%E5%94%A4%E9%86%92%E6%9D%A5%E6%BA%90%EF%BC%8C%E5%A4%9A%E4%B8%80%E4%BB%BD%E6%97%B6%E9%97%B4%E8%B4%A3%E4%BB%BB"><span class="nav-text">2.3 NOIRQ：少一类唤醒来源，多一份时间责任</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-4-FAST-%E4%B8%8E-MMAP%EF%BC%9A%E4%B8%A4%E6%9D%A1%E4%B8%8D%E5%90%8C%E7%9A%84%E4%BD%8E%E5%BB%B6%E8%BF%9F%E8%B7%AF%E7%BA%BF"><span class="nav-text">2.4 FAST 与 MMAP：两条不同的低延迟路线</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-5-%E4%BD%8E%E5%BB%B6%E8%BF%9F%EF%BC%9A%E5%BF%85%E9%A1%BB%E5%85%88%E8%AF%B4%E6%B5%8B%E9%87%8F%E5%8C%BA%E9%97%B4"><span class="nav-text">2.5 低延迟：必须先说测量区间</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-6-frame%E3%80%81sample-%E4%B8%8E-burst"><span class="nav-text">2.6 frame、sample 与 burst</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#3-%E6%80%BB%E4%BD%93%E6%9E%B6%E6%9E%84%EF%BC%9A%E4%B8%89%E6%9D%A1%E6%95%B0%E6%8D%AE%E8%B7%AF%E5%BE%84%EF%BC%8C%E4%B8%89%E7%B1%BB%E9%80%9A%E4%BF%A1"><span class="nav-text">3. 总体架构：三条数据路径，三类通信</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#3-1-%E8%B0%81%E8%B4%9F%E8%B4%A3%E4%BB%80%E4%B9%88"><span class="nav-text">3.1 谁负责什么</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-2-%E6%8E%A7%E5%88%B6%E3%80%81PCM%E3%80%81%E4%BA%8B%E4%BB%B6%E5%90%84%E8%B5%B0%E4%B8%80%E6%9D%A1%E8%B7%AF"><span class="nav-text">3.2 控制、PCM、事件各走一条路</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-3-%E7%8B%AC%E5%8D%A0%E4%B8%8E%E5%85%B1%E4%BA%AB%E5%88%B0%E5%BA%95%E5%B7%AE%E5%9C%A8%E5%93%AA"><span class="nav-text">3.3 独占与共享到底差在哪</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#4-openStream%EF%BC%9A%E4%BD%8E%E5%BB%B6%E8%BF%9F%E8%AF%B7%E6%B1%82%E6%80%8E%E6%A0%B7%E5%8F%98%E6%88%90%E5%AE%9E%E9%99%85%E8%B7%AF%E5%BE%84"><span class="nav-text">4. openStream：低延迟请求怎样变成实际路径</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#4-1-%E7%AC%AC%E4%B8%80%E5%B1%82%E5%88%A4%E6%96%AD%EF%BC%9A%E7%B3%BB%E7%BB%9F%E5%88%B0%E5%BA%95%E5%85%81%E8%AE%B8%E5%B0%9D%E8%AF%95-MMAP-%E5%90%97"><span class="nav-text">4.1 第一层判断：系统到底允许尝试 MMAP 吗</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-2-%E7%AC%AC%E4%BA%8C%E5%B1%82%E5%88%A4%E6%96%AD%EF%BC%9A%E5%BD%93%E5%89%8D%E6%B5%81%E7%9A%84%E8%A6%81%E6%B1%82%E6%98%AF%E5%90%A6%E9%80%82%E5%90%88-MMAP"><span class="nav-text">4.2 第二层判断：当前流的要求是否适合 MMAP</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-3-%E7%AC%AC%E4%B8%89%E5%B1%82%E5%88%A4%E6%96%AD%EF%BC%9A%E9%80%89%E6%8B%A9%E5%AE%9E%E7%8E%B0%E7%B1%BB%EF%BC%8C%E6%89%93%E5%BC%80%E5%A4%B1%E8%B4%A5%E5%86%8D%E5%86%B3%E5%AE%9A%E5%9B%9E%E9%80%80"><span class="nav-text">4.3 第三层判断：选择实现类，打开失败再决定回退</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-4-%E7%AC%AC%E5%9B%9B%E5%B1%82%E5%88%A4%E6%96%AD%EF%BC%9A%E6%9C%8D%E5%8A%A1%E7%AB%AF%E4%BB%8E-EXCLUSIVE-%E9%80%80%E5%88%B0-SHARED"><span class="nav-text">4.4 第四层判断：服务端从 EXCLUSIVE 退到 SHARED</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#5-MMAP-%E5%BB%BA%E9%93%BE%EF%BC%9A%E4%BB%8E%E6%9C%8D%E5%8A%A1%E7%AB%AF%E8%AF%B7%E6%B1%82%E5%88%B0%E5%BA%94%E7%94%A8%E5%8F%AF%E7%94%A8%E7%9A%84%E5%9C%B0%E5%9D%80"><span class="nav-text">5. MMAP 建链：从服务端请求到应用可用的地址</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#5-1-open-%E4%B8%8D%E5%8F%AA%E6%98%AF%E5%88%86%E9%85%8D%E4%B8%80%E4%B8%AA%E5%AF%B9%E8%B1%A1"><span class="nav-text">5.1 open 不只是分配一个对象</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-2-AudioFlinger-%E6%B2%A1%E6%9C%89%E6%B6%88%E5%A4%B1%EF%BC%9A%E5%AE%83%E4%B8%BA-MMAP-%E5%BB%BA%E7%AB%8B%E4%B8%93%E9%97%A8%E7%9A%84%E7%BA%BF%E7%A8%8B%E5%AF%B9%E8%B1%A1"><span class="nav-text">5.2 AudioFlinger 没有消失：它为 MMAP 建立专门的线程对象</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-3-createMmapBuffer%EF%BC%9A%E6%9C%80%E5%B0%8F%E9%9C%80%E6%B1%82%E7%94%B1%E8%BD%AF%E4%BB%B6%E6%8F%90%E5%87%BA%EF%BC%8C%E5%AE%9E%E9%99%85%E5%AE%B9%E9%87%8F%E7%94%B1%E5%BA%95%E5%B1%82%E8%BF%94%E5%9B%9E"><span class="nav-text">5.3 createMmapBuffer：最小需求由软件提出，实际容量由底层返回</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-4-%E5%AE%A2%E6%88%B7%E7%AB%AF%E6%98%A0%E5%B0%84%EF%BC%9A%E9%9B%B6-IPC-%E6%90%AC%E8%BF%90%E4%B8%8D%E7%AD%89%E4%BA%8E%E9%9B%B6%E5%A4%8D%E5%88%B6"><span class="nav-text">5.4 客户端映射：零 IPC 搬运不等于零复制</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-5-HAL-%E4%BB%A3%E9%99%85%E4%B8%8E%E4%BA%A7%E5%93%81%E9%85%8D%E7%BD%AE%EF%BC%9A%E4%B8%8D%E8%A6%81%E5%8F%AA%E7%9C%8B-XML-%E6%88%96%E4%B8%80%E4%B8%AA%E5%B1%9E%E6%80%A7"><span class="nav-text">5.5 HAL 代际与产品配置：不要只看 XML 或一个属性</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#6-%E8%BF%9E%E7%BB%AD%E6%92%AD%E6%94%BE%EF%BC%9A%E8%B0%81%E5%94%A4%E9%86%92%E5%BA%94%E7%94%A8%EF%BC%8C%E8%B0%81%E6%8E%A8%E8%BF%9B%E7%BC%93%E5%86%B2"><span class="nav-text">6. 连续播放：谁唤醒应用，谁推进缓冲</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#6-1-requestStart-%E8%BF%94%E5%9B%9E%E4%B8%8D%E7%AD%89%E4%BA%8E%E5%B7%B2%E7%BB%8F%E5%90%AC%E5%88%B0%E7%AC%AC%E4%B8%80%E5%B8%A7"><span class="nav-text">6.1 requestStart 返回不等于已经听到第一帧</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-2-callback-%E5%AE%9E%E9%99%85%E8%BF%90%E8%A1%8C%E5%9C%A8%E5%BA%94%E7%94%A8%E8%BF%9B%E7%A8%8B%EF%BC%8C%E4%B8%8D%E6%98%AF%E6%9C%8D%E5%8A%A1-Binder-%E7%BA%BF%E7%A8%8B"><span class="nav-text">6.2 callback 实际运行在应用进程，不是服务 Binder 线程</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-3-%E4%B8%80%E6%AC%A1-write-%E5%A6%82%E4%BD%95%E6%8B%86%E6%88%90%E2%80%9C%E8%83%BD%E5%86%99%E5%A4%9A%E5%B0%91%E2%80%9D%E5%92%8C%E2%80%9C%E7%9D%A1%E5%88%B0%E4%BD%95%E6%97%B6%E2%80%9D"><span class="nav-text">6.3 一次 write 如何拆成“能写多少”和“睡到何时”</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-4-%E8%B0%81%E6%8E%A8%E8%BF%9B%E7%A1%AC%E4%BB%B6%E4%BE%A7%E8%AF%BB%E6%8C%87%E9%92%88%EF%BC%9Afree-running-%E5%88%A4%E5%AE%9A"><span class="nav-text">6.4 谁推进硬件侧读指针：free-running 判定</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-5-%E7%8B%AC%E5%8D%A0%E8%BE%93%E5%87%BA%EF%BC%9A%E9%A2%84%E6%B5%8B%E6%B6%88%E8%B4%B9%E4%BD%8D%E7%BD%AE%EF%BC%8C%E5%86%8D%E6%8A%8A%E6%95%B0%E6%8D%AE%E5%86%99%E5%88%B0%E5%89%8D%E9%9D%A2"><span class="nav-text">6.5 独占输出：预测消费位置，再把数据写到前面</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-6-%E5%86%99%E5%AE%8C%E4%BB%A5%E5%90%8E%E4%B8%BA%E4%BB%80%E4%B9%88%E4%B8%8D%E7%AB%8B%E5%88%BB%E5%86%8D%E5%9B%9E%E8%B0%83"><span class="nav-text">6.6 写完以后为什么不立刻再回调</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-7-%E6%9A%82%E5%81%9C%E3%80%81%E5%81%9C%E6%AD%A2%E3%80%81%E6%B8%85%E7%A9%BA%E4%B8%8E%E5%85%B3%E9%97%AD%E6%98%AF%E4%B8%8D%E5%90%8C%E5%8A%A8%E4%BD%9C"><span class="nav-text">6.7 暂停、停止、清空与关闭是不同动作</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#7-%E6%97%B6%E9%97%B4%E6%88%B3%E4%B8%8E%E6%97%B6%E9%92%9F%E6%A8%A1%E5%9E%8B%EF%BC%9ANOIRQ-%E8%B7%AF%E5%BE%84%E7%9A%84%E6%A0%B8%E5%BF%83"><span class="nav-text">7. 时间戳与时钟模型：NOIRQ 路径的核心</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#7-1-%E6%97%B6%E9%97%B4%E6%88%B3%E6%98%AF%E4%B8%80%E5%AF%B9%E5%80%BC%EF%BC%8C%E4%B8%8D%E6%98%AF%E2%80%9C%E6%94%B6%E5%88%B0%E6%B6%88%E6%81%AF%E7%9A%84%E6%97%B6%E9%97%B4%E2%80%9D"><span class="nav-text">7.1 时间戳是一对值，不是“收到消息的时间”</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-2-SERVICE-%E4%B8%8E-HARDWARE-%E6%97%B6%E9%97%B4%E6%88%B3%E4%B8%8D%E8%83%BD%E6%B7%B7%E8%AF%BB"><span class="nav-text">7.2 SERVICE 与 HARDWARE 时间戳不能混读</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-3-IsochronousClockModel-%E6%80%8E%E6%A0%B7%E4%BB%8E%E6%97%B6%E9%97%B4%E9%A2%84%E6%B5%8B%E4%BD%8D%E7%BD%AE"><span class="nav-text">7.3 IsochronousClockModel 怎样从时间预测位置</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-4-%E6%A8%A1%E5%9E%8B%E8%87%AA%E8%BA%AB%E4%B9%9F%E6%9C%89%E7%8A%B6%E6%80%81%E6%9C%BA"><span class="nav-text">7.4 模型自身也有状态机</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-5-%E6%92%AD%E6%94%BE%E6%80%95%E5%86%99%E6%99%9A%EF%BC%8C%E9%87%87%E9%9B%86%E6%80%95%E8%AF%BB%E6%97%A9"><span class="nav-text">7.5 播放怕写晚，采集怕读早</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#8-%E7%BC%93%E5%86%B2%E8%B0%83%E4%BC%98%EF%BC%9A%E5%9B%9B%E4%B8%AA%E6%95%B0%E4%B8%8D%E8%83%BD%E6%B7%B7%E6%88%90%E4%B8%80%E4%B8%AA"><span class="nav-text">8. 缓冲调优：四个数不能混成一个</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#8-1-capacity%E3%80%81size%E3%80%81burst%E3%80%81callback-%E7%9A%84%E5%8C%BA%E5%88%AB"><span class="nav-text">8.1 capacity、size、burst、callback 的区别</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#8-2-%E5%BD%93%E5%89%8D-setBufferSize-%E7%9A%84%E7%9C%9F%E5%AE%9E%E4%BD%9C%E7%94%A8"><span class="nav-text">8.2 当前 setBufferSize 的真实作用</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#8-3-%E4%BB%8E%E4%B8%A4%E4%B8%AA-burst-%E5%BC%80%E5%A7%8B%EF%BC%8C%E6%98%AF%E5%AE%9E%E9%AA%8C%E8%B5%B7%E7%82%B9%EF%BC%8C%E4%B8%8D%E6%98%AF%E5%B9%B3%E5%8F%B0%E5%AE%9A%E5%BE%8B"><span class="nav-text">8.3 从两个 burst 开始，是实验起点，不是平台定律</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#8-4-%E9%87%8D%E9%87%87%E6%A0%B7%E4%B8%BA%E4%BB%80%E4%B9%88%E8%A6%81%E5%8D%95%E7%8B%AC%E7%AE%97%E8%B4%A6"><span class="nav-text">8.4 重采样为什么要单独算账</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#9-%E5%85%B1%E4%BA%AB%E3%80%81Legacy-%E4%B8%8E%E5%BD%95%E9%9F%B3%EF%BC%9A%E4%B8%89%E7%A7%8D%E5%88%86%E6%94%AF%E6%80%8E%E6%A0%B7%E6%94%B9%E5%8F%98%E7%BB%93%E8%AE%BA"><span class="nav-text">9. 共享、Legacy 与录音：三种分支怎样改变结论</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#9-1-MMAP-SHARED-%E4%B8%8D%E6%98%AF%E2%80%9C%E5%A4%9A%E5%BA%94%E7%94%A8%E5%90%8C%E6%97%B6%E5%86%99%E5%90%8C%E4%B8%80-DMA-%E5%8C%BA%E2%80%9D"><span class="nav-text">9.1 MMAP SHARED 不是“多应用同时写同一 DMA 区”</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#9-2-%E6%9F%90%E4%B8%AA%E5%85%B1%E4%BA%AB%E5%BA%94%E7%94%A8%E6%9D%A5%E4%B8%8D%E5%8F%8A%E4%BE%9B%E6%95%B0%EF%BC%8C%E4%BC%9A%E4%B8%8D%E4%BC%9A%E6%8B%96%E4%BD%8F%E5%85%A8%E9%83%A8%E5%BA%94%E7%94%A8"><span class="nav-text">9.2 某个共享应用来不及供数，会不会拖住全部应用</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#9-3-Legacy-%E5%9B%9E%E9%80%80%E5%90%8E%E4%BB%8D%E5%8F%AF%E8%83%BD%E4%BD%8E%E5%BB%B6%E8%BF%9F"><span class="nav-text">9.3 Legacy 回退后仍可能低延迟</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#9-4-%E5%BD%95%E9%9F%B3%E7%9A%84%E4%B8%BB%E5%B9%B2%E7%9B%B8%E4%BC%BC%EF%BC%8C%E9%A3%8E%E9%99%A9%E6%96%B9%E5%90%91%E7%9B%B8%E5%8F%8D"><span class="nav-text">9.4 录音的主干相似，风险方向相反</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#10-%E6%8A%8A%E5%AE%9E%E7%8E%B0%E6%94%BE%E5%9B%9E%E7%94%B5%E5%AD%90%E7%90%B4%E5%9C%BA%E6%99%AF"><span class="nav-text">10. 把实现放回电子琴场景</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#10-1-%E4%B8%80%E6%AC%A1%E6%AD%A3%E5%B8%B8%E7%9A%84%E6%89%93%E5%BC%80%E4%B8%8E%E6%8C%81%E7%BB%AD%E5%90%88%E6%88%90"><span class="nav-text">10.1 一次正常的打开与持续合成</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#10-2-%E5%9B%9E%E8%B0%83%E7%9A%84%E5%B7%A5%E4%BD%9C%E5%BA%94%E8%AF%A5%E6%9C%89%E6%98%8E%E7%A1%AE%E4%B8%8A%E9%99%90"><span class="nav-text">10.2 回调的工作应该有明确上限</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#10-3-%E7%AC%AC%E4%BA%8C%E4%B8%AA%E5%BA%94%E7%94%A8%E7%AB%9E%E4%BA%89%EF%BC%9A%E7%8B%AC%E5%8D%A0%E6%B5%81%E5%8F%AF%E8%83%BD%E8%A2%AB%E6%92%A4%E9%94%80"><span class="nav-text">10.3 第二个应用竞争：独占流可能被撤销</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#10-4-%E6%89%AC%E5%A3%B0%E5%99%A8%E5%88%87%E5%88%B0%E8%80%B3%E6%9C%BA%EF%BC%9A%E4%B8%8D%E8%A6%81%E6%B2%BF%E7%94%A8%E4%B8%8A%E4%B8%80%E6%AC%A1%E7%9A%84%E5%8F%82%E6%95%B0%E7%BC%93%E5%AD%98"><span class="nav-text">10.4 扬声器切到耳机：不要沿用上一次的参数缓存</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#10-5-%E4%BA%94%E4%B8%AA%E5%9C%BA%E6%99%AF%E7%9A%84%E6%8E%A8%E6%BC%94%E7%BB%93%E6%9E%9C"><span class="nav-text">10.5 五个场景的推演结果</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#11-%E6%80%8E%E6%A0%B7%E9%AA%8C%E8%AF%81%EF%BC%9A%E4%BB%8E%E2%80%9C%E8%AF%B7%E6%B1%82%E6%98%AF%E4%BB%80%E4%B9%88%E2%80%9D%E8%BF%BD%E5%88%B0%E2%80%9C%E5%A3%B0%E9%9F%B3%E4%BB%80%E4%B9%88%E6%97%B6%E5%80%99%E5%87%BA%E6%9D%A5%E2%80%9D"><span class="nav-text">11. 怎样验证：从“请求是什么”追到“声音什么时候出来”</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#11-1-%E5%85%88%E5%BB%BA%E7%AB%8B%E4%B8%80%E6%9D%A1%E5%8F%AF%E5%85%B3%E8%81%94%E7%9A%84%E8%AE%B0%E5%BD%95"><span class="nav-text">11.1 先建立一条可关联的记录</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#11-2-API-%E5%8F%AF%E7%94%A8%E6%80%A7%E5%BF%85%E9%A1%BB%E6%8C%89%E7%9B%AE%E6%A0%87%E7%B3%BB%E7%BB%9F%E5%88%A4%E6%96%AD"><span class="nav-text">11.2 API 可用性必须按目标系统判断</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#11-3-%E5%8F%AA%E8%AF%BB%E7%B3%BB%E7%BB%9F%E8%A7%82%E5%AF%9F"><span class="nav-text">11.3 只读系统观察</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#11-4-%E7%94%A8%E5%8D%95%E5%8F%98%E9%87%8F%E7%9F%A9%E9%98%B5%E9%AA%8C%E8%AF%81%E9%80%89%E8%B7%AF%EF%BC%8C%E8%80%8C%E4%B8%8D%E6%98%AF%E4%B8%80%E6%AC%A1%E6%94%B9%E4%BA%94%E4%B8%AA%E8%AE%BE%E7%BD%AE"><span class="nav-text">11.4 用单变量矩阵验证选路，而不是一次改五个设置</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#11-5-%E7%94%A8-trace-%E5%8C%BA%E5%88%86%E2%80%9C%E7%AE%97%E5%BE%97%E6%85%A2%E2%80%9D%E5%92%8C%E2%80%9C%E6%B2%A1%E8%A2%AB%E8%B0%83%E5%BA%A6%E2%80%9D"><span class="nav-text">11.5 用 trace 区分“算得慢”和“没被调度”</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#11-6-%E6%97%B6%E9%97%B4%E6%88%B3%E4%BC%B0%E7%AE%97%E4%B8%8E%E7%9C%9F%E5%AE%9E-loopback-%E5%90%84%E8%83%BD%E8%AF%81%E6%98%8E%E4%BB%80%E4%B9%88"><span class="nav-text">11.6 时间戳估算与真实 loopback 各能证明什么</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#11-7-%E7%9C%8B%E5%88%B0%E5%BC%82%E5%B8%B8%E6%97%B6%E7%9A%84%E6%8E%92%E6%9F%A5%E9%A1%BA%E5%BA%8F"><span class="nav-text">11.7 看到异常时的排查顺序</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#12-%E5%88%86%E5%B1%82%E5%A4%8D%E4%B9%A0%EF%BC%9A%E8%83%BD%E8%A7%A3%E9%87%8A%E5%88%B0%E5%93%AA%E4%B8%80%E5%B1%82"><span class="nav-text">12. 分层复习：能解释到哪一层</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#12-1-L0%EF%BC%9A%E5%85%88%E8%AE%B0%E4%BD%8F%E5%85%A8%E5%B1%80%E5%85%B3%E7%B3%BB"><span class="nav-text">12.1 L0：先记住全局关系</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#12-2-L1%EF%BC%9A%E8%83%BD%E5%A4%9F%E5%B1%95%E5%BC%80%E7%9A%84%E4%B8%BB%E5%B9%B2"><span class="nav-text">12.2 L1：能够展开的主干</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#12-3-L2%EF%BC%9A%E6%8C%89%E9%9C%80%E5%AE%9A%E4%BD%8D%E7%9A%84%E7%BB%86%E8%8A%82"><span class="nav-text">12.3 L2：按需定位的细节</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#13-%E8%87%AA%E6%B5%8B%EF%BC%9A%E5%85%88%E9%A2%84%E6%B5%8B%EF%BC%8C%E5%86%8D%E5%B1%95%E5%BC%80%E7%AD%94%E6%A1%88"><span class="nav-text">13. 自测：先预测，再展开答案</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#13-1-%E5%9F%BA%E7%A1%80%E9%A2%98"><span class="nav-text">13.1 基础题</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#13-2-%E5%9C%BA%E6%99%AF%E6%8E%A8%E7%90%86%E9%A2%98"><span class="nav-text">13.2 场景推理题</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Zcorpius</span>
+
+  
+</div>
+
+<!--
+
+
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Muse</a> v5.1.4</div>
+
+
+-->
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+          <span id="scrollpercent"><span>0</span>%</span>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+  
+
+
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@9/dist/mermaid.min.js"></script>
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: 'default'
+    });
+  </script>
+  
+  
+
+  
+
+
+<!-- Nexora 风格代码块增强：顶栏 + 语言标签 + 复制按钮 -->
+<script type="text/javascript" src="/js/src/nexora-code.js"></script>
+<!-- Nexora 风格 TOC scroll-spy（IntersectionObserver，替代 Bootstrap scrollspy） -->
+<script type="text/javascript" src="/js/src/nexora-toc.js"></script>
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"debug":false,"model":{"jsonPath":"https://cdn.jsdelivr.net/gh/evrstr/live2d-widget-models/live2d_evrstr/mashiro_shifuku/model.json"},"display":{"position":"left","width":200,"height":500},"mobile":{"show":true},"encrypt":{"enable":true},"log":false});</script></body>
+</html>
+
+<!-- 页面点击小红心 -->
+<script type="text/javascript" src="/js/src/love.js"></script>

@@ -112,7 +112,7 @@
 <meta property="og:image" content="https://zcorpius.github.io/2026/10/27/AudioFlinger%E5%89%96%E6%9E%90/record-thread.png">
 <meta property="og:image" content="https://zcorpius.github.io/2026/10/27/AudioFlinger%E5%89%96%E6%9E%90/routing-recovery.png">
 <meta property="article:published_time" content="2026-10-26T16:00:00.000Z">
-<meta property="article:modified_time" content="2026-10-27T15:23:18.917Z">
+<meta property="article:modified_time" content="2026-10-27T15:24:06.991Z">
 <meta property="article:author" content="Zcorpius">
 <meta property="article:tag" content="Audio">
 <meta name="twitter:card" content="summary">
@@ -1128,7 +1128,7 @@
 <h1 id="10-FastMixer：把最终输出周期中的工作压缩到必要范围"><a href="#10-FastMixer：把最终输出周期中的工作压缩到必要范围" class="headerlink" title="10. FastMixer：把最终输出周期中的工作压缩到必要范围"></a>10. FastMixer：把最终输出周期中的工作压缩到必要范围</h1><h2 id="10-1-普通混音为什么还需要一个快速线程"><a href="#10-1-普通混音为什么还需要一个快速线程" class="headerlink" title="10.1. 普通混音为什么还需要一个快速线程"></a>10.1. 普通混音为什么还需要一个快速线程</h2><p>普通 MixerThread 需要处理多种格式、重采样、效果和复杂状态；如果 HAL 要求较小周期地持续拿到数据，把这些工作全塞到同一短周期里，会增加调度和计算压力。</p>
 <p>FastMixer 的组织方式是：普通线程先完成较复杂的处理，把普通轨道的子混音写入 MonoPipe；快速线程按较小的输出块读取它，再与获得 FAST 资格的轨道一起混合并写出。快速轨道因此避开普通 MixerThread 的大块混音与中间排队。</p>
 <p><img src="/2026/10/27/AudioFlinger%E5%89%96%E6%9E%90/fast-mixer.png" alt="普通轨道经 AudioMixer 和 MonoPipe 进入 FastMixer 的 slot 0，FAST 轨道直接进入其他槽位"></p>
-<p>绿色箭头是 PCM，橙色箭头是状态控制。<strong>MonoPipe 是单写入者管道，可以传输多声道音频；不能把 Mono 理解成声道数固定为 1。</strong> <code>AudioStreamOutSink</code> 是输出适配对象，也不是额外的一条 Linux 输出线程。</p>
+<p>绿色箭头是 PCM，橙色箭头是状态控制。<strong>MonoPipe 是单写入者、单读取者的管道，可以传输多声道音频；不能把 Mono 理解成声道数固定为 1。</strong> <code>AudioStreamOutSink</code> 是输出适配对象，也不是额外的一条 Linux 输出线程。</p>
 <p>图中普通 Track A/B 的结果经过 FastMixer，不会使它们变成 fast tracks。判断一条轨道是否 FAST，应看最终获准标志、fast index 和实际线程状态，而不是只看设备上有没有名为 FastMixer 的线程。</p>
 <h2 id="10-2-每个-MixerThread-都有-FastMixer-吗"><a href="#10-2-每个-MixerThread-都有-FastMixer-吗" class="headerlink" title="10.2. 每个 MixerThread 都有 FastMixer 吗"></a>10.2. 每个 MixerThread 都有 FastMixer 吗</h2><p>没有。构造函数会根据配置和线程类型决定是否初始化。当前源码默认 <code>kUseFastMixer = FastMixer_Static</code>；该模式下，普通 deep-buffer 输出不创建 FastMixer，其余相关情况以 <code>mFrameCount &lt; mNormalFrameCount</code> 等条件判断。Spatializer 和 BitPerfect 也有明确排除。</p>
 <figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/av/services/audioflinger/Threads.cpp</span></span><br><span class="line"></span><br><span class="line">MixerThread::<span class="built_in">MixerThread</span>(<span class="type">const</span> sp&lt;IAfThreadCallback&gt;&amp; afThreadCallback, AudioStreamOut* output,</span><br><span class="line">        <span class="type">audio_io_handle_t</span> id, <span class="type">bool</span> systemReady, <span class="type">type_t</span> type, <span class="type">audio_config_base_t</span> *mixerConfig)</span><br><span class="line">    : ...</span><br><span class="line">{</span><br><span class="line">    ...</span><br><span class="line">    <span class="keyword">if</span> (initFastMixer) {</span><br><span class="line">        ...</span><br><span class="line">        <span class="comment">// 普通子混音的缓冲；用于吸收普通线程调度节奏的波动。</span></span><br><span class="line">        MonoPipe *monoPipe = <span class="keyword">new</span> <span class="built_in">MonoPipe</span>(mNormalFrameCount * <span class="number">4</span>, format, <span class="literal">true</span> <span class="comment">/*writeCanBlock*/</span>);</span><br><span class="line">        ...</span><br><span class="line">        mPipeSink = monoPipe;</span><br><span class="line">        mFastMixer = <span class="keyword">new</span> <span class="built_in">FastMixer</span>(mId);</span><br><span class="line">        FastMixerStateQueue *sq = mFastMixer-&gt;<span class="built_in">sq</span>();</span><br><span class="line">        ...</span><br><span class="line">        FastMixerState *state = sq-&gt;<span class="built_in">begin</span>();</span><br><span class="line"></span><br><span class="line">        <span class="comment">// slot 0 保留给普通 MixerThread 的子混音。</span></span><br><span class="line">        FastTrack *fastTrack = &amp;state-&gt;mFastTracks[<span class="number">0</span>];</span><br><span class="line">        fastTrack-&gt;mBufferProvider = <span class="keyword">new</span> <span class="built_in">SourceAudioBufferProvider</span>(<span class="keyword">new</span> <span class="built_in">MonoPipeReader</span>(monoPipe));</span><br><span class="line">        ...</span><br><span class="line">        state-&gt;mTrackMask = <span class="number">1</span>;</span><br><span class="line">        state-&gt;mOutputSink = mOutputSink.<span class="built_in">get</span>();</span><br><span class="line">        ...</span><br><span class="line">        state-&gt;mFrameCount = mFrameCount;</span><br><span class="line">        ...</span><br><span class="line">        mFastMixer-&gt;<span class="built_in">run</span>(<span class="string">"FastMixer"</span>, PRIORITY_URGENT_AUDIO);</span><br><span class="line">        ...</span><br><span class="line">    }</span><br><span class="line">    ...</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
@@ -2025,7 +2025,7 @@
         <div class="post-nav">
           <div class="post-nav-next post-nav-item">
             
-              <a href="/2026/10/26/CarAudio%E5%89%96%E6%9E%90/" rel="next" title="CarAudio 车载音频架构剖析">
+              <a href="/2026/10/26/CarAudio-bak/" rel="next" title="CarAudio 车载音频架构剖析">
                 <i class="fa fa-chevron-left"></i> CarAudio 车载音频架构剖析
               </a>
             
@@ -2035,7 +2035,7 @@
 
           <div class="post-nav-prev post-nav-item">
             
-              <a href="/2026/10/27/AudioRecord%E5%89%96%E6%9E%90/" rel="prev" title="AudioRecord 采集链路剖析">
+              <a href="/2026/10/27/AudioRecord-bak/" rel="prev" title="AudioRecord 采集链路剖析">
                 AudioRecord 采集链路剖析 <i class="fa fa-chevron-right"></i>
               </a>
             
@@ -2118,7 +2118,7 @@
               
                 <a href="/archives/%7C%7C%20archive">
               
-                  <span class="site-state-item-count">57</span>
+                  <span class="site-state-item-count">59</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
@@ -2129,7 +2129,7 @@
               
               <div class="site-state-item site-state-categories">
                 <a href="/categories/index.html">
-                  <span class="site-state-item-count">21</span>
+                  <span class="site-state-item-count">23</span>
                   <span class="site-state-item-name">分类</span>
                 </a>
               </div>
@@ -2140,7 +2140,7 @@
               
               <div class="site-state-item site-state-tags">
                 <a href="/tags/index.html">
-                  <span class="site-state-item-count">36</span>
+                  <span class="site-state-item-count">38</span>
                   <span class="site-state-item-name">标签</span>
                 </a>
               </div>

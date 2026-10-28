@@ -1,0 +1,2235 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next muse use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+<script>
+    (function(){
+        if(''){
+            if (prompt('请输入密码') !== ''){
+                alert('密码错误');
+                history.back();
+            }
+        }
+    })();
+</script>
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/head.jpg?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/head.jpg?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/head.jpg?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/head.jpg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="Audio,Android," />
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="Zcorpius's Blog" type="application/atom+xml" />
+
+
+
+
+
+
+<meta name="description" content="1. 从一次听歌过程认识 AudioService手机正在播放音乐，用户按了一次音量加，导航随后播报“前方右转”，接着用户拔掉耳机，又接起一通语音电话。听起来是一组日常操作，系统却必须回答不同的问题：  音量键应该调媒体还是通话？调的是哪一种设备的档位？ 导航来了，音乐应该暂停、变小，还是继续播放？谁通知播放器？ 耳机拔掉后，什么时候通知应用，什么时候更新设备，谁决定改走扬声器？ 通话模式属于哪个">
+<meta property="og:type" content="article">
+<meta property="og:title" content="AudioService 剖析">
+<meta property="og:url" content="https://zcorpius.github.io/2026/10/27/AudioService%E5%89%96%E6%9E%90/index.html">
+<meta property="og:site_name" content="Zcorpius&#39;s Blog">
+<meta property="og:description" content="1. 从一次听歌过程认识 AudioService手机正在播放音乐，用户按了一次音量加，导航随后播报“前方右转”，接着用户拔掉耳机，又接起一通语音电话。听起来是一组日常操作，系统却必须回答不同的问题：  音量键应该调媒体还是通话？调的是哪一种设备的档位？ 导航来了，音乐应该暂停、变小，还是继续播放？谁通知播放器？ 耳机拔掉后，什么时候通知应用，什么时候更新设备，谁决定改走扬声器？ 通话模式属于哪个">
+<meta property="og:locale">
+<meta property="og:image" content="https://zcorpius.github.io/2026/10/27/AudioService%E5%89%96%E6%9E%90/01-%E6%8E%A7%E5%88%B6%E9%9D%A2%E4%B8%8E%E6%95%B0%E6%8D%AE%E9%9D%A2.png">
+<meta property="og:image" content="https://zcorpius.github.io/2026/10/27/AudioService%E5%89%96%E6%9E%90/02-%E9%9F%B3%E9%87%8F%E5%BC%82%E6%AD%A5%E4%B8%8B%E5%8F%91.png">
+<meta property="og:image" content="https://zcorpius.github.io/2026/10/27/AudioService%E5%89%96%E6%9E%90/03-%E7%84%A6%E7%82%B9%E4%B8%8E%E6%92%AD%E6%94%BE%E5%99%A8.png">
+<meta property="article:published_time" content="2026-10-27T13:00:00.000Z">
+<meta property="article:modified_time" content="2026-10-27T16:00:05.692Z">
+<meta property="article:author" content="Zcorpius">
+<meta property="article:tag" content="Audio">
+<meta property="article:tag" content="Android">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://zcorpius.github.io/2026/10/27/AudioService%E5%89%96%E6%9E%90/01-%E6%8E%A7%E5%88%B6%E9%9D%A2%E4%B8%8E%E6%95%B0%E6%8D%AE%E9%9D%A2.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Muse',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":true,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://Zcorpius.github.io/2026/10/27/AudioService剖析/"/>
+
+
+
+
+
+  <title>AudioService 剖析 | Zcorpius's Blog</title>
+  
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 7.3.0">
+<style>.github-emoji { position: relative; display: inline-block; width: 1.2em; min-height: 1.2em; overflow: hidden; vertical-align: top; color: transparent; }  .github-emoji > span { position: relative; z-index: 10; }  .github-emoji img, .github-emoji .fancybox { margin: 0 !important; padding: 0 !important; border: none !important; outline: none !important; text-decoration: none !important; user-select: none !important; cursor: auto !important; }  .github-emoji img { height: 1.2em !important; width: 1.2em !important; position: absolute !important; left: 50% !important; top: 50% !important; transform: translate(-50%, -50%) !important; user-select: none !important; cursor: auto !important; } .github-emoji-fallback { color: inherit; } .github-emoji-fallback img { opacity: 0 !important; }</style>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Zcorpius's Blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">追寻自我的崎岖路上从不缺勇敢。</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-阅读">
+          <a href="/top/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-book"></i> <br />
+            
+            阅读
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-健身">
+          <a href="/fitness/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-heartbeat"></i> <br />
+            
+            健身
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://Zcorpius.github.io/2026/10/27/AudioService%E5%89%96%E6%9E%90/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/head.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Zcorpius's Blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">AudioService 剖析</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2026-10-27T21:00:00+08:00">
+                2026-10-27
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Audio/" itemprop="url" rel="index">
+                    <span itemprop="name">Audio</span>
+                  </a>
+                </span>
+
+                
+                
+                  ， 
+                
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Audio/AudioService/" itemprop="url" rel="index">
+                    <span itemprop="name">AudioService</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+            <div class="post-wordcount">
+              
+                
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-file-word-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">字数统计&#58;</span>
+                
+                <span title="字数统计">
+                  18.3k
+                </span>
+              
+
+              
+                <span class="post-meta-divider">|</span>
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-clock-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">阅读时长 &asymp;</span>
+                
+                <span title="阅读时长">
+                  68
+                </span>
+              
+            </div>
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="1-从一次听歌过程认识-AudioService"><a href="#1-从一次听歌过程认识-AudioService" class="headerlink" title="1. 从一次听歌过程认识 AudioService"></a>1. 从一次听歌过程认识 AudioService</h1><p>手机正在播放音乐，用户按了一次音量加，导航随后播报“前方右转”，接着用户拔掉耳机，又接起一通语音电话。听起来是一组日常操作，系统却必须回答不同的问题：</p>
+<ul>
+<li>音量键应该调媒体还是通话？调的是哪一种设备的档位？</li>
+<li>导航来了，音乐应该暂停、变小，还是继续播放？谁通知播放器？</li>
+<li>耳机拔掉后，什么时候通知应用，什么时候更新设备，谁决定改走扬声器？</li>
+<li>通话模式属于哪个应用？应用异常退出后，谁清理它留下的状态？</li>
+<li>audioserver 重启了，用户音量、连接设备和动态策略怎样恢复？</li>
+</ul>
+<p><strong>AudioService 是 system_server 中的音频管理服务：它把应用、用户和系统提出的控制需求，转换成经过权限检查与策略协调的音频状态，再交给下层音频系统执行。</strong> 它不在音乐 PCM 的必经传输路径上，也不负责在 Java 层混合每一帧音频。</p>
+<p>本文以“音乐播放 → 调音量 → 导航播报 → 耳机切换 → 语音通话 → 服务恢复”为贯穿场景，重点读懂控制面。阅读后应能分清“请求受理、Java 状态变化、native 配置生效、设备实际出声”这几个不同的完成点，而不仅是记住一串函数名。</p>
+<span id="more"></span>
+
+<p><span class="audio-service-column" hidden=""></span></p>
+<style>
+/* 本文技术图需要完整可见；仅在此文页面隐藏会遮挡图文的站点悬浮角色。 */
+body:has(.audio-service-column) #live2d-widget { display: none !important; }
+</style>
+
+<h2 id="1-1-源码基线与阅读约定"><a href="#1-1-源码基线与阅读约定" class="headerlink" title="1.1. 源码基线与阅读约定"></a>1.1. 源码基线与阅读约定</h2><p>本文依据本机 <code>LineageOS</code> 源码树，根目录为 <code>/Users/zhangyongbin/Desktop/Learn/Framework/LineageOS</code>，核对日期为 2026-10-27。后续代码块路径均相对于该根目录。</p>
+<table>
+<thead>
+<tr>
+<th>依据</th>
+<th>本次核对结果</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Repo manifest 默认分支</td>
+<td><code>refs/heads/lineage-22.2</code></td>
+</tr>
+<tr>
+<td><code>frameworks/base</code> HEAD</td>
+<td><code>f8d852aaaa843b9d74db780bb11d4691b3ceebc0</code></td>
+</tr>
+<tr>
+<td><code>frameworks/av</code> HEAD</td>
+<td><code>b848cc86cfe225d1b6d375629cf3d10980c13e1e</code></td>
+</tr>
+<tr>
+<td>Git 状态</td>
+<td>两个仓库当前分支名为空，按上述提交定位；base 的已跟踪改动位于 WMS 文件，av 只有未跟踪的系统/构建缓存，本文引用的音频实现没有已跟踪的未提交改动</td>
+</tr>
+<tr>
+<td>本地扩展</td>
+<td>base 包含 <code>Uac2AudioRouteController</code> 等 USB 音频定制实现；不能当成未经修改的上游发行版</td>
+</tr>
+</tbody></table>
+<p>manifest 分支用于说明来源背景，<strong>真正追踪实现时以上述提交和文件为准</strong>。本文不据此断言本机能完整构建哪一个 Android 发布版本，也不把 feature flag 的某一分支当成设备上的确定配置。像 <code>ringMyCar()</code>、<code>replaceStreamBtSco()</code>、<code>absVolumeIndexFix()</code> 这样的开关会实质改变行为，涉及处会单独指出。</p>
+<p>下文代码为源码节选，添加了中文讲解注释，<code>...</code> 表示省略；它们用于解释实现，不是可直接编译的完整文件。验证章节提供的是<strong>尚未执行的设备实验方案</strong>，没有虚构 dumpsys 或听感结果。</p>
+<h2 id="1-2-与音频系列其他文章的衔接"><a href="#1-2-与音频系列其他文章的衔接" class="headerlink" title="1.2. 与音频系列其他文章的衔接"></a>1.2. 与音频系列其他文章的衔接</h2><p>本文把 AudioService 内部的职责与主干调用讲完整；PCM 缓冲、混音线程、HAL 数据格式以及 APM 的全套路由算法放在对应篇目中展开：</p>
+<ul>
+<li><a href="/2026/06/04/AudioTrack%E5%89%96%E6%9E%90/" title="AudioTrack 播放链路剖析">AudioTrack 剖析</a>：应用怎样建立播放轨道、提交音频数据。</li>
+<li><a href="/2026/10/27/AudioFlinger%E5%89%96%E6%9E%90/" title="AudioFlinger 剖析">AudioFlinger 剖析</a>：轨道、输出线程与混音执行。</li>
+<li><a href="/2026/10/27/AudioPolicy%E5%89%96%E6%9E%90/" title="AudioPolicy 剖析">AudioPolicy 剖析</a>：设备、策略、输出和音量曲线。</li>
+<li><a href="/2026/10/26/CarAudio%E5%89%96%E6%9E%90/" title="CarAudio 车载音频架构剖析">CarAudio 剖析</a>：车载场景中的区域、音量组与外部策略。</li>
+</ul>
+<p>同系列文章可帮助建立背景；本篇涉及的机制以本次源码核对为依据，不沿用相邻文章未经复核的绝对化表述。</p>
+<h1 id="2-先划清四条边界"><a href="#2-先划清四条边界" class="headerlink" title="2. 先划清四条边界"></a>2. 先划清四条边界</h1><p><img src="/2026/10/27/AudioService%E5%89%96%E6%9E%90/01-%E6%8E%A7%E5%88%B6%E9%9D%A2%E4%B8%8E%E6%95%B0%E6%8D%AE%E9%9D%A2.png" alt="AudioService 控制面与 AudioTrack 数据面分离，橙色为控制调用，绿色为简化音频数据路径"></p>
+<p>图中外框区分进程，内部面板表示组件/职责。绿色线横向经过排版区域但不接入 AudioService；它概括普通 AudioTrack 数据通路，省略共享缓冲、native 客户端与具体输出类型。橙色线只画本篇主干，不能据此推断 AudioSystem 只访问 AudioPolicyService。</p>
+<h2 id="2-1-AudioManager、AudioService、AudioSystem-分别在哪里"><a href="#2-1-AudioManager、AudioService、AudioSystem-分别在哪里" class="headerlink" title="2.1. AudioManager、AudioService、AudioSystem 分别在哪里"></a>2.1. AudioManager、AudioService、AudioSystem 分别在哪里</h2><p>应用需要一个方便使用的对象来发起请求，这就是 <code>AudioManager</code>。它并不是服务本体，而是应用进程中的客户端门面。<code>getService()</code> 通过 ServiceManager 取得名为 <code>audio</code> 的 Binder 服务，再转换为 <code>IAudioService</code> 接口。</p>
+<figure class="highlight java"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/base/media/java/android/media/AudioManager.java</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">static</span> IAudioService <span class="title function_">getService</span><span class="params">()</span></span><br><span class="line">{</span><br><span class="line">    <span class="keyword">if</span> (sService != <span class="literal">null</span>) {</span><br><span class="line">        <span class="keyword">return</span> sService;</span><br><span class="line">    }</span><br><span class="line">    <span class="comment">// Context.AUDIO_SERVICE 对应 Binder 服务名 audio。</span></span><br><span class="line">    <span class="type">IBinder</span> <span class="variable">b</span> <span class="operator">=</span> ServiceManager.getService(Context.AUDIO_SERVICE);</span><br><span class="line">    sService = IAudioService.Stub.asInterface(b);</span><br><span class="line">    <span class="keyword">return</span> sService;</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<p>普通应用进程获得的是 Binder 代理；请求进入 system_server 后由 AudioService 处理。<code>AudioService</code> 实现 <code>IAudioService.Stub</code>，而 <code>AudioSystem</code> 是 Java 到 native 音频系统的桥接类。后者的静态接口经 JNI 调用 C++ <code>AudioSystem</code>，再根据具体操作访问 AudioPolicyService 或 AudioFlinger。</p>
+<p>因此不要把“AudioManager 调 AudioService”和“AudioSystem 调 native”混成同一层 IPC。JNI 本身也不等于跨进程：Java 进入 JNI 仍在原进程，后续 native Binder 调用才跨入 audioserver。</p>
+<h2 id="2-2-AudioService-与-AudioPolicyService-的职责边界"><a href="#2-2-AudioService-与-AudioPolicyService-的职责边界" class="headerlink" title="2.2. AudioService 与 AudioPolicyService 的职责边界"></a>2.2. AudioService 与 AudioPolicyService 的职责边界</h2><table>
+<thead>
+<tr>
+<th>对象</th>
+<th>所在进程</th>
+<th>主要保存或决定的内容</th>
+<th>不应归给它的工作</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>AudioService</td>
+<td>system_server</td>
+<td>用户音量、静音、模式、焦点协调、设备事件与动态策略注册</td>
+<td>持续搬运所有 PCM、执行软件混音</td>
+</tr>
+<tr>
+<td>MediaFocusControl</td>
+<td>system_server，AudioService 协作者</td>
+<td>默认焦点仲裁、焦点请求生命周期、外部焦点策略对接</td>
+<td>直接选择物理扬声器或计算音量曲线</td>
+</tr>
+<tr>
+<td>AudioPolicyService / AudioPolicyManager</td>
+<td>audioserver</td>
+<td>native 策略入口、输出选择、设备路由、音量曲线与 patch 等</td>
+<td>绘制系统音量面板、替应用管理业务播放队列</td>
+</tr>
+<tr>
+<td>AudioFlinger</td>
+<td>audioserver</td>
+<td>track、音频线程、混音/输出和底层控制执行</td>
+<td>决定应用应该如何响应业务层的焦点变化</td>
+</tr>
+</tbody></table>
+<p>音量管理跨越多层：AudioService 主要管理“用户要第几档”，APM 把档位和设备类别等条件结合起来计算音量，AudioFlinger/HAL 执行相应控制。某些输出使用硬件增益、offload 或远端绝对音量，不能把所有路径都描述成“AudioFlinger 把 PCM 乘以同一个系数”。</p>
+<h2 id="2-3-数据面不穿过焦点栈"><a href="#2-3-数据面不穿过焦点栈" class="headerlink" title="2.3. 数据面不穿过焦点栈"></a>2.3. 数据面不穿过焦点栈</h2><p>音乐播放器可以同时做两件事：用 AudioManager 申请焦点，用 AudioTrack 等接口建立实际播放。<strong>焦点请求不是创建音频轨道，焦点栈也不是 PCM 队列。</strong> 反过来，存在一个已启动的播放器，并不能证明它当前拿到了焦点。</p>
+<p>这两个事实解释了常见现象：焦点申请成功却没有声音，可能是播放轨道、路由或音量出了问题；焦点申请失败，应用若仍错误地启动播放，也不能仅凭失败返回就断言底层一定完全没有声音。现代框架存在有条件的 duck、fade 和通话静音干预，仍要分别检查焦点决策与播放器执行。</p>
+<h2 id="2-4-Java-AudioPolicy-不是-native-AudioPolicyService"><a href="#2-4-Java-AudioPolicy-不是-native-AudioPolicyService" class="headerlink" title="2.4. Java AudioPolicy 不是 native AudioPolicyService"></a>2.4. Java AudioPolicy 不是 native AudioPolicyService</h2><p>特权应用可以创建 Java <code>android.media.audiopolicy.AudioPolicy</code>，携带动态 mix、焦点监听/策略或外部音量控制能力，向 AudioService 注册。注册对象在服务端对应 <code>AudioPolicyProxy</code>。</p>
+<p>它和 audioserver 中的 AudioPolicyService 同名近似，却不是同一对象。焦点策略回调在 Java Binder 通道上完成；mix 配置才通过 AudioSystem 注册到 native 策略系统。这一区分在车载系统中特别重要，第 10 章再展开。</p>
+<h1 id="3-服务怎样启动，又怎样长期处理事件"><a href="#3-服务怎样启动，又怎样长期处理事件" class="headerlink" title="3. 服务怎样启动，又怎样长期处理事件"></a>3. 服务怎样启动，又怎样长期处理事件</h1><h2 id="3-1-生命周期：构造、发布、就绪是三个阶段"><a href="#3-1-生命周期：构造、发布、就绪是三个阶段" class="headerlink" title="3.1. 生命周期：构造、发布、就绪是三个阶段"></a>3.1. 生命周期：构造、发布、就绪是三个阶段</h2><p><code>SystemServer</code> 的音频启动段在普通路径上通过 <code>SystemServiceManager.startService(AudioService.Lifecycle.class)</code> 启动服务；同一段还保留设备指定 AudioService 实现的配置分支。因此下面讲的是本树中的标准实现，不把它当成所有产品唯一入口。</p>
+<p><code>Lifecycle</code> 将 SystemService 生命周期接到真正的 AudioService 对象：</p>
+<figure class="highlight java"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/base/services/core/java/com/android/server/audio/AudioService.java</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">class</span> <span class="title class_">Lifecycle</span> <span class="keyword">extends</span> <span class="title class_">SystemService</span> {</span><br><span class="line">    <span class="keyword">private</span> AudioService mService;</span><br><span class="line">    ...</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">onStart</span><span class="params">()</span> {</span><br><span class="line">        <span class="comment">// 发布 Binder 接口；此时不等于所有系统依赖都已就绪。</span></span><br><span class="line">        publishBinderService(Context.AUDIO_SERVICE, mService);</span><br><span class="line">    }</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">onBootPhase</span><span class="params">(<span class="type">int</span> phase)</span> {</span><br><span class="line">        <span class="keyword">if</span> (phase == SystemService.PHASE_ACTIVITY_MANAGER_READY) {</span><br><span class="line">            mService.systemReady();</span><br><span class="line">        }</span><br><span class="line">    }</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<p>构造阶段创建状态和协作者，读取音量范围、设备配置和设置，建立线程与回调。发布阶段让客户端可以找到服务。到 ActivityManager ready 阶段，<code>systemReady()</code> 再投递 <code>MSG_SYSTEM_READY</code>，由 AudioHandler 调用 <code>onSystemReady()</code>：设置 <code>mSystemReady</code>，启动设备相关处理、声音效果加载及其他依赖系统就绪的工作。</p>
+<p>注意 <code>systemReady()</code> 与 <code>onSystemReady()</code> 并非同义名字：前者是触发入口，后者是消息消费者。调用前者返回，不表示后者及全部异步初始化已经完成。</p>
+<h2 id="3-2-为什么需要这些协作者"><a href="#3-2-为什么需要这些协作者" class="headerlink" title="3.2. 为什么需要这些协作者"></a>3.2. 为什么需要这些协作者</h2><p>AudioService 很大，但理解它不需要先背完所有字段。先按它要管理的状态分组：</p>
+<table>
+<thead>
+<tr>
+<th>要解决的问题</th>
+<th>主要对象</th>
+<th>典型状态/入口</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>不同音频流、设备分别记音量</td>
+<td><code>VolumeStreamState</code>、<code>VolumeGroupState</code></td>
+<td>index map、mute、alias、group</td>
+</tr>
+<tr>
+<td>多个应用争用听觉注意力</td>
+<td><code>MediaFocusControl</code>、<code>FocusRequester</code></td>
+<td>焦点栈、请求属性、Binder death</td>
+</tr>
+<tr>
+<td>异步设备事件不能互相打乱</td>
+<td><code>AudioDeviceBroker</code></td>
+<td>BrokerHandler、通信路由客户端</td>
+</tr>
+<tr>
+<td>保存可用设备与路由角色</td>
+<td><code>AudioDeviceInventory</code></td>
+<td>connected devices、preferred devices</td>
+</tr>
+<tr>
+<td>蓝牙连接与音量协议适配</td>
+<td><code>BtHelper</code></td>
+<td>SCO、A2DP/LE 音频状态与远端音量</td>
+</tr>
+<tr>
+<td>知道哪些播放器正在工作</td>
+<td><code>PlaybackActivityMonitor</code></td>
+<td>player ID、UID、属性、状态、duck/fade</td>
+</tr>
+<tr>
+<td>知道录音配置怎样变化</td>
+<td><code>RecordingActivityMonitor</code></td>
+<td>活跃录音配置、回调和隐私处理</td>
+</tr>
+<tr>
+<td>安全音量与声音剂量</td>
+<td><code>SoundDoseHelper</code></td>
+<td>safe media volume、待确认命令、CSD</td>
+</tr>
+<tr>
+<td>空间化与头部跟踪能力</td>
+<td><code>SpatializerHelper</code></td>
+<td>能力、设备兼容性、启用状态</td>
+</tr>
+<tr>
+<td>触摸/按键等系统音效</td>
+<td><code>SoundEffectsHelper</code></td>
+<td>音效资源加载与播放</td>
+</tr>
+</tbody></table>
+<p>这些是职责协作关系，不能理解成全部都在同一个线程运行，也不能把 Java 对象之间的成员引用画成进程通信。</p>
+<h2 id="3-3-Binder-线程、AudioHandler-和-BrokerHandler"><a href="#3-3-Binder-线程、AudioHandler-和-BrokerHandler" class="headerlink" title="3.3. Binder 线程、AudioHandler 和 BrokerHandler"></a>3.3. Binder 线程、AudioHandler 和 BrokerHandler</h2><p>外部 Binder 调用通常在 system_server 的 Binder 线程上执行：检查身份、参数和权限，读取或修改必要状态，再把适合异步执行的工作交给消息线程。AudioService 通过 <code>AudioSystemThread</code> 建立自己的 Looper：</p>
+<figure class="highlight java"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/base/services/core/java/com/android/server/audio/AudioService.java</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">class</span> <span class="title class_">AudioSystemThread</span> <span class="keyword">extends</span> <span class="title class_">Thread</span> {</span><br><span class="line">    AudioSystemThread() {</span><br><span class="line">        <span class="built_in">super</span>(<span class="string">"AudioService"</span>);</span><br><span class="line">    }</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">run</span><span class="params">()</span> {</span><br><span class="line">        Looper.prepare();</span><br><span class="line">        <span class="keyword">synchronized</span> (AudioService.<span class="built_in">this</span>) {</span><br><span class="line">            <span class="comment">// Handler 绑定当前线程刚创建的 Looper。</span></span><br><span class="line">            mAudioHandler = <span class="keyword">new</span> <span class="title class_">AudioHandler</span>();</span><br><span class="line">            AudioService.<span class="built_in">this</span>.notify();</span><br><span class="line">        }</span><br><span class="line">        <span class="comment">// 后续音量、持久化、就绪和恢复消息在这里消费。</span></span><br><span class="line">        Looper.loop();</span><br><span class="line">    }</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<p>创建线程的一方调用 <code>waitForAudioHandlerCreation()</code>，在 <code>mAudioHandler == null</code> 时等待。<code>wait()</code> 会释放监视器，工作线程才能进入同步块创建 Handler 并通知。这里保证的是 Handler 已可投递，不是“所有音频硬件已初始化”。</p>
+<p><code>AudioDeviceBroker</code> 另建名为 <code>AudioDeviceBroker</code> 的线程和 <code>BrokerHandler</code>，负责设备连接、恢复、通信路由等消息。此外还有广播线程、audioserver 生命周期 executor 和若干回调线程。<strong>“AudioService 所有方法都在 AudioHandler 上串行执行”是错误的。</strong></p>
+<h2 id="3-4-消息策略与锁分别解决什么"><a href="#3-4-消息策略与锁分别解决什么" class="headerlink" title="3.4. 消息策略与锁分别解决什么"></a>3.4. 消息策略与锁分别解决什么</h2><p><code>sendMsg()</code> 的三个模式决定同类待处理消息怎样处理：</p>
+<table>
+<thead>
+<tr>
+<th>策略</th>
+<th>实现含义</th>
+<th>不能据此推断的事情</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>SENDMSG_REPLACE</code></td>
+<td>删除同 <code>what</code> 消息，再发送新消息</td>
+<td>不按任意业务对象自动精确去重</td>
+</tr>
+<tr>
+<td><code>SENDMSG_NOOP</code></td>
+<td>已有同类消息则不再投递</td>
+<td>不表示已有消息已经执行</td>
+</tr>
+<tr>
+<td><code>SENDMSG_QUEUE</code></td>
+<td>继续排队</td>
+<td>不保证每条消息都保存独立状态快照</td>
+</tr>
+</tbody></table>
+<p>最后一点直接影响音量分析：<code>MSG_SET_DEVICE_VOLUME</code> 携带的是 <code>VolumeStreamState</code> 对象与设备值。连续请求可能先修改同一对象，多条消息消费时读到较新的 index。要知道历史变化，得看请求日志和状态更新，而不能把消息数量当成“native 必然逐个经历了每个旧档位”。</p>
+<p>队列不能替代锁。Binder 线程、AudioHandler、BrokerHandler 可能共同访问状态，代码使用 <code>VolumeStreamState.class</code>、<code>mSettingsLock</code>、<code>mSetModeLock</code>、<code>mDeviceStateLock</code>、焦点锁等保护不同数据。在 Broker 的设备恢复路径中，能看到先取 <code>mSetModeLock</code>、再取 <code>mDeviceStateLock</code> 的嵌套顺序。修改源码时，应沿既有调用路径保持锁顺序，不能因为“最终都发消息”就删除同步。</p>
+<h1 id="4-音量模型：先理解状态，再看按键"><a href="#4-音量模型：先理解状态，再看按键" class="headerlink" title="4. 音量模型：先理解状态，再看按键"></a>4. 音量模型：先理解状态，再看按键</h1><h2 id="4-1-Stream、Attributes、Strategy、Group-是四种描述"><a href="#4-1-Stream、Attributes、Strategy、Group-是四种描述" class="headerlink" title="4.1. Stream、Attributes、Strategy、Group 是四种描述"></a>4.1. Stream、Attributes、Strategy、Group 是四种描述</h2><p><code>STREAM_MUSIC</code>、<code>STREAM_RING</code> 等 legacy stream 表达传统音量分类；<code>AudioAttributes</code> 表达声音的用途、内容类型和标志，例如媒体音乐或导航播报。native 策略系统再用 product strategy 组织路由行为，用 volume group 组织音量行为。</p>
+<p>它们有映射关系，但不能直接画等号。相同 usage 不代表应用独占一个输出；相同 volume group 不代表多个应用就是同一个播放器；stream alias 也不是设备路由规则。</p>
+<table>
+<thead>
+<tr>
+<th>概念</th>
+<th>回答的问题</th>
+<th>本篇关注点</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>legacy stream</td>
+<td>传统 API 要调哪类音量？</td>
+<td>AudioManager 的兼容入口</td>
+</tr>
+<tr>
+<td>AudioAttributes</td>
+<td>这是什么用途、什么内容的声音？</td>
+<td>焦点、策略与组映射的输入</td>
+</tr>
+<tr>
+<td>product strategy</td>
+<td>哪组属性遵循相应路由策略？</td>
+<td>设备选择交给 native 策略</td>
+</tr>
+<tr>
+<td>volume group</td>
+<td>哪些声音共享音量控制语义？</td>
+<td>VolumeGroupState 与 native 曲线</td>
+</tr>
+</tbody></table>
+<p>AudioService 构造时查询 <code>AudioProductStrategy</code> 及属性音量范围，还结合资源和系统属性确定范围。源码中注释明确给出相关初始化优先级：属性、Audio Policy Service、默认值。不能拿一台手机的“媒体 15 档”当成系统常量。</p>
+<h2 id="4-2-VolumeStreamState：一条流不是只有一个整数"><a href="#4-2-VolumeStreamState：一条流不是只有一个整数" class="headerlink" title="4.2. VolumeStreamState：一条流不是只有一个整数"></a>4.2. VolumeStreamState：一条流不是只有一个整数</h2><p>用户先把扬声器调到 8 档，再插上耳机发现是 4 档，这通常不是音量“丢了”，而是设备对应的索引不同。<code>VolumeStreamState</code> 的核心是设备到档位的映射：</p>
+<figure class="highlight java"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/base/services/core/java/com/android/server/audio/AudioService.java</span></span><br><span class="line"></span><br><span class="line"><span class="comment">/*package*/</span> <span class="keyword">class</span> <span class="title class_">VolumeStreamState</span> {</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> <span class="type">int</span> mStreamType;</span><br><span class="line">    <span class="keyword">private</span> <span class="type">VolumeGroupState</span> <span class="variable">mVolumeGroupState</span> <span class="operator">=</span> <span class="literal">null</span>;</span><br><span class="line">    <span class="keyword">private</span> <span class="type">int</span> mIndexMin;</span><br><span class="line">    ...</span><br><span class="line">    <span class="keyword">private</span> <span class="type">int</span> mIndexMax;</span><br><span class="line">    ...</span><br><span class="line">    <span class="keyword">private</span> <span class="type">boolean</span> <span class="variable">mIsMuted</span> <span class="operator">=</span> <span class="literal">false</span>;</span><br><span class="line">    <span class="keyword">private</span> <span class="type">boolean</span> <span class="variable">mIsMutedInternally</span> <span class="operator">=</span> <span class="literal">false</span>;</span><br><span class="line">    ...</span><br><span class="line">    <span class="comment">// key 为 native 设备类型值；不能直接理解成每只耳机的 MAC 地址。</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> <span class="type">SparseIntArray</span> <span class="variable">mIndexMap</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">SparseIntArray</span>(<span class="number">8</span>) {</span><br><span class="line">        ...</span><br><span class="line">    };</span><br><span class="line">    ...</span><br><span class="line">    <span class="keyword">private</span> <span class="title function_">VolumeStreamState</span><span class="params">(String settingName, <span class="type">int</span> streamType)</span> {</span><br><span class="line">        mVolumeIndexSettingName = settingName;</span><br><span class="line">        mStreamType = streamType;</span><br><span class="line">        <span class="comment">// 内部扩大十倍保存，便于比例转换和步长处理。</span></span><br><span class="line">        mIndexMin = MIN_STREAM_VOLUME[streamType] * <span class="number">10</span>;</span><br><span class="line">        mIndexMax = MAX_STREAM_VOLUME[streamType] * <span class="number">10</span>;</span><br><span class="line">        ...</span><br><span class="line">    }</span><br><span class="line">    ...</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<p>这里的 <code>SparseIntArray</code> 是整数 key 到整数 value 的紧凑映射。<code>mIndexMap</code> 常见 key 包括扬声器、有线耳机和默认设备等 native 类型；它不是 <code>AudioDeviceInfo.getId()</code>，也不是“蓝牙地址 → 音量”的完整数据库。蓝牙栈可能另有按设备保存音量的机制，不能由这个字段单独推导出来。</p>
+<p>普通 UI 第 5 档在这层通常表现为内部 index 50。转换回整数档位常见 <code>(index + 5) / 10</code>。十倍单位是内部表示精度，不表示音量增加十倍，也不表示声压按线性比例增长。实际响度还取决于曲线、设备和后续增益。</p>
+<h2 id="4-3-Alias：为什么改通知音量会影响铃声"><a href="#4-3-Alias：为什么改通知音量会影响铃声" class="headerlink" title="4.3. Alias：为什么改通知音量会影响铃声"></a>4.3. Alias：为什么改通知音量会影响铃声</h2><p>不同 stream 可以共享控制行为。<code>sStreamVolumeAlias</code> 保存“请求的流 → 负责控制的流”的映射。调音时先找到 alias，修改对应的状态，再传播到使用该 alias 的其他流。</p>
+<p><code>updateStreamVolumeAlias()</code> 会结合设备平台、单音量模式、通知是否绑定铃声、辅助功能独立音量、通信状态以及 volume group alias 配置等建立或更新映射。因此不能直接抄一张老版本 alias 数组，再声称所有 Android 都固定如此。</p>
+<p>例如在通知绑定铃声的配置下，通知音量请求可落到铃声对应的状态；进入通信场景后，部分流的 alias 或控制逻辑又会变化。映射决定的是音量联动，不是“通知 PCM 被重分类成电话音频”。当两个流的范围不同，代码还会做比例换算，不能机械复制同一个数值。</p>
+<h2 id="4-4-VolumeGroupState-与-legacy-stream-怎样共存"><a href="#4-4-VolumeGroupState-与-legacy-stream-怎样共存" class="headerlink" title="4.4. VolumeGroupState 与 legacy stream 怎样共存"></a>4.4. VolumeGroupState 与 legacy stream 怎样共存</h2><p>本树中同时存在 stream state 和 group state。<code>VolumeGroupState</code> 使用一组 <code>AudioAttributes</code> 表达组的音量，保存范围、设备索引与静音状态，通过 <code>setVolumeIndexForAttributes()</code> 下发 native。组关联的 legacy stream 也需要保持状态协调。</p>
+<p><code>setVolumeGroupVolumeIndex()</code> 等组接口与 legacy <code>setStreamVolume()</code> 并存；<code>config_handleVolumeAliasesUsingVolumeGroups</code> 决定是否用 volume groups 帮助处理 alias。分析产品时应先看 <code>mUseVolumeGroupAliases</code> 和实际组定义，再判断哪条通路生效。</p>
+<p>即使应用走 legacy stream 接口，到了本树的 APM，<code>setStreamVolumeIndex()</code> 也会先取得该 stream 的 attributes，再进入 <code>setVolumeIndexForAttributes()</code>。旧 API 与新组模型是通过适配衔接的，不能简单分成“旧系统只有 stream、新系统只有 group”。</p>
+<h2 id="4-5-档位、静音、铃声模式与-DND-不能混成一个值"><a href="#4-5-档位、静音、铃声模式与-DND-不能混成一个值" class="headerlink" title="4.5. 档位、静音、铃声模式与 DND 不能混成一个值"></a>4.5. 档位、静音、铃声模式与 DND 不能混成一个值</h2><table>
+<thead>
+<tr>
+<th>状态</th>
+<th>例子</th>
+<th>对“没有声音”的解释</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>index</td>
+<td>媒体第 5 档</td>
+<td>表示记住的用户档位</td>
+</tr>
+<tr>
+<td>stream mute / internal mute</td>
+<td>某条流被静音</td>
+<td>可能保留非零 index，实际应用静音</td>
+</tr>
+<tr>
+<td>ringer mode</td>
+<td>正常、振动、静音</td>
+<td>改变一组相关流的行为</td>
+</tr>
+<tr>
+<td>Zen / DND</td>
+<td>勿扰策略限制某类声音</td>
+<td>决定允许什么声音和哪些调整</td>
+</tr>
+<tr>
+<td>player gain / duck / fade</td>
+<td>导航期间压低音乐</td>
+<td>影响播放器，未必修改媒体档位</td>
+</tr>
+<tr>
+<td>device volume behavior</td>
+<td>full / fixed / absolute</td>
+<td>改变 index 的解释或控制对象</td>
+</tr>
+</tbody></table>
+<p>所以 <code>getStreamVolume()</code> 返回非零，不足以证明能听见；导航播报时音乐变小，也不意味着 <code>STREAM_MUSIC</code> 的用户档位被改低。后面排障时要按这些不同状态逐层判断。</p>
+<h1 id="5-一次音量调整：从请求到-native，再到设置保存"><a href="#5-一次音量调整：从请求到-native，再到设置保存" class="headerlink" title="5. 一次音量调整：从请求到 native，再到设置保存"></a>5. 一次音量调整：从请求到 native，再到设置保存</h1><h2 id="5-1-“音量键调谁”与“怎样调整”是两个问题"><a href="#5-1-“音量键调谁”与“怎样调整”是两个问题" class="headerlink" title="5.1. “音量键调谁”与“怎样调整”是两个问题"></a>5.1. “音量键调谁”与“怎样调整”是两个问题</h2><p>物理音量键先由输入、窗口/媒体会话等上层机制分发，具体产品还可能让活动 MediaSession 或远端会话处理。本文从请求已经进入 AudioService 开始分析，不假设所有按键都直接调用同一个方法。</p>
+<p><code>adjustSuggestedStreamVolume()</code> 先决定目标流，考虑强制控制流、当前活跃流、默认建议和外部音量控制器等，再进入调整逻辑。<code>adjustStreamVolume()</code> 则已经给定 stream，表达“加、减、静音、取消静音”等方向；<code>setStreamVolume()</code> 表达“设置到指定档位”。</p>
+<p>因此“音量键调错流”要先查目标选择；“流选对但档位没动”才进入权限、alias、设备行为和安全音量检查。远端媒体会话的音量也不能强行套成本机扬声器的 <code>VolumeStreamState</code>。</p>
+<h2 id="5-2-调整前为什么有那么多检查"><a href="#5-2-调整前为什么有那么多检查" class="headerlink" title="5.2. 调整前为什么有那么多检查"></a>5.2. 调整前为什么有那么多检查</h2><p><code>adjustStreamVolume()</code> 的主干不是先加一再补救，而是先建立允许调整的条件。源码中的关键判断可以按因果顺序读：</p>
+<ol>
+<li>全局固定音量模式可直接返回；替换 SCO stream 的 feature flag 可能先转换目标流。</li>
+<li>校验方向和 stream，检查此流是否可静音；语音流静音、助手流等有额外权限条件。</li>
+<li>找到 stream alias 和目标设备，读取该设备旧 index。</li>
+<li>验证包名、UID 与 AppOps；系统 UID 发来的请求还要按当前用户处理相关限制。</li>
+<li>计算步长。普通路径由内部十倍单位及比例换算得到；固定音量设备可能用整个允许范围作为一步。</li>
+<li>检查铃声模式、Zen/DND；某些加音量/取消静音动作不能越过当前策略。</li>
+<li>若由绝对音量控制器处理 adjustment，转发给它并返回。</li>
+<li>对允许的请求，修改 mute 或 index；安全音量可能拦截继续加大。</li>
+<li>投递实际设备音量更新，并按设备类型协调蓝牙、HDMI 与 UI 等后续行为。</li>
+</ol>
+<p>这是阅读顺序，不是对所有 flag 组合的穷举。尤其不要把“没有抛异常”当成音量一定发生变化：不少拒绝路径是返回、无操作或仅显示提示。</p>
+<h2 id="5-3-具体例子：扬声器媒体音量从-5-调到-6"><a href="#5-3-具体例子：扬声器媒体音量从-5-调到-6" class="headerlink" title="5.3. 具体例子：扬声器媒体音量从 5 调到 6"></a>5.3. 具体例子：扬声器媒体音量从 5 调到 6</h2><p>先限定条件：普通可调扬声器、媒体 alias 仍是媒体、无静音/勿扰阻止、无安全音量拦截、无外部控制器接管，步长因子为 1，未到上限。输入是 <code>STREAM_MUSIC + ADJUST_RAISE</code>。</p>
+<p>此时旧内部 index 为 50，普通步长为 10，<code>adjustIndex()</code> 按范围裁剪后把状态改成 60。接下来提交 <code>MSG_SET_DEVICE_VOLUME</code>，参数包括设备类型与该 <code>VolumeStreamState</code>。</p>
+<p>这里已经发生的是 <strong>Java 状态更新和消息入队</strong>。native 设备音量应用要等 AudioHandler 消费消息。消息的 <code>delay=0</code> 表示没有主动延时，仍需等待 Looper 调度，不是同步执行。</p>
+<figure class="highlight java"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/base/services/core/java/com/android/server/audio/AudioService.java</span></span><br><span class="line"></span><br><span class="line"><span class="comment">/*package*/</span> <span class="keyword">class</span> <span class="title class_">AudioHandler</span> <span class="keyword">extends</span> <span class="title class_">Handler</span> {</span><br><span class="line">    ...</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">handleMessage</span><span class="params">(Message msg)</span> {</span><br><span class="line">        <span class="keyword">switch</span> (msg.what) {</span><br><span class="line">            <span class="keyword">case</span> MSG_SET_DEVICE_VOLUME:</span><br><span class="line">                <span class="comment">// 消费者在 AudioHandler 线程实际应用设备音量。</span></span><br><span class="line">                setDeviceVolume((VolumeStreamState) msg.obj, msg.arg1);</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">            ...</span><br><span class="line">            <span class="keyword">case</span> MSG_PERSIST_VOLUME:</span><br><span class="line">                <span class="comment">// Settings 保存是后续另一条消息。</span></span><br><span class="line">                persistVolume((VolumeStreamState) msg.obj, msg.arg1);</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">            ...</span><br><span class="line">        }</span><br><span class="line">    }</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<p><code>setDeviceVolume()</code> 在 <code>VolumeStreamState.class</code> 锁下应用目标设备音量，并遍历使用同一 alias 的流，必要时给它们当前使用的设备也应用音量。随后再发送延迟 <code>PERSIST_DELAY</code> 的保存消息，本树常量为 500 ms。</p>
+<p><strong>500 ms 是计划延迟，不是磁盘持久化的实时保证。</strong> 消费时要读取当时状态，SettingsProvider 的实际落盘又有自己的实现；不能把这个值写成“按键后恰好 500 ms 写入磁盘”。</p>
+<p><img src="/2026/10/27/AudioService%E5%89%96%E6%9E%90/02-%E9%9F%B3%E9%87%8F%E5%BC%82%E6%AD%A5%E4%B8%8B%E5%8F%91.png" alt="普通音量请求的状态更新、AudioHandler 下发与延迟保存，蓝色虚线表示异步消息"></p>
+<p>图中的 audioserver 调用省略了 Adapter、JNI 和 Binder 细节；Settings 一行表示保存目标，并不声明 SettingsProvider 与其他组件属于同一线程。上方与 AudioHandler 两行在 system_server 内。档位 6 是单次孤立请求的示例；连续请求应按可变状态对象解释。</p>
+<h2 id="5-4-applyDeviceVolume：用户-index-不一定原样下发"><a href="#5-4-applyDeviceVolume：用户-index-不一定原样下发" class="headerlink" title="5.4. applyDeviceVolume：用户 index 不一定原样下发"></a>5.4. applyDeviceVolume：用户 index 不一定原样下发</h2><p><code>applyDeviceVolume_syncVSS()</code> 根据设备行为生成要传给 native 的 index。普通设备才直接把内部十倍单位取整；静音、full volume、absolute volume、助听器等有专门分支。</p>
+<table>
+<thead>
+<tr>
+<th>条件</th>
+<th>本树处理方向</th>
+<th>阅读提醒</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>完全静音且 <code>ringMyCar()</code> 未启用</td>
+<td>应用 index 0</td>
+<td>记住的 index 可以仍非零</td>
+</tr>
+<tr>
+<td>absolute / A2DP absolute / LE 设备</td>
+<td>经 <code>getAbsoluteVolumeIndex()</code> 等分支</td>
+<td>受 <code>absVolumeIndexFix()</code> 等开关影响</td>
+</tr>
+<tr>
+<td>full volume 设备</td>
+<td>应用最大 index</td>
+<td>本地 index 与最终音量控制可能分离</td>
+</tr>
+<tr>
+<td>普通设备</td>
+<td><code>(getIndex(device) + 5) / 10</code></td>
+<td>不涉及这里以外的后续增益</td>
+</tr>
+<tr>
+<td><code>ringMyCar()</code> 启用</td>
+<td>native 接口可另带 muted 状态</td>
+<td>不能永远假设“静音只有 index=0”</td>
+</tr>
+</tbody></table>
+<p><code>getAbsoluteVolumeIndex()</code> 的旧分支包含低档位预衰减、其他档位全增益等兼容逻辑；新 flag 分支不再按同样方式操纵 index。这正是“蓝牙绝对音量永远把手机侧拉满”不够准确的原因。</p>
+<h2 id="5-5-从-Java-到-APM：谁负责档位到响度"><a href="#5-5-从-Java-到-APM：谁负责档位到响度" class="headerlink" title="5.5. 从 Java 到 APM：谁负责档位到响度"></a>5.5. 从 Java 到 APM：谁负责档位到响度</h2><p>本树普通 stream 音量路径可以按符号定位：</p>
+<figure class="highlight text"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">AudioService.VolumeStreamState.setStreamVolumeIndex()</span><br><span class="line">  → AudioSystemAdapter.setStreamVolumeIndexAS()</span><br><span class="line">  → android.media.AudioSystem.setStreamVolumeIndexAS()</span><br><span class="line">  → JNI android_media_AudioSystem_setStreamVolumeIndex()</span><br><span class="line">  → C++ AudioSystem::setStreamVolumeIndex()</span><br><span class="line">  → IAudioPolicyService::setStreamVolumeIndex()</span><br><span class="line">  → AudioPolicyManager::setStreamVolumeIndex()</span><br><span class="line">  → AudioPolicyManager::setVolumeIndexForAttributes()</span><br></pre></td></tr></tbody></table></figure>
+
+<p>这张调用清单中的 JNI 在 system_server 内；C++ AudioSystem 调用 native 策略 Binder 时跨到 audioserver。<code>AudioSystemAdapter</code> 便于封装/替换桥接依赖，并不是另一个系统进程。</p>
+<p>APM 的 stream 入口展示了兼容转换：</p>
+<figure class="highlight cpp"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/av/services/audiopolicy/managerdefault/AudioPolicyManager.cpp</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">status_t</span> <span class="title">AudioPolicyManager::setStreamVolumeIndex</span><span class="params">(<span class="type">audio_stream_type_t</span> stream,</span></span></span><br><span class="line"><span class="params"><span class="function">                                                  <span class="type">int</span> index,</span></span></span><br><span class="line"><span class="params"><span class="function">                                                  <span class="type">bool</span> muted,</span></span></span><br><span class="line"><span class="params"><span class="function">                                                  <span class="type">audio_devices_t</span> device)</span></span></span><br><span class="line"><span class="function"></span>{</span><br><span class="line">    <span class="keyword">auto</span> attributes = mEngine-&gt;<span class="built_in">getAttributesForStreamType</span>(stream);</span><br><span class="line">    <span class="keyword">if</span> (attributes == AUDIO_ATTRIBUTES_INITIALIZER) {</span><br><span class="line">        ...</span><br><span class="line">        <span class="comment">// 没有映射时并不会凭空生成一组可控制的输出。</span></span><br><span class="line">        <span class="keyword">return</span> NO_ERROR;</span><br><span class="line">    }</span><br><span class="line">    ...</span><br><span class="line">    <span class="keyword">return</span> <span class="built_in">setVolumeIndexForAttributes</span>(attributes, index, muted, device);</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<p>后续 <code>setVolumeIndexForAttributes()</code> 查 volume group、保存曲线 index、结合当前设备与输出处理音量；<code>computeVolume()</code> 等路径计算实际 dB。<strong>AudioService 的十倍整数不是 dB，也不是最终线性振幅。</strong> 查询到档位变化，只证明控制状态变化；要证明底层采用了预期增益，需要再看 native policy/输出状态。</p>
+<h2 id="5-6-为什么切回扬声器能恢复之前的档位"><a href="#5-6-为什么切回扬声器能恢复之前的档位" class="headerlink" title="5.6. 为什么切回扬声器能恢复之前的档位"></a>5.6. 为什么切回扬声器能恢复之前的档位</h2><p><code>persistVolume()</code> 用 <code>getSettingNameForDevice(device)</code> 形成设置项名，写入 <code>Settings.System</code> 当前用户；固定音量、单音量非媒体流等条件会跳过保存。重新读设置、切换用户或设备变化时，相关状态按配置重新应用。</p>
+<p>下面是本树保存时最重要的约束：</p>
+<figure class="highlight java"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/base/services/core/java/com/android/server/audio/AudioService.java</span></span><br><span class="line"></span><br><span class="line"><span class="comment">/*package*/</span> <span class="keyword">class</span> <span class="title class_">AudioHandler</span> <span class="keyword">extends</span> <span class="title class_">Handler</span> {</span><br><span class="line">    ...</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">void</span> <span class="title function_">persistVolume</span><span class="params">(VolumeStreamState streamState, <span class="type">int</span> device)</span> {</span><br><span class="line">        <span class="keyword">if</span> (mUseFixedVolume) {</span><br><span class="line">            <span class="keyword">return</span>;</span><br><span class="line">        }</span><br><span class="line">        <span class="keyword">if</span> (mIsSingleVolume &amp;&amp; (streamState.mStreamType != AudioSystem.STREAM_MUSIC)) {</span><br><span class="line">            <span class="keyword">return</span>;</span><br><span class="line">        }</span><br><span class="line">        <span class="comment">// SYSTEM_ENFORCED 与 alias 的设置共享关系不能重复覆盖。</span></span><br><span class="line">        <span class="keyword">if</span> (streamState.mStreamType == AudioSystem.STREAM_SYSTEM_ENFORCED) {</span><br><span class="line">            <span class="keyword">return</span>;</span><br><span class="line">        }</span><br><span class="line">        <span class="keyword">if</span> (streamState.hasValidSettingsName()) {</span><br><span class="line">            mSettings.putSystemIntForUser(mContentResolver,</span><br><span class="line">                    streamState.getSettingNameForDevice(device),</span><br><span class="line">                    (streamState.getIndex(device) + <span class="number">5</span>) / <span class="number">10</span>,</span><br><span class="line">                    UserHandle.USER_CURRENT);</span><br><span class="line">        }</span><br><span class="line">    }</span><br><span class="line">    ...</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<p>沿贯穿场景推演：扬声器记住 6，耳机记住 4；插耳机后查耳机设备对应状态，拔掉后若路由回扬声器，再应用扬声器的 6。这个例子建立在常规设备分类与策略条件上，不保证所有设备切换都保留完全相同的 UI 数字；alias、音量范围、安全音量和远端控制都可能介入。</p>
+<h2 id="5-7-四个“音量不动”分支"><a href="#5-7-四个“音量不动”分支" class="headerlink" title="5.7. 四个“音量不动”分支"></a>5.7. 四个“音量不动”分支</h2><p><strong>固定音量与满音量。</strong> 全局 <code>mUseFixedVolume</code> 可以让调整入口无操作。<code>mFixedVolumeDevices</code> 表示特定设备上的固定音量行为，媒体路径可能在 0 与最大允许值之间切换；<code>mFullVolumeDevices</code> 则在应用音量时走 full-volume 逻辑。两者不能按名字猜成同一集合。</p>
+<p><strong>绝对音量。</strong> 蓝牙或其他控制器可接收统一档位/调整请求。对应 flag 用于识别来源，避免把远端报告的变化又无限发回远端。排障要同时看本地 index、设备行为、协议支持及远端设备结果。</p>
+<p><strong>铃声与勿扰。</strong> <code>checkForRingerModeChange()</code> 可能把某次音量动作转成铃声模式变化；<code>volumeAdjustmentAllowedByDnd()</code> 可能不允许调整。请求触发勿扰变化时，<code>setStreamVolume()</code> 还检查通知策略访问资格。</p>
+<p><strong>安全音量。</strong> <code>SoundDoseHelper</code> 判断媒体 alias、受保护设备和安全阈值等条件。设置指定档位时，超阈值请求可能保存为 <code>mPendingVolumeCommand</code> 并显示警告，用户通过正常 UI 确认后才有机会执行。增加音量路径也有安全提示判断。它不是“先调大再弹一个无关提示”。</p>
+<p>这里有个容易读反的返回值：<code>checkSafeMediaVolume_l()</code> 返回 true 表示命中了需要安全音量处理的条件，并非“本次音量已经被证明安全”。</p>
+<figure class="highlight java"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/base/services/core/java/com/android/server/audio/SoundDoseHelper.java</span></span><br><span class="line"></span><br><span class="line"><span class="meta">@GuardedBy("mSafeMediaVolumeStateLock")</span></span><br><span class="line"><span class="keyword">private</span> <span class="type">boolean</span> <span class="title function_">checkSafeMediaVolume_l</span><span class="params">(<span class="type">int</span> streamType, <span class="type">int</span> index, <span class="type">int</span> device)</span> {</span><br><span class="line">    <span class="comment">// 保护已激活 + 媒体 alias + 受保护设备 + 请求值超过阈值。</span></span><br><span class="line">    <span class="keyword">return</span> (mSafeMediaVolumeState == SAFE_MEDIA_VOLUME_ACTIVE)</span><br><span class="line">                &amp;&amp; (AudioService.sStreamVolumeAlias.get(streamType) == AudioSystem.STREAM_MUSIC)</span><br><span class="line">                &amp;&amp; safeDevicesContains(device)</span><br><span class="line">                &amp;&amp; (index &gt; safeMediaVolumeIndex(device));</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<p>必须沿调用者继续读：<code>willDisplayWarningAfterCheckVolume()</code> 在上述条件为 true 时显示提示、记录待处理命令，并返回 true；调用方因此跳过正常设置分支。仅按方法名猜测布尔值含义，很容易把整个控制流解释反。</p>
+<p>CSD（累计声音剂量）还涉及暴露累计和告警，与传统安全媒体音量不是完全相同的状态机；本树按配置决定它们的启用和协作。本文解释控制职责，不把源码中的阈值或产品配置推广成通用健康建议。</p>
+<h1 id="6-音频焦点：从请求仲裁到播放器行为"><a href="#6-音频焦点：从请求仲裁到播放器行为" class="headerlink" title="6. 音频焦点：从请求仲裁到播放器行为"></a>6. 音频焦点：从请求仲裁到播放器行为</h1><h2 id="6-1-焦点到底管理什么"><a href="#6-1-焦点到底管理什么" class="headerlink" title="6.1. 焦点到底管理什么"></a>6.1. 焦点到底管理什么</h2><p>导航和音乐可以在硬件上同时播放，但“能混在一起”不意味着“用户体验上应该一样大声”。焦点协议让声音发起者表达短时打断、长期占用、允许被压低等需求，系统再把影响传给已有持有者。</p>
+<p>每次请求由 <code>AudioAttributes</code>、gain 类型、clientId、调用 UID/包名、目标 SDK、flags、回调接口和 Binder token 等共同描述。<code>FocusRequester</code> 把这些数据与当前 loss 状态封装起来；它不是 AudioTrack，也不是每个 UID 永远唯一的一份对象。</p>
+<table>
+<thead>
+<tr>
+<th>请求 gain</th>
+<th>常见意图</th>
+<th>对既有持有者的典型影响</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>AUDIOFOCUS_GAIN</code></td>
+<td>较长期占用，如新的音乐播放</td>
+<td>可能造成永久 loss</td>
+</tr>
+<tr>
+<td><code>GAIN_TRANSIENT</code></td>
+<td>短时占用</td>
+<td>通常 transient loss，之后可恢复</td>
+</tr>
+<tr>
+<td><code>GAIN_TRANSIENT_MAY_DUCK</code></td>
+<td>短时声音，允许其他声音压低继续</td>
+<td>可能产生 can-duck loss</td>
+</tr>
+<tr>
+<td><code>GAIN_TRANSIENT_EXCLUSIVE</code></td>
+<td>希望暂时独占的场景</td>
+<td>焦点协议中的更强临时需求，不能据此保证所有硬件声音消失</td>
+</tr>
+</tbody></table>
+<p>这里是主干语义，不是无条件映射表。已有 loss、锁定持有者、外部策略、多焦点配置与播放器类型都会影响后续行为。</p>
+<h2 id="6-2-请求先过准入，再进入焦点仲裁"><a href="#6-2-请求先过准入，再进入焦点仲裁" class="headerlink" title="6.2. 请求先过准入，再进入焦点仲裁"></a>6.2. 请求先过准入，再进入焦点仲裁</h2><p>AudioManager 通过 <code>IAudioService.requestAudioFocus()</code> 发请求。AudioService 先检查 attributes usage、参数、锁定焦点权限等，再调用 <code>HardeningEnforcer</code> 和 <code>MediaFocusControl</code>。</p>
+<p>本树 <code>HardeningEnforcer.blockFocusMethod()</code> 检查 <code>OP_TAKE_AUDIO_FOCUS</code>；目标 SDK 低于 <code>VANILLA_ICE_CREAM</code> 有兼容放行分支，特权身份也可能在上层绕过该阻止检查。因此，看到“焦点失败”时不能直接认定是另一播放器占着栈顶，应先判断是否根本没有通过准入。与前台资格相关的策略最终如何反映在 AppOps，还需结合设备上的权限策略和应用状态观察。</p>
+<p>Binder token 用于 <code>linkToDeath()</code>：应用进程在主动 abandon 前崩溃，系统仍可清理其请求。失效 client 不应该永远留在焦点结构里占位。这里用的是 Binder 生命周期，不是靠播放器自己保证执行 <code>finally</code>。</p>
+<h2 id="6-3-默认栈怎样处理新请求"><a href="#6-3-默认栈怎样处理新请求" class="headerlink" title="6.3. 默认栈怎样处理新请求"></a>6.3. 默认栈怎样处理新请求</h2><p>在<strong>没有外部焦点策略、未走多焦点特殊分支</strong>的普通路径中，<code>MediaFocusControl.requestAudioFocus()</code> 在焦点锁内做以下事情：</p>
+<ol>
+<li>判断能否重分配焦点。栈顶是锁定持有者时，普通请求可能失败；允许 delayed gain 的请求可等待。</li>
+<li>对相同客户端的重复请求做匹配、清理或复用处理。</li>
+<li>创建 <code>FocusRequester</code>，关联死亡监听。</li>
+<li>若需延迟，将请求插入锁定持有者下方；否则传播新 gain 对旧请求的 loss，再把新请求压入栈顶。</li>
+<li>返回 grant/delay/failure，按路径通知焦点观察者。</li>
+</ol>
+<p>普通立即授予分支中的顺序值得注意：<strong>先传播 loss，再压入新请求</strong>。不能把焦点栈想成简单的“只通知旧栈顶，再覆盖一个全局变量”。<code>propagateFocusLossFromGain_syncAf()</code> 会遍历现有栈中的请求并处理影响；永久 loss 的请求可能被移除，临时 loss 的请求可以保留以等待恢复。</p>
+<p><code>abandonAudioFocus()</code> 或死亡清理移除请求后，如果需要，系统通知可恢复的栈顶。恢复表示焦点状态变化，播放器是否正确恢复业务进度，仍要看应用和框架播放器控制的处理结果。</p>
+<h2 id="6-4-GRANTED、DELAYED-与外部策略等待"><a href="#6-4-GRANTED、DELAYED-与外部策略等待" class="headerlink" title="6.4. GRANTED、DELAYED 与外部策略等待"></a>6.4. GRANTED、DELAYED 与外部策略等待</h2><table>
+<thead>
+<tr>
+<th>结果</th>
+<th>应用应该理解为</th>
+<th>不应理解为</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>AUDIOFOCUS_REQUEST_GRANTED</code></td>
+<td>此次请求被授予</td>
+<td>音频输出和路由已经建立</td>
+</tr>
+<tr>
+<td><code>AUDIOFOCUS_REQUEST_DELAYED</code></td>
+<td>接受等待，后续 gain 才能开始预定播放</td>
+<td>已获得焦点，可以立即播放</td>
+</tr>
+<tr>
+<td><code>AUDIOFOCUS_REQUEST_FAILED</code></td>
+<td>此次请求失败</td>
+<td>系统一定对所有播放通路施加静音</td>
+</tr>
+<tr>
+<td>内部 <code>WAITING_FOR_EXT_POLICY</code></td>
+<td>AudioManager 与外部策略结果机制配合处理</td>
+<td>普通默认栈路径已完成授予</td>
+</tr>
+</tbody></table>
+<p>延迟焦点不是调用线程一直阻塞到电话结束。它是一种“先记录等待者，之后回调”的协议。外部策略等待又是另一条机制，不要把它和 <code>DELAYED</code> 混为一谈。</p>
+<h2 id="6-5-导航播报时，为什么应用可能没收到-duck-回调"><a href="#6-5-导航播报时，为什么应用可能没收到-duck-回调" class="headerlink" title="6.5. 导航播报时，为什么应用可能没收到 duck 回调"></a>6.5. 导航播报时，为什么应用可能没收到 duck 回调</h2><p>旧印象往往是“框架只发通知，应用自己调小音量”。本树并不止于此：<code>FocusRequester.handleFocusLoss()</code> 会尝试 <code>frameworkHandleFocusLoss()</code>，符合条件时由框架实际控制播放器。</p>
+<p>先看框架处理入口：</p>
+<figure class="highlight java"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/base/services/core/java/com/android/server/audio/FocusRequester.java</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span> <span class="type">boolean</span> <span class="title function_">frameworkHandleFocusLoss</span><span class="params">(<span class="type">int</span> focusLoss,</span></span><br><span class="line"><span class="params">        <span class="meta">@NonNull</span> <span class="keyword">final</span> FocusRequester frWinner, <span class="type">boolean</span> forceDuck)</span> {</span><br><span class="line">    <span class="keyword">if</span> (frWinner.mCallingUid == <span class="built_in">this</span>.mCallingUid) {</span><br><span class="line">        <span class="comment">// 同 UID 内部的焦点变化交回常规分发路径处理。</span></span><br><span class="line">        <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">    }</span><br><span class="line">    <span class="keyword">if</span> (focusLoss == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK) {</span><br><span class="line">        <span class="keyword">if</span> (!MediaFocusControl.ENFORCE_DUCKING) {</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">        }</span><br><span class="line">        <span class="keyword">if</span> (!forceDuck &amp;&amp; ((mGrantFlags</span><br><span class="line">                &amp; AudioManager.AUDIOFOCUS_FLAG_PAUSES_ON_DUCKABLE_LOSS) != <span class="number">0</span>)) {</span><br><span class="line">            <span class="comment">// 请求者声明希望暂停，不由这里替它直接暂停。</span></span><br><span class="line">            <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">        }</span><br><span class="line">        <span class="keyword">if</span> (!forceDuck &amp;&amp; (MediaFocusControl.ENFORCE_DUCKING_FOR_NEW</span><br><span class="line">                &amp;&amp; <span class="built_in">this</span>.getSdkTarget() &lt;= MediaFocusControl.DUCKING_IN_APP_SDK_LEVEL)) {</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">        }</span><br><span class="line">        <span class="keyword">return</span> mFocusController.duckPlayers(frWinner, <span class="comment">/*loser*/</span> <span class="built_in">this</span>, forceDuck);</span><br><span class="line">    }</span><br><span class="line">    ...</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<p><img src="/2026/10/27/AudioService%E5%89%96%E6%9E%90/03-%E7%84%A6%E7%82%B9%E4%B8%8E%E6%92%AD%E6%94%BE%E5%99%A8.png" alt="导航 MAY_DUCK 请求进入框架自动 duck 或应用回调的两条分支"></p>
+<p>图中的菱形概括分散在 FocusRequester 与 PlaybackActivityMonitor 中的条件，不是一处独立的同名函数。它以默认焦点、无外部 duck 接管的普通场景为前提；左路也要满足播放器可处理条件，箭头仅表示处理方向，省略线程与 IPC。</p>
+<p><code>MediaFocusControl</code> 再委托 <code>PlaybackActivityMonitor.duckPlayers()</code> 找出 loser UID 下正在启动状态的播放器。它还检查是否是语音内容、是否属于不能自动 duck 的播放器类型。本树 <code>UNDUCKABLE_PLAYER_TYPES</code> 包含 AAudio、SoundPool 对应类型，不能把支持范围推广成所有播放器。</p>
+<p>符合条件时，<code>DuckingManager</code> 通过播放器代理应用 <code>VolumeShaper</code>，并记住被 duck 的 UID，后续新启动的同 UID 播放器也能按状态处理。若框架已经处理，某些 loss 通知不再按普通路径交给应用，所以“回调没来但音乐变小”可以是预期结果。若不满足自动处理条件，则回到应用通知等路径。</p>
+<p><code>CONTENT_TYPE_SPEECH</code> 是有意义的反例：把有声书压得太低可能损害可理解性，所以常规非 forceDuck 路径会放弃框架自动 duck，让应用处理焦点损失。<code>forceDuck</code> 又可改变该判断，不能省掉这个前提。</p>
+<h3 id="应用回调还要跨-Binder，再投递到应用-Handler"><a href="#应用回调还要跨-Binder，再投递到应用-Handler" class="headerlink" title="应用回调还要跨 Binder，再投递到应用 Handler"></a>应用回调还要跨 Binder，再投递到应用 Handler</h3><p>需要通知应用时，<code>FocusRequester</code> 调用 <code>IAudioFocusDispatcher.dispatchAudioFocusChange()</code>。AudioManager 的 Binder 回调通过 clientId 找到注册的 listener 与 Handler，再投递 <code>MSSG_FOCUS_CHANGE</code>，最终由应用侧 Handler 调用监听器。</p>
+<p>这意味着系统决定 loss、Binder 通知抵达、应用 listener 执行、应用实际暂停是四个不同时间点。注册时选择的回调 Handler 如果忙碌，业务处理就可能延后；不能把“服务端调用了 dispatcher”当成“应用已经停播”。初始 GRANTED 也通常由请求返回值告知，不应假设每次成功请求都还必须等待一个独立 GAIN 回调才证明授予。</p>
+<p>还有一条独立分支：若外部策略接管 duck，<code>handleFocusLoss()</code> 可在框架自动处理之前按 <code>mustNotifyFocusOwnerOnDuck()</code> 等条件停止普通通知。因此排查“没有回调”时，要同时区分框架自动 duck 和外部 duck 接管，不能把二者混为一种原因。</p>
+<h2 id="6-6-Fade-out-与-duck-的区别"><a href="#6-6-Fade-out-与-duck-的区别" class="headerlink" title="6.6. Fade-out 与 duck 的区别"></a>6.6. Fade-out 与 duck 的区别</h2><p>Ducking 是暂时压低，通常期待之后恢复；永久焦点 loss 的某些路径则尝试 fade-out。<code>FocusRequester</code> 若成功启动 fade，会记录 <code>mFocusLossFadeLimbo</code>，通过 <code>postDelayedLossAfterFade()</code> 延后发送 loss。</p>
+<p>这说明“loss 回调时刻”不一定等于“声音开始变小的时刻”，也不等于“栈中的全部资源已经释放”。fade 能否应用仍依赖播放属性、UID、播放器与当前配置。本文只讲经过核对的调度关系，不把任意媒体播放都承诺成固定时长的淡出。</p>
+<p>贯穿场景至此可以预测：音乐 6 档，导航申请 <code>GAIN_TRANSIENT_MAY_DUCK</code>；若框架自动 duck 成立，音乐实际变小，但媒体档位仍可能是 6。导航 abandon 后，恢复焦点/播放器形状的路径使音乐恢复。若音乐声明 pause-on-duck，或播放语音内容，则不能用同一结果推演。</p>
+<h1 id="7-设备切换：连接事实、策略偏好与实际路由"><a href="#7-设备切换：连接事实、策略偏好与实际路由" class="headerlink" title="7. 设备切换：连接事实、策略偏好与实际路由"></a>7. 设备切换：连接事实、策略偏好与实际路由</h1><h2 id="7-1-为什么“耳机已连接”不等于“音乐已走耳机”"><a href="#7-1-为什么“耳机已连接”不等于“音乐已走耳机”" class="headerlink" title="7.1. 为什么“耳机已连接”不等于“音乐已走耳机”"></a>7.1. 为什么“耳机已连接”不等于“音乐已走耳机”</h2><p>音频设备有三个不同层面的状态：</p>
+<ol>
+<li><strong>连接事实</strong>：系统当前认为哪些设备可用，类型、地址、名称和能力是什么。</li>
+<li><strong>策略输入</strong>：媒体/通信偏好、模式、force use、动态 mix 等告诉策略引擎如何选择。</li>
+<li><strong>实际路由</strong>：某个活跃播放客户端最终使用的 output、device、audio patch 与 HAL 通路。</li>
+</ol>
+<p>AudioDeviceInventory 的 connected devices 主要回答第一层；AudioDeviceBroker 协调第二层的许多输入；native AudioPolicyManager 结合播放属性、可用设备和配置形成第三层的选择。连接列表有耳机，只能证明它进入了可用候选范围，不能单独证明当前播放器路由到了它。</p>
+<p>同样，<code>AudioRoutesInfo</code> 中的主路由摘要不是每条 track 的完整路由快照。分析具体播放要继续关联 native policy client、output 与 AudioFlinger track。</p>
+<h2 id="7-2-一次有线耳机连接怎样被处理"><a href="#7-2-一次有线耳机连接怎样被处理" class="headerlink" title="7.2. 一次有线耳机连接怎样被处理"></a>7.2. 一次有线耳机连接怎样被处理</h2><p>上游有线、USB 或蓝牙组件报告变化后，设备操作经 AudioService/Broker 进入 Inventory。不同传输类型入口有所区别，这里跟踪有线状态路径。</p>
+<p>Inventory 的入队方法非常短，但揭示了两个关键动作：<strong>先计算 noisy 通知及延迟，再把连接状态交给 BrokerHandler</strong>。</p>
+<figure class="highlight java"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/base/services/core/java/com/android/server/audio/AudioDeviceInventory.java</span></span><br><span class="line"></span><br><span class="line"><span class="comment">/*package*/</span> <span class="type">int</span> <span class="title function_">setWiredDeviceConnectionState</span><span class="params">(AudioDeviceAttributes attributes,</span></span><br><span class="line"><span class="params">        <span class="meta">@AudioService</span>.ConnectionState <span class="type">int</span> state, String caller)</span> {</span><br><span class="line">    <span class="keyword">synchronized</span> (mDevicesLock) {</span><br><span class="line">        <span class="type">int</span> <span class="variable">delay</span> <span class="operator">=</span> checkSendBecomingNoisyIntentInt(</span><br><span class="line">                attributes.getInternalType(), state, AudioSystem.DEVICE_NONE);</span><br><span class="line">        <span class="comment">// 此处只是提交；真正处理在 BrokerHandler 的消息分支中。</span></span><br><span class="line">        mDeviceBroker.postSetWiredDeviceConnectionState(</span><br><span class="line">                <span class="keyword">new</span> <span class="title class_">WiredDeviceConnectionState</span>(attributes, state, caller), delay);</span><br><span class="line">        <span class="keyword">return</span> delay;</span><br><span class="line">    }</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<p>BrokerHandler 收到 <code>MSG_L_SET_WIRED_DEVICE_CONNECTION_STATE</code> 后，在设备状态锁下调用 <code>onSetWiredDeviceConnectionState()</code>。后者执行连接处理、调整相关蓝牙媒体行为、检查音乐活动/HDMI 条件，发送连接广播并更新路由摘要。</p>
+<p><code>handleDeviceConnection()</code> 使用设备类型和地址构造 key；这与第 4 章 stream 音量 map 的 key 粒度不同。它调用 <code>AudioSystemAdapter.setDeviceConnectionState()</code> 把设备可用性送入 native。连接路径只有 native 返回成功才加入 <code>mConnectedDevices</code>；重复相同状态会按幂等方向处理，不把每个重复事件都当成新插入。</p>
+<p>断开路径则通知 native unavailable，再移除本地记录，并触发通信设备移除检查。源码注释明确说明，即便断开失败也移除本地记录。因此排查异常恢复时，Java 与 native 暂时不同步是需要考虑的情况，不能断言两者每个瞬间都严格一致。</p>
+<h2 id="7-3-拔耳机为什么先发-AUDIO-BECOMING-NOISY"><a href="#7-3-拔耳机为什么先发-AUDIO-BECOMING-NOISY" class="headerlink" title="7.3. 拔耳机为什么先发 AUDIO_BECOMING_NOISY"></a>7.3. 拔耳机为什么先发 AUDIO_BECOMING_NOISY</h2><p>若音乐突然从私密耳机外放，用户通常不希望等外放之后应用才知道。<code>checkSendBecomingNoisyIntentInt()</code> 判断是否存在这种转换风险，条件满足时先投递广播，并给设备断开处理加上 <code>BECOMING_NOISY_DELAY_MS</code> 延迟。</p>
+<p>这个判断不是“任何设备拔出都广播”。本树会检查：</p>
+<ul>
+<li>必须是断开事件，且设备属于可能导致 noisy 的集合。</li>
+<li>断开的设备与媒体当前设备相关，或当前在通信状态。</li>
+<li>剩余 noisy 设备类型满足 <code>isSingleAudioDeviceType()</code> 的条件。</li>
+<li>没有相关媒体动态策略介入，媒体设备也不是 remote submix。</li>
+<li>存在媒体播放活动或焦点使用者；否则可能直接放弃广播。</li>
+</ul>
+<p>这里的集合按设备类型处理，不能直接翻译成“只剩最后一只物理耳机”。多个同类型设备、动态路由和通信场景都要按实际代码条件理解。</p>
+<p>广播与延迟提供了应用暂停的机会，<strong>不是等待应用回复的握手机制</strong>，也不是“AudioService 保证在断开前暂停所有播放器”。应用如何注册并响应广播、是否及时暂停，以及硬件何时真正失去连接，都影响最终听感。</p>
+<p>回到场景：音乐正在耳机上播放，拔掉耳机；条件成立则应用收到 noisy 事件，可先暂停，随后设备状态被更新，APM 根据可用设备重新计算路由。若音乐已经暂停，仍不能仅由“后来没外放”推断系统没有重路由——可能只是没有待输出的音频数据。</p>
+<h2 id="7-4-蓝牙不是一个开关"><a href="#7-4-蓝牙不是一个开关" class="headerlink" title="7.4. 蓝牙不是一个开关"></a>7.4. 蓝牙不是一个开关</h2><p>蓝牙音乐播放、电话双向语音、LE Audio 和助听器有不同的设备类型、协议及控制路径。Broker 协调设备与模式，BtHelper 处理 profile/SCO 等交互，Inventory 更新设备可用性与偏好，APM 决定实际路由。</p>
+<table>
+<thead>
+<tr>
+<th>情况</th>
+<th>必须区分的状态</th>
+<th>常见误判</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>A2DP 媒体</td>
+<td>profile 连接、active device、音频设备可用、媒体路由、绝对音量</td>
+<td>蓝牙图标亮就等于媒体走蓝牙</td>
+</tr>
+<tr>
+<td>SCO 通信</td>
+<td>请求者、SCO 连接过程、模式 owner、通信首选设备</td>
+<td>调用 start/request 就等于 SCO 已建立</td>
+</tr>
+<tr>
+<td>LE Audio</td>
+<td>LE 设备与组、上下文、设备音量控制</td>
+<td>用经典 A2DP 的所有假设套用</td>
+</tr>
+<tr>
+<td>助听器</td>
+<td>对应设备状态与音量适配</td>
+<td>将音量 index 原样当成远端增益</td>
+</tr>
+</tbody></table>
+<p>本文不展开蓝牙协议状态机，但要保留这个边界：<strong>AudioService 管理/协调需求，不代替 Bluetooth 服务完成射频和协议连接。</strong> API 成功受理、profile 成功建立和实际音频出声仍是不同完成点。</p>
+<h1 id="8-通话模式与通信设备：两套相关但独立的仲裁"><a href="#8-通话模式与通信设备：两套相关但独立的仲裁" class="headerlink" title="8. 通话模式与通信设备：两套相关但独立的仲裁"></a>8. 通话模式与通信设备：两套相关但独立的仲裁</h1><h2 id="8-1-setMode-不是“给当前应用加个标签”"><a href="#8-1-setMode-不是“给当前应用加个标签”" class="headerlink" title="8.1. setMode 不是“给当前应用加个标签”"></a>8.1. setMode 不是“给当前应用加个标签”</h2><p><code>MODE_NORMAL</code>、<code>MODE_RINGTONE</code>、<code>MODE_IN_CALL</code>、<code>MODE_IN_COMMUNICATION</code> 是系统音频模式。它影响 native 策略、相关音量处理和通信路由。多个应用可能同时提交模式需求，所以 AudioService 保存 <code>SetModeDeathHandler</code> 列表，记录调用者、模式、权限、活跃情况和更新时间。</p>
+<p>普通应用不能随意冒充蜂窝通话：<code>setMode()</code> 先检查音频设置权限，<code>MODE_IN_CALL</code> 等受保护模式还要求 <code>MODIFY_PHONE_STATE</code>。通信应用常用的 <code>MODE_IN_COMMUNICATION</code> 也不能据此与电话模式等同。</p>
+<p><code>MODE_NORMAL</code> 的请求会移除本调用者的模式记录。它不是无条件清空所有其他调用者，然后强制整个系统正常模式。这个差别解释了为什么某个 VoIP 应用退出后，如果还有真正的通话请求，系统仍可以留在通话模式。</p>
+<h2 id="8-2-当前-mode-owner-怎样选"><a href="#8-2-当前-mode-owner-怎样选" class="headerlink" title="8.2. 当前 mode owner 怎样选"></a>8.2. 当前 mode owner 怎样选</h2><p>源码用权限与活跃状态优先，再比较更新时间：</p>
+<figure class="highlight java"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/base/services/core/java/com/android/server/audio/AudioService.java</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span> SetModeDeathHandler <span class="title function_">getAudioModeOwnerHandler</span><span class="params">()</span> {</span><br><span class="line">    <span class="type">SetModeDeathHandler</span> <span class="variable">modeOwner</span> <span class="operator">=</span> <span class="literal">null</span>;</span><br><span class="line">    <span class="type">SetModeDeathHandler</span> <span class="variable">privilegedModeOwner</span> <span class="operator">=</span> <span class="literal">null</span>;</span><br><span class="line">    <span class="keyword">for</span> (SetModeDeathHandler h : mSetModeDeathHandlers) {</span><br><span class="line">        <span class="keyword">if</span> (h.isActive()) {</span><br><span class="line">            <span class="keyword">if</span> (h.isPrivileged()) {</span><br><span class="line">                <span class="keyword">if</span> (privilegedModeOwner == <span class="literal">null</span></span><br><span class="line">                        || h.getUpdateTime() &gt; privilegedModeOwner.getUpdateTime()) {</span><br><span class="line">                    privilegedModeOwner = h;</span><br><span class="line">                }</span><br><span class="line">            } <span class="keyword">else</span> {</span><br><span class="line">                <span class="keyword">if</span> (modeOwner == <span class="literal">null</span></span><br><span class="line">                        || h.getUpdateTime() &gt; modeOwner.getUpdateTime()) {</span><br><span class="line">                    modeOwner = h;</span><br><span class="line">                }</span><br><span class="line">            }</span><br><span class="line">        }</span><br><span class="line">    }</span><br><span class="line">    <span class="comment">// 优先最近的特权持有者，否则选最近的活跃普通持有者。</span></span><br><span class="line">    <span class="keyword">return</span> privilegedModeOwner != <span class="literal">null</span> ? privilegedModeOwner : modeOwner;</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<p>因此“最后一次 setMode 永远获胜”不成立。普通通信应用进入模式时，本树会暂时设置播放/录音活跃状态，并延后检查真实活动，避免应用先设模式、稍后才启动播放/录音时立刻被当成不活跃。后续播放与录音状态能影响模式 owner。</p>
+<p>选出 owner 后，<code>onUpdateAudioMode()</code> 调用 <code>mAudioSystem.setPhoneState(mode, uid)</code>。只有成功，才更新 <code>mMode</code>、分发模式变化，重新应用相关音量/alias，并通知 Broker 模式 owner。这里又体现了“请求的模式”和“成功应用的模式”必须区分。</p>
+<p>客户端异常死亡时，death handler 清理请求并触发重评估。这是防止残留模式的重要机制，但不代表所有通话后的无声问题都必然由死亡清理解决；路由、播放器和 HAL 状态仍可能各有问题。</p>
+<h2 id="8-3-setCommunicationDevice：提交偏好，不是直接打开扬声器"><a href="#8-3-setCommunicationDevice：提交偏好，不是直接打开扬声器" class="headerlink" title="8.3. setCommunicationDevice：提交偏好，不是直接打开扬声器"></a>8.3. setCommunicationDevice：提交偏好，不是直接打开扬声器</h2><p>通信应用可选择适用的通信设备，AudioService 校验后将请求交给 Broker。Broker 保存按调用者关联的 <code>CommunicationRouteClient</code>，协调模式 owner、请求优先级、可用设备与蓝牙 SCO 状态。</p>
+<figure class="highlight java"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/base/services/core/java/com/android/server/audio/AudioDeviceBroker.java</span></span><br><span class="line"></span><br><span class="line"><span class="comment">/*package*/</span> <span class="type">boolean</span> <span class="title function_">setCommunicationDevice</span><span class="params">(IBinder cb,</span></span><br><span class="line"><span class="params">        <span class="meta">@NonNull</span> AttributionSource attributionSource, AudioDeviceInfo device,</span></span><br><span class="line"><span class="params">        <span class="type">boolean</span> isPrivileged, String eventSource)</span> {</span><br><span class="line">    ...</span><br><span class="line">    <span class="keyword">if</span> (device == <span class="literal">null</span>) {</span><br><span class="line">        <span class="keyword">synchronized</span> (mDeviceStateLock) {</span><br><span class="line">            <span class="type">CommunicationRouteClient</span> <span class="variable">client</span> <span class="operator">=</span></span><br><span class="line">                    getCommunicationRouteClientForUid(attributionSource.getUid());</span><br><span class="line">            <span class="keyword">if</span> (client == <span class="literal">null</span>) {</span><br><span class="line">                <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">            }</span><br><span class="line">        }</span><br><span class="line">    }</span><br><span class="line">    <span class="keyword">synchronized</span> (mCommunicationDeviceLock) {</span><br><span class="line">        mCommunicationDeviceUpdateCount++;</span><br><span class="line">        <span class="type">AudioDeviceAttributes</span> <span class="variable">deviceAttr</span> <span class="operator">=</span></span><br><span class="line">                (device != <span class="literal">null</span>) ? <span class="keyword">new</span> <span class="title class_">AudioDeviceAttributes</span>(device) : <span class="literal">null</span>;</span><br><span class="line">        <span class="type">CommunicationDeviceInfo</span> <span class="variable">deviceInfo</span> <span class="operator">=</span></span><br><span class="line">                <span class="keyword">new</span> <span class="title class_">CommunicationDeviceInfo</span>(cb, attributionSource, deviceAttr,</span><br><span class="line">                device != <span class="literal">null</span>, BtHelper.SCO_MODE_UNDEFINED, eventSource, isPrivileged);</span><br><span class="line">        <span class="comment">// 提交给 Broker 后续执行，当前返回不证明物理链路已经建立。</span></span><br><span class="line">        postSetCommunicationDeviceForClient(deviceInfo);</span><br><span class="line">    }</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<p><code>setCommunicationRouteForClient()</code> 保存请求，并在需要时启动/停止 SCO，失败时清理或恢复先前客户端选择，再更新通信路由。<code>updateCommunicationRoute()</code> 通过通信策略相关的设备偏好把结果交给下层。</p>
+<p>“请求的设备”“当前首选设备”“实际 active communication device”可能短暂不同。特别是蓝牙连接需要时间，不能把 <code>true</code> 返回直接展示成“用户已听到耳机声音”。应结合通信设备变化回调、Broker 状态和 native route 判断。</p>
+<h2 id="8-4-焦点、mode、route-三者不是互相替代的-API"><a href="#8-4-焦点、mode、route-三者不是互相替代的-API" class="headerlink" title="8.4. 焦点、mode、route 三者不是互相替代的 API"></a>8.4. 焦点、mode、route 三者不是互相替代的 API</h2><table>
+<thead>
+<tr>
+<th>控制</th>
+<th>主要作用</th>
+<th>单独调用不能保证</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>requestAudioFocus</td>
+<td>协调与其他声音的关系</td>
+<td>进入通信模式、选择扬声器</td>
+</tr>
+<tr>
+<td>setMode</td>
+<td>声明/仲裁系统音频模式需求</td>
+<td>获得焦点、建立 SCO、启动录音</td>
+</tr>
+<tr>
+<td>setCommunicationDevice</td>
+<td>提交通信设备选择</td>
+<td>自动创建播放/录音轨道、获得麦克风权限</td>
+</tr>
+</tbody></table>
+<p>贯穿场景中，音乐遇到语音通话，往往同时看到焦点变化、mode 变化、通信设备调整和录音活动。但这些是业务场景把多条控制链组合在一起，不是一个 API 必然隐式完成全部工作。</p>
+<h1 id="9-播放-录音监控与麦克风静音"><a href="#9-播放-录音监控与麦克风静音" class="headerlink" title="9. 播放/录音监控与麦克风静音"></a>9. 播放/录音监控与麦克风静音</h1><h2 id="9-1-为什么系统还要维护播放器列表"><a href="#9-1-为什么系统还要维护播放器列表" class="headerlink" title="9.1. 为什么系统还要维护播放器列表"></a>9.1. 为什么系统还要维护播放器列表</h2><p>焦点请求告诉系统“应用想获得什么”，却不能完整说明“实际有哪些播放器正在播放”。一个应用可以有多个 player，也可能拿着焦点没有启动播放。<code>PlaybackActivityMonitor</code> 保存 player interface ID、UID/PID、播放器类型、attributes 和状态等，接收注册、属性变化、start/stop/release 等事件。</p>
+<p>这份状态使框架能够把焦点决策落到具体 player：duck/fade、通话期间的播放器控制、播放活动回调，以及 mode 活跃状态判断。它不是 PCM 数据缓存，也不以音频波形为输入判断“用户听到了什么”。</p>
+<p>本树注释明确指出部分 player 更新是 oneway 调用：报告操作具有异步性。观察焦点、player 配置与 native track 时，要允许采样时刻不同造成的短暂差异，不能只取三份相隔很久的 dump 就声称获得同一时刻的一致快照。</p>
+<h2 id="9-2-录音监控也不等于录音授权"><a href="#9-2-录音监控也不等于录音授权" class="headerlink" title="9.2. 录音监控也不等于录音授权"></a>9.2. 录音监控也不等于录音授权</h2><p><code>RecordingActivityMonitor</code> 处理录音配置更新、活跃录音查询与回调，向普通客户端分发时有匿名化路径。它可以帮助判断当前有哪些录音活动，但不替代 <code>RECORD_AUDIO</code>、AppOps、传感器隐私和 native 并发采集策略。</p>
+<p>有录音配置不等于采集到非静音数据；录音无声也不能直接归因于 AudioService 的模式。完整排查还需关联录音 source、device、client silenced 状态、隐私开关和 native input。本文覆盖其与 AudioService 的协作，不展开 AudioRecord 缓冲和并发采集完整算法。</p>
+<h2 id="9-3-麦克风静音是多个来源合成的结果"><a href="#9-3-麦克风静音是多个来源合成的结果" class="headerlink" title="9.3. 麦克风静音是多个来源合成的结果"></a>9.3. 麦克风静音是多个来源合成的结果</h2><p>本树区分 API 请求、物理开关、用户限制和隐私开关四个来源：</p>
+<figure class="highlight java"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/base/services/core/java/com/android/server/audio/AudioService.java</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span> <span class="type">boolean</span> <span class="title function_">isMicrophoneSupposedToBeMuted</span><span class="params">()</span> {</span><br><span class="line">    <span class="comment">// 任一来源要求静音，期望状态就是静音。</span></span><br><span class="line">    <span class="keyword">return</span> mMicMuteFromSwitch || mMicMuteFromRestrictions || mMicMuteFromApi</span><br><span class="line">            || mMicMuteFromPrivacyToggle;</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<p><code>setMicrophoneMuteNoCallerCheck()</code> 在适用用户条件下调用 native mute，再查询真实状态更新 <code>mMicMuteFromSystemCached</code>，即使设置调用失败也以查询结果维护缓存。它区分了“希望静音”和“底层报告静音”。</p>
+<p>因此应用调用取消静音，只能撤销其 API 来源的要求，不能绕过物理开关或隐私策略。另一个细节是本树公开 <code>isMicrophoneMuted()</code> 对隐私来源做了额外过滤：公开 API 返回值不能简单等同于这四个布尔值的 OR。验证麦克风问题应结合隐私状态和 native 状态，而不是只盯一个 getter。</p>
+<h2 id="9-4-空间音频与系统音效在本篇的位置"><a href="#9-4-空间音频与系统音效在本篇的位置" class="headerlink" title="9.4. 空间音频与系统音效在本篇的位置"></a>9.4. 空间音频与系统音效在本篇的位置</h2><p><code>SpatializerHelper</code> 维护空间化相关能力、设备与启用状态，audioserver 恢复时也需要重新建立状态；实际空间音效处理不在 AudioService 的普通 Java 消息循环中逐帧执行。<code>SoundEffectsHelper</code> 管理系统音效加载/播放，不等于所有应用音乐都由它统一播放。</p>
+<p>这两部分是理解服务全貌所需的职责定位；本篇不展开空间化算法、头部跟踪传感器融合或 SoundPool 资源管理细节。</p>
+<h1 id="10-动态-AudioPolicy：把部分决策交给特权组件"><a href="#10-动态-AudioPolicy：把部分决策交给特权组件" class="headerlink" title="10. 动态 AudioPolicy：把部分决策交给特权组件"></a>10. 动态 AudioPolicy：把部分决策交给特权组件</h1><h2 id="10-1-为什么需要外部策略"><a href="#10-1-为什么需要外部策略" class="headerlink" title="10.1. 为什么需要外部策略"></a>10.1. 为什么需要外部策略</h2><p>普通手机的默认焦点栈和音量模型不一定足以描述车载多区域、投射、虚拟设备等产品需求。框架因此允许经过权限检查的组件注册 Java AudioPolicy，并按能力接入焦点、音量或动态混音规则。</p>
+<p><code>registerAudioPolicy()</code> 校验注册资格与配置，创建 <code>AudioPolicyProxy</code>，保存 callback 和 Binder 生命周期。不同能力的权限与投射条件不同，不能概括为“有 MODIFY_AUDIO_SETTINGS 就能任意接管音频”。</p>
+<h2 id="10-2-一份注册对应三条不同的控制关系"><a href="#10-2-一份注册对应三条不同的控制关系" class="headerlink" title="10.2. 一份注册对应三条不同的控制关系"></a>10.2. 一份注册对应三条不同的控制关系</h2><table>
+<thead>
+<tr>
+<th>能力</th>
+<th>服务端处理</th>
+<th>最终影响</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>焦点观察者</td>
+<td><code>addFocusFollower()</code></td>
+<td>观察焦点事件，不自动成为决策者</td>
+</tr>
+<tr>
+<td>外部焦点策略</td>
+<td><code>setFocusPolicy()</code></td>
+<td>焦点请求转交策略回调，等待结果</td>
+</tr>
+<tr>
+<td>外部音量控制器</td>
+<td><code>setExtVolumeController()</code></td>
+<td>特定音量调整路径转交外部组件</td>
+</tr>
+<tr>
+<td>动态 mix</td>
+<td><code>connectMixes()</code> → <code>registerPolicyMixes()</code></td>
+<td>native 策略按 mix 规则建立相应路由行为</td>
+</tr>
+</tbody></table>
+<p><code>AudioPolicyProxy</code> 构造函数中分别设置这些关系，随后调用 <code>connectMixes()</code>。这证明了“焦点接管”和“native mix 注册”是并列能力，不是同一条转发链。</p>
+<figure class="highlight java"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/base/services/core/java/com/android/server/audio/AudioService.java</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">AudioPolicyProxy</span> <span class="keyword">extends</span> <span class="title class_">AudioPolicyConfig</span> <span class="keyword">implements</span> <span class="title class_">IBinder</span>.DeathRecipient {</span><br><span class="line">    ...</span><br><span class="line">    <span class="meta">@AudioSystem</span>.AudioSystemError <span class="type">int</span> <span class="title function_">connectMixes</span><span class="params">()</span> {</span><br><span class="line">        <span class="keyword">final</span> <span class="type">long</span> <span class="variable">identity</span> <span class="operator">=</span> Binder.clearCallingIdentity();</span><br><span class="line">        <span class="keyword">try</span> {</span><br><span class="line">            <span class="keyword">for</span> (AudioMix mix : mMixes) {</span><br><span class="line">                mix.setVirtualDeviceId(mAttributionSource.getDeviceId());</span><br><span class="line">            }</span><br><span class="line">            <span class="comment">// 这里进入 native mix 注册，不是把焦点请求交给 APM 仲裁。</span></span><br><span class="line">            <span class="keyword">return</span> mAudioSystem.registerPolicyMixes(mMixes, <span class="literal">true</span>);</span><br><span class="line">        } <span class="keyword">finally</span> {</span><br><span class="line">            Binder.restoreCallingIdentity(identity);</span><br><span class="line">        }</span><br><span class="line">    }</span><br><span class="line">    ...</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<p><code>clearCallingIdentity()</code> 让经过校验后的系统内部工作使用服务自身身份；<code>finally</code> 恢复原身份。这不表示可以把前置权限检查删除，也不能把它当成“所有调用都会自动获得系统权限”的通用写法。</p>
+<h2 id="10-3-外部焦点策略改变了哪条主线"><a href="#10-3-外部焦点策略改变了哪条主线" class="headerlink" title="10.3. 外部焦点策略改变了哪条主线"></a>10.3. 外部焦点策略改变了哪条主线</h2><p>在 <code>MediaFocusControl.requestAudioFocus()</code> 中，如果存在 <code>mFocusPolicy</code>，会调用 <code>notifyExtFocusPolicyFocusRequest_syncAf()</code>，成功则返回内部等待结果状态，停止继续按默认焦点栈授予。</p>
+<p>外部策略通过相应 API 报回决策，AudioManager 端有 <code>BlockingFocusResultReceiver</code> 等结果协调逻辑。这个有限等待结果机制与“电话占用时返回 DELAYED，未来收到 gain”不是一回事。</p>
+<p>因此车载焦点问题不能只看默认 <code>mFocusStack</code> 是否符合手机模型；应该先确认是否注册了外部 focus policy，再检查其回调和决策。<strong>AudioPolicyService 并不是这条 Java 焦点回调链的中转站。</strong> 它处理的是 native 路由等职责。</p>
+<h2 id="10-4-策略退出与恢复同样属于生命周期"><a href="#10-4-策略退出与恢复同样属于生命周期" class="headerlink" title="10.4. 策略退出与恢复同样属于生命周期"></a>10.4. 策略退出与恢复同样属于生命周期</h2><p>策略进程死亡、主动注销或投射停止时，需要释放注册关系、mix、focus policy/observer 及其他关联状态。持有配置并不意味着可永远有效使用。</p>
+<p>audioserver 重启时，Java 侧仍存在的代理会尝试重新 <code>connectMixes()</code> 与恢复设备 affinity；本树会收集恢复失败的代理并释放。注册曾经成功，不保证未来每次恢复都成功。第 11 章将它放回整个恢复流程中看。</p>
+<h1 id="11-audioserver-死亡后：重新下发状态，而不是重建所有业务"><a href="#11-audioserver-死亡后：重新下发状态，而不是重建所有业务" class="headerlink" title="11. audioserver 死亡后：重新下发状态，而不是重建所有业务"></a>11. audioserver 死亡后：重新下发状态，而不是重建所有业务</h1><h2 id="11-1-谁发现死亡，谁执行恢复"><a href="#11-1-谁发现死亡，谁执行恢复" class="headerlink" title="11.1. 谁发现死亡，谁执行恢复"></a>11.1. 谁发现死亡，谁执行恢复</h2><p>AudioService 注册 <code>AudioSystem.ErrorCallback</code>。收到 <code>AUDIO_STATUS_SERVER_DIED</code> 后，回调通知播放/录音监控器，并投递 <code>MSG_AUDIO_SERVER_DIED</code> 和服务状态分发消息。恢复主体在 AudioHandler 调用的 <code>onAudioServerDied()</code> 中执行。</p>
+<p>这个方法名容易误导：它既处理“还没恢复，继续等待”，也处理“native 服务已经回来，重建配置”。</p>
+<figure class="highlight java"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// frameworks/base/services/core/java/com/android/server/audio/AudioService.java</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">onAudioServerDied</span><span class="params">()</span> {</span><br><span class="line">    <span class="keyword">if</span> (!mSystemReady ||</span><br><span class="line">            (AudioSystem.checkAudioFlinger() != AudioSystem.AUDIO_STATUS_OK)) {</span><br><span class="line">        ...</span><br><span class="line">        <span class="comment">// 服务未就绪或 AudioFlinger 尚不可用，稍后重试。</span></span><br><span class="line">        sendMsg(mAudioHandler, MSG_AUDIO_SERVER_DIED, SENDMSG_NOOP, <span class="number">0</span>, <span class="number">0</span>,</span><br><span class="line">                <span class="literal">null</span>, <span class="number">500</span>);</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    }</span><br><span class="line">    ...</span><br><span class="line">    AudioSystem.setParameters(<span class="string">"restarting=true"</span>);</span><br><span class="line">    ...</span><br><span class="line">    <span class="comment">// 本地扩展与标准 Broker 恢复在这里接入。</span></span><br><span class="line">    mUac2RouteController.onAudioServerRestarted();</span><br><span class="line">    mDeviceBroker.onAudioServerDied();</span><br><span class="line">    ...</span><br><span class="line">    onReinitVolumes(<span class="string">"after audioserver restart"</span>);</span><br><span class="line">    restoreVolumeGroups();</span><br><span class="line">    ...</span><br><span class="line">    AudioSystem.setParameters(<span class="string">"restarting=false"</span>);</span><br><span class="line">    ...</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+
+<p>AudioService 并不是在这里 fork 一个新的 audioserver。native 服务进程的拉起属于其服务生命周期管理；AudioService 的任务是在发现可用后，把仍掌握的控制状态重新下发。</p>
+<h2 id="11-2-恢复哪些内容，为什么需要重放"><a href="#11-2-恢复哪些内容，为什么需要重放" class="headerlink" title="11.2. 恢复哪些内容，为什么需要重放"></a>11.2. 恢复哪些内容，为什么需要重放</h2><p>audioserver 里的 AudioPolicyManager、输出和相关 native 对象重建后，不会自动拥有 system_server 还保存着的全部状态。本树恢复内容包括：</p>
+<table>
+<thead>
+<tr>
+<th>状态</th>
+<th>恢复方向</th>
+<th>依据位置</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>连接设备、蓝牙与设备角色</td>
+<td>Broker → Inventory → AudioSystem</td>
+<td><code>MSG_RESTORE_DEVICES</code>、<code>onRestoreDevices()</code></td>
+</tr>
+<tr>
+<td>当前 mode</td>
+<td>重新选择 owner 并设置 phone state</td>
+<td><code>onUpdateAudioMode(... force=true ...)</code></td>
+</tr>
+<tr>
+<td>stream 音量及 volume groups</td>
+<td>初始化范围、应用设备音量、恢复组</td>
+<td><code>onReinitVolumes()</code>、<code>restoreVolumeGroups()</code></td>
+</tr>
+<tr>
+<td>铃声、mono、balance、surround 等</td>
+<td>从 Java/设置状态重下发</td>
+<td><code>onAudioServerDied()</code> 内各更新调用</td>
+</tr>
+<tr>
+<td>动态策略 mix 与 affinity</td>
+<td>每个 proxy 尝试重连</td>
+<td><code>connectMixes()</code>、<code>setupDeviceAffinities()</code></td>
+</tr>
+<tr>
+<td>capture policy、空间化、声音剂量</td>
+<td>恢复或重置相关 helper/native 关系</td>
+<td>playback monitor、SpatializerHelper、SoundDoseHelper</td>
+</tr>
+<tr>
+<td>麦克风静音与其他系统信息</td>
+<td>重新计算并应用</td>
+<td>microphone mute、vibrator info 等</td>
+</tr>
+</tbody></table>
+<p>这是恢复职责表，不是严格同步完成的时间轴。尤其 <code>mDeviceBroker.onAudioServerDied()</code> 会投递 <code>MSG_RESTORE_DEVICES</code> 到另一个线程；AudioService 后续代码继续执行。因此不能因为函数里设备恢复调用写在音量恢复之前，就声称所有设备恢复都已结束后才开始音量恢复。</p>
+<p>Broker 消费恢复消息时重新初始化策略 ID、恢复设备、重应用蓝牙状态和通信路由。本地 UAC2 扩展还在 Broker 完成后收到 <code>onUac2AudioDevicesRestored()</code>，这恰好说明“发出恢复请求”和“对应线程完成恢复”需要不同通知点。</p>
+<h2 id="11-3-恢复也可能失败"><a href="#11-3-恢复也可能失败" class="headerlink" title="11.3. 恢复也可能失败"></a>11.3. 恢复也可能失败</h2><p>Inventory 重报设备时，<code>asDeviceConnectionFailure()</code> 开关启用后会收集恢复失败设备并移除对应记录，必要时清理 SCO active device。AudioPolicyProxy 的 mix 或 affinity 恢复失败会导致代理释放。</p>
+<p>所以“服务已经 started”并不能证明每项状态都完整恢复。更不能推断所有应用无需处理错误就能继续播放：旧 track、录音会话、应用媒体对象以及其缓冲中的数据可能需要各自恢复或重建。AudioService 重放的主要是控制状态，不是替每个应用保存和重放此前的 PCM。</p>
+<h2 id="11-4-本地-UAC2-扩展的边界"><a href="#11-4-本地-UAC2-扩展的边界" class="headerlink" title="11.4. 本地 UAC2 扩展的边界"></a>11.4. 本地 UAC2 扩展的边界</h2><p>本树 <code>Uac2AudioRouteController</code> 明确把用户请求、USB transport 和路由 lease 作为分开的状态处理。构造时读取产品支持开关，在 <code>onSystemReady()</code> 启动，并在音量变化、audioserver 恢复及设备恢复完成处接入。</p>
+<p>这意味着在本机源码上调试 USB 收发音频时，除了标准 AudioService/Broker/APM，还要检查这套扩展的有效状态和恢复时序。它不是本文默认手机场景的前提，也不是 upstream AudioService 必然拥有的类。本文只核对其接入位置，不展开 USB transport、HAL bridge 和路由 lease 的完整实现。</p>
+<h1 id="12-把贯穿场景完整走一遍"><a href="#12-把贯穿场景完整走一遍" class="headerlink" title="12. 把贯穿场景完整走一遍"></a>12. 把贯穿场景完整走一遍</h1><p>下面所有数值均为解释机制的假设，不是真机采集。产品采用默认焦点策略、普通可调音量，音乐与导航来自不同 UID，未启用多焦点特殊分支。</p>
+<h2 id="12-1-音乐开始播放"><a href="#12-1-音乐开始播放" class="headerlink" title="12.1. 音乐开始播放"></a>12.1. 音乐开始播放</h2><p>音乐应用以媒体 attributes 申请长期焦点，准入通过后，MediaFocusControl 记录请求并授予。应用建立并启动实际播放器，播放监控器开始记录 player 活动；native policy 为其选择输出和设备，AudioFlinger/HAL 完成数据输出。</p>
+<p>此时分别存在焦点请求、player 配置和 native track/output。它们相互关联但不是同一对象。焦点成功但播放器未 start，用户仍听不到声音。</p>
+<h2 id="12-2-用户按音量加"><a href="#12-2-用户按音量加" class="headerlink" title="12.2. 用户按音量加"></a>12.2. 用户按音量加</h2><p>请求目标最终确定为媒体，当前设备是扬声器。alias 对应媒体，内部 index 从 50 变成 60；AudioHandler 应用整数档位 6，APM 按扬声器相关音量曲线处理，保存消息稍后把设置写入当前用户。</p>
+<p>如果紧接着又按一次，状态可能先变成 70。由于消息持有状态对象，不能按第一个消息的身份推定它一定应用过 60。验证时需记录请求时间、状态更新和下发日志。</p>
+<h2 id="12-3-导航短时播报"><a href="#12-3-导航短时播报" class="headerlink" title="12.3. 导航短时播报"></a>12.3. 导航短时播报</h2><p>导航申请 MAY_DUCK。满足框架自动处理条件时，音乐 UID 的合适播放器被 VolumeShaper 压低，媒体 index 仍可保持 70。导航结束并 abandon，焦点/播放器恢复路径使音乐回到原有增益。</p>
+<p>若音乐内容是 speech、应用要求 pause-on-duck，或播放器类型不支持自动 duck，则检查应用回调处理；不能用“导航来了”直接预测唯一结果。</p>
+<h2 id="12-4-插入耳机，再拔出"><a href="#12-4-插入耳机，再拔出" class="headerlink" title="12.4. 插入耳机，再拔出"></a>12.4. 插入耳机，再拔出</h2><p>插入先成为设备事件，经 Broker/Inventory 向 APM 报告可用。APM 若按策略选择耳机，应用对应耳机设备音量，例如此前记住的 4 档。这里有两个同时发生但不同的变化：路由换设备，音量换设备对应状态。</p>
+<p>拔出时若 noisy 条件成立，先广播，再延迟处理设备状态变化。应用可能暂停；native 策略在耳机不可用后选择剩余设备。扬声器原来保存的 7 档仍是后续应用音量的依据之一，而不是直接继承耳机 4 档。</p>
+<h2 id="12-5-语音通话接管"><a href="#12-5-语音通话接管" class="headerlink" title="12.5. 语音通话接管"></a>12.5. 语音通话接管</h2><p>通信应用分别申请焦点、请求 <code>MODE_IN_COMMUNICATION</code>、选通信设备并启动录放音。模式 owner 由权限、活跃与更新时间选出；Broker 按通信客户端与模式状态协调路由。若选择蓝牙，连接阶段与最终活动设备可能不同步。</p>
+<p>通话结束，应用放弃焦点、清除设备请求、恢复自己的 mode 请求并释放录放音资源。某一项遗漏可能留下异常行为；死亡监听能帮助处理进程退出，不能替代正确的业务生命周期。</p>
+<h2 id="12-6-此时-audioserver-恢复"><a href="#12-6-此时-audioserver-恢复" class="headerlink" title="12.6. 此时 audioserver 恢复"></a>12.6. 此时 audioserver 恢复</h2><p>AudioService 发现 native 可用后重放音量、模式、设备和策略等控制状态。设备恢复在 Broker 线程继续处理，应用播放器也可能需要各自恢复。最终应同时观察 Java 控制状态、native 路由/输出和应用播放结果，不能用一条“started”日志证明场景完全恢复。</p>
+<h1 id="13-怎样验证：按证据层次缩小问题"><a href="#13-怎样验证：按证据层次缩小问题" class="headerlink" title="13. 怎样验证：按证据层次缩小问题"></a>13. 怎样验证：按证据层次缩小问题</h1><p>本章是<strong>未执行的实验方案</strong>。需要一台与分析版本尽量匹配的测试设备及 adb；用户构建、日志权限和厂商修改会影响可见字段。先用系统正常操作复现场景，不通过直接改 Settings 来冒充一次完整的音量 API 流程。</p>
+<h2 id="13-1-先保存版本与三层快照"><a href="#13-1-先保存版本与三层快照" class="headerlink" title="13.1. 先保存版本与三层快照"></a>13.1. 先保存版本与三层快照</h2><figure class="highlight bash"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">adb shell getprop ro.build.fingerprint</span><br><span class="line">adb shell getprop ro.build.version.release</span><br><span class="line">adb shell getprop ro.build.version.sdk</span><br><span class="line">adb shell service list</span><br><span class="line">adb shell dumpsys audio &gt; audio-before.txt</span><br><span class="line">adb shell dumpsys media.audio_policy &gt; policy-before.txt</span><br><span class="line">adb shell dumpsys media.audio_flinger &gt; flinger-before.txt</span><br></pre></td></tr></tbody></table></figure>
+
+<p>文件输出在执行命令的电脑当前目录。<code>audio</code> 是 Java 服务视角，<code>media.audio_policy</code> 是 native 策略视角，<code>media.audio_flinger</code> 是执行/轨道视角。若服务名不存在，先以 <code>service list</code> 和产品实际实现为准，不把空输出当成该层没有问题。</p>
+<p>本树 <code>AudioService.dump()</code> 能定位到以下部分：</p>
+<table>
+<thead>
+<tr>
+<th>观察部分</th>
+<th>重点关联</th>
+<th>能支持的判断与限制</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Stream states / volume groups</td>
+<td>stream、device、index、mute、alias</td>
+<td>Java 控制状态；不直接证明声压</td>
+</tr>
+<tr>
+<td>焦点 dump</td>
+<td>clientId、UID、gain/loss、策略</td>
+<td>焦点决策/持有者；不证明播放器正在出声</td>
+</tr>
+<tr>
+<td>Playback / Recording monitor</td>
+<td>player、UID、attributes、state</td>
+<td>框架收到的活动状态；不是波形检测</td>
+</tr>
+<tr>
+<td>Audio mode</td>
+<td>mode owner、请求者、当前模式</td>
+<td>模式仲裁结果；不等于设备链路完成</td>
+</tr>
+<tr>
+<td>AudioDeviceBroker / Inventory</td>
+<td>connected、preferred、communication client</td>
+<td>设备与偏好；实际 track 路由还需 native</td>
+</tr>
+<tr>
+<td>SoundDoseHelper</td>
+<td>safe media volume、pending/CSD 状态</td>
+<td>安全策略是否可能介入</td>
+</tr>
+<tr>
+<td>Event logs</td>
+<td>请求时间、设备、音量、phone state</td>
+<td>最近事件因果线索；历史容量有限</td>
+</tr>
+<tr>
+<td>Message handler</td>
+<td>待处理消息</td>
+<td>当前队列线索；不是完整执行历史</td>
+</tr>
+</tbody></table>
+<p>用稳定的对象关系交叉定位，比只搜索某一个固定标题更可靠；不同版本 dump 文本可能改名。</p>
+<h2 id="13-2-实验-A：验证设备音量与异步保存"><a href="#13-2-实验-A：验证设备音量与异步保存" class="headerlink" title="13.2. 实验 A：验证设备音量与异步保存"></a>13.2. 实验 A：验证设备音量与异步保存</h2><p>操作：使用普通媒体播放器在扬声器播放，记录当前媒体档位；按一次音量加；分别立即、稍后采集 audio/policy 快照；再插上有线耳机并观察音量，最后拔出并重新观察。</p>
+<figure class="highlight bash"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">adb shell dumpsys audio &gt; audio-after-volume.txt</span><br><span class="line">adb shell dumpsys media.audio_policy &gt; policy-after-volume.txt</span><br><span class="line">adb shell settings list system &gt; settings-after-volume.txt</span><br></pre></td></tr></tbody></table></figure>
+
+<p>重点看媒体对应设备的 index、是否静音、alias、native 音量组和设备。Settings 项名应由实际设备和 <code>getSettingNameForDevice()</code> 推导，不假设所有产品都只有一个 <code>volume_music</code> 值。</p>
+<p>预期：普通无拦截分支下，目标设备的档位变化；耳机与扬声器可能各有不同值。立即快照与稍后快照可能不同，但<strong>没有捕捉到差异不代表不存在异步</strong>：adb 往返本身足以覆盖短暂窗口。若要验证线程级时序，需要在自有调试构建增加精确日志/trace，而不是凭两份粗粒度 dump 推断毫秒级顺序。</p>
+<h2 id="13-3-实验-B：区分自动-duck-与应用暂停"><a href="#13-3-实验-B：区分自动-duck-与应用暂停" class="headerlink" title="13.3. 实验 B：区分自动 duck 与应用暂停"></a>13.3. 实验 B：区分自动 duck 与应用暂停</h2><p>使用两个可控测试应用：音乐应用以媒体/音乐内容播放并申请 GAIN；导航应用短时申请 MAY_DUCK。记录双方焦点回调、播放状态和请求返回值，同时采集 audio 与 AudioFlinger 状态。</p>
+<p>做两组对照：第一组允许常规自动 duck；第二组让音乐请求声明 pause-on-duck，并由测试应用在回调中真正暂停。还可以将内容改成 speech，对照框架自动处理分支。</p>
+<p>预期第一组可能在媒体档位不变时音乐变小，且普通 duck 回调不按预想出现；第二组应结合回调与应用 pause 日志确认行为。仅凭听感不能判断是系统 VolumeShaper、应用音量、DSP duck 还是换路由；必须结合播放器配置与控制记录。</p>
+<p>外部焦点策略或多焦点配置启用的设备应另建对照，不把它们和默认栈混测。</p>
+<h2 id="13-4-实验-C：耳机断开与-noisy-事件"><a href="#13-4-实验-C：耳机断开与-noisy-事件" class="headerlink" title="13.4. 实验 C：耳机断开与 noisy 事件"></a>13.4. 实验 C：耳机断开与 noisy 事件</h2><p>在可控播放器记录 <code>ACTION_AUDIO_BECOMING_NOISY</code> 接收时间与暂停时间，播放中拔出有线耳机；比较 Broker/Inventory 设备日志和 native policy 设备变化。再以“无媒体播放、无焦点使用者”重复。</p>
+<p>预期第一组在满足条件时广播先于延迟设备处理，第二组可能因不构成 noisy 场景而不广播。广播到达不证明应用已经暂停；广播缺失也不直接证明异常，先核对动态策略、设备类型集合、媒体活动和当前路由条件。</p>
+<p>物理断开实际发生时刻不由 Java 延迟保证。若分析的是极短外放泄漏或蓝牙切换爆音，需要更细的 native/HAL 日志与录音测量，本实验只能解释上层控制顺序。</p>
+<h2 id="13-5-实验-D：通信模式残留"><a href="#13-5-实验-D：通信模式残留" class="headerlink" title="13.5. 实验 D：通信模式残留"></a>13.5. 实验 D：通信模式残留</h2><p>启动一个可控 VoIP 场景，分别记录 setMode、焦点请求、选通信设备和录放音启动。正常退出一次，再在测试设备上让该测试应用进程异常退出一次，观察 mode owner、通信客户端和焦点请求是否重新评估。</p>
+<p>预期正常退出会主动清理；进程死亡会触发相应 death handler。若模式没有回到 NORMAL，先检查是否有其他活跃或特权请求者，而不是立即判断清理失败。若 mode 已恢复但仍无声，再检查设备路由、音量和播放器生命周期。</p>
+<h2 id="13-6-实验-E：audioserver-恢复"><a href="#13-6-实验-E：audioserver-恢复" class="headerlink" title="13.6. 实验 E：audioserver 恢复"></a>13.6. 实验 E：audioserver 恢复</h2><p>这是会打断整机音频的实验，仅适合已授权的专用调试设备和可控环境。本文没有执行服务停止或进程终止命令；需要按设备构建支持的管理方式触发 audioserver 重启，再保存前后 PID、生命周期日志和三层 dump。</p>
+<p>观察时先关联死亡通知与 AudioFlinger 可用检查，再分别核对配置重放、Broker 设备恢复、动态策略重连结果和应用实际重新播放；它们包含跨线程过程，不能把采样清单当成严格串行时序。对照媒体音量、通信 mode、设备集合、mix 与麦克风状态。</p>
+<p>预期是相关控制状态尝试恢复，不承诺播放无缝。若 Java 保存值正确但 native 缺少设备，查 Broker/Inventory 恢复返回值；若 mix 不见，查代理重连是否失败；若两层状态正常但应用不响，继续查 track 是否重建。</p>
+<h2 id="13-7-一张排障顺序表"><a href="#13-7-一张排障顺序表" class="headerlink" title="13.7. 一张排障顺序表"></a>13.7. 一张排障顺序表</h2><table>
+<thead>
+<tr>
+<th>现象</th>
+<th>先查</th>
+<th>再查</th>
+<th>不宜直接得出的结论</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>按音量键调错对象</td>
+<td>按键/MediaSession 分发、suggested stream</td>
+<td>mode、强制控制流、外部 volume controller</td>
+<td>AudioFlinger 混音错误</td>
+</tr>
+<tr>
+<td>UI 档位变了但声音不变</td>
+<td>设备行为、mute、实际 route</td>
+<td>native 曲线、远端音量、HAL 增益</td>
+<td>Settings 写失败</td>
+</tr>
+<tr>
+<td>导航期间音乐小声但档位没变</td>
+<td>focus、ducked players、应用回调</td>
+<td>VolumeShaper、外部策略/DSP</td>
+<td>用户音量状态丢失</td>
+</tr>
+<tr>
+<td>耳机已连接但仍外放</td>
+<td>Inventory、媒体/通信偏好</td>
+<td>APM client/output/device、动态 mix</td>
+<td>蓝牙连接成功必然代表音频链路正常</td>
+</tr>
+<tr>
+<td>通话结束后媒体异常</td>
+<td>mode owner、通信 client、焦点</td>
+<td>alias、SCO、native 路由、player</td>
+<td>最后调用 MODE_NORMAL 一定能清掉全部状态</td>
+</tr>
+<tr>
+<td>录音全零</td>
+<td>隐私/静音/权限、录音配置</td>
+<td>native input 与 silenced 状态</td>
+<td>有录音回调就必有有效数据</td>
+</tr>
+<tr>
+<td>audioserver 重启后部分无声</td>
+<td>恢复日志、设备/mix 成功与否</td>
+<td>track/record 对象和应用恢复</td>
+<td>started 日志代表整条链恢复成功</td>
+</tr>
+</tbody></table>
+<p>排障的核心是找到<strong>第一处与预期不一致的状态</strong>。请求未获准时先修准入；Java 状态正确但 native 配置不对时继续下追；配置都正确却没有数据时转向播放器与数据面，避免在 AudioService 里无限搜索。</p>
+<h1 id="14-分层记忆与源码导航"><a href="#14-分层记忆与源码导航" class="headerlink" title="14. 分层记忆与源码导航"></a>14. 分层记忆与源码导航</h1><h2 id="14-1-L0：只记住这幅全局图"><a href="#14-1-L0：只记住这幅全局图" class="headerlink" title="14.1. L0：只记住这幅全局图"></a>14.1. L0：只记住这幅全局图</h2><p>AudioService 在 system_server 管理应用与用户的音频控制状态；焦点、音量、模式和设备请求是不同维度。AudioSystem 把部分控制送到 audioserver，APM 做 native 策略，AudioFlinger/HAL 执行音频数据与底层控制。声音是否正常，必须把控制面和数据面连起来观察。</p>
+<h2 id="14-2-L1：能够独立展开的五条主干"><a href="#14-2-L1：能够独立展开的五条主干" class="headerlink" title="14.2. L1：能够独立展开的五条主干"></a>14.2. L1：能够独立展开的五条主干</h2><ol>
+<li><strong>启动</strong>：Lifecycle 构造/发布 → ready 消息 → AudioHandler 初始化相关运行行为；服务可查找不等于全部依赖就绪。</li>
+<li><strong>音量</strong>：选 stream → alias/device → 权限和策略 → 更新 index/mute → AudioHandler 下发 → APM → 延迟保存。</li>
+<li><strong>焦点</strong>：准入 → 默认栈或外部策略 → loss/gain → 框架 duck/fade 或应用回调 → abandon/death 清理与恢复。</li>
+<li><strong>设备/通信</strong>：连接事件 → Broker 队列 → Inventory/native 可用性 → 模式与偏好 → APM 实际路由。</li>
+<li><strong>恢复</strong>：发现死亡 → 等待 native 可用 → 重放 Java 保留状态 → 各协作者恢复；应用媒体对象仍有自己的生命周期。</li>
+</ol>
+<h2 id="14-3-L2：需要时再查，不靠硬背"><a href="#14-3-L2：需要时再查，不靠硬背" class="headerlink" title="14.3. L2：需要时再查，不靠硬背"></a>14.3. L2：需要时再查，不靠硬背</h2><table>
+<thead>
+<tr>
+<th>问题</th>
+<th>相对源码路径</th>
+<th>首选符号</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>服务入口与设备替换实现</td>
+<td><code>frameworks/base/services/java/com/android/server/SystemServer.java</code></td>
+<td><code>StartAudioService</code> 段</td>
+</tr>
+<tr>
+<td>生命周期与线程</td>
+<td><code>frameworks/base/services/core/java/com/android/server/audio/AudioService.java</code></td>
+<td><code>Lifecycle</code>、<code>AudioSystemThread</code>、<code>AudioHandler</code></td>
+</tr>
+<tr>
+<td>音量与 alias</td>
+<td>同上</td>
+<td><code>adjustStreamVolume</code>、<code>setStreamVolume</code>、<code>updateStreamVolumeAlias</code></td>
+</tr>
+<tr>
+<td>状态与 native 下发</td>
+<td>同上</td>
+<td><code>VolumeStreamState</code>、<code>VolumeGroupState</code>、<code>setDeviceVolume</code></td>
+</tr>
+<tr>
+<td>模式与麦克风</td>
+<td>同上</td>
+<td><code>getAudioModeOwnerHandler</code>、<code>onUpdateAudioMode</code>、<code>setMicrophoneMuteNoCallerCheck</code></td>
+</tr>
+<tr>
+<td>外部策略与恢复</td>
+<td>同上</td>
+<td><code>AudioPolicyProxy</code>、<code>onAudioServerDied</code></td>
+</tr>
+<tr>
+<td>默认焦点仲裁</td>
+<td><code>frameworks/base/services/core/java/com/android/server/audio/MediaFocusControl.java</code></td>
+<td><code>requestAudioFocus</code>、<code>abandonAudioFocus</code></td>
+</tr>
+<tr>
+<td>loss 到执行动作</td>
+<td><code>frameworks/base/services/core/java/com/android/server/audio/FocusRequester.java</code></td>
+<td><code>handleFocusLoss</code>、<code>frameworkHandleFocusLoss</code></td>
+</tr>
+<tr>
+<td>播放器与 duck</td>
+<td><code>frameworks/base/services/core/java/com/android/server/audio/PlaybackActivityMonitor.java</code></td>
+<td><code>trackPlayer</code>、<code>playerEvent</code>、<code>duckPlayers</code></td>
+</tr>
+<tr>
+<td>设备协调</td>
+<td><code>frameworks/base/services/core/java/com/android/server/audio/AudioDeviceBroker.java</code></td>
+<td><code>BrokerHandler</code>、<code>setCommunicationRouteForClient</code></td>
+</tr>
+<tr>
+<td>设备清单与 noisy</td>
+<td><code>frameworks/base/services/core/java/com/android/server/audio/AudioDeviceInventory.java</code></td>
+<td><code>handleDeviceConnection</code>、<code>checkSendBecomingNoisyIntentInt</code></td>
+</tr>
+<tr>
+<td>安全音量</td>
+<td><code>frameworks/base/services/core/java/com/android/server/audio/SoundDoseHelper.java</code></td>
+<td><code>checkSafeMediaVolume_l</code>、<code>mPendingVolumeCommand</code></td>
+</tr>
+<tr>
+<td>准入限制</td>
+<td><code>frameworks/base/services/core/java/com/android/server/audio/HardeningEnforcer.java</code></td>
+<td><code>blockFocusMethod</code>、<code>blockVolumeMethod</code></td>
+</tr>
+<tr>
+<td>客户端与回调</td>
+<td><code>frameworks/base/media/java/android/media/AudioManager.java</code></td>
+<td><code>getService</code>、焦点 dispatcher、结果 receiver</td>
+</tr>
+<tr>
+<td>IPC 接口声明</td>
+<td><code>frameworks/base/media/java/android/media/IAudioService.aidl</code></td>
+<td>音量/焦点/设备/player 方法</td>
+</tr>
+<tr>
+<td>JNI 桥</td>
+<td><code>frameworks/base/core/jni/android_media_AudioSystem.cpp</code></td>
+<td><code>android_media_AudioSystem_setStreamVolumeIndex</code></td>
+</tr>
+<tr>
+<td>native 客户端</td>
+<td><code>frameworks/av/media/libaudioclient/AudioSystem.cpp</code></td>
+<td><code>AudioSystem::setStreamVolumeIndex</code></td>
+</tr>
+<tr>
+<td>native 音量策略</td>
+<td><code>frameworks/av/services/audiopolicy/managerdefault/AudioPolicyManager.cpp</code></td>
+<td><code>setVolumeIndexForAttributes</code>、<code>computeVolume</code></td>
+</tr>
+</tbody></table>
+<p>用路径和符号定位比死记行号稳定。开始修改某条路径前，再读完整方法及调用点；本文节选用于建立主线，没有展示所有 flag、异常和设备特例。</p>
+<h1 id="15-自测：先预测，再展开答案"><a href="#15-自测：先预测，再展开答案" class="headerlink" title="15. 自测：先预测，再展开答案"></a>15. 自测：先预测，再展开答案</h1><h2 id="15-1-基础题"><a href="#15-1-基础题" class="headerlink" title="15.1. 基础题"></a>15.1. 基础题</h2><p><strong>题 1：AudioManager、AudioService 与 AudioPolicyService 各在哪个进程？PCM 必须经过 AudioService 吗？</strong></p>
+<details>
+<summary>展开参考答案</summary>
+
+<p>AudioManager 通常在应用进程，AudioService 在 system_server，AudioPolicyService 在 audioserver。普通 AudioTrack 播放数据不把 AudioService 当成逐帧 PCM 中转站。AudioService 负责控制请求、状态和策略协调；JNI 与 Binder 的边界也不同。回看第 2 章。</p>
+</details>
+
+<p><strong>题 2：内部 index=60 能否直接解释成 60 dB，或每一只耳机都分别保存了 60？</strong></p>
+<details>
+<summary>展开参考答案</summary>
+
+<p>不能。普通 stream 路径通常用十倍整数表示 UI 档位，60 对应第 6 档，native 再结合曲线与设备处理。VolumeStreamState 的 map 按 native 设备类型保存，不等于每个蓝牙地址或 AudioDeviceInfo ID 都有独立项。回看 4.2、5.5 节。</p>
+</details>
+
+<p><strong>题 3：音量调整方法返回后，设备音量和 Settings 一定都更新了吗？</strong></p>
+<details>
+<summary>展开参考答案</summary>
+
+<p>不一定。可能在检查阶段被拒绝，也可能只更新了 Java 状态并入队；实际下发在 AudioHandler 消费，保存是后续延迟消息。连续请求还会共享可变状态对象。不能从返回时刻推出硬件完成或落盘完成。回看 3.4、5.2—5.6 节。</p>
+</details>
+
+<p><strong>题 4：为什么 AudioService 既需要焦点请求对象，又需要播放器监控对象？</strong></p>
+<details>
+<summary>展开参考答案</summary>
+
+<p>焦点请求表达应用的协调需求，player 配置表达实际播放器活动。应用可能持有焦点但没有播放，也可能有多个播放器。框架要把 duck/fade 落到具体 player，必须关联 UID、属性、类型和状态。回看第 6 章与 9.1 节。</p>
+</details>
+
+<h2 id="15-2-场景推理题"><a href="#15-2-场景推理题" class="headerlink" title="15.2. 场景推理题"></a>15.2. 场景推理题</h2><p><strong>题 5：导航播报期间音乐明显变小，STREAM_MUSIC 仍是 7，而且音乐应用没收到预期的 duck 回调，这是必然的 bug 吗？怎样验证？</strong></p>
+<details>
+<summary>展开参考答案</summary>
+
+<p>不是。满足条件时，框架可以用 VolumeShaper 自动 duck，保持用户档位不变，并不走预期的普通应用回调分支。应检查 gain/loss、不同 UID、SDK/flags、内容类型与 player 类型，再看播放监控中的 duck 状态和应用日志。若用了外部策略或 DSP，还需检查对应执行者，不能只凭听感定性。回看 6.5 节及实验 B。</p>
+</details>
+
+<p><strong>题 6：拔耳机时没有收到 noisy 广播，是否说明设备事件丢失？</strong></p>
+<details>
+<summary>展开参考答案</summary>
+
+<p>不能直接判断。广播有设备集合、当前媒体设备/通信、媒体动态策略、remote submix、媒体活动/焦点使用者等条件。先核对是否构成需要广播的场景，再查 Broker/Inventory 设备事件。广播与设备更新不是同一个状态。回看 7.2—7.3 节及实验 C。</p>
+</details>
+
+<p><strong>题 7：VoIP 应用最后调用 MODE_NORMAL，系统为什么还可能保持通话模式？</strong></p>
+<details>
+<summary>展开参考答案</summary>
+
+<p>该调用主要清除该调用者的 mode 请求；其他活跃请求尤其特权持有者仍可能成为 owner。模式选择不是无条件最后调用者获胜。先看 mode requester 列表、权限、活跃和更新时间，再看 native setPhoneState 是否成功。回看 8.1—8.2 节及实验 D。</p>
+</details>
+
+<p><strong>题 8：setCommunicationDevice 返回 true，但蓝牙还没出声，应该先怀疑哪个完成点被混淆了？</strong></p>
+<details>
+<summary>展开参考答案</summary>
+
+<p>返回 true 可表示请求被提交给 Broker，不证明 SCO/其他通信链路已建立，也不证明实际 active device 已切换。检查通信客户端、请求/首选/实际设备、蓝牙连接状态和 native route，最后检查播放器/录音是否启动。回看 8.3—8.4 节。</p>
+</details>
+
+<p><strong>题 9：audioserver 恢复日志已出现，Java 音量正确，某条动态 mix 却不见了，可以断言恢复函数没执行吗？</strong></p>
+<details>
+<summary>展开参考答案</summary>
+
+<p>不能。恢复可能已执行，但 mix 或 affinity 重连失败，代理被释放；设备恢复还在另一个线程进行。应检查代理恢复返回值、相关日志和 native mix，区分未触发、执行中和执行失败。控制状态恢复也不保证应用 track 自动恢复。回看 10.4 节与第 11 章。</p>
+</details>
+
+<p><strong>题 10：应用取消麦克风静音后仍然录到静音，是否应该反复调用 setMicrophoneMute(false)？</strong></p>
+<details>
+<summary>展开参考答案</summary>
+
+<p>先检查其他静音来源和录音条件。API 来源撤销不等于物理开关、用户限制或隐私开关撤销；公开 getter 还有隐私相关语义。应把期望静音、native 实际状态、录音配置/权限和 input 状态分别检查。回看 9.2—9.3 节。</p>
+</details>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/Audio/" rel="tag"># Audio</a>
+          
+            <a href="/tags/Android/" rel="tag"># Android</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2026/10/27/AudioPolicy%E5%89%96%E6%9E%90/" rel="next" title="AudioPolicy 剖析">
+                <i class="fa fa-chevron-left"></i> AudioPolicy 剖析
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2026/10/27/AAudio%E4%BD%8E%E5%BB%B6%E8%BF%9F%E5%AE%9E%E7%8E%B0%E5%89%96%E6%9E%90/" rel="prev" title="AAudio / MMAP / 低延迟路径实现剖析">
+                AAudio / MMAP / 低延迟路径实现剖析 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="/images/head.jpg"
+                alt="" />
+            
+              <p class="site-author-name" itemprop="name"></p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/%7C%7C%20archive">
+              
+                  <span class="site-state-item-count">59</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">23</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">38</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+            <div class="feed-link motion-element">
+              <a href="/atom.xml" rel="alternate">
+                <i class="fa fa-rss"></i>
+                RSS
+              </a>
+            </div>
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/Zcorpius" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-github"></i>GitHub</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://www.zhihu.com/people/lin-li-yike-cao/activities" target="_blank" title="ZhiHu">
+                      
+                        <i class="fa fa-fw fa-globe"></i>ZhiHu</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+            <div class="links-of-blogroll motion-element links-of-blogroll-block">
+              <div class="links-of-blogroll-title">
+                <i class="fa  fa-fw fa-link"></i>
+                Links
+              </div>
+              <ul class="links-of-blogroll-list">
+                
+                  <li class="links-of-blogroll-item">
+                    <a href="https://blog.schwarzeni.com/" title="Schwarzeni" target="_blank">Schwarzeni</a>
+                  </li>
+                
+                  <li class="links-of-blogroll-item">
+                    <a href="https://www.qcmoke.cn/" title="qcmoke" target="_blank">qcmoke</a>
+                  </li>
+                
+                  <li class="links-of-blogroll-item">
+                    <a href="https://www.zhoujianguo.ltd/" title="ZhouJianGuo" target="_blank">ZhouJianGuo</a>
+                  </li>
+                
+                  <li class="links-of-blogroll-item">
+                    <a href="https://hishiro-xiao.github.io/" title="hishiro-xiao" target="_blank">hishiro-xiao</a>
+                  </li>
+                
+              </ul>
+            </div>
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#1-%E4%BB%8E%E4%B8%80%E6%AC%A1%E5%90%AC%E6%AD%8C%E8%BF%87%E7%A8%8B%E8%AE%A4%E8%AF%86-AudioService"><span class="nav-text">1. 从一次听歌过程认识 AudioService</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-1-%E6%BA%90%E7%A0%81%E5%9F%BA%E7%BA%BF%E4%B8%8E%E9%98%85%E8%AF%BB%E7%BA%A6%E5%AE%9A"><span class="nav-text">1.1. 源码基线与阅读约定</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#1-2-%E4%B8%8E%E9%9F%B3%E9%A2%91%E7%B3%BB%E5%88%97%E5%85%B6%E4%BB%96%E6%96%87%E7%AB%A0%E7%9A%84%E8%A1%94%E6%8E%A5"><span class="nav-text">1.2. 与音频系列其他文章的衔接</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#2-%E5%85%88%E5%88%92%E6%B8%85%E5%9B%9B%E6%9D%A1%E8%BE%B9%E7%95%8C"><span class="nav-text">2. 先划清四条边界</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#2-1-AudioManager%E3%80%81AudioService%E3%80%81AudioSystem-%E5%88%86%E5%88%AB%E5%9C%A8%E5%93%AA%E9%87%8C"><span class="nav-text">2.1. AudioManager、AudioService、AudioSystem 分别在哪里</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-2-AudioService-%E4%B8%8E-AudioPolicyService-%E7%9A%84%E8%81%8C%E8%B4%A3%E8%BE%B9%E7%95%8C"><span class="nav-text">2.2. AudioService 与 AudioPolicyService 的职责边界</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-3-%E6%95%B0%E6%8D%AE%E9%9D%A2%E4%B8%8D%E7%A9%BF%E8%BF%87%E7%84%A6%E7%82%B9%E6%A0%88"><span class="nav-text">2.3. 数据面不穿过焦点栈</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-4-Java-AudioPolicy-%E4%B8%8D%E6%98%AF-native-AudioPolicyService"><span class="nav-text">2.4. Java AudioPolicy 不是 native AudioPolicyService</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#3-%E6%9C%8D%E5%8A%A1%E6%80%8E%E6%A0%B7%E5%90%AF%E5%8A%A8%EF%BC%8C%E5%8F%88%E6%80%8E%E6%A0%B7%E9%95%BF%E6%9C%9F%E5%A4%84%E7%90%86%E4%BA%8B%E4%BB%B6"><span class="nav-text">3. 服务怎样启动，又怎样长期处理事件</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#3-1-%E7%94%9F%E5%91%BD%E5%91%A8%E6%9C%9F%EF%BC%9A%E6%9E%84%E9%80%A0%E3%80%81%E5%8F%91%E5%B8%83%E3%80%81%E5%B0%B1%E7%BB%AA%E6%98%AF%E4%B8%89%E4%B8%AA%E9%98%B6%E6%AE%B5"><span class="nav-text">3.1. 生命周期：构造、发布、就绪是三个阶段</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-2-%E4%B8%BA%E4%BB%80%E4%B9%88%E9%9C%80%E8%A6%81%E8%BF%99%E4%BA%9B%E5%8D%8F%E4%BD%9C%E8%80%85"><span class="nav-text">3.2. 为什么需要这些协作者</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-3-Binder-%E7%BA%BF%E7%A8%8B%E3%80%81AudioHandler-%E5%92%8C-BrokerHandler"><span class="nav-text">3.3. Binder 线程、AudioHandler 和 BrokerHandler</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-4-%E6%B6%88%E6%81%AF%E7%AD%96%E7%95%A5%E4%B8%8E%E9%94%81%E5%88%86%E5%88%AB%E8%A7%A3%E5%86%B3%E4%BB%80%E4%B9%88"><span class="nav-text">3.4. 消息策略与锁分别解决什么</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#4-%E9%9F%B3%E9%87%8F%E6%A8%A1%E5%9E%8B%EF%BC%9A%E5%85%88%E7%90%86%E8%A7%A3%E7%8A%B6%E6%80%81%EF%BC%8C%E5%86%8D%E7%9C%8B%E6%8C%89%E9%94%AE"><span class="nav-text">4. 音量模型：先理解状态，再看按键</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#4-1-Stream%E3%80%81Attributes%E3%80%81Strategy%E3%80%81Group-%E6%98%AF%E5%9B%9B%E7%A7%8D%E6%8F%8F%E8%BF%B0"><span class="nav-text">4.1. Stream、Attributes、Strategy、Group 是四种描述</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-2-VolumeStreamState%EF%BC%9A%E4%B8%80%E6%9D%A1%E6%B5%81%E4%B8%8D%E6%98%AF%E5%8F%AA%E6%9C%89%E4%B8%80%E4%B8%AA%E6%95%B4%E6%95%B0"><span class="nav-text">4.2. VolumeStreamState：一条流不是只有一个整数</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-3-Alias%EF%BC%9A%E4%B8%BA%E4%BB%80%E4%B9%88%E6%94%B9%E9%80%9A%E7%9F%A5%E9%9F%B3%E9%87%8F%E4%BC%9A%E5%BD%B1%E5%93%8D%E9%93%83%E5%A3%B0"><span class="nav-text">4.3. Alias：为什么改通知音量会影响铃声</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-4-VolumeGroupState-%E4%B8%8E-legacy-stream-%E6%80%8E%E6%A0%B7%E5%85%B1%E5%AD%98"><span class="nav-text">4.4. VolumeGroupState 与 legacy stream 怎样共存</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-5-%E6%A1%A3%E4%BD%8D%E3%80%81%E9%9D%99%E9%9F%B3%E3%80%81%E9%93%83%E5%A3%B0%E6%A8%A1%E5%BC%8F%E4%B8%8E-DND-%E4%B8%8D%E8%83%BD%E6%B7%B7%E6%88%90%E4%B8%80%E4%B8%AA%E5%80%BC"><span class="nav-text">4.5. 档位、静音、铃声模式与 DND 不能混成一个值</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#5-%E4%B8%80%E6%AC%A1%E9%9F%B3%E9%87%8F%E8%B0%83%E6%95%B4%EF%BC%9A%E4%BB%8E%E8%AF%B7%E6%B1%82%E5%88%B0-native%EF%BC%8C%E5%86%8D%E5%88%B0%E8%AE%BE%E7%BD%AE%E4%BF%9D%E5%AD%98"><span class="nav-text">5. 一次音量调整：从请求到 native，再到设置保存</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#5-1-%E2%80%9C%E9%9F%B3%E9%87%8F%E9%94%AE%E8%B0%83%E8%B0%81%E2%80%9D%E4%B8%8E%E2%80%9C%E6%80%8E%E6%A0%B7%E8%B0%83%E6%95%B4%E2%80%9D%E6%98%AF%E4%B8%A4%E4%B8%AA%E9%97%AE%E9%A2%98"><span class="nav-text">5.1. “音量键调谁”与“怎样调整”是两个问题</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-2-%E8%B0%83%E6%95%B4%E5%89%8D%E4%B8%BA%E4%BB%80%E4%B9%88%E6%9C%89%E9%82%A3%E4%B9%88%E5%A4%9A%E6%A3%80%E6%9F%A5"><span class="nav-text">5.2. 调整前为什么有那么多检查</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-3-%E5%85%B7%E4%BD%93%E4%BE%8B%E5%AD%90%EF%BC%9A%E6%89%AC%E5%A3%B0%E5%99%A8%E5%AA%92%E4%BD%93%E9%9F%B3%E9%87%8F%E4%BB%8E-5-%E8%B0%83%E5%88%B0-6"><span class="nav-text">5.3. 具体例子：扬声器媒体音量从 5 调到 6</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-4-applyDeviceVolume%EF%BC%9A%E7%94%A8%E6%88%B7-index-%E4%B8%8D%E4%B8%80%E5%AE%9A%E5%8E%9F%E6%A0%B7%E4%B8%8B%E5%8F%91"><span class="nav-text">5.4. applyDeviceVolume：用户 index 不一定原样下发</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-5-%E4%BB%8E-Java-%E5%88%B0-APM%EF%BC%9A%E8%B0%81%E8%B4%9F%E8%B4%A3%E6%A1%A3%E4%BD%8D%E5%88%B0%E5%93%8D%E5%BA%A6"><span class="nav-text">5.5. 从 Java 到 APM：谁负责档位到响度</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-6-%E4%B8%BA%E4%BB%80%E4%B9%88%E5%88%87%E5%9B%9E%E6%89%AC%E5%A3%B0%E5%99%A8%E8%83%BD%E6%81%A2%E5%A4%8D%E4%B9%8B%E5%89%8D%E7%9A%84%E6%A1%A3%E4%BD%8D"><span class="nav-text">5.6. 为什么切回扬声器能恢复之前的档位</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-7-%E5%9B%9B%E4%B8%AA%E2%80%9C%E9%9F%B3%E9%87%8F%E4%B8%8D%E5%8A%A8%E2%80%9D%E5%88%86%E6%94%AF"><span class="nav-text">5.7. 四个“音量不动”分支</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#6-%E9%9F%B3%E9%A2%91%E7%84%A6%E7%82%B9%EF%BC%9A%E4%BB%8E%E8%AF%B7%E6%B1%82%E4%BB%B2%E8%A3%81%E5%88%B0%E6%92%AD%E6%94%BE%E5%99%A8%E8%A1%8C%E4%B8%BA"><span class="nav-text">6. 音频焦点：从请求仲裁到播放器行为</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#6-1-%E7%84%A6%E7%82%B9%E5%88%B0%E5%BA%95%E7%AE%A1%E7%90%86%E4%BB%80%E4%B9%88"><span class="nav-text">6.1. 焦点到底管理什么</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-2-%E8%AF%B7%E6%B1%82%E5%85%88%E8%BF%87%E5%87%86%E5%85%A5%EF%BC%8C%E5%86%8D%E8%BF%9B%E5%85%A5%E7%84%A6%E7%82%B9%E4%BB%B2%E8%A3%81"><span class="nav-text">6.2. 请求先过准入，再进入焦点仲裁</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-3-%E9%BB%98%E8%AE%A4%E6%A0%88%E6%80%8E%E6%A0%B7%E5%A4%84%E7%90%86%E6%96%B0%E8%AF%B7%E6%B1%82"><span class="nav-text">6.3. 默认栈怎样处理新请求</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-4-GRANTED%E3%80%81DELAYED-%E4%B8%8E%E5%A4%96%E9%83%A8%E7%AD%96%E7%95%A5%E7%AD%89%E5%BE%85"><span class="nav-text">6.4. GRANTED、DELAYED 与外部策略等待</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-5-%E5%AF%BC%E8%88%AA%E6%92%AD%E6%8A%A5%E6%97%B6%EF%BC%8C%E4%B8%BA%E4%BB%80%E4%B9%88%E5%BA%94%E7%94%A8%E5%8F%AF%E8%83%BD%E6%B2%A1%E6%94%B6%E5%88%B0-duck-%E5%9B%9E%E8%B0%83"><span class="nav-text">6.5. 导航播报时，为什么应用可能没收到 duck 回调</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%BA%94%E7%94%A8%E5%9B%9E%E8%B0%83%E8%BF%98%E8%A6%81%E8%B7%A8-Binder%EF%BC%8C%E5%86%8D%E6%8A%95%E9%80%92%E5%88%B0%E5%BA%94%E7%94%A8-Handler"><span class="nav-text">应用回调还要跨 Binder，再投递到应用 Handler</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-6-Fade-out-%E4%B8%8E-duck-%E7%9A%84%E5%8C%BA%E5%88%AB"><span class="nav-text">6.6. Fade-out 与 duck 的区别</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#7-%E8%AE%BE%E5%A4%87%E5%88%87%E6%8D%A2%EF%BC%9A%E8%BF%9E%E6%8E%A5%E4%BA%8B%E5%AE%9E%E3%80%81%E7%AD%96%E7%95%A5%E5%81%8F%E5%A5%BD%E4%B8%8E%E5%AE%9E%E9%99%85%E8%B7%AF%E7%94%B1"><span class="nav-text">7. 设备切换：连接事实、策略偏好与实际路由</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#7-1-%E4%B8%BA%E4%BB%80%E4%B9%88%E2%80%9C%E8%80%B3%E6%9C%BA%E5%B7%B2%E8%BF%9E%E6%8E%A5%E2%80%9D%E4%B8%8D%E7%AD%89%E4%BA%8E%E2%80%9C%E9%9F%B3%E4%B9%90%E5%B7%B2%E8%B5%B0%E8%80%B3%E6%9C%BA%E2%80%9D"><span class="nav-text">7.1. 为什么“耳机已连接”不等于“音乐已走耳机”</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-2-%E4%B8%80%E6%AC%A1%E6%9C%89%E7%BA%BF%E8%80%B3%E6%9C%BA%E8%BF%9E%E6%8E%A5%E6%80%8E%E6%A0%B7%E8%A2%AB%E5%A4%84%E7%90%86"><span class="nav-text">7.2. 一次有线耳机连接怎样被处理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-3-%E6%8B%94%E8%80%B3%E6%9C%BA%E4%B8%BA%E4%BB%80%E4%B9%88%E5%85%88%E5%8F%91-AUDIO-BECOMING-NOISY"><span class="nav-text">7.3. 拔耳机为什么先发 AUDIO_BECOMING_NOISY</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-4-%E8%93%9D%E7%89%99%E4%B8%8D%E6%98%AF%E4%B8%80%E4%B8%AA%E5%BC%80%E5%85%B3"><span class="nav-text">7.4. 蓝牙不是一个开关</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#8-%E9%80%9A%E8%AF%9D%E6%A8%A1%E5%BC%8F%E4%B8%8E%E9%80%9A%E4%BF%A1%E8%AE%BE%E5%A4%87%EF%BC%9A%E4%B8%A4%E5%A5%97%E7%9B%B8%E5%85%B3%E4%BD%86%E7%8B%AC%E7%AB%8B%E7%9A%84%E4%BB%B2%E8%A3%81"><span class="nav-text">8. 通话模式与通信设备：两套相关但独立的仲裁</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#8-1-setMode-%E4%B8%8D%E6%98%AF%E2%80%9C%E7%BB%99%E5%BD%93%E5%89%8D%E5%BA%94%E7%94%A8%E5%8A%A0%E4%B8%AA%E6%A0%87%E7%AD%BE%E2%80%9D"><span class="nav-text">8.1. setMode 不是“给当前应用加个标签”</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#8-2-%E5%BD%93%E5%89%8D-mode-owner-%E6%80%8E%E6%A0%B7%E9%80%89"><span class="nav-text">8.2. 当前 mode owner 怎样选</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#8-3-setCommunicationDevice%EF%BC%9A%E6%8F%90%E4%BA%A4%E5%81%8F%E5%A5%BD%EF%BC%8C%E4%B8%8D%E6%98%AF%E7%9B%B4%E6%8E%A5%E6%89%93%E5%BC%80%E6%89%AC%E5%A3%B0%E5%99%A8"><span class="nav-text">8.3. setCommunicationDevice：提交偏好，不是直接打开扬声器</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#8-4-%E7%84%A6%E7%82%B9%E3%80%81mode%E3%80%81route-%E4%B8%89%E8%80%85%E4%B8%8D%E6%98%AF%E4%BA%92%E7%9B%B8%E6%9B%BF%E4%BB%A3%E7%9A%84-API"><span class="nav-text">8.4. 焦点、mode、route 三者不是互相替代的 API</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#9-%E6%92%AD%E6%94%BE-%E5%BD%95%E9%9F%B3%E7%9B%91%E6%8E%A7%E4%B8%8E%E9%BA%A6%E5%85%8B%E9%A3%8E%E9%9D%99%E9%9F%B3"><span class="nav-text">9. 播放&#x2F;录音监控与麦克风静音</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#9-1-%E4%B8%BA%E4%BB%80%E4%B9%88%E7%B3%BB%E7%BB%9F%E8%BF%98%E8%A6%81%E7%BB%B4%E6%8A%A4%E6%92%AD%E6%94%BE%E5%99%A8%E5%88%97%E8%A1%A8"><span class="nav-text">9.1. 为什么系统还要维护播放器列表</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#9-2-%E5%BD%95%E9%9F%B3%E7%9B%91%E6%8E%A7%E4%B9%9F%E4%B8%8D%E7%AD%89%E4%BA%8E%E5%BD%95%E9%9F%B3%E6%8E%88%E6%9D%83"><span class="nav-text">9.2. 录音监控也不等于录音授权</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#9-3-%E9%BA%A6%E5%85%8B%E9%A3%8E%E9%9D%99%E9%9F%B3%E6%98%AF%E5%A4%9A%E4%B8%AA%E6%9D%A5%E6%BA%90%E5%90%88%E6%88%90%E7%9A%84%E7%BB%93%E6%9E%9C"><span class="nav-text">9.3. 麦克风静音是多个来源合成的结果</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#9-4-%E7%A9%BA%E9%97%B4%E9%9F%B3%E9%A2%91%E4%B8%8E%E7%B3%BB%E7%BB%9F%E9%9F%B3%E6%95%88%E5%9C%A8%E6%9C%AC%E7%AF%87%E7%9A%84%E4%BD%8D%E7%BD%AE"><span class="nav-text">9.4. 空间音频与系统音效在本篇的位置</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#10-%E5%8A%A8%E6%80%81-AudioPolicy%EF%BC%9A%E6%8A%8A%E9%83%A8%E5%88%86%E5%86%B3%E7%AD%96%E4%BA%A4%E7%BB%99%E7%89%B9%E6%9D%83%E7%BB%84%E4%BB%B6"><span class="nav-text">10. 动态 AudioPolicy：把部分决策交给特权组件</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#10-1-%E4%B8%BA%E4%BB%80%E4%B9%88%E9%9C%80%E8%A6%81%E5%A4%96%E9%83%A8%E7%AD%96%E7%95%A5"><span class="nav-text">10.1. 为什么需要外部策略</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#10-2-%E4%B8%80%E4%BB%BD%E6%B3%A8%E5%86%8C%E5%AF%B9%E5%BA%94%E4%B8%89%E6%9D%A1%E4%B8%8D%E5%90%8C%E7%9A%84%E6%8E%A7%E5%88%B6%E5%85%B3%E7%B3%BB"><span class="nav-text">10.2. 一份注册对应三条不同的控制关系</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#10-3-%E5%A4%96%E9%83%A8%E7%84%A6%E7%82%B9%E7%AD%96%E7%95%A5%E6%94%B9%E5%8F%98%E4%BA%86%E5%93%AA%E6%9D%A1%E4%B8%BB%E7%BA%BF"><span class="nav-text">10.3. 外部焦点策略改变了哪条主线</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#10-4-%E7%AD%96%E7%95%A5%E9%80%80%E5%87%BA%E4%B8%8E%E6%81%A2%E5%A4%8D%E5%90%8C%E6%A0%B7%E5%B1%9E%E4%BA%8E%E7%94%9F%E5%91%BD%E5%91%A8%E6%9C%9F"><span class="nav-text">10.4. 策略退出与恢复同样属于生命周期</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#11-audioserver-%E6%AD%BB%E4%BA%A1%E5%90%8E%EF%BC%9A%E9%87%8D%E6%96%B0%E4%B8%8B%E5%8F%91%E7%8A%B6%E6%80%81%EF%BC%8C%E8%80%8C%E4%B8%8D%E6%98%AF%E9%87%8D%E5%BB%BA%E6%89%80%E6%9C%89%E4%B8%9A%E5%8A%A1"><span class="nav-text">11. audioserver 死亡后：重新下发状态，而不是重建所有业务</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#11-1-%E8%B0%81%E5%8F%91%E7%8E%B0%E6%AD%BB%E4%BA%A1%EF%BC%8C%E8%B0%81%E6%89%A7%E8%A1%8C%E6%81%A2%E5%A4%8D"><span class="nav-text">11.1. 谁发现死亡，谁执行恢复</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#11-2-%E6%81%A2%E5%A4%8D%E5%93%AA%E4%BA%9B%E5%86%85%E5%AE%B9%EF%BC%8C%E4%B8%BA%E4%BB%80%E4%B9%88%E9%9C%80%E8%A6%81%E9%87%8D%E6%94%BE"><span class="nav-text">11.2. 恢复哪些内容，为什么需要重放</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#11-3-%E6%81%A2%E5%A4%8D%E4%B9%9F%E5%8F%AF%E8%83%BD%E5%A4%B1%E8%B4%A5"><span class="nav-text">11.3. 恢复也可能失败</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#11-4-%E6%9C%AC%E5%9C%B0-UAC2-%E6%89%A9%E5%B1%95%E7%9A%84%E8%BE%B9%E7%95%8C"><span class="nav-text">11.4. 本地 UAC2 扩展的边界</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#12-%E6%8A%8A%E8%B4%AF%E7%A9%BF%E5%9C%BA%E6%99%AF%E5%AE%8C%E6%95%B4%E8%B5%B0%E4%B8%80%E9%81%8D"><span class="nav-text">12. 把贯穿场景完整走一遍</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#12-1-%E9%9F%B3%E4%B9%90%E5%BC%80%E5%A7%8B%E6%92%AD%E6%94%BE"><span class="nav-text">12.1. 音乐开始播放</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#12-2-%E7%94%A8%E6%88%B7%E6%8C%89%E9%9F%B3%E9%87%8F%E5%8A%A0"><span class="nav-text">12.2. 用户按音量加</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#12-3-%E5%AF%BC%E8%88%AA%E7%9F%AD%E6%97%B6%E6%92%AD%E6%8A%A5"><span class="nav-text">12.3. 导航短时播报</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#12-4-%E6%8F%92%E5%85%A5%E8%80%B3%E6%9C%BA%EF%BC%8C%E5%86%8D%E6%8B%94%E5%87%BA"><span class="nav-text">12.4. 插入耳机，再拔出</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#12-5-%E8%AF%AD%E9%9F%B3%E9%80%9A%E8%AF%9D%E6%8E%A5%E7%AE%A1"><span class="nav-text">12.5. 语音通话接管</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#12-6-%E6%AD%A4%E6%97%B6-audioserver-%E6%81%A2%E5%A4%8D"><span class="nav-text">12.6. 此时 audioserver 恢复</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#13-%E6%80%8E%E6%A0%B7%E9%AA%8C%E8%AF%81%EF%BC%9A%E6%8C%89%E8%AF%81%E6%8D%AE%E5%B1%82%E6%AC%A1%E7%BC%A9%E5%B0%8F%E9%97%AE%E9%A2%98"><span class="nav-text">13. 怎样验证：按证据层次缩小问题</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#13-1-%E5%85%88%E4%BF%9D%E5%AD%98%E7%89%88%E6%9C%AC%E4%B8%8E%E4%B8%89%E5%B1%82%E5%BF%AB%E7%85%A7"><span class="nav-text">13.1. 先保存版本与三层快照</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#13-2-%E5%AE%9E%E9%AA%8C-A%EF%BC%9A%E9%AA%8C%E8%AF%81%E8%AE%BE%E5%A4%87%E9%9F%B3%E9%87%8F%E4%B8%8E%E5%BC%82%E6%AD%A5%E4%BF%9D%E5%AD%98"><span class="nav-text">13.2. 实验 A：验证设备音量与异步保存</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#13-3-%E5%AE%9E%E9%AA%8C-B%EF%BC%9A%E5%8C%BA%E5%88%86%E8%87%AA%E5%8A%A8-duck-%E4%B8%8E%E5%BA%94%E7%94%A8%E6%9A%82%E5%81%9C"><span class="nav-text">13.3. 实验 B：区分自动 duck 与应用暂停</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#13-4-%E5%AE%9E%E9%AA%8C-C%EF%BC%9A%E8%80%B3%E6%9C%BA%E6%96%AD%E5%BC%80%E4%B8%8E-noisy-%E4%BA%8B%E4%BB%B6"><span class="nav-text">13.4. 实验 C：耳机断开与 noisy 事件</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#13-5-%E5%AE%9E%E9%AA%8C-D%EF%BC%9A%E9%80%9A%E4%BF%A1%E6%A8%A1%E5%BC%8F%E6%AE%8B%E7%95%99"><span class="nav-text">13.5. 实验 D：通信模式残留</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#13-6-%E5%AE%9E%E9%AA%8C-E%EF%BC%9Aaudioserver-%E6%81%A2%E5%A4%8D"><span class="nav-text">13.6. 实验 E：audioserver 恢复</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#13-7-%E4%B8%80%E5%BC%A0%E6%8E%92%E9%9A%9C%E9%A1%BA%E5%BA%8F%E8%A1%A8"><span class="nav-text">13.7. 一张排障顺序表</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#14-%E5%88%86%E5%B1%82%E8%AE%B0%E5%BF%86%E4%B8%8E%E6%BA%90%E7%A0%81%E5%AF%BC%E8%88%AA"><span class="nav-text">14. 分层记忆与源码导航</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#14-1-L0%EF%BC%9A%E5%8F%AA%E8%AE%B0%E4%BD%8F%E8%BF%99%E5%B9%85%E5%85%A8%E5%B1%80%E5%9B%BE"><span class="nav-text">14.1. L0：只记住这幅全局图</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#14-2-L1%EF%BC%9A%E8%83%BD%E5%A4%9F%E7%8B%AC%E7%AB%8B%E5%B1%95%E5%BC%80%E7%9A%84%E4%BA%94%E6%9D%A1%E4%B8%BB%E5%B9%B2"><span class="nav-text">14.2. L1：能够独立展开的五条主干</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#14-3-L2%EF%BC%9A%E9%9C%80%E8%A6%81%E6%97%B6%E5%86%8D%E6%9F%A5%EF%BC%8C%E4%B8%8D%E9%9D%A0%E7%A1%AC%E8%83%8C"><span class="nav-text">14.3. L2：需要时再查，不靠硬背</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#15-%E8%87%AA%E6%B5%8B%EF%BC%9A%E5%85%88%E9%A2%84%E6%B5%8B%EF%BC%8C%E5%86%8D%E5%B1%95%E5%BC%80%E7%AD%94%E6%A1%88"><span class="nav-text">15. 自测：先预测，再展开答案</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#15-1-%E5%9F%BA%E7%A1%80%E9%A2%98"><span class="nav-text">15.1. 基础题</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#15-2-%E5%9C%BA%E6%99%AF%E6%8E%A8%E7%90%86%E9%A2%98"><span class="nav-text">15.2. 场景推理题</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Zcorpius</span>
+
+  
+</div>
+
+<!--
+
+
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Muse</a> v5.1.4</div>
+
+
+-->
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+          <span id="scrollpercent"><span>0</span>%</span>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+  
+
+
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@9/dist/mermaid.min.js"></script>
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: 'default'
+    });
+  </script>
+  
+  
+
+  
+
+
+<!-- Nexora 风格代码块增强：顶栏 + 语言标签 + 复制按钮 -->
+<script type="text/javascript" src="/js/src/nexora-code.js"></script>
+<!-- Nexora 风格 TOC scroll-spy（IntersectionObserver，替代 Bootstrap scrollspy） -->
+<script type="text/javascript" src="/js/src/nexora-toc.js"></script>
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"debug":false,"model":{"jsonPath":"https://cdn.jsdelivr.net/gh/evrstr/live2d-widget-models/live2d_evrstr/mashiro_shifuku/model.json"},"display":{"position":"left","width":200,"height":500},"mobile":{"show":true},"encrypt":{"enable":true},"log":false});</script></body>
+</html>
+
+<!-- 页面点击小红心 -->
+<script type="text/javascript" src="/js/src/love.js"></script>
